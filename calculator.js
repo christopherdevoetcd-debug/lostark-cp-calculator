@@ -17180,23 +17180,26 @@
       }
     });
 
-    const targetCp = pCp + totalGapCp;
+    // Écart CP progressif réaliste : entre +200 et +380 CP pour un palier de progression
+    const safeGap = Math.max(200, Math.min(420, totalGapCp));
+    const targetCp = pCp + safeGap;
+    const stepIlvl = Number((pIlvl + (pIlvl >= 1700 ? 2.5 : 5.0)).toFixed(1));
     const dynamicBenchName = isEn 
-      ? `Step Target +2.0 iLvl (${spec})`
-      : `Palier Cible +2.0 iLvl (${spec})`;
+      ? `Target Step (${stepIlvl} iLvl • ${gemDesc})`
+      : `Palier Progrès (${stepIlvl} iLvl • ${gemDesc})`;
 
     return {
-      id: `dynamic_${(playerChar.name || 'char').toLowerCase()}`,
+      id: `dynamic_${(playerChar.id || playerChar.name || 'char').toLowerCase()}_${gemFilter}`,
       name: dynamicBenchName,
       className: normClass,
       spec: spec,
       role: playerChar.role || (isSupport ? 'support' : 'dps'),
-      ilvl: Number((pIlvl + 2.0).toFixed(2)),
+      ilvl: stepIlvl,
       cp: targetCp,
       server: playerChar.server || 'Elpon (CE)',
-      guild: isEn ? 'Optimal Step (+2 iLvl)' : 'Palier Progrès (+2 iLvl)',
+      guild: isEn ? 'Optimal Peer (±2.5 iLvl)' : 'Palier Proche (±2.5 iLvl)',
       rosterLevel: playerChar.rosterLevel || 300,
-      gemTier: isGem9 ? 'gem9' : (gemFilter === 'gem8' ? 'gem8' : 'all'),
+      gemTier: isGem9 ? 'gem9' : (gemFilter === 'gem8' ? 'gem8' : 'gem8'),
       gemDesc: gemDesc,
       avatarUrl: getClassIconUrl(normClass, playerChar.role || (isSupport ? 'support' : 'dps')),
       bibleUrl: null,
@@ -17213,7 +17216,7 @@
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
     const filter = benchmarkState.gemFilter;
 
-    // Profils STRICTEMENT RÉELS de la MÊME CLASSE dans la base BENCHMARK_DATABASE
+    // 1. Profils RÉELS de la MÊME CLASSE dans la base BENCHMARK_DATABASE
     let classMatches = BENCHMARK_DATABASE.filter(b => {
       const bClass = normalizeClassName(b.className || '').toLowerCase();
       if (bClass !== pClass) return false;
@@ -17223,14 +17226,8 @@
     });
 
     // Tri rigoureux des profils réels :
-    // 1. Profils avec CP supérieur au joueur en premier (pour servir d'objectif d'optimisation)
-    // 2. Même spécialisation prioritaire
-    // 3. Proximité d'iLvl la plus proche (|b.ilvl - pIlvl|)
+    // Même spécialisation prioritaire, puis proximité d'iLvl absolue (|b.ilvl - pIlvl|)
     classMatches.sort((a, b) => {
-      const aHigher = (a.cp > pCp) ? 0 : 1;
-      const bHigher = (b.cp > pCp) ? 0 : 1;
-      if (aHigher !== bHigher) return aHigher - bHigher;
-
       const aSameSpec = (a.spec || '').toLowerCase() === pSpec ? 0 : 1;
       const bSameSpec = (b.spec || '').toLowerCase() === pSpec ? 0 : 1;
       if (aSameSpec !== bSameSpec) return aSameSpec - bSameSpec;
@@ -17238,36 +17235,60 @@
       return Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl);
     });
 
+    // 2. Génération automatique d'un Benchmark Proche (±2.5 iLvl) calibré pour TOUTES les classes
+    // Garantit qu'aucun joueur ne se retrouve sans benchmark ou uniquement avec des profils +15 iLvl au-dessus
+    const dynamicBench = generateDynamicBenchmark(playerChar, filter === 'gem9' ? 'gem9' : 'gem8');
+    if (dynamicBench) {
+      // Si aucun profil réel de la même classe n'est véritablement proche (écart <= 8 iLvl avec CP > joueur)
+      // ex: Bard où le plus proche est Lavieenrosee à +15.8 iLvl, ou classe sans profil DB (Berserker, Glaivier...)
+      const hasCloseRealMatch = classMatches.some(b => Math.abs(b.ilvl - pIlvl) <= 8.0 && b.cp > pCp);
+      if (!hasCloseRealMatch) {
+        classMatches.unshift(dynamicBench);
+      } else {
+        // S'il existe un profil réel proche, insérer le palier étalon juste après les profils proches
+        const insertIdx = classMatches.findIndex(b => Math.abs(b.ilvl - pIlvl) > 8.0);
+        if (insertIdx !== -1) {
+          classMatches.splice(insertIdx, 0, dynamicBench);
+        } else {
+          classMatches.push(dynamicBench);
+        }
+      }
+    }
+
     return classMatches;
   }
 
   function findOptimalBenchmark(playerChar) {
     const avail = getAvailableBenchmarks(playerChar);
     if (!avail || avail.length === 0) {
-      return BENCHMARK_DATABASE.find(b => b.role === (playerChar.role || 'dps')) || BENCHMARK_DATABASE[0];
+      return generateDynamicBenchmark(playerChar, 'gem8');
     }
 
     const pIlvl = playerChar.ilvl || 1740;
     const pCp = playerChar.cp || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
 
-    // 1. Cherche en priorité un profil réel de même spé avec CP supérieur
-    const sameSpecHigher = avail.filter(b => (b.spec || '').toLowerCase() === pSpec && b.cp > pCp);
-    if (sameSpecHigher.length > 0) {
-      sameSpecHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return sameSpecHigher[0];
+    // 1. Cherche en priorité un profil réel de même spé avec CP supérieur ET iLvl proche (écart <= 8 iLvl)
+    const closeSameSpecReal = avail.filter(b => !b.isDynamic && (b.spec || '').toLowerCase() === pSpec && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 8.0);
+    if (closeSameSpecReal.length > 0) {
+      closeSameSpecReal.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return closeSameSpecReal[0];
     }
 
-    // 2. Sinon cherche un profil réel de la même classe avec CP supérieur
-    const classHigher = avail.filter(b => b.cp > pCp);
-    if (classHigher.length > 0) {
-      classHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return classHigher[0];
+    // 2. Cherche un profil réel de la même classe avec CP supérieur ET iLvl proche (écart <= 8 iLvl)
+    const closeClassReal = avail.filter(b => !b.isDynamic && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 8.0);
+    if (closeClassReal.length > 0) {
+      closeClassReal.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return closeClassReal[0];
     }
 
-    // 3. Sinon le profil réel le plus proche en iLvl
-    const sorted = [...avail].sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-    return sorted[0];
+    // 3. Si aucun profil réel n'est proche (ex: Bard où le plus bas est Lavieenrosee à +15.8 iLvl, ou classe sans profil DB),
+    // retourner le Palier Progrès Immédiat dynamique (écart ±2.5 iLvl) !
+    const dynamicStep = avail.find(b => b.isDynamic);
+    if (dynamicStep) return dynamicStep;
+
+    // 4. Fallback si rien d'autre : le premier profil disponible
+    return avail[0];
   }
 
 
@@ -19856,6 +19877,13 @@
             console.warn(`[Benchmark Sync] Live data for ${targetName} is logged in DPS build (Grudge/isSupport:false) while benchmark target is Support (${target.spec || 'Blessed Aura'}). Retaining canonical Support preset.`);
             return;
           }
+          // Protection contre les profils ayant out-leveled le bracket d'iLvl du preset
+          // (ex: benchmark calibré à 1742 iLvl pour un joueur à 1742 iLvl, mais dont le compte réel est monté à 1758+ ou 1791+)
+          const presetIlvl = target.ilvl || player.ilvl;
+          if ((liveData.ilvl - presetIlvl > 8.0) && Math.abs(presetIlvl - player.ilvl) <= 8.0) {
+            console.warn(`[Benchmark Sync] Live data for ${targetName} has leveled up to ${liveData.ilvl} iLvl (leaving bracket ${presetIlvl} iLvl for player ${player.ilvl}). Retaining calibrated bracket benchmark.`);
+            return;
+          }
           Object.assign(target, liveData);
           target.id = originalTargetId;
           target.systems = resolveTargetSystems(target, isEn);
@@ -19889,15 +19917,17 @@
         optionsHtml += `</optgroup>`;
       }
 
-      // 2. Profils réels lostark.bible recommandés pour la classe active
-      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Real Benchmark Profiles (' + escapeHtml(player.className) + ')' : 'Profils Réels lostark.bible (' + escapeHtml(player.className) + ')'}">`;
+      // 2. Profils recommandés pour la classe active (Paliers calibrés & Profils réels)
+      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Benchmark Profiles (' + escapeHtml(player.className) + ')' : 'Profils de Référence (' + escapeHtml(player.className) + ')'}">`;
       avail.forEach(b => {
         const isSel = target && (target.id === b.id) && (!benchmarkState.customTarget || !searchedList.some(s => s.id === target.id));
         const deltaIlvl = b.ilvl - (player.ilvl || 1700);
         const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
         const gemLabel = b.gemDesc ? ` [${b.gemDesc}]` : (b.gemTier === 'gem8' ? ' [Full 8]' : ' [Mix 8/9]');
+        const icon = b.isDynamic ? '🎯' : '👤';
+        const tag = b.isDynamic ? (isEn ? ' [Peer Target]' : ' [Palier Étalon]') : '';
         optionsHtml += `<option value="${escapeHtml(b.id)}" ${isSel ? 'selected' : ''}>
-          👤 ${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(b.cp))} CP)${escapeHtml(gemLabel)}
+          ${icon} ${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(b.cp))} CP)${escapeHtml(gemLabel)}${tag}
         </option>`;
       });
       optionsHtml += `</optgroup>`;
@@ -20830,6 +20860,8 @@
   window.__computeDynamicGapsAndPlan = computeDynamicGapsAndPlan;
   window.__buildCpReconciliationHtml = buildCpReconciliationHtml;
   window.__resolveTargetSystems = resolveTargetSystems;
+  window.__generateDynamicBenchmark = generateDynamicBenchmark;
+  window.__getAvailableBenchmarks = getAvailableBenchmarks;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
