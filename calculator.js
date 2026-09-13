@@ -14075,9 +14075,9 @@
   // --- 5. INITIALISATION DES ÉVÉNEMENTS & INTERACTIONS ---
 
   function bindEvents() {
-    // Switch de Rôle (Support vs DPS)
-    dom.roleSupport.addEventListener('click', () => setRole('support'));
-    dom.roleDps.addEventListener('click', () => setRole('dps'));
+    // Switch de Rôle (Support vs DPS) - s'il est présent dans le DOM
+    if (dom.roleSupport) dom.roleSupport.addEventListener('click', () => setRole('support'));
+    if (dom.roleDps) dom.roleDps.addEventListener('click', () => setRole('dps'));
 
     // Navigation des onglets
     dom.tabBtns.forEach(btn => {
@@ -14776,11 +14776,13 @@
 
   function setRole(newRole) {
     state.role = newRole;
-    dom.roleSupport.classList.toggle('active', newRole === 'support');
-    dom.roleDps.classList.toggle('active', newRole === 'dps');
-    dom.roleBadge.textContent = newRole === 'support' ? 'Modèle Support' : 'Modèle DPS';
-    dom.roleBadge.style.color = newRole === 'support' ? 'var(--support-color)' : 'var(--dps-color)';
-    dom.roleBadge.style.borderColor = newRole === 'support' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+    if (dom.roleSupport) dom.roleSupport.classList.toggle('active', newRole === 'support');
+    if (dom.roleDps) dom.roleDps.classList.toggle('active', newRole === 'dps');
+    if (dom.roleBadge) {
+      dom.roleBadge.textContent = newRole === 'support' ? 'Modèle Support' : 'Modèle DPS';
+      dom.roleBadge.style.color = newRole === 'support' ? 'var(--support-color)' : 'var(--dps-color)';
+      dom.roleBadge.style.borderColor = newRole === 'support' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+    }
     
     updatePredictorView();
     updateHoningView();
