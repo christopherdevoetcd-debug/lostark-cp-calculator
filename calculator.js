@@ -16929,24 +16929,72 @@
       : (accAvailable === 0 ? "Rolls High/Mid T4 (Optimisés)" : (accAvailable === 1 ? "Rolls Mid T4 (2 High)" : "Rolls Mid T4 (Standard)"));
     const accBonusPct = accAvailable === 0 ? 13.50 : (accAvailable === 1 ? 12.50 : 11.50);
 
-    // 7. Engravings
+    // 7. Engravings & Ability Stone
     const spec = getCharacterSpecName(playerChar);
     const normClass = normalizeClassName(playerChar.className || '').toLowerCase();
+    
+    const allBpParts = (playerChar.rawProfile && playerChar.rawProfile.battlePoint && playerChar.rawProfile.battlePoint.parts)
+      || (playerChar.battlePoint && playerChar.battlePoint.parts)
+      || (playerChar.rawProfile && playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.battlePoint && playerChar.rawProfile.loadout.battlePoint.parts)
+      || (playerChar.loadout && playerChar.loadout.battlePoint && playerChar.loadout.battlePoint.parts)
+      || [];
+
+    const engParts = allBpParts.filter(p => p.type === 10 || p.type === 11 || (p.grade && p.grade.includes('engrave')));
+    let engBonusPct = 42.00;
+    let hasRealEng = false;
+    if (engParts.length > 0) {
+      const sumVal = engParts.reduce((s, p) => s + (p.value || 0), 0);
+      if (sumVal > 0) {
+        engBonusPct = Number((sumVal / 100).toFixed(2));
+        hasRealEng = true;
+      }
+    }
+
     let engLabel = "";
+    const stoneNotice = hasRealEng ? (isEn ? ` (Stone & Relic: +${engBonusPct.toFixed(2)}%)` : ` (Pierre & Relique: +${engBonusPct.toFixed(2)}%)`) : "";
     if (isSupport) {
       if (normClass.includes('paladin')) {
-        engLabel = isEn ? "Blessed Aura 3, 5 Full T4 Relic Engravings (20/20)" : "Aura Sacrée 3, 5 Gravures Reliques T4 (20/20)";
+        engLabel = (isEn ? "Blessed Aura 3, 5 Full T4 Relic Engravings" : "Aura Sacrée 3, 5 Gravures Reliques T4") + stoneNotice;
       } else if (normClass.includes('bard')) {
-        engLabel = isEn ? "Desperate Salvation 3, 5 Full T4 Relic Engravings (20/20)" : "Salut Désespéré 3, 5 Gravures Reliques T4 (20/20)";
+        engLabel = (isEn ? "Desperate Salvation 3, 5 Full T4 Relic Engravings" : "Salut Désespéré 3, 5 Gravures Reliques T4") + stoneNotice;
       } else if (normClass.includes('artist')) {
-        engLabel = isEn ? "Full Bloom 3, 5 Full T4 Relic Engravings (20/20)" : "Pleine Floraison 3, 5 Gravures Reliques T4 (20/20)";
+        engLabel = (isEn ? "Full Bloom 3, 5 Full T4 Relic Engravings" : "Pleine Floraison 3, 5 Gravures Reliques T4") + stoneNotice;
       } else {
-        engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings (20/20)` : `${spec} 3, 5 Gravures Reliques T4 (20/20)`;
+        engLabel = (isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`) + stoneNotice;
       }
     } else {
-      engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings (20/20)` : `${spec} 3, 5 Gravures Reliques T4 (20/20)`;
+      engLabel = (isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`) + stoneNotice;
     }
-    const engBonusPct = 42.00;
+
+    // 7b. Main Stat & Base AP (Type 1)
+    const t1Part = allBpParts.find(p => p.type === 1);
+    const mainStatName = getMainStatName(playerChar.className || '', isEn);
+    let baseAtkLabel = '';
+    let baseAtkBonusPct = 37.00;
+    if (t1Part) {
+      const mStat = t1Part.mainStat || 0;
+      const bAp = t1Part.baseAttackPower || 0;
+      const mStatK = (mStat / 1000).toFixed(0);
+      const bApK = (bAp / 1000).toFixed(1);
+      baseAtkLabel = `${mainStatName} ${mStatK}k (${bApK}k AP)`;
+      baseAtkBonusPct = Number((bAp / 5000).toFixed(2));
+    } else {
+      const fallbackMStat = playerChar.mainStat || (pIlvl >= 1770 ? 735000 : (pIlvl >= 1750 ? 690000 : 640000));
+      baseAtkLabel = `${mainStatName} ${(fallbackMStat / 1000).toFixed(0)}k`;
+      baseAtkBonusPct = Number((fallbackMStat / 20000).toFixed(2));
+    }
+
+    // 7c. Combat Stats (Type 26: Crit / Spec / Swift)
+    const t26Part = allBpParts.find(p => p.type === 26 || p.total);
+    let combatStatsBonusPct = 76.00;
+    let combatStatsLabel = isEn ? "Combat Stats (Crit/Spec/Swift)" : "Stats de Combat (Crit/Spé/Rap)";
+    if (t26Part) {
+      const sumVal = t26Part.value !== undefined ? (t26Part.value / 100) : 0;
+      if (sumVal > 0) {
+        combatStatsBonusPct = Number(sumVal.toFixed(2));
+        combatStatsLabel = isEn ? `Combat Stats (+${combatStatsBonusPct.toFixed(2)}%)` : `Stats de Combat (+${combatStatsBonusPct.toFixed(2)}%)`;
+      }
+    }
 
     // 8. Ark Grid Percentages & Labels
     const sunBonusPct = hasSun17 ? (isSupport ? 1.13 : 2.24) : (isSupport ? 0.35 : 0.60);
@@ -16988,7 +17036,7 @@
     let astroBonusPct = isSupport ? 3.50 : 4.80;
     const bpParts = (playerChar.astrogems && playerChar.astrogems.length > 0)
       ? playerChar.astrogems
-      : ((playerChar.rawProfile && playerChar.rawProfile.battlePoint && playerChar.rawProfile.battlePoint.parts) || (playerChar.battlePoint && playerChar.battlePoint.parts) || []);
+      : (allBpParts.length > 0 ? allBpParts.filter(p => p.type === 31 || p.type === 32) : []);
     if (Array.isArray(bpParts) && bpParts.length > 0) {
       const astros = bpParts.filter(p => p.type === 31 || p.type === 32);
       if (astros.length > 0) {
@@ -17002,6 +17050,8 @@
 
     return {
       engravings: { label: engLabel, bonusPct: engBonusPct },
+      baseAttackStat: { label: baseAtkLabel, bonusPct: baseAtkBonusPct },
+      combatStats: { label: combatStatsLabel, bonusPct: combatStatsBonusPct },
       arkEvolution: { label: `${evoPts} Pts ${isEn ? 'Evolution' : 'Évolution'}`, bonusPct: Number((evoPts * 0.15).toFixed(2)) },
       arkEnlightenment: { label: `${enlPts} Pts ${isEn ? 'Enlightenment' : 'Illumination'}`, bonusPct: Number((enlPts * 0.28).toFixed(2)) },
       arkLeap: { label: `${leapPts} Pts ${isEn ? 'Leap' : 'Saut'}`, bonusPct: Number((leapPts * 0.20).toFixed(2)) },
@@ -17034,16 +17084,18 @@
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: 60000 },
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: 45000 },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
+      { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '🔮', cost: 30000 },
       { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '⚡', cost: 180000 },
+      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '🛡️', cost: 65000 },
+      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '💪', cost: 75000 },
+      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '📜', cost: 40000 },
+      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '🎯', cost: 50000 },
+      { key: 'transWeapon', title: isEn ? "Weapon Transcendence" : "Transcendance Arme", icon: '⚔️', cost: 15000 },
+      { key: 'transArmor', title: isEn ? "Armor Transcendence" : "Transcendance Armures", icon: '🛡️', cost: 25000 },
       { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '💡', cost: 25000 },
       { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '🧬', cost: 20000 },
       { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '🚀', cost: 30000 },
-      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '🛡️', cost: 65000 },
-      { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
-      { key: 'transWeapon', title: isEn ? "Weapon Transcendence" : "Transcendance Arme", icon: '⚔️', cost: 15000 },
-      { key: 'transArmor', title: isEn ? "Armor Transcendence" : "Transcendance Armures", icon: '🛡️', cost: 25000 },
-      { key: 'engravings', title: isEn ? "Engravings (5x Relic 20/20)" : "Gravures Reliques T4 (5x 20/20)", icon: '📜', cost: 40000 },
       { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '☸️', cost: 70000 }
     ];
 
@@ -18785,6 +18837,154 @@
     `;
   }
 
+  function buildCpReconciliationHtml(player, target, gaps, isEn) {
+    if (!player || !target) return '';
+    const pCp = Number(player.cp || 0);
+    const tCp = Number(target.cp || 0);
+    const netGap = Math.round(tCp - pCp);
+
+    const positiveGaps = (gaps || []).filter(g => g.gainCp > 0 && g.priority !== 'player_lead');
+    const playerLeadGaps = (gaps || []).filter(g => g.priority === 'player_lead');
+
+    const totalPositiveCp = positiveGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
+    const totalPlayerLeadCp = playerLeadGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
+    const top3Sum = positiveGaps.slice(0, 3).reduce((s, g) => s + (g.gainCp || 0), 0);
+
+    // Cas 1 : L'adversaire mène globalement (netGap > 0) et le joueur possède une avance sur l'arme ou un équipement
+    if (totalPlayerLeadCp > 0 && netGap > 0) {
+      const grossDeficit = Math.max(totalPositiveCp, netGap + totalPlayerLeadCp);
+      const topLead = playerLeadGaps[0];
+      const leadTitle = topLead
+        ? topLead.title.replace(/\(Player Advantage\)/i, '').replace(/\(Avantage Joueur\)/i, '').trim()
+        : (isEn ? 'Weapon' : 'Arme');
+
+      return `
+        <div class="cp-reconciliation-card">
+          <div class="reconciliation-top">
+            <div class="reconciliation-title">
+              <span class="reconciliation-icon">⚖️</span>
+              <strong>${isEn ? 'Combat Power Math Reconciliation (Net Balance)' : 'Bilan Mathématique du Combat Power (Équilibre Net)'}</strong>
+            </div>
+            <span class="reconciliation-tag">
+              ${isEn ? 'Formula & Transparency' : 'Formule & Transparence'}
+            </span>
+          </div>
+
+          <div class="reconciliation-equation">
+            <div class="eq-box gross-deficit">
+              <div class="eq-box-label">${isEn ? 'Gross Equipment Deficit' : 'Retard Brut Équipements'}</div>
+              <div class="eq-box-val">+${grossDeficit} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Gems, Astrogems, Armors, Dex, Stone...' : 'Gemmes, Astrogemmes, Armures, Dex, Pierre...'}</div>
+            </div>
+
+            <div class="eq-operator">−</div>
+
+            <div class="eq-box player-lead">
+              <div class="eq-box-label">${isEn ? 'Your Advantage (' + escapeHtml(leadTitle) + ')' : 'Votre Avance (' + escapeHtml(leadTitle) + ')'}</div>
+              <div class="eq-box-val">+${totalPlayerLeadCp} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Direct Compensation' : 'Compense ' + totalPlayerLeadCp + ' CP de retard'}</div>
+            </div>
+
+            <div class="eq-operator">=</div>
+
+            <div class="eq-box net-gap">
+              <div class="eq-box-label">${isEn ? 'Observed In-Game Gap' : 'Écart Réel Net In-Game'}</div>
+              <div class="eq-box-val">+${netGap} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Net Difference (lostark.bible)' : 'Score affiché en Raid'}</div>
+            </div>
+          </div>
+
+          <div class="reconciliation-explanation">
+            <span class="info-bulb">💡</span>
+            <span>
+              ${isEn
+                ? `<strong>Why doesn't the Top 3 impact (+${top3Sum} CP) equal the +${netGap} CP header?</strong> The Top 3 targets your most profitable upgrade levers. In reality, your gross deficit of <strong>+${grossDeficit} CP</strong> across other equipment is heavily cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${totalPlayerLeadCp} CP lead)</strong>, bringing the exact net gap down to <strong>+${netGap} CP</strong>.`
+                : `<strong>Pourquoi la somme du Top 3 (+${top3Sum} CP) ne fait pas +${netGap} CP ?</strong> Le Top 3 cible vos chantiers prioritaires les plus rentables. En réalité, votre retard brut global de <strong>+${grossDeficit} CP</strong> sur les autres équipements est massivement amorti par votre <strong>${escapeHtml(leadTitle)} surpuissante (+${totalPlayerLeadCp} CP d'avance)</strong>, ramenant l'écart net exact à <strong>+${netGap} CP</strong>.`
+              }
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Cas 2 : L'adversaire mène et le joueur n'a pas d'avance compensatoire
+    if (netGap > 0) {
+      const baseSynergies = Math.max(0, netGap - totalPositiveCp);
+
+      return `
+        <div class="cp-reconciliation-card">
+          <div class="reconciliation-top">
+            <div class="reconciliation-title">
+              <span class="reconciliation-icon">⚖️</span>
+              <strong>${isEn ? 'Combat Power Math Reconciliation (Net Balance)' : 'Bilan Mathématique du Combat Power (Équilibre Net)'}</strong>
+            </div>
+            <span class="reconciliation-tag">
+              ${isEn ? 'Formula & Transparency' : 'Formule & Transparence'}
+            </span>
+          </div>
+
+          <div class="reconciliation-equation">
+            <div class="eq-box gross-deficit">
+              <div class="eq-box-label">${isEn ? 'Identified Equipment Gaps' : 'Écarts Équipements Identifiés'}</div>
+              <div class="eq-box-val">+${totalPositiveCp} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Gems, Astrogems, Armors...' : 'Gemmes, Astrogemmes, Armures...'}</div>
+            </div>
+
+            <div class="eq-operator">+</div>
+
+            <div class="eq-box player-lead" style="border-color: rgba(148, 163, 184, 0.3);">
+              <div class="eq-box-label">${isEn ? 'Base Stats & Synergies' : 'Stats de Base & Synergies'}</div>
+              <div class="eq-box-val" style="color: #cbd5e1;">+${baseSynergies} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Main Stat & Compounding' : 'Stat Principale & Multiplicateurs'}</div>
+            </div>
+
+            <div class="eq-operator">=</div>
+
+            <div class="eq-box net-gap">
+              <div class="eq-box-label">${isEn ? 'Observed In-Game Gap' : 'Écart Réel Net In-Game'}</div>
+              <div class="eq-box-val">+${netGap} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Net Difference (lostark.bible)' : 'Score affiché en Raid'}</div>
+            </div>
+          </div>
+
+          <div class="reconciliation-explanation">
+            <span class="info-bulb">💡</span>
+            <span>
+              ${isEn
+                ? `<strong>Transparent breakdown:</strong> The identified equipment levers account for <strong>+${totalPositiveCp} CP</strong>. The remaining <strong>+${baseSynergies} CP</strong> comes from Base Main Stat differences (potions, roster level) and Lost Ark's multiplicative compounding formula.`
+                : `<strong>Décomposition transparente :</strong> Les leviers d'équipement identifiés représentent <strong>+${totalPositiveCp} CP</strong>. Le reliquat de <strong>+${baseSynergies} CP</strong> provient des écarts de Stat Principale brute (potions, niveau de roster) et des multiplicateurs croisés (compounding) de Lost Ark.`
+              }
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Cas 3 : Le joueur est en avance
+    return `
+      <div class="cp-reconciliation-card">
+        <div class="reconciliation-top">
+          <div class="reconciliation-title">
+            <span class="reconciliation-icon">⚖️</span>
+            <strong>${isEn ? 'Combat Power Math Reconciliation' : 'Bilan Mathématique du Combat Power'}</strong>
+          </div>
+          <span class="reconciliation-tag" style="background: rgba(52, 211, 153, 0.15); color: #34d399; border-color: rgba(52, 211, 153, 0.35);">
+            ${isEn ? 'Player Advantage' : 'Avantage Joueur'}
+          </span>
+        </div>
+        <div class="reconciliation-explanation">
+          <span class="info-bulb">✨</span>
+          <span>
+            ${isEn
+              ? `Your character holds a solid net advantage of <strong>+${Math.abs(netGap)} CP</strong> over the benchmark target. Your overall systems outperform the reference profile.`
+              : `Votre personnage conserve une solide avance nette de <strong>+${Math.abs(netGap)} CP</strong> sur le profil de référence. Vos systèmes globaux surpassent la cible.`
+            }
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
   function renderBenchmarkTab() {
     const heroCard = document.getElementById('benchmarkHeroCard');
     if (!heroCard) return;
@@ -19007,7 +19207,7 @@
     `;
 
     const pSys = extractPlayerSystems(player, isEn);
-    const tSys = target.systems || {};
+    const tSys = (target && target.systems && Object.keys(target.systems).length > 0) ? target.systems : extractPlayerSystems(target, isEn);
     const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
     const directCpGap = Math.round((target.cp || 0) - (player.cp || 0));
 
@@ -19015,6 +19215,7 @@
 
     // 4. Diagnostic des Écarts Prioritaires (Uniquement les leviers de progression ou avantages joueur)
     const gapsGrid = document.getElementById('benchmarkGapsGrid');
+    const reconEl = document.getElementById('benchmarkCpReconciliation');
     if (gapsGrid) {
       const activeGaps = gaps.filter(g => g.gainCp > 0 || g.priority === 'player_lead');
       if (activeGaps.length === 0) {
@@ -19052,6 +19253,11 @@
       }
     }
 
+    // 4b. Bilan Mathématique du CP (Réconciliation des Écarts)
+    if (reconEl) {
+      reconEl.innerHTML = buildCpReconciliationHtml(player, target, gaps, isEn);
+    }
+
     // 5. Tableau Comparatif Système par Système
     const tableBody = document.getElementById('benchmarkTableBody');
     if (tableBody) {
@@ -19065,13 +19271,15 @@
         { key: 'advHoning', name: isEn ? 'T4 Advanced Honing' : 'Affinage Avancé T4', icon: '✨', prio: 'equal' },
         { key: 'bracelet', name: isEn ? 'T4 Bracelet (Stats & Passives)' : 'Bracelet T4 (Stats & Passifs)', icon: '🔮', prio: 'med' },
         { key: 'gems', name: isEn ? 'T4 Gems (Tiers & DMG)' : 'Gemmes T4 (Niveaux & Dégâts)', icon: '⚡', prio: target.gemTier === 'gem8' ? 'equal' : 'opt' },
+        { key: 'armors', name: isEn ? 'T4 Armors (Chest/Pants/Shoulders)' : 'Armures T4 (Torse/Jambes/Épaules)', icon: '🛡️', prio: 'med' },
+        { key: 'baseAttackStat', name: isEn ? 'Main Stat & Base AP' : 'Stat Principale & Attaque Base', icon: '💪', prio: 'med' },
+        { key: 'engravings', name: isEn ? 'Engravings & Ability Stone' : 'Gravures & Pierre de Naissance', icon: '📜', prio: 'equal' },
+        { key: 'combatStats', name: isEn ? 'Combat Stats (Crit/Spec/Swift)' : 'Stats de Combat (Crit/Spé/Rap)', icon: '🎯', prio: 'equal' },
         { key: 'transWeapon', name: isEn ? 'Weapon Transcendence' : 'Transcendance Arme', icon: '⚔️', prio: 'equal' },
         { key: 'transArmor', name: isEn ? 'Armor Transcendence (105 Pts)' : 'Transcendance Armures (105 Pts)', icon: '🛡️', prio: 'equal' },
-        { key: 'engravings', name: isEn ? 'Engravings & Spec Tree' : 'Gravures & Arbre de Spécialisation', icon: '📜', prio: 'equal' },
         { key: 'arkEvolution', name: isEn ? 'Ark Passive: Evolution (Stats)' : 'Ark Passive : Évolution (Stats)', icon: '🧬', prio: 'med' },
         { key: 'arkEnlightenment', name: isEn ? 'Ark Passive: Enlightenment (Tree)' : 'Ark Passive : Illumination (Arbre)', icon: '💡', prio: 'med' },
         { key: 'arkLeap', name: isEn ? 'Ark Passive: Leap (Hyper)' : 'Ark Passive : Saut (Hyper)', icon: '🚀', prio: 'equal' },
-        { key: 'armors', name: isEn ? 'T4 Armors (Chest/Pants/Shoulders)' : 'Armures T4 (Torse/Jambes/Épaules)', icon: '🛡️', prio: 'med' },
         { key: 'karma', name: isEn ? 'T4 Karma (Evolution Rank 0-6)' : 'Karma T4 (Évolution Rang 0-6)', icon: '☸️', prio: 'equal' }
       ];
 
@@ -19687,6 +19895,8 @@
   window.__loadCharacter = loadCharacter;
   window.__setAdvisorMode = setAdvisorMode;
   window.__renderAdvisorView = renderAdvisorView;
+  window.__computeDynamicGapsAndPlan = computeDynamicGapsAndPlan;
+  window.__buildCpReconciliationHtml = buildCpReconciliationHtml;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);

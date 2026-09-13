@@ -110,10 +110,18 @@ Document de transmission complet du projet pour reprise instantanée de contexte
 - **Calcul Mathématique Strict à 100% de Parité** :
   - Formule au prorata : $CP_i = \text{round}\left(\frac{\Delta_i}{\sum \Delta} \times \text{cpImpact}\right)$ avec ajustement résiduel sur le dernier terme pour garantir $\sum CP_i \equiv \text{cpImpact}$.
   - Exemple réel (Neevercry vs Ebeneben) : $+139\text{ CP}$ réparti exactement en Puissance d'Attaque ($+10\text{ CP}$), Dégâts Additionnels ($+26\text{ CP}$), Dégâts aux Boss ($+103\text{ CP}$).
-- **Interface Glassmorphism Bilingue** :
-  - Cartes côte à côte Joueur vs Cible avec pilules de gains `+X CP`.
-  - Tableau comparatif dédié avec sous-totaux et écarts individuels.
-  - Bannière de recommandation d'optimisation prioritaire identifiant la sous-statistique au plus fort impact (ex: Dégâts aux Boss).
+### H. Bilan Mathématique du CP (Réconciliation Écart Brut / Avance / Écart Net) & Données Brutes
+- **Bandeau de Réconciliation Mathématique Dynamique (`#benchmarkCpReconciliation`)** :
+  - Résout définitivement la confusion entre le Top 3 des leviers prioritaires et l'écart réel net in-game.
+  - Équation visuelle complète :
+    $$\text{Retard Brut sur Équipements } (+756\text{ CP}) - \text{Votre Avance Arme } (+240\text{ CP}) = \text{Écart Réel Net In-Game } (+516\text{ CP})$$
+  - Bulle explicative pédagogique adaptative : explique clairement que l'arme surpuissante amortit le déficit pour ramener l'écart net exact à celui observé en raid sur `lostark.bible`.
+- **Intégration des Données Brutes Sous-Jacentes dans le Tableau Comparatif** :
+  - `baseAttackStat` : Stat Principale brute (Dextérité / Force / Intelligence) et Attaque de Base (*Base AP*, Smilegate Part Type 1).
+  - `engravings` : Gravures Reliques + bonus réel des nœuds de Pierre de Naissance / Transcendance (Smilegate Part Type 10, ex: $+2.30\%$).
+  - `combatStats` : Cumul réel des statistiques de combat (Critique, Spécialisation, Rapidité, Part Type 26).
+- **100% Généralisé et Bilingue (FR / EN)** :
+  - Support de tout profil, toute classe et toute combinaison d'écarts (avec ou sans avantage joueur, avance globale ou parité).
 
 ---
 

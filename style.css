@@ -4711,6 +4711,151 @@ select optgroup {
   line-height: 1.45;
 }
 
+/* --- BILAN MATHÉMATIQUE DU CP (RÉCONCILIATION) --- */
+.benchmark-cp-reconciliation {
+  margin-top: 14px;
+}
+
+.cp-reconciliation-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  animation: accDetailsFadeIn 0.3s ease-out;
+}
+
+.reconciliation-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.reconciliation-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.reconciliation-tag {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.reconciliation-equation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.eq-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-width: 130px;
+  flex: 1;
+}
+
+.eq-box.gross-deficit {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.eq-box.gross-deficit .eq-box-val {
+  color: #fbbf24;
+}
+
+.eq-box.player-lead {
+  border-color: rgba(96, 165, 250, 0.35);
+}
+.eq-box.player-lead .eq-box-val {
+  color: #60a5fa;
+}
+
+.eq-box.net-gap {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.08);
+}
+.eq-box.net-gap .eq-box-val {
+  color: #34d399;
+}
+
+.eq-box-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.eq-box-val {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.eq-box-sub {
+  font-size: 10.5px;
+  color: #64748b;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+.eq-operator {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 800;
+  color: #94a3b8;
+  user-select: none;
+}
+
+.reconciliation-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #38bdf8;
+}
+
+.reconciliation-explanation strong {
+  color: #f1f5f9;
+}
+
+.reconciliation-explanation .info-bulb {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 /* TABLEAU COMPARATIF SYSTÈME PAR SYSTÈME */
 .benchmark-table {
   width: 100%;
