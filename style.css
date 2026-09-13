@@ -5081,6 +5081,22 @@ select optgroup {
   border-color: #fbbf24;
 }
 
+.btn-engravings-toggle {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+.btn-engravings-toggle:hover {
+  background: rgba(56, 189, 248, 0.28);
+  border-color: #38bdf8;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-engravings-parent.expanded .btn-engravings-toggle {
+  background: #38bdf8;
+  color: #0b1120;
+  border-color: #38bdf8;
+}
+
 .row-acc-details td {
   padding: 0 !important;
   background: rgba(10, 15, 26, 0.85);
@@ -5097,6 +5113,12 @@ select optgroup {
   padding: 0 !important;
   background: rgba(10, 15, 26, 0.85);
   border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.row-engravings-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
 }
 
 .acc-breakdown-panel {
@@ -5574,6 +5596,11 @@ select optgroup {
   color: #fde68a;
   display: block;
   margin-bottom: 2px;
+}
+
+/* --- DÉTAIL DES GRAVURES RELIQUES T4 & PIERRE (BENCHMARK) --- */
+.engravings-breakdown-panel {
+  border-left: 3px solid #38bdf8;
 }
 
 /* PLAN D'ACTION RECOMMANDÉ */

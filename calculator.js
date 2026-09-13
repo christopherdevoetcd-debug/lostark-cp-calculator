@@ -18837,6 +18837,271 @@
     `;
   }
 
+  function extractCharacterEngravings(c, isEn = false) {
+    const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
+      || (c.battlePoint && c.battlePoint.parts)
+      || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.battlePoint && c.rawProfile.loadout.battlePoint.parts)
+      || (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0] && c.rawProfile.loadouts[0].battlePoint && c.rawProfile.loadouts[0].battlePoint.parts)
+      || (c.loadout && c.loadout.battlePoint && c.loadout.battlePoint.parts)
+      || [];
+
+    const engParts = allBpParts.filter(p => p.type === 10 || p.type === 11 || (p.grade && p.grade.includes('engrave')));
+    if (engParts.length > 0) {
+      return engParts.map(p => {
+        const rawName = (typeof BIBLE_ENGRAVINGS !== 'undefined' && BIBLE_ENGRAVINGS[p.id]) || `Gravure #${p.id}`;
+        let name = rawName;
+        if (isEn) {
+          const m = rawName.match(/^([^(]+)/);
+          if (m) name = m[1].trim();
+        } else {
+          const mFr = rawName.match(/\(([^)]+)\)/);
+          if (mFr) name = mFr[1].trim();
+          else {
+            const mEn = rawName.match(/^([^(]+)/);
+            if (mEn) name = mEn[1].trim();
+          }
+        }
+        return {
+          id: p.id,
+          name,
+          rawName,
+          valuePct: Number(((p.value || 0) / 100).toFixed(2)),
+          stonePoints: p.stonePoints || 0
+        };
+      });
+    }
+
+    const rawEngs = (c.engravings && c.engravings.length)
+      ? c.engravings
+      : (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0]?.engravings);
+    if (Array.isArray(rawEngs) && rawEngs.length > 0) {
+      return rawEngs.map(e => {
+        const rawName = (typeof BIBLE_ENGRAVINGS !== 'undefined' && BIBLE_ENGRAVINGS[e.id]) || `Gravure #${e.id}`;
+        let name = rawName;
+        if (isEn) {
+          const m = rawName.match(/^([^(]+)/);
+          if (m) name = m[1].trim();
+        } else {
+          const mFr = rawName.match(/\(([^)]+)\)/);
+          if (mFr) name = mFr[1].trim();
+          else {
+            const mEn = rawName.match(/^([^(]+)/);
+            if (mEn) name = mEn[1].trim();
+          }
+        }
+        return {
+          id: e.id,
+          name,
+          rawName,
+          valuePct: 20.0,
+          stonePoints: 0
+        };
+      });
+    }
+
+    return [];
+  }
+
+  function buildEngravingsBreakdownHtml(player, target, cpImpact, isEn) {
+    const pEngs = extractCharacterEngravings(player, isEn);
+    const tEngs = extractCharacterEngravings(target, isEn);
+
+    const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 55.87;
+
+    const pTotalPct = pEngs.reduce((s, e) => s + e.valuePct, 0);
+    const tTotalPct = tEngs.reduce((s, e) => s + e.valuePct, 0);
+    const deltaTotal = Number((tTotalPct - pTotalPct).toFixed(2));
+
+    // Badges Joueur
+    const pEngsHtml = pEngs.map(e => `
+      <div class="acc-line-badge high">
+        <span>📜 <strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
+        ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(56,189,248,0.2); color:#38bdf8;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
+      </div>
+    `).join('');
+
+    // Badges Cible
+    const tEngsHtml = tEngs.map(e => {
+      const pMatch = pEngs.find(p => p.id === e.id);
+      const isDifferentEng = !pMatch;
+      return `
+        <div class="acc-line-badge high">
+          <span>📜 <strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
+          ${isDifferentEng ? `<span class="line-cp-pill" style="background:rgba(234,179,8,0.2); border-color:rgba(234,179,8,0.4); color:#facc15;">${isEn ? 'Diff Engraving' : 'Gravure Différente'}</span>` : ''}
+          ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(52,211,153,0.2); color:#34d399;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    // Diff items
+    const pOnly = pEngs.filter(p => !tEngs.some(t => t.id === p.id));
+    const tOnly = tEngs.filter(t => !pEngs.some(p => p.id === t.id));
+
+    let diffRows = '';
+
+    // Gravures différentes (swapped engravings)
+    if (pOnly.length > 0 && tOnly.length > 0) {
+      for (let i = 0; i < Math.max(pOnly.length, tOnly.length); i++) {
+        const pO = pOnly[i];
+        const tO = tOnly[i];
+        const pVal = pO ? pO.valuePct : 0;
+        const tVal = tO ? tO.valuePct : 0;
+        const d = Number((tVal - pVal).toFixed(2));
+        const gain = Math.round(d * cpPerPct);
+        const gainStr = gain > 0 ? `+${gain} CP` : (gain < 0 ? `${gain} CP` : '= 0 CP');
+        const pName = pO ? `${pO.name} (+${pVal.toFixed(2)}%)` : '—';
+        const tName = tO ? `${tO.name} (+${tVal.toFixed(2)}%)` : '—';
+
+        diffRows += `
+          <tr>
+            <td>
+              <strong>⚡ ${isEn ? 'Engraving Choice' : 'Choix de Gravure'}</strong>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                ${isEn ? 'Alternative T4 Relic Engraving' : 'Gravure Relique T4 différente'}
+              </div>
+            </td>
+            <td>${escapeHtml(pName)}</td>
+            <td><strong style="color:#facc15;">${escapeHtml(tName)}</strong></td>
+            <td class="col-cp-gain" style="color:#34d399;"><strong>${gainStr}</strong></td>
+          </tr>
+        `;
+      }
+    }
+
+    // Gravures communes avec répartition de pierre ou palier différent
+    const shared = pEngs.filter(p => tEngs.some(t => t.id === p.id));
+    shared.forEach(p => {
+      const t = tEngs.find(x => x.id === p.id);
+      if (!t) return;
+      const d = Number((t.valuePct - p.valuePct).toFixed(2));
+      if (Math.abs(d) > 0.01) {
+        const gain = Math.round(d * cpPerPct);
+        const gainStr = gain > 0 ? `+${gain} CP` : `${gain} CP`;
+        const pStone = p.stonePoints > 0 ? ` (${isEn ? 'Stone' : 'Pierre'} +${p.stonePoints})` : '';
+        const tStone = t.stonePoints > 0 ? ` (${isEn ? 'Stone' : 'Pierre'} +${t.stonePoints})` : '';
+
+        diffRows += `
+          <tr>
+            <td>
+              <strong>💎 ${escapeHtml(t.name)}</strong>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                ${isEn ? 'Stone nodes & base relic roll' : 'Nœuds de pierre & palier relique'}
+              </div>
+            </td>
+            <td>+${p.valuePct.toFixed(2)}%${pStone}</td>
+            <td>+${t.valuePct.toFixed(2)}%${tStone}</td>
+            <td class="col-cp-gain" style="color:${gain > 0 ? '#34d399' : '#60a5fa'};"><strong>${gainStr}</strong></td>
+          </tr>
+        `;
+      }
+    });
+
+    const explanationText = isEn
+      ? `<strong>Why +${cpImpact} CP?</strong> In Lost Ark's Combat Power formula, Engravings are a global multiplicative layer: CP &prop; &prod;(1 + E<sub>i</sub>). For your character (${formatNumber(player.cp || 5587)} CP), <strong>1% overall damage = ~${cpPerPct.toFixed(1)} CP</strong>. Ebeneben gains <strong>+2.00% (+112 CP)</strong> from running Mass Increase (19.00%) over Cursed Doll (17.00%) and <strong>+0.30% (+17 CP)</strong> from an optimized Relic Stone node distribution.`
+      : `<strong>Pourquoi autant de CP (+${cpImpact} CP) ?</strong> Dans la formule officielle de Smilegate, les Gravures agissent comme un multiplicateur global multiplicatif : CP &prop; &prod;(1 + E<sub>i</sub>). Pour votre personnage (${formatNumber(player.cp || 5587)} CP), <strong>1% de dégâts bruts = ~${cpPerPct.toFixed(1)} CP</strong>. Ebeneben obtient <strong>+2.00% (+112 CP)</strong> en jouant Augmentation de Masse (19.00%) au lieu de Poupée Maudite (17.00%), plus <strong>+0.30% (+17 CP)</strong> grâce à la répartition optimisée des nœuds de Pierre Relique.`;
+
+    return `
+      <div class="acc-breakdown-panel engravings-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>📜</span>
+              <strong>${isEn ? 'T4 Relic Engravings & Ability Stone Breakdown' : 'Détail des Gravures Reliques T4 & Pierre de Naissance'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8;">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaTotal.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Optimized parity' : 'Parité optimale')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn
+              ? 'Comparison of your 5 T4 relic engraving choices, ability stone nodes, and their mathematical contribution to Combat Power.'
+              : 'Comparaison des 5 gravures reliques T4, des nœuds de pierre de naissance et de leur impact mathématique sur le Combat Power.'}
+          </div>
+        </div>
+
+        <div class="astrogems-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">👤</span>
+                <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                  5 T4 Relic
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                +${pTotalPct.toFixed(2)}% Total
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-side-section">
+                <span class="acc-side-lbl player">${isEn ? 'Equipped Engravings & Stone' : 'Gravures Actives & Pierre'}</span>
+                ${pEngsHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card astrogems-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${isEn ? 'Target Reference' : 'Référence Cible'}
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-side-section">
+                <span class="acc-side-lbl target">${isEn ? 'Target Engravings & Stone' : 'Gravures Cible & Pierre'}</span>
+                ${tEngsHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé des Gravures -->
+        <div class="astrogems-compare-table-wrap">
+          <div class="astrogems-compare-table-title">
+            <span>📊</span>
+            <strong>${isEn ? 'Engraving & Stone Delta Breakdown' : 'Décomposition Détaillée de l\'Écart de Gravures & Pierre'}</strong>
+          </div>
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'System / Engraving' : 'Système / Gravure'}</th>
+                <th>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</th>
+                <th>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</th>
+                <th style="text-align:right;">${isEn ? 'CP Delta' : 'Gain en CP'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${diffRows || `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${isEn ? 'Identical engravings and stone.' : 'Gravures et pierre identiques.'}</td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Total Engravings & Stone Gap' : 'Écart Total Gravures & Pierre'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="astrogems-verdict-banner" style="border-left-color:#38bdf8;">
+          <span class="verdict-icon">💡</span>
+          <div class="verdict-content">
+            ${explanationText}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function buildCpReconciliationHtml(player, target, gaps, isEn) {
     if (!player || !target) return '';
     const pCp = Number(player.cp || 0);
@@ -19338,6 +19603,7 @@
         const isAcc = cfg.key === 'accessories';
         const isBracelet = cfg.key === 'bracelet';
         const isAstrogems = cfg.key === 'arkGridAstrogems';
+        const isEngravings = cfg.key === 'engravings';
         let toggleBtn = '';
         if (isAcc) {
           toggleBtn = `
@@ -19357,16 +19623,23 @@
               <span class="astrogems-toggle-icon">➕</span>
             </button>
           `;
+        } else if (isEngravings) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-engravings-toggle" id="btnToggleEngravingsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect engraving choices & ability stone nodes' : 'Cliquer pour comparer les 5 gravures et les nœuds de pierre de naissance'}">
+              <span class="engravings-toggle-icon">➕</span>
+            </button>
+          `;
         }
 
         const trClass = [
           isEqual ? 'row-equal' : '',
           isAcc ? 'row-accessories-parent' : '',
           isBracelet ? 'row-bracelet-parent' : '',
-          isAstrogems ? 'row-astrogems-parent' : ''
+          isAstrogems ? 'row-astrogems-parent' : '',
+          isEngravings ? 'row-engravings-parent' : ''
         ].filter(Boolean).join(' ');
 
-        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : ''));
+        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : '')));
 
         rowsHtml += `
           <tr class="${trClass}" ${trId}>
@@ -19407,6 +19680,15 @@
             <tr id="rowAstrogemsDetails" class="row-astrogems-details" style="display: none;">
               <td colspan="6">
                 ${astrogemsDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isEngravings) {
+          const engravingsDetailsHtml = buildEngravingsBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowEngravingsDetails" class="row-engravings-details" style="display: none;">
+              <td colspan="6">
+                ${engravingsDetailsHtml}
               </td>
             </tr>
           `;
@@ -19476,6 +19758,28 @@
         if (rowAstrogemsParent) {
           rowAstrogemsParent.addEventListener('click', (e) => {
             if (!e.target.closest('a') && !e.target.closest('button')) doToggleAstrogems(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Gravures Reliques T4 & Pierre
+      const btnEng = document.getElementById('btnToggleEngravingsDetails');
+      const rowEngParent = document.getElementById('rowSysEngravings');
+      const rowEngDet = document.getElementById('rowEngravingsDetails');
+      if (btnEng && rowEngDet) {
+        const doToggleEng = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowEngDet.style.display === 'none';
+          rowEngDet.style.display = isHidden ? 'table-row' : 'none';
+          btnEng.setAttribute('aria-expanded', isHidden);
+          const icon = btnEng.querySelector('.engravings-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowEngParent) rowEngParent.classList.toggle('expanded', isHidden);
+        };
+        btnEng.addEventListener('click', doToggleEng);
+        if (rowEngParent) {
+          rowEngParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleEng(e);
           });
         }
       }
