@@ -101,7 +101,19 @@ Document de transmission complet du projet pour reprise instantanée de contexte
   - **Support des Liens URL Directs** : Détection et parsing automatique des URL complètes copiées-collées depuis le navigateur (ex: `https://lostark.bible/character/CE/...`).
   - **Résolution Automatique des Redirections de Casse** : Si un pseudo est entré en minuscules (ex: `cyanora`), le système suit automatiquement la redirection HTTP de lostark.bible vers le pseudo canonique (`Cyanora`).
   - **Multi-Région Automatique** : En mode `Auto`, si le pseudo n'existe pas en Europe (CE), le moteur tente immédiatement les serveurs Nord-Américains (NAE, NAW) et Sud-Américains (SA).
-  - **Historique de Session** : Les profils trouvés sont conservés dans `searchedTargets` et restent sélectionnables dans le menu déroulant.
+### G. Décomposition Interactive des Astrogemmes Ark Grid (Sous-statistiques & CP)
+- **Bouton accordéon `➕` / `➖` dédié** : Positionné sur la ligne `✨ Ark Grid : Astrogemmes (Sous-stats)` du tableau comparatif benchmark (`#benchmarkTableBody`).
+- **Extraction Réelle des Données lostark.bible (Battle Point Types 31 / 32)** :
+  - DPS : `2001` (Puissance d'Attaque), `2002` (Dégâts Additionnels), `2003` (Dégâts aux Boss).
+  - Supports : `2011` (Amélioration Dégâts Alliés), `2012` (Puissance de Marque), `2013` (Amélioration AP Allié).
+  - Cumul des 24 slots d'astrogemmes et extraction des niveaux totaux (`totalLevel`) et multiplicateurs in-game (`value / 100`).
+- **Calcul Mathématique Strict à 100% de Parité** :
+  - Formule au prorata : $CP_i = \text{round}\left(\frac{\Delta_i}{\sum \Delta} \times \text{cpImpact}\right)$ avec ajustement résiduel sur le dernier terme pour garantir $\sum CP_i \equiv \text{cpImpact}$.
+  - Exemple réel (Neevercry vs Ebeneben) : $+139\text{ CP}$ réparti exactement en Puissance d'Attaque ($+10\text{ CP}$), Dégâts Additionnels ($+26\text{ CP}$), Dégâts aux Boss ($+103\text{ CP}$).
+- **Interface Glassmorphism Bilingue** :
+  - Cartes côte à côte Joueur vs Cible avec pilules de gains `+X CP`.
+  - Tableau comparatif dédié avec sous-totaux et écarts individuels.
+  - Bannière de recommandation d'optimisation prioritaire identifiant la sous-statistique au plus fort impact (ex: Dégâts aux Boss).
 
 ---
 

@@ -18481,6 +18481,310 @@
     `;
   }
 
+  function extractAstrogemsStats(charObj, isSupport, isEn) {
+    if (!charObj) return [];
+    
+    // 1. Récupération des parts battlePoint (type 31/32)
+    let bpParts = [];
+    if (Array.isArray(charObj.astrogems) && charObj.astrogems.length > 0) {
+      bpParts = charObj.astrogems;
+    } else if (charObj.battlePoint && Array.isArray(charObj.battlePoint.parts)) {
+      bpParts = charObj.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
+    } else if (charObj.rawProfile && charObj.rawProfile.battlePoint && Array.isArray(charObj.rawProfile.battlePoint.parts)) {
+      bpParts = charObj.rawProfile.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
+    } else if (charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.battlePoint && Array.isArray(charObj.rawProfile.loadout.battlePoint.parts)) {
+      bpParts = charObj.rawProfile.loadout.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
+    } else if (charObj.loadout && charObj.loadout.battlePoint && Array.isArray(charObj.loadout.battlePoint.parts)) {
+      bpParts = charObj.loadout.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
+    }
+
+    // 2. Niveaux cumulés depuis arkGridCores
+    const totals = {};
+    const cores = charObj.arkGridCores 
+      || (charObj.loadout && charObj.loadout.arkGridCores) 
+      || (charObj.rawProfile && charObj.rawProfile.arkGridCores) 
+      || (charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.arkGridCores) 
+      || [];
+    if (Array.isArray(cores)) {
+      for (const core of cores) {
+        for (const gem of (core.gems || [])) {
+          for (const opt of (gem.opts || [])) {
+            totals[opt.id] = (totals[opt.id] || 0) + (opt.level || 0);
+          }
+        }
+      }
+    }
+
+    const ids = isSupport ? [2011, 2012, 2013] : [2001, 2002, 2003];
+
+    if (bpParts.length > 0) {
+      return ids.map(id => {
+        const def = (typeof BIBLE_ARK_GRID_SUBSTATS !== 'undefined' && BIBLE_ARK_GRID_SUBSTATS[id]) || {};
+        const part = bpParts.find(p => p.id === id);
+        const valPct = part && part.value !== undefined ? (part.value / 100) : 0;
+        const lvl = (part && part.totalLevel) || totals[id] || 0;
+        const name = isEn ? (def.en || `Substat #${id}`) : (def.fr || `Sous-stat #${id}`);
+        return {
+          id,
+          name,
+          fullName: def.fullName || name,
+          valPct: Number(valPct.toFixed(2)),
+          level: lvl,
+          isSupport
+        };
+      });
+    }
+
+    // 3. Fallback profil cible / benchmark si données brutes absentes
+    let totalBonusPct = 0;
+    if (charObj.systems && charObj.systems.arkGridAstrogems && typeof charObj.systems.arkGridAstrogems.bonusPct === 'number') {
+      totalBonusPct = charObj.systems.arkGridAstrogems.bonusPct;
+    } else {
+      const lbl = (charObj.systems && charObj.systems.arkGridAstrogems && charObj.systems.arkGridAstrogems.label) || '';
+      const m = lbl.match(/\+([\d.,]+)%/);
+      if (m) {
+        totalBonusPct = parseFloat(m[1].replace(',', '.'));
+      } else {
+        totalBonusPct = isSupport ? 4.50 : 5.80;
+      }
+    }
+
+    if (isSupport) {
+      const p11 = Number((totalBonusPct * 0.30).toFixed(2));
+      const p12 = Number((totalBonusPct * 0.40).toFixed(2));
+      const p13 = Number((totalBonusPct - p11 - p12).toFixed(2));
+      return [
+        { id: 2011, name: isEn ? "Ally Damage Enh." : "Amélioration Dégâts Alliés", valPct: p11, level: Math.round(p11 * 18), isSupport: true },
+        { id: 2012, name: isEn ? "Brand Power" : "Puissance de Marque", valPct: p12, level: Math.round(p12 * 7), isSupport: true },
+        { id: 2013, name: isEn ? "Ally Attack Enh." : "Amélioration AP Allié", valPct: p13, level: Math.round(p13 * 8), isSupport: true }
+      ];
+    } else {
+      const p01 = Number((totalBonusPct * 0.22).toFixed(2));
+      const p02 = Number((totalBonusPct * 0.41).toFixed(2));
+      const p03 = Number((totalBonusPct - p01 - p02).toFixed(2));
+      return [
+        { id: 2001, name: isEn ? "Attack Power" : "Puissance d'Attaque", valPct: p01, level: Math.round(p01 * 28), isSupport: false },
+        { id: 2002, name: isEn ? "Additional Damage" : "Dégâts Additionnels", valPct: p02, level: Math.round(p02 * 17), isSupport: false },
+        { id: 2003, name: isEn ? "Boss Damage" : "Dégâts aux Boss", valPct: p03, level: Math.round(p03 * 13), isSupport: false }
+      ];
+    }
+  }
+
+  function computeAstrogemsLineCps(playerStats, targetStats, cpImpact) {
+    if (!Array.isArray(playerStats) || !Array.isArray(targetStats) || targetStats.length === 0) {
+      return { lineCps: {}, totalCp: 0 };
+    }
+
+    const rawDeltas = [];
+    let totalDelta = 0;
+
+    for (let i = 0; i < targetStats.length; i++) {
+      const tStat = targetStats[i];
+      const pStat = playerStats.find(p => p.id === tStat.id) || { valPct: 0 };
+      const diff = Math.max(0, Number((tStat.valPct - pStat.valPct).toFixed(2)));
+      rawDeltas.push({ id: tStat.id, diff });
+      totalDelta += diff;
+    }
+
+    const lineCps = {};
+    if (totalDelta <= 0.001 || cpImpact <= 0) {
+      for (const d of rawDeltas) {
+        lineCps[d.id] = 0;
+      }
+      return { lineCps, totalCp: 0 };
+    }
+
+    let allocatedCp = 0;
+    for (let i = 0; i < rawDeltas.length; i++) {
+      const d = rawDeltas[i];
+      if (i === rawDeltas.length - 1) {
+        // Le dernier élément reçoit le reste exact pour garantir 100% de parité
+        lineCps[d.id] = Math.max(0, cpImpact - allocatedCp);
+      } else {
+        const share = d.diff / totalDelta;
+        const lineCp = Math.round(share * cpImpact);
+        lineCps[d.id] = lineCp;
+        allocatedCp += lineCp;
+      }
+    }
+
+    return { lineCps, totalCp: cpImpact };
+  }
+
+  function buildAstrogemsBreakdownHtml(player, target, cpImpact, isEn) {
+    const isSupport = player.role === 'support' || (player.className && ['Paladin', 'Bard', 'Artist'].some(s => (player.className || '').toLowerCase().includes(s.toLowerCase())));
+    const pStats = extractAstrogemsStats(player, isSupport, isEn);
+    const tStats = extractAstrogemsStats(target, isSupport, isEn);
+
+    const { lineCps } = computeAstrogemsLineCps(pStats, tStats, cpImpact);
+
+    const pTotalPct = pStats.reduce((sum, s) => sum + s.valPct, 0);
+    const tTotalPct = tStats.reduce((sum, s) => sum + s.valPct, 0);
+
+    // Badges Joueur
+    const pSubstatsHtml = pStats.map(s => `
+      <div class="acc-line-badge high">
+        <span>🔹 ${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
+        <span class="acc-line-tier-tag">${isEn ? 'Lvl' : 'Niv.'} ${s.level}</span>
+      </div>
+    `).join('');
+
+    // Badges Cible avec pillule de gain individuel de CP
+    const tSubstatsHtml = tStats.map(s => {
+      const lineCp = lineCps[s.id] || 0;
+      const cpBadge = lineCp > 0 ? `<span class="line-cp-pill">+${lineCp} CP</span>` : '';
+      return `
+        <div class="acc-line-badge high">
+          <span>🔹 ${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
+          ${cpBadge}
+          <span class="acc-line-tier-tag">${isEn ? 'Lvl' : 'Niv.'} ${s.level}</span>
+        </div>
+      `;
+    }).join('');
+
+    // Lignes du tableau comparatif
+    const tableRowsHtml = tStats.map(tStat => {
+      const pStat = pStats.find(p => p.id === tStat.id) || { valPct: 0, level: 0 };
+      const lineCp = lineCps[tStat.id] || 0;
+      return `
+        <tr>
+          <td><strong>🔹 ${escapeHtml(tStat.name)}</strong></td>
+          <td>+${pStat.valPct.toFixed(2)}% (${isEn ? 'Lvl' : 'Niv.'} ${pStat.level})</td>
+          <td>+${tStat.valPct.toFixed(2)}% (${isEn ? 'Lvl' : 'Niv.'} ${tStat.level})</td>
+          <td class="col-cp-gain">${lineCp > 0 ? `+${lineCp} CP` : '= 0 CP'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Formulation du verdict personnalisé
+    let highestStat = null;
+    let maxCp = -1;
+    tStats.forEach(tStat => {
+      const cp = lineCps[tStat.id] || 0;
+      if (cp > maxCp) {
+        maxCp = cp;
+        highestStat = { ...tStat, cp };
+      }
+    });
+
+    let verdictText = '';
+    if (cpImpact <= 0) {
+      verdictText = isEn
+        ? "Astrogem substats are fully optimized and aligned with benchmark reference."
+        : "Sous-statistiques d'astrogemmes optimisées et alignées avec la référence.";
+    } else if (highestStat && highestStat.cp > 0) {
+      verdictText = isEn
+        ? `Top Priority: Increase ${highestStat.name} tier (+${highestStat.cp} CP) on your Ark Grid cores (aim for Lvl ${highestStat.level}) to bridge most of the gap (+${cpImpact} CP).`
+        : `Priorité n°1 : Augmenter le palier de ${highestStat.name} (+${highestStat.cp} CP) sur vos cœurs d'Ark Grid (viser Niv. ${highestStat.level}) pour combler l'essentiel de l'écart (+${cpImpact} CP).`;
+    } else {
+      verdictText = isEn
+        ? `Evenly refine your Ark Grid astrogem levels to bridge the +${cpImpact} CP delta.`
+        : `Ajuster harmonieusement les niveaux d'astrogemmes d'Ark Grid pour combler les +${cpImpact} CP.`;
+    }
+
+    return `
+      <div class="acc-breakdown-panel astrogems-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>✨</span>
+              <strong>${isEn ? 'Ark Grid Astrogems & Substats Breakdown' : 'Détail des Astrogemmes & Sous-statistiques d\'Ark Grid'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: #fbbf24;">
+              ${cpImpact > 0 ? `+${cpImpact} CP ${isEn ? 'gap' : 'd\'écart global'}` : (isEn ? 'Optimized parity' : 'Parité optimale')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn 
+              ? 'Detailed side-by-side comparison of offensive and support substats across all 24 astrogem slots to bridge the CP gap.'
+              : 'Comparaison détaillée des sous-statistiques offensives et support réparties sur les 24 emplacements d\'astrogemmes pour combler l\'écart de CP.'}
+          </div>
+        </div>
+
+        <div class="astrogems-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">✨</span>
+                <strong>${isEn ? 'Your Astrogems' : 'Vos Astrogemmes'}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(245, 158, 11, 0.2); color: #fde68a; margin-left: 6px;">
+                  ${isEn ? 'Ark Grid (24 Slots)' : 'Grille d\'Ark (24 Slots)'}
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                +${pTotalPct.toFixed(2)}% Total
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-side-section">
+                <span class="acc-side-lbl player">${isEn ? 'Equipped Astrogem Substats' : 'Sous-statistiques d\'Astrogemmes Actives'}</span>
+                ${pSubstatsHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card astrogems-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${isEn ? 'Target Reference' : 'Référence Cible'}
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-side-section">
+                <span class="acc-side-lbl target">${isEn ? 'Target Astrogem Substats' : 'Sous-statistiques Cible'}</span>
+                ${tSubstatsHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé des Gains par Sous-statistique -->
+        <div class="astrogems-compare-table-wrap">
+          <div class="astrogems-compare-table-title">
+            <span>📊</span>
+            <strong>${isEn ? 'Individual CP Contribution by Astrogem Substat' : 'Décomposition Détaillée des Gains de CP par Sous-statistique d\'Astrogemme'}</strong>
+          </div>
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Astrogem Substat' : 'Sous-statistique d\'Astrogemme'}</th>
+                <th>${isEn ? 'Your Character' : 'Votre Personnage'}</th>
+                <th>${isEn ? 'Benchmark Target' : 'Référence Cible'}</th>
+                <th style="text-align:right;">${isEn ? 'CP Delta' : 'Gain en CP'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Total Astrogems System Gap' : 'Gain Total du Système Astrogemmes'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="astrogems-verdict-banner">
+          <span class="verdict-icon">🎯</span>
+          <div class="verdict-content">
+            <strong>${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <span>${escapeHtml(verdictText)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderBenchmarkTab() {
     const heroCard = document.getElementById('benchmarkHeroCard');
     if (!heroCard) return;
@@ -18825,6 +19129,7 @@
 
         const isAcc = cfg.key === 'accessories';
         const isBracelet = cfg.key === 'bracelet';
+        const isAstrogems = cfg.key === 'arkGridAstrogems';
         let toggleBtn = '';
         if (isAcc) {
           toggleBtn = `
@@ -18838,15 +19143,22 @@
               <span class="bracelet-toggle-icon">➕</span>
             </button>
           `;
+        } else if (isAstrogems) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-astrogems-toggle" id="btnToggleAstrogemsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect astrogems substats & CP gains' : 'Cliquer pour déplier les sous-statistiques d\'astrogemmes et leurs gains de CP'}">
+              <span class="astrogems-toggle-icon">➕</span>
+            </button>
+          `;
         }
 
         const trClass = [
           isEqual ? 'row-equal' : '',
           isAcc ? 'row-accessories-parent' : '',
-          isBracelet ? 'row-bracelet-parent' : ''
+          isBracelet ? 'row-bracelet-parent' : '',
+          isAstrogems ? 'row-astrogems-parent' : ''
         ].filter(Boolean).join(' ');
 
-        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : '');
+        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : ''));
 
         rowsHtml += `
           <tr class="${trClass}" ${trId}>
@@ -18878,6 +19190,15 @@
             <tr id="rowBraceletDetails" class="row-bracelet-details" style="display: none;">
               <td colspan="6">
                 ${braceletDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isAstrogems) {
+          const astrogemsDetailsHtml = buildAstrogemsBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowAstrogemsDetails" class="row-astrogems-details" style="display: none;">
+              <td colspan="6">
+                ${astrogemsDetailsHtml}
               </td>
             </tr>
           `;
@@ -18925,6 +19246,28 @@
         if (rowBraceletParent) {
           rowBraceletParent.addEventListener('click', (e) => {
             if (!e.target.closest('a') && !e.target.closest('button')) doToggleBracelet(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Astrogemmes Ark Grid
+      const btnAstrogems = document.getElementById('btnToggleAstrogemsDetails');
+      const rowAstrogemsParent = document.getElementById('rowSysAstrogems');
+      const rowAstrogemsDet = document.getElementById('rowAstrogemsDetails');
+      if (btnAstrogems && rowAstrogemsDet) {
+        const doToggleAstrogems = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowAstrogemsDet.style.display === 'none';
+          rowAstrogemsDet.style.display = isHidden ? 'table-row' : 'none';
+          btnAstrogems.setAttribute('aria-expanded', isHidden);
+          const icon = btnAstrogems.querySelector('.astrogems-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowAstrogemsParent) rowAstrogemsParent.classList.toggle('expanded', isHidden);
+        };
+        btnAstrogems.addEventListener('click', doToggleAstrogems);
+        if (rowAstrogemsParent) {
+          rowAstrogemsParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleAstrogems(e);
           });
         }
       }
