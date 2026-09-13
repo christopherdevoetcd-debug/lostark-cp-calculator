@@ -16692,6 +16692,7 @@
   BENCHMARK_DATABASE.forEach(b => {
     if (!b.systems) b.systems = {};
     const isSupp = b.role === 'support' || ['paladin', 'bard', 'artist'].some(s => (b.className || '').toLowerCase().includes(s));
+    const ilvl = b.ilvl || 1750;
 
     // Calibrage universel du bonus d'Arme T4 (+2.15% par niveau au-dessus de +19)
     if (b.systems.weapon && b.systems.weapon.label) {
@@ -16712,6 +16713,52 @@
       }
     }
 
+    // Calibrage universel des Gravures Reliques T4 (Remplace le 42.0% résiduel T3 par ~101.94% - 104.24%)
+    if (!b.systems.engravings || b.systems.engravings.bonusPct < 60) {
+      const engVal = ilvl >= 1770 ? 104.24 : 101.94;
+      const specName = b.spec || (b.className || 'Classe');
+      const stoneBonus = ilvl >= 1770 ? ' (Pierre +3/+4 & Relique: +104.24%)' : ' (Pierre +2/+3 & Relique: +101.94%)';
+      b.systems.engravings = {
+        label: `${specName} 3, 5 Gravures Reliques T4${stoneBonus}`,
+        bonusPct: engVal
+      };
+    }
+
+    // Calibrage universel Main Stat & Base AP (Type 1)
+    if (!b.systems.baseAttackStat || b.systems.baseAttackStat.bonusPct <= 10) {
+      const mStatK = ilvl >= 1770 ? 735 : (ilvl >= 1750 ? 690 : 640);
+      const bApK = ilvl >= 1770 ? 185.0 : (ilvl >= 1750 ? 172.5 : 160.0);
+      const mStatName = getMainStatName(b.className || '', false);
+      const bPct = Number((ilvl >= 1770 ? 37.00 : (ilvl >= 1750 ? 34.50 : 32.00)).toFixed(2));
+      b.systems.baseAttackStat = {
+        label: `${mStatName} ${mStatK}k (${bApK}k AP)`,
+        bonusPct: bPct
+      };
+    }
+
+    // Calibrage universel Combat Stats (Crit / Spec / Swift)
+    if (!b.systems.combatStats || b.systems.combatStats.bonusPct <= 10) {
+      const cPct = Number((ilvl >= 1770 ? 78.36 : (ilvl >= 1750 ? 77.07 : 76.00)).toFixed(2));
+      b.systems.combatStats = {
+        label: `Stats de Combat (+${cPct.toFixed(2)}%)`,
+        bonusPct: cPct
+      };
+    }
+
+    // Calibrage universel Astrogemmes Grille d'Ark
+    if (!b.systems.arkGridAstrogems || b.systems.arkGridAstrogems.bonusPct <= 0) {
+      const aPct = Number((ilvl >= 1770 ? 7.52 : (ilvl >= 1750 ? 5.80 : (isSupp ? 3.50 : 4.80))).toFixed(2));
+      b.systems.arkGridAstrogems = {
+        label: `Astrogemmes (+${aPct.toFixed(2)}% Sous-stats Grille)`,
+        bonusPct: aPct
+      };
+    }
+
+    // Calibrage Karma
+    if (!b.systems.karma) {
+      b.systems.karma = { label: "Karma Évolution Rang 6", bonusPct: 3.60 };
+    }
+
     if (b.ilvl >= 1740) {
       if (!b.systems.arkEvolution || b.systems.arkEvolution.bonusPct < 21.00) {
         b.systems.arkEvolution = { label: "140 Pts Évolution", bonusPct: 21.00 };
@@ -16730,9 +16777,6 @@
       }
       if (!b.systems.arkGridStar || b.systems.arkGridStar.bonusPct < (isSupp ? 0.60 : 1.20)) {
         b.systems.arkGridStar = { label: "Palier 17P (Chaos Étoile: +" + (isSupp ? "0.60" : "1.20") + "%)", bonusPct: isSupp ? 0.60 : 1.20 };
-      }
-      if (!b.systems.arkGridAstrogems) {
-        b.systems.arkGridAstrogems = { label: "Astrogemmes (+" + (isSupp ? "4.50" : "5.80") + "% Sous-stats Grille)", bonusPct: isSupp ? 4.50 : 5.80 };
       }
     }
   });
@@ -17088,9 +17132,109 @@
     };
   }
 
+  function resolveTargetSystems(target, isEn = false) {
+    if (!target) return {};
+    let sys = {};
+
+    // Si le target possède un profil complet (live ou canonique avec battlePoint / rawProfile / loadout), on extrait dynamiquement
+    if (target.battlePoint || target.rawProfile || target.loadout) {
+      sys = extractPlayerSystems(target, isEn);
+    } else if (target.systems && Object.keys(target.systems).length > 0) {
+      sys = Object.assign({}, target.systems);
+    } else {
+      sys = extractPlayerSystems(target, isEn);
+    }
+
+    const ilvl = target.ilvl || 1750;
+    const isSupport = target.role === 'support' || ['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s));
+
+    // Garde-fou 1 : Gravures Reliques T4 ne peuvent pas être < 60%
+    if (!sys.engravings || !sys.engravings.bonusPct || sys.engravings.bonusPct < 60) {
+      const engVal = ilvl >= 1770 ? 104.24 : 101.94;
+      const specName = target.spec || (target.className || (isEn ? 'Class' : 'Classe'));
+      const stoneBonus = isEn
+        ? (ilvl >= 1770 ? ' (Stone +3/+4 & Relic: +104.24%)' : ' (Stone +2/+3 & Relic: +101.94%)')
+        : (ilvl >= 1770 ? ' (Pierre +3/+4 & Relique: +104.24%)' : ' (Pierre +2/+3 & Relique: +101.94%)');
+      sys.engravings = {
+        label: (isEn ? `${specName} 3, 5 Full T4 Relic Engravings` : `${specName} 3, 5 Gravures Reliques T4`) + stoneBonus,
+        bonusPct: engVal
+      };
+    }
+
+    // Garde-fou 2 : Main Stat & Base AP (ne peut JAMAIS être <= 10% pour un profil T4 1700+)
+    if (!sys.baseAttackStat || !sys.baseAttackStat.bonusPct || sys.baseAttackStat.bonusPct <= 10) {
+      const mStatK = ilvl >= 1770 ? 735 : (ilvl >= 1750 ? 690 : 640);
+      const bApK = ilvl >= 1770 ? 185.0 : (ilvl >= 1750 ? 172.5 : 160.0);
+      const mStatName = getMainStatName(target.className || '', isEn);
+      const bPct = Number((ilvl >= 1770 ? 37.00 : (ilvl >= 1750 ? 34.50 : 32.00)).toFixed(2));
+      sys.baseAttackStat = {
+        label: `${mStatName} ${mStatK}k (${bApK}k AP)`,
+        bonusPct: bPct
+      };
+    }
+
+    // Garde-fou 3 : Combat Stats (Crit / Spec / Swift ne peut JAMAIS être <= 10% pour un profil T4 1700+)
+    if (!sys.combatStats || !sys.combatStats.bonusPct || sys.combatStats.bonusPct <= 10) {
+      const cPct = Number((ilvl >= 1770 ? 78.36 : (ilvl >= 1750 ? 77.07 : 76.00)).toFixed(2));
+      sys.combatStats = {
+        label: isEn ? `Combat Stats (+${cPct.toFixed(2)}%)` : `Stats de Combat (+${cPct.toFixed(2)}%)`,
+        bonusPct: cPct
+      };
+    }
+
+    // Garde-fou 4 : Astrogemmes Grille d'Ark
+    if (!sys.arkGridAstrogems || !sys.arkGridAstrogems.bonusPct || sys.arkGridAstrogems.bonusPct <= 0) {
+      const aPct = Number((ilvl >= 1770 ? 7.52 : (ilvl >= 1750 ? 5.80 : (isSupport ? 3.50 : 4.80))).toFixed(2));
+      sys.arkGridAstrogems = {
+        label: isEn ? `Astrogems (+${aPct.toFixed(2)}% DPS/Buff Substats)` : `Astrogemmes (+${aPct.toFixed(2)}% Sous-stats Grille)`,
+        bonusPct: aPct
+      };
+    }
+
+    // Garde-fou 5 : Karma
+    if (!sys.karma || !sys.karma.bonusPct) {
+      sys.karma = {
+        label: isEn ? "Karma Evolution Rank 6" : "Karma Évolution Rang 6",
+        bonusPct: 3.60
+      };
+    }
+
+    // Traduction bilingue des labels si isEn est vrai
+    if (isEn) {
+      for (const [k, v] of Object.entries(sys)) {
+        if (v && v.label) {
+          v.label = v.label
+            .replace(/Palier/g, 'Tier')
+            .replace(/Ordre Soleil/g, 'Order Sun')
+            .replace(/Ordre Lune/g, 'Order Moon')
+            .replace(/Chaos Étoile/g, 'Chaos Star')
+            .replace(/Arme T4/g, 'T4 Weapon')
+            .replace(/Armures T4 Moyenne/g, 'T4 Armor Avg')
+            .replace(/Affinage Avancé/g, 'T4 Adv Honing')
+            .replace(/Transcendance Arme/g, 'Weapon Transcendence')
+            .replace(/Transcendance Armures/g, 'Armor Transcendence')
+            .replace(/Relique \(Stats \+ Circulaire\)/g, 'Relic (Stats + Circularity)')
+            .replace(/Relique \(Spécialisation \+ Circulaire\)/g, 'Relic (Spec + Circularity)')
+            .replace(/Mix Gemmes/g, 'Mix Gems')
+            .replace(/Full Gemmes/g, 'Full Gems')
+            .replace(/Stats de Combat/g, 'Combat Stats')
+            .replace(/Astrogemmes/g, 'Astrogems')
+            .replace(/Sous-stats Grille/g, 'Grid Substats')
+            .replace(/Gravures Reliques/g, 'Relic Engravings')
+            .replace(/Pierre & Relique/g, 'Stone & Relic')
+            .replace(/Évolution/g, 'Evolution')
+            .replace(/Illumination/g, 'Enlightenment')
+            .replace(/Saut/g, 'Leap');
+        }
+      }
+    }
+
+    return sys;
+  }
+
   function computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn) {
     if (!pSys) pSys = extractPlayerSystems(player, isEn);
-    if (!tSys) tSys = (target && target.systems) ? target.systems : extractPlayerSystems(target, isEn);
+    if (!tSys) tSys = resolveTargetSystems(target, isEn);
     const isSupport = player.role === 'support';
     const gaps = [];
 
@@ -18967,7 +19111,29 @@
       });
     }
 
-    return [];
+    // Fallback Universel : 5 Gravures Reliques T4 avec Pierre de Naissance
+    const specName = getCharacterSpecName(c) || (isEn ? 'Class Engraving' : 'Gravure de Classe');
+    const isSupport = c.role === 'support' || ['paladin', 'bard', 'artist'].some(s => (c.className || '').toLowerCase().includes(s));
+    const cIlvl = c.ilvl || 1750;
+    const stoneBonus = cIlvl >= 1770 ? 4.24 : 1.94;
+    const stonePts = cIlvl >= 1770 ? 4 : 2;
+
+    if (isSupport) {
+      return [
+        { id: 101, name: `${specName} 3`, rawName: `${specName} 3`, valuePct: 20.00, stonePoints: 0 },
+        { id: 102, name: isEn ? "Expert 3" : "Expert 3", rawName: "Expert", valuePct: 20.00, stonePoints: 0 },
+        { id: 103, name: isEn ? "Awakening 3" : "Éveil 3", rawName: "Éveil", valuePct: 20.00, stonePoints: 0 },
+        { id: 104, name: isEn ? "Drops of Ether 3" : "Gouttes d'éther 3", rawName: "Gouttes d'éther", valuePct: 20.00, stonePoints: stonePts },
+        { id: 105, name: isEn ? "Vital Point Hit 3" : "Frappe vitale 3", rawName: "Frappe vitale", valuePct: Number((20.00 + stoneBonus).toFixed(2)), stonePoints: stonePts + 1 }
+      ];
+    }
+    return [
+      { id: 201, name: `${specName} 3`, rawName: `${specName} 3`, valuePct: 20.00, stonePoints: 0 },
+      { id: 202, name: isEn ? "Grudge 3" : "Rancune 3", rawName: "Rancune", valuePct: 20.00, stonePoints: 0 },
+      { id: 203, name: isEn ? "Keen Blunt Weapon 3" : "Arme affûtée 3", rawName: "Arme affûtée", valuePct: 20.00, stonePoints: 0 },
+      { id: 204, name: isEn ? "Raid Captain 3" : "Capitaine de raid 3", rawName: "Capitaine de raid", valuePct: 20.00, stonePoints: stonePts },
+      { id: 205, name: isEn ? "Adrenaline 3" : "Adrénaline 3", rawName: "Adrénaline", valuePct: Number((20.00 + stoneBonus).toFixed(2)), stonePoints: stonePts + 1 }
+    ];
   }
 
   function buildEngravingsBreakdownHtml(player, target, cpImpact, isEn) {
@@ -19401,6 +19567,7 @@
           }
           Object.assign(target, liveData);
           target.id = originalTargetId;
+          target.systems = resolveTargetSystems(target, isEn);
           renderBenchmarkTab();
         }
       }).catch(() => {
@@ -19559,7 +19726,7 @@
     `;
 
     const pSys = extractPlayerSystems(player, isEn);
-    const tSys = (target && target.systems && Object.keys(target.systems).length > 0) ? target.systems : extractPlayerSystems(target, isEn);
+    const tSys = resolveTargetSystems(target, isEn);
     const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
     const directCpGap = Math.round((target.cp || 0) - (player.cp || 0));
 
@@ -19641,7 +19808,11 @@
 
       rowsConfig.forEach(cfg => {
         const pRaw = pSys[cfg.key] || { label: 'Standard', bonusPct: 0 };
-        const tRaw = tSys[cfg.key] || { label: 'Standard', bonusPct: 0 };
+        let tRaw = tSys[cfg.key];
+        if (!tRaw || (['baseAttackStat', 'combatStats'].includes(cfg.key) && tRaw.bonusPct <= 10) || (cfg.key === 'engravings' && tRaw.bonusPct < 60)) {
+          const freshTargetSys = resolveTargetSystems(target, isEn);
+          tRaw = freshTargetSys[cfg.key] || { label: 'Standard', bonusPct: 0 };
+        }
         let pLabel = pRaw.label || '';
         let tLabel = tRaw.label || '';
         if (isEn) {
@@ -20288,6 +20459,7 @@
   window.__renderAdvisorView = renderAdvisorView;
   window.__computeDynamicGapsAndPlan = computeDynamicGapsAndPlan;
   window.__buildCpReconciliationHtml = buildCpReconciliationHtml;
+  window.__resolveTargetSystems = resolveTargetSystems;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
