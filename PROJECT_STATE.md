@@ -52,7 +52,22 @@ Document de transmission complet du projet pour reprise instantanée de contexte
 - **Solution apportée** :
   - Directive globale `color-scheme: dark;` sur `:root` et tous les `select`.
   - Stylisation sombre complète (`#0f172a` et `#070a12`) avec flèche SVG cyan et en-têtes de groupes `<optgroup>` en cyan `#38bdf8`.
-- **Cache Busters actuels** : `calculator.js?v=10.0`, `style.css?v=7.0`.
+
+### C. Décodage Authentique des Lignes d'Accessoires T4 (Tables Officielles lostark.bible)
+- **Origine du problème résolu** : 
+  - Les identifiants de statistiques (`stat.index`) étaient incorrectement assignés (ex: l'index `152` qui est du `Weapon Power %` était traduit à tort en `Dégâts d'Allié` et marqué `Ligne Inutile`, l'index `124` qui est de la `Puissance d'Attaque` flat était traduit en `Puissance d'Arme %`, l'index `74` qui est du `Crit Rate %` était traduit en `Dégâts d'Évolution`, et l'index `27` qui est des `Points de Vie Max` était éliminé car pris pour du dégât critique brut $> 5\%$).
+  - La lecture des lignes s'appuyait uniquement sur `battlePoint.parts` (qui omet les lignes mortes/utilitaires sur un profil DPS), activant des lignes par défaut fictives au lieu de lire les véritables stats de `loadout.items`.
+  - Les cibles de référence utilisaient des combinaisons théoriques impossibles (du Weapon Power % sur Collier/Anneau).
+- **Correctifs déployés** :
+  - **Dictionnaire Décompilé Canonique** : Basé sur les tables `6009` (Collier), `6109` (Boucles) et `6209` (Anneaux) de `lostark.bible`.
+  - **Alignement Exact Pièce par Pièce (ex: Profil d'Àlphâ)** :
+    - *Collier* : Points de Vie Max (+6500) [⚠️ Ligne Inutile], Dégâts infligés (+2.00%) [👑 Passif Rang 3], Puissance d'Attaque (+195) [🔹 Roll Moyen].
+    - *Boucle #1* : Puissance d'Arme (+3.00%) [✨ Roll Élevé], Puissance d'Attaque (+0.40%) [📉 Roll Faible], Puissance d'Attaque (+80) [📉 Roll Faible].
+    - *Boucle #2* : Puissance d'Arme (+3.00%) [✨ Roll Élevé], Boucliers aux Membres du Groupe (+0.95%) [⚠️ Ligne Inutile], Puissance d'Attaque (+0.40%) [📉 Roll Faible].
+    - *Anneau #1* : Taux Critique (+1.55%) [✨ Roll Élevé], Récupération PV en Combat (+10) [⚠️ Ligne Inutile], Points de Vie Max (+3250) [⚠️ Ligne Inutile].
+    - *Anneau #2* : Puissance d'Attaque (+195) [🔹 Roll Moyen], Effet Augmentation Dégâts d'Allié (+2.00%) [⚠️ Ligne Inutile], Dégâts Critiques (+4.00%) [✨ Roll Élevé].
+  - **Lignes Référence Best-in-Slot** : Véritables High Rolls T4 par slot pour DPS et Supports.
+- **Cache Busters actuels** : `calculator.js?v=11.0`, `style.css?v=7.0`.
 
 ---
 
