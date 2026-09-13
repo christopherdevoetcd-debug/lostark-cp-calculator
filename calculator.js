@@ -17288,52 +17288,61 @@
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
     const filter = benchmarkState.gemFilter;
 
-    // 1. Benchmark dynamique optimal strictement calibré (+2.0 iLvl, mêmes gemmes, même spé)
-    const dynamicBench = generateDynamicBenchmark(playerChar, filter);
-
-    // 2. Profils réels de la MÊME CLASSE dans la base de données
+    // Profils STRICTEMENT RÉELS de la MÊME CLASSE dans la base BENCHMARK_DATABASE
     let classMatches = BENCHMARK_DATABASE.filter(b => {
       const bClass = normalizeClassName(b.className || '').toLowerCase();
       if (bClass !== pClass) return false;
       if (filter === 'gem8' && b.gemTier !== 'gem8') return false;
       if (filter === 'gem9' && b.gemTier !== 'gem9') return false;
-      if (pCp && b.cp < pCp) return false;
       return true;
     });
 
-    // Tri rigoureux des profils de la classe :
-    // - En priorité la même spécialisation
-    // - Puis par proximité absolue d'iLvl (|b.ilvl - pIlvl|)
+    // Tri rigoureux des profils réels :
+    // 1. Profils avec CP supérieur au joueur en premier (pour servir d'objectif d'optimisation)
+    // 2. Même spécialisation prioritaire
+    // 3. Proximité d'iLvl la plus proche (|b.ilvl - pIlvl|)
     classMatches.sort((a, b) => {
+      const aHigher = (a.cp > pCp) ? 0 : 1;
+      const bHigher = (b.cp > pCp) ? 0 : 1;
+      if (aHigher !== bHigher) return aHigher - bHigher;
+
       const aSameSpec = (a.spec || '').toLowerCase() === pSpec ? 0 : 1;
       const bSameSpec = (b.spec || '').toLowerCase() === pSpec ? 0 : 1;
       if (aSameSpec !== bSameSpec) return aSameSpec - bSameSpec;
+
       return Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl);
     });
 
-    return [dynamicBench, ...classMatches];
+    return classMatches;
   }
 
   function findOptimalBenchmark(playerChar) {
     const avail = getAvailableBenchmarks(playerChar);
-    if (!avail || avail.length === 0) return generateDynamicBenchmark(playerChar, benchmarkState.gemFilter);
+    if (!avail || avail.length === 0) {
+      return BENCHMARK_DATABASE.find(b => b.role === (playerChar.role || 'dps')) || BENCHMARK_DATABASE[0];
+    }
 
     const pIlvl = playerChar.ilvl || 1740;
     const pCp = playerChar.cp || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
 
-    // Priorité 1 : Profil réel existant de même spé, ayant une différence d'iLvl très proche (1 à 3.5 iLvl) et CP supérieur
-    const realTight = avail.filter(b => !b.isDynamic && (b.spec || '').toLowerCase() === pSpec && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 3.5);
-    if (realTight.length > 0) {
-      realTight.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return realTight[0];
+    // 1. Cherche en priorité un profil réel de même spé avec CP supérieur
+    const sameSpecHigher = avail.filter(b => (b.spec || '').toLowerCase() === pSpec && b.cp > pCp);
+    if (sameSpecHigher.length > 0) {
+      sameSpecHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return sameSpecHigher[0];
     }
 
-    // Priorité 2 : Le benchmark dynamique calibré (+2.0 iLvl, mêmes gemmes, même spé)
-    const dynamicBench = avail.find(b => b.isDynamic);
-    if (dynamicBench) return dynamicBench;
+    // 2. Sinon cherche un profil réel de la même classe avec CP supérieur
+    const classHigher = avail.filter(b => b.cp > pCp);
+    if (classHigher.length > 0) {
+      classHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return classHigher[0];
+    }
 
-    return avail[0];
+    // 3. Sinon le profil réel le plus proche en iLvl
+    const sorted = [...avail].sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+    return sorted[0];
   }
 
 
@@ -18511,7 +18520,7 @@
     }
 
     if (!target) {
-      target = generateDynamicBenchmark(player, benchmarkState.gemFilter);
+      target = avail[0] || BENCHMARK_DATABASE.find(b => b.role === (player.role || 'dps')) || BENCHMARK_DATABASE[0];
     }
 
     // Synchronisation en temps réel avec lostark.bible (données 100% fraîches directes)
@@ -18566,16 +18575,15 @@
         optionsHtml += `</optgroup>`;
       }
 
-      // 2. Profils recommandés strictement calibrés pour la classe active
-      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Recommended (' + escapeHtml(player.className) + ')' : 'Profils Recommandés (' + escapeHtml(player.className) + ')'}">`;
+      // 2. Profils réels lostark.bible recommandés pour la classe active
+      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Real Benchmark Profiles (' + escapeHtml(player.className) + ')' : 'Profils Réels lostark.bible (' + escapeHtml(player.className) + ')'}">`;
       avail.forEach(b => {
         const isSel = target && (target.id === b.id) && (!benchmarkState.customTarget || !searchedList.some(s => s.id === target.id));
         const deltaIlvl = b.ilvl - (player.ilvl || 1700);
         const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
-        const iconPrefix = b.isDynamic ? '⚡ ' : '👤 ';
         const gemLabel = b.gemDesc ? ` [${b.gemDesc}]` : (b.gemTier === 'gem8' ? ' [Full 8]' : ' [Mix 8/9]');
         optionsHtml += `<option value="${escapeHtml(b.id)}" ${isSel ? 'selected' : ''}>
-          ${iconPrefix}${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(b.cp))} CP)${escapeHtml(gemLabel)}
+          👤 ${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(b.cp))} CP)${escapeHtml(gemLabel)}
         </option>`;
       });
       optionsHtml += `</optgroup>`;
@@ -18688,7 +18696,7 @@
 
           <div class="bench-pills-row">
             <span class="bench-pill">Gemmes : <strong>${escapeHtml(target.gemDesc || 'Full Gemmes 8')}</strong></span>
-            ${target.bibleUrl && !target.isDynamic ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#38bdf8; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>` : `<span style="font-size:11px; color:#94a3b8; margin-left:auto;">✨ ${isEn ? 'Virtual T4 Benchmark' : 'Modèle Virtuel T4'}</span>`}
+            <a href="${target.bibleUrl || `https://lostark.bible/character/CE/${encodeURIComponent(target.name)}`}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#38bdf8; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>
           </div>
         </div>
       </div>

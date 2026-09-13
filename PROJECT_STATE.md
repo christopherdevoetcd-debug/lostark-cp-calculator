@@ -87,14 +87,15 @@ Document de transmission complet du projet pour reprise instantanée de contexte
 - **Badges Visuels Intégrés (`line-cp-pill`)** : Des pilules cyan `+X CP` sont également incrustées directement sur les badges de la carte cible pour une lecture visuelle immédiate.
 - **Garantie Mathématique Stricte** : La somme des 4 composantes est rigoureusement égale à 100% du `cpImpact` du système bracelet (ex: $18 + 13 + 13 + 38 = 82\text{ CP}$).
 
-### F. Profils de Référence Épurés (+1-3 iLvl, Mêmes Gemmes) & Moteur de Recherche Live lostark.bible
-- **Épuration Complète du Menu Déroulant** : Suppression de l'injection arbitraire de 9 classes sans rapport (Top Stars multi-classes) qui polluaient la sélection. Désormais, le menu déroulant ne propose QUE :
+### F. Profils de Référence 100% Réels lostark.bible & Moteur de Recherche Live
+- **Éradication Totale des Profils Virtuels / Génériques** :
+  - Aucun profil synthétique ou modèle virtuel n'est généré ni affiché. L'application s'appuie **strictement sur des profils de joueurs réels** issus de lostark.bible.
+  - Tous les profils présentés disposent de leur lien direct officiel `🌐 Voir sur lostark.bible` (ex: `https://lostark.bible/character/CE/Cyanora` pour Soulfist Energy Overflow).
+- **Épuration Complète du Menu Déroulant** : Suppression de l'injection arbitraire de 9 classes sans rapport qui polluaient la sélection. Désormais, le menu déroulant ne propose QUE :
   1. `🌐 Profils Recherchés (lostark.bible)` : Profils interrogés en direct par l'utilisateur.
-  2. `🎯 Profils Recommandés (<Classe>)` : Strictement la classe du joueur, avec indication directe du delta iLvl (ex: `[+2.0]`) et des gemmes.
+  2. `🎯 Profils Réels lostark.bible (<Classe>)` : Strictement la classe du joueur (ex: `Cyanora`, `Genkidama`), triés par même spécialisation et proximité d'iLvl, avec indication directe du delta iLvl (ex: `[+6.7]`) et de leurs gemmes réelles.
   3. `👥 Vos Autres Personnages (Roster)` : Uniquement si l'utilisateur possède plusieurs personnages dans son roster.
-- **Calibrage Précis du Benchmark Recommandé** :
-  - **Écart d'iLvl** : Strictement de **+2.0 iLvl** (1 à 3 iLvl au-dessus du joueur, correspondant au palier d'affinage immédiat d'armes/armures).
-  - **Palier de Gemmes** : Strictement calqué sur les gemmes réelles du joueur (ex: si le joueur est en Full 8 ou Mix 8/9, la cible a exactement la même configuration de gemmes).
+- **Auto-Match Ciblé sur Profil Réel** : Sélectionne automatiquement le vrai joueur de la même classe et même spécialisation ayant le CP supérieur le plus proche (ex: pour `Àlphâ` 1758.33 $\rightarrow$ sélectionne automatiquement le vrai profil de `Cyanora` 1765.00).
 - **Moteur de Recherche Live lostark.bible Haute Compatibilité** :
   - **Champ & Contrôle Dédiés** : Champ de saisie spacieux, sélecteur de région (`Auto`, `CE`, `NAE`, `NAW`, `SA`) et bouton d'action lumineux `Interroger lostark.bible`.
   - **Support des Liens URL Directs** : Détection et parsing automatique des URL complètes copiées-collées depuis le navigateur (ex: `https://lostark.bible/character/CE/...`).
