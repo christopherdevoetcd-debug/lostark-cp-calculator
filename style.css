@@ -2825,6 +2825,28 @@ select optgroup {
   color: #38bdf8;
 }
 
+.tree-delta-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  margin-left: 6px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.tree-delta-pill.pos {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tree-delta-pill.neg {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
 .ark-summary-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
