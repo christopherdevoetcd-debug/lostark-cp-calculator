@@ -16932,23 +16932,37 @@
 
     // 7. Engravings & Ability Stone
     const spec = getCharacterSpecName(playerChar);
-    const normClass = normalizeClassName(playerChar.className || '').toLowerCase();
-    
+
     const allBpParts = (playerChar.rawProfile && playerChar.rawProfile.battlePoint && playerChar.rawProfile.battlePoint.parts)
       || (playerChar.battlePoint && playerChar.battlePoint.parts)
       || (playerChar.rawProfile && playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.battlePoint && playerChar.rawProfile.loadout.battlePoint.parts)
       || (playerChar.rawProfile && playerChar.rawProfile.loadouts && playerChar.rawProfile.loadouts[0] && playerChar.rawProfile.loadouts[0].battlePoint && playerChar.rawProfile.loadouts[0].battlePoint.parts)
       || (playerChar.loadout && playerChar.loadout.battlePoint && playerChar.loadout.battlePoint.parts)
+      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
+      || (canon && canon.battlePoint && canon.battlePoint.parts)
       || [];
 
     const engParts = allBpParts.filter(p => p.type === 10 || p.type === 11 || (p.grade && p.grade.includes('engrave')));
-    let engBonusPct = 42.00;
+    let engBonusPct = 101.94;
     let hasRealEng = false;
     if (engParts.length > 0) {
       const sumVal = engParts.reduce((s, p) => s + (p.value || 0), 0);
       if (sumVal > 0) {
         engBonusPct = Number((sumVal / 100).toFixed(2));
         hasRealEng = true;
+      }
+    } else {
+      const gravItems = (Array.isArray(playerChar.items) && playerChar.items.filter(i => i.cat === 'Gravures').length > 0)
+        ? playerChar.items.filter(i => i.cat === 'Gravures')
+        : ((canon && Array.isArray(canon.items) && canon.items.filter(i => i.cat === 'Gravures').length > 0)
+            ? canon.items.filter(i => i.cat === 'Gravures')
+            : []);
+      if (gravItems.length > 0) {
+        const sumVal = gravItems.reduce((s, it) => s + (parseFloat((it.val || it.mult || '0').replace(/[^0-9.]/g, '')) || 0), 0);
+        if (sumVal > 50) {
+          engBonusPct = Number(sumVal.toFixed(2));
+          hasRealEng = true;
+        }
       }
     }
 
@@ -18843,11 +18857,17 @@
   }
 
   function extractCharacterEngravings(c, isEn = false) {
+    if (!c) return [];
+    const pId = (c.id || c.name || '').toLowerCase();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+
     const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
       || (c.battlePoint && c.battlePoint.parts)
       || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.battlePoint && c.rawProfile.loadout.battlePoint.parts)
       || (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0] && c.rawProfile.loadouts[0].battlePoint && c.rawProfile.loadouts[0].battlePoint.parts)
       || (c.loadout && c.loadout.battlePoint && c.loadout.battlePoint.parts)
+      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
+      || (canon && canon.battlePoint && canon.battlePoint.parts)
       || [];
 
     const engParts = allBpParts.filter(p => p.type === 10 || p.type === 11 || (p.grade && p.grade.includes('engrave')));
@@ -18876,9 +18896,52 @@
       });
     }
 
+    // Fallback 1: via c.items ou canon.items
+    const gravureItems = (Array.isArray(c.items) && c.items.filter(i => i.cat === 'Gravures').length > 0)
+      ? c.items.filter(i => i.cat === 'Gravures')
+      : ((canon && Array.isArray(canon.items) && canon.items.filter(i => i.cat === 'Gravures').length > 0)
+          ? canon.items.filter(i => i.cat === 'Gravures')
+          : []);
+
+    if (gravureItems.length > 0) {
+      return gravureItems.map(gi => {
+        const valPct = parseFloat((gi.val || gi.mult || '20').replace(/[^0-9.]/g, '')) || 20.0;
+        const stoneMatch = (gi.label || '').match(/Pierre \+(\d+)|Stone \+(\d+)/i);
+        const stonePoints = stoneMatch ? parseInt(stoneMatch[1] || stoneMatch[2], 10) : 0;
+        let name = (gi.label || '').replace(/—.*$/, '').trim();
+        let engId = null;
+        if (typeof BIBLE_ENGRAVINGS !== 'undefined') {
+          for (const [idKey, strName] of Object.entries(BIBLE_ENGRAVINGS)) {
+            if (strName.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(strName.toLowerCase())) {
+              engId = Number(idKey);
+              break;
+            }
+          }
+        }
+        if (isEn) {
+          const m = name.match(/^([^(]+)/);
+          if (m) name = m[1].trim();
+        } else {
+          const mFr = name.match(/\(([^)]+)\)/);
+          if (mFr) name = mFr[1].trim();
+        }
+        return {
+          id: engId || name.toLowerCase(),
+          name,
+          rawName: gi.label,
+          valuePct: Number(valPct.toFixed(2)),
+          stonePoints
+        };
+      });
+    }
+
+    // Fallback 2: via c.engravings ou canon.engravings
     const rawEngs = (c.engravings && c.engravings.length)
       ? c.engravings
-      : (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0]?.engravings);
+      : ((canon && canon.engravings && canon.engravings.length)
+          ? canon.engravings
+          : (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0]?.engravings));
+
     if (Array.isArray(rawEngs) && rawEngs.length > 0) {
       return rawEngs.map(e => {
         const rawName = (typeof BIBLE_ENGRAVINGS !== 'undefined' && BIBLE_ENGRAVINGS[e.id]) || `Gravure #${e.id}`;
@@ -18917,6 +18980,14 @@
     const tTotalPct = tEngs.reduce((s, e) => s + e.valuePct, 0);
     const deltaTotal = Number((tTotalPct - pTotalPct).toFixed(2));
 
+    const isEngMatch = (a, b) => {
+      if (!a || !b) return false;
+      if (a.id && b.id && (a.id === b.id || String(a.id) === String(b.id))) return true;
+      const nA = (a.name || a.rawName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const nB = (b.name || b.rawName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return nA && nB && (nA.includes(nB) || nB.includes(nA));
+    };
+
     // Badges Joueur
     const pEngsHtml = pEngs.map(e => `
       <div class="acc-line-badge high">
@@ -18927,7 +18998,7 @@
 
     // Badges Cible
     const tEngsHtml = tEngs.map(e => {
-      const pMatch = pEngs.find(p => p.id === e.id);
+      const pMatch = pEngs.find(p => isEngMatch(p, e));
       const isDifferentEng = !pMatch;
       return `
         <div class="acc-line-badge high">
@@ -18939,8 +19010,8 @@
     }).join('');
 
     // Diff items
-    const pOnly = pEngs.filter(p => !tEngs.some(t => t.id === p.id));
-    const tOnly = tEngs.filter(t => !pEngs.some(p => p.id === t.id));
+    const pOnly = pEngs.filter(p => !tEngs.some(t => isEngMatch(p, t)));
+    const tOnly = tEngs.filter(t => !pEngs.some(p => isEngMatch(p, t)));
 
     let diffRows = '';
 
@@ -18974,9 +19045,9 @@
     }
 
     // Gravures communes avec répartition de pierre ou palier différent
-    const shared = pEngs.filter(p => tEngs.some(t => t.id === p.id));
+    const shared = pEngs.filter(p => tEngs.some(t => isEngMatch(p, t)));
     shared.forEach(p => {
-      const t = tEngs.find(x => x.id === p.id);
+      const t = tEngs.find(x => isEngMatch(x, p));
       if (!t) return;
       const d = Number((t.valuePct - p.valuePct).toFixed(2));
       if (Math.abs(d) > 0.01) {
@@ -19264,6 +19335,17 @@
 
     const player = getCurrentActiveCharacter();
     if (!player) return;
+
+    // Enrichit le profil joueur depuis CANONICAL_PRESETS si c'est un profil du roster sans rawProfile
+    const pId = (player.id || player.name || '').toLowerCase();
+    const canonPlayer = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+    if (canonPlayer) {
+      if (!player.rawProfile) player.rawProfile = canonPlayer;
+      if (!player.items || player.items.length === 0) player.items = canonPlayer.items;
+      if (!player.engravings || player.engravings.length === 0) player.engravings = canonPlayer.engravings;
+      if (!player.arkGridCores || player.arkGridCores.length === 0) player.arkGridCores = canonPlayer.arkGridCores;
+      if (!player.gemParts) player.gemParts = canonPlayer.gemParts;
+    }
 
     const avail = getAvailableBenchmarks(player);
 
