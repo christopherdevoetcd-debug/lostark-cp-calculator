@@ -67,7 +67,15 @@ Document de transmission complet du projet pour reprise instantanée de contexte
     - *Anneau #1* : Taux Critique (+1.55%) [✨ Roll Élevé], Récupération PV en Combat (+10) [⚠️ Ligne Inutile], Points de Vie Max (+3250) [⚠️ Ligne Inutile].
     - *Anneau #2* : Puissance d'Attaque (+195) [🔹 Roll Moyen], Effet Augmentation Dégâts d'Allié (+2.00%) [⚠️ Ligne Inutile], Dégâts Critiques (+4.00%) [✨ Roll Élevé].
   - **Lignes Référence Best-in-Slot** : Véritables High Rolls T4 par slot pour DPS et Supports.
-- **Cache Busters actuels** : `calculator.js?v=11.0`, `style.css?v=7.0`.
+- **Cache Busters actuels** : `calculator.js?v=12.0`, `style.css?v=8.0`.
+
+### D. Dépliage Interactif du Bracelet T4 (Stats & Passifs)
+- **Bouton `➕` / `➖`** : Ajouté directement sur la ligne « 🔮 Bracelet T4 (Stats & Passifs) » (`rowSysBracelet`) du tableau de benchmark.
+- **Grille Comparative 2 Colonnes** :
+  - **Carte Joueur** : Décode et affiche les caractéristiques fixes de base (ex: `Spécialisation +87` [Stat Fixe], `Critique +73` [Stat Fixe]), les rolls de statistique principale (ex: `Force +11 904` [Roll Élevé]) et les passifs débloqués (ex: `Coinçage +3%` [Proc BiS], `Marteau +8.4%` [Proc BiS]).
+  - **Carte Cible Référence** : Affiche les stats fixes de la cible (ex: `Critique +81`, `Rapidité +100`) et ses passifs (ex: `Embuscade +3%`, `Marteau +6.8%` / `Ferveur +5.5%`), ou génère une référence BiS canonique selon le rôle (DPS / Support).
+  - **Détection des Stats Mortes** : Identifie et signale en rouge `⚠️ [Stat Morte]` les caractéristiques inefficaces (ex: Vitalité sur DPS, ou stats critiques sur Support).
+- **Bannière d'Optimisation & Diagnostic** : Recommandation claire et actionnable pour combler l'écart de CP (ex: reroll de stat morte, passage au palier max de stat principale ou reroll de passif BiS).
 
 ---
 

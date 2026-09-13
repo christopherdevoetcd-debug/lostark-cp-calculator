@@ -4816,17 +4816,25 @@ select optgroup {
   transform: translateY(-1px);
 }
 
-/* --- DÉPLIAGE DÉTAILLÉ DES ACCESSOIRES T4 (BENCHMARK) --- */
-.benchmark-table tr.row-accessories-parent {
+/* --- DÉPLIAGE DÉTAILLÉ DES ACCESSOIRES ET BRACELET T4 (BENCHMARK) --- */
+.benchmark-table tr.row-accessories-parent,
+.benchmark-table tr.row-bracelet-parent {
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 .benchmark-table tr.row-accessories-parent:hover td {
   background: rgba(56, 189, 248, 0.06);
 }
+.benchmark-table tr.row-bracelet-parent:hover td {
+  background: rgba(168, 85, 247, 0.06);
+}
 .benchmark-table tr.row-accessories-parent.expanded td {
   background: rgba(56, 189, 248, 0.1);
   border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+.benchmark-table tr.row-bracelet-parent.expanded td {
+  background: rgba(168, 85, 247, 0.1);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
 }
 
 .btn-acc-toggle {
@@ -4858,10 +4866,32 @@ select optgroup {
   border-color: #38bdf8;
 }
 
+.btn-bracelet-toggle {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+}
+.btn-bracelet-toggle:hover {
+  background: rgba(168, 85, 247, 0.28);
+  border-color: #c084fc;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-bracelet-parent.expanded .btn-bracelet-toggle {
+  background: #a855f7;
+  color: #0b1120;
+  border-color: #c084fc;
+}
+
 .row-acc-details td {
   padding: 0 !important;
   background: rgba(10, 15, 26, 0.85);
   border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.row-bracelet-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.25);
 }
 
 .acc-breakdown-panel {
@@ -5042,6 +5072,11 @@ select optgroup {
   color: #d8b4fe;
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
+.acc-line-badge.fixed {
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
 
 .acc-line-tier-tag {
   font-size: 9.5px;
@@ -5057,6 +5092,10 @@ select optgroup {
 }
 .acc-line-badge.mid .acc-line-tier-tag {
   background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+.acc-line-badge.fixed .acc-line-tier-tag {
+  background: rgba(14, 165, 233, 0.25);
   color: #38bdf8;
 }
 .acc-line-badge.low .acc-line-tier-tag {
@@ -5087,6 +5126,57 @@ select optgroup {
 }
 .acc-piece-verdict .verdict-text strong {
   color: #fbbf24;
+}
+
+/* --- DÉTAIL DU BRACELET T4 (BENCHMARK) --- */
+.bracelet-breakdown-panel {
+  border-left: 3px solid #a855f7;
+}
+
+.bracelet-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .bracelet-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bracelet-card {
+  background: rgba(30, 41, 59, 0.6);
+}
+.bracelet-card.player-card {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.bracelet-card.target-card {
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.bracelet-verdict-banner {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-left: 4px solid #a855f7;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+.bracelet-verdict-banner .verdict-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.bracelet-verdict-banner .verdict-content strong {
+  color: #d8b4fe;
+  display: block;
+  margin-bottom: 2px;
 }
 
 /* PLAN D'ACTION RECOMMANDÉ */

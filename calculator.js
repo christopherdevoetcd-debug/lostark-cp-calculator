@@ -12922,6 +12922,7 @@
       apPoints: loadout.apPoints || { enlightenment: 101, evolution: 140, leap: 70 },
       arkPassive: loadout.arkPassive || {},
       accessories: (loadout.items || []).filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)),
+      bracelet: (loadout.items || []).find(i => i.slot === 'bracelet') || null,
       loadout: loadout,
       rawItems: loadout.items || [],
       items
@@ -17409,6 +17410,36 @@
     ]}}
   ];
 
+  const ALPHA_KNOWN_BRACELET = {
+    slot: "bracelet",
+    data: {
+      stats: [
+        { type: 2, index: 16, value: 87, fixed: true },
+        { type: 2, index: 15, value: 73, fixed: true },
+        { type: 2, index: 11, value: 11904, fixed: false },
+        { type: 3, index: 11042, value: 5, fixed: false },
+        { type: 3, index: 11022, value: 5, fixed: false }
+      ],
+      numRerolls: 4,
+      numTicketRerolls: 3
+    }
+  };
+
+  const CYANORA_KNOWN_BRACELET = {
+    slot: "bracelet",
+    data: {
+      stats: [
+        { type: 2, index: 15, value: 81, fixed: true },
+        { type: 2, index: 6, value: 4040, fixed: true },
+        { type: 3, index: 605100031, value: 5, fixed: false },
+        { type: 2, index: 11, value: 13056, fixed: false },
+        { type: 3, index: 11023, value: 5, fixed: false }
+      ],
+      numRerolls: 0,
+      numTicketRerolls: 0
+    }
+  };
+
   function decodeAccessoryStat(st, slot, isSupport, isEn) {
     const t = st.type;
     const idx = st.index;
@@ -17558,6 +17589,7 @@
       gemDesc: getCharacterGemSummary(c, isEn),
       systems: systems,
       accessories: c.accessories || (c.rawProfile && c.rawProfile.accessories) || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.items && c.rawProfile.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot))) || [],
+      bracelet: c.bracelet || (c.rawProfile && c.rawProfile.bracelet) || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.items && c.rawProfile.loadout.items.find(i => i.slot === 'bracelet')) || (c.loadout && c.loadout.items && c.loadout.items.find(i => i.slot === 'bracelet')) || null,
       rawProfile: c.rawProfile,
       loadout: c.loadout || (c.rawProfile && c.rawProfile.loadout) || null
     };
@@ -17836,6 +17868,421 @@
         </div>
         <div class="acc-pieces-grid">
           ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function getMainStatName(className, isEn) {
+    const c = (className || '').toLowerCase();
+    const isHunter = ['devilhunter', 'blaster', 'hawkeye', 'gunslinger', 'scouter', 'machinist', 'sharpshooter', 'deadeye', 'artillerist'].some(k => c.includes(k));
+    const isAssassin = ['blade', 'demonic', 'reaper', 'souleater', 'soul_eater', 'shadowhunter', 'deathblade'].some(k => c.includes(k));
+    const isMage = ['bard', 'arcana', 'summoner', 'sorceress', 'arcanist'].some(k => c.includes(k));
+    const isSpecialist = ['artist', 'aeromancer', 'alchemist', 'wildcard'].some(k => c.includes(k));
+    if (isHunter || isAssassin) return isEn ? 'Dexterity' : 'Dextérité';
+    if (isMage || isSpecialist) return isEn ? 'Intelligence' : 'Intelligence';
+    return isEn ? 'Strength' : 'Force';
+  }
+
+  function decodeBraceletStat(st, className, isSupport, isEn) {
+    const sIndex = st.index;
+    const sVal = st.value;
+    const isFixed = st.fixed === true;
+    const isPerk = st.type === 3 || sIndex > 1000;
+
+    if (isPerk) {
+      const perk = (typeof BIBLE_BRACELET_PERKS !== 'undefined' && BIBLE_BRACELET_PERKS[sIndex]) || null;
+      let rawName = perk ? perk.name : `Roll Spécial (#${sIndex})`;
+      if (typeof formatBraceletLine === 'function') {
+        rawName = formatBraceletLine(rawName, isEn);
+      }
+      let rollTier = 'high';
+      let tierLabel = isEn ? 'BiS Perk' : 'Proc BiS';
+      let isDead = false;
+
+      if (isSupport) {
+        if (sIndex === 11061 || sIndex === 11091 || sIndex === 11071 || sIndex === 11081) {
+          rollTier = 'passif';
+          tierLabel = isEn ? 'BiS Raid Perk' : 'Proc BiS Raid';
+        } else if (rawName.toLowerCase().includes('marteau') || rawName.toLowerCase().includes('hammer') ||
+                   rawName.toLowerCase().includes('coinçage') || rawName.toLowerCase().includes('wedge') ||
+                   rawName.toLowerCase().includes('précision') || rawName.toLowerCase().includes('precision')) {
+          isDead = true;
+          rollTier = 'dead';
+          tierLabel = isEn ? 'Dead Perk' : 'Perk Inutile';
+        }
+      } else {
+        if (rawName.toLowerCase().includes('marteau') || rawName.toLowerCase().includes('hammer') ||
+            rawName.toLowerCase().includes('ferveur') || rawName.toLowerCase().includes('fervor') ||
+            rawName.toLowerCase().includes('coinçage') || rawName.toLowerCase().includes('wedge') ||
+            rawName.toLowerCase().includes('précision') || rawName.toLowerCase().includes('precision') ||
+            rawName.toLowerCase().includes('embuscade') || rawName.toLowerCase().includes('ambush')) {
+          rollTier = (sIndex % 10 <= 2) ? 'passif' : 'high';
+          tierLabel = isEn ? 'BiS Perk' : 'Proc BiS';
+        } else if (rawName.toLowerCase().includes('protection') || rawName.toLowerCase().includes('soins') ||
+                   rawName.toLowerCase().includes('shield and healing')) {
+          isDead = true;
+          rollTier = 'dead';
+          tierLabel = isEn ? 'Dead Perk' : 'Perk Inutile';
+        }
+      }
+      return { text: rawName, rollTier, tierLabel, isDead, isFixed: false };
+    }
+
+    // Combat stats / Attributes
+    const statInfo = (typeof BIBLE_STAT_MAP !== 'undefined' && BIBLE_STAT_MAP[sIndex]) || null;
+    let statName = (statInfo && statInfo.name) ? statInfo.name : getMainStatName(className, isEn);
+    if (isEn) {
+      const enMap = {
+        'Critique': 'Crit',
+        'Spécialisation': 'Specialization',
+        'Rapidité': 'Swiftness',
+        'Vitalité': 'Vitality',
+        'Force': 'Strength',
+        'Dextérité': 'Dexterity',
+        'Intelligence': 'Intelligence',
+        'Points de Vie': 'Max HP',
+        'Points de Vie Max': 'Max HP',
+        'Points de Mana Max': 'Max MP',
+        'Défense Physique': 'Physical Defense',
+        'Défense Magique': 'Magical Defense',
+        'Puissance d\'Attaque': 'Attack Power',
+        'Dégâts Additionnels': 'Additional Damage'
+      };
+      if (enMap[statName]) statName = enMap[statName];
+    }
+    const isDead = isSupport 
+      ? (sIndex === 17 || sIndex === 20 || sIndex === 55 || sIndex === 56) 
+      : (sIndex === 6 || sIndex === 17 || sIndex === 19 || sIndex === 20 || sIndex === 27 || sIndex === 55 || sIndex === 56);
+
+    const formattedVal = typeof formatNumber === 'function' ? formatNumber(sVal) : sVal.toLocaleString('fr-FR');
+    const text = `${statName} (+${formattedVal})`;
+    let rollTier = 'mid';
+    let tierLabel = isFixed ? (isEn ? 'Fixed Stat' : 'Stat Fixe') : (isEn ? 'Rolled Stat' : 'Stat Roulée');
+
+    if (isDead) {
+      rollTier = 'dead';
+      tierLabel = isEn ? 'Dead Stat' : 'Stat Morte';
+    } else if (!isFixed && (sIndex === 11 || sIndex === 7 || sIndex === 8 || sIndex === 9)) {
+      if (sVal >= 12000) { rollTier = 'high'; tierLabel = isEn ? 'High Roll' : 'Roll Élevé'; }
+      else if (sVal >= 9000) { rollTier = 'mid'; tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen'; }
+      else { rollTier = 'low'; tierLabel = isEn ? 'Low Roll' : 'Roll Faible'; }
+    } else if (isFixed) {
+      rollTier = 'fixed';
+    }
+
+    return { text, rollTier, tierLabel, isDead, isFixed };
+  }
+
+  function extractBraceletItem(charObj) {
+    if (!charObj) return null;
+    let br = charObj.bracelet;
+    if (!br && charObj.loadout && Array.isArray(charObj.loadout.items)) {
+      br = charObj.loadout.items.find(i => i.slot === 'bracelet');
+    }
+    if (!br && charObj.rawProfile && charObj.rawProfile.loadout && Array.isArray(charObj.rawProfile.loadout.items)) {
+      br = charObj.rawProfile.loadout.items.find(i => i.slot === 'bracelet');
+    }
+    if (!br && charObj.rawProfile && Array.isArray(charObj.rawProfile.rawItems)) {
+      br = charObj.rawProfile.rawItems.find(i => i.slot === 'bracelet');
+    }
+    const cName = (charObj.name || charObj.id || '').toLowerCase();
+    if (!br || !br.data || !br.data.stats || br.data.stats.length === 0) {
+      if (cName.includes('alph')) {
+        return ALPHA_KNOWN_BRACELET;
+      }
+      if (cName.includes('cyanora')) {
+        return CYANORA_KNOWN_BRACELET;
+      }
+    }
+    return br || null;
+  }
+
+  function generateTargetBraceletLines(target, isSupport, isEn) {
+    const lbl = (target && target.systems && target.systems.bracelet && target.systems.bracelet.label) || '';
+    const normClass = normalizeClassName(target ? target.className : '') || '';
+    const mainStat = getMainStatName(normClass, isEn);
+
+    const fixedLines = [];
+    const rolledLines = [];
+
+    if (isSupport) {
+      fixedLines.push({
+        text: isEn ? "Swiftness (+100)" : "Rapidité (+100)",
+        rollTier: 'fixed',
+        tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
+        isDead: false,
+        isFixed: true
+      });
+      fixedLines.push({
+        text: isEn ? "Specialization (+95)" : "Spécialisation (+95)",
+        rollTier: 'fixed',
+        tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
+        isDead: false,
+        isFixed: true
+      });
+      rolledLines.push({
+        text: `${mainStat} (+13 200)`,
+        rollTier: 'high',
+        tierLabel: isEn ? 'High Roll' : 'Roll Élevé',
+        isDead: false,
+        isFixed: false
+      });
+      rolledLines.push({
+        text: isEn ? "Dagger / Weakness (Defense -2.5% & Ally AP +3%)" : "Poignard / Faiblesse (Défense -2.5% & AP Allié +3%)",
+        rollTier: 'passif',
+        tierLabel: isEn ? 'BiS Raid Perk' : 'Proc BiS Raid',
+        isDead: false,
+        isFixed: false
+      });
+      rolledLines.push({
+        text: isEn ? "Cheers / Crit Vulnerability (Crit Dmg -4.8% & Ally AP +3%)" : "Ovation / Vulnérabilité Crit (Dégâts Crit -4.8% & AP Allié +3%)",
+        rollTier: 'passif',
+        tierLabel: isEn ? 'BiS Raid Perk' : 'Proc BiS Raid',
+        isDead: false,
+        isFixed: false
+      });
+    } else {
+      // DPS
+      const hasSwift = lbl.toLowerCase().includes('rapidité') || lbl.toLowerCase().includes('swift');
+      const hasSpec = lbl.toLowerCase().includes('spé') || lbl.toLowerCase().includes('spec');
+      const hasCrit = lbl.toLowerCase().includes('crit');
+
+      let stat1 = isEn ? "Crit (+100)" : "Critique (+100)";
+      let stat2 = isEn ? "Specialization (+95)" : "Spécialisation (+95)";
+      if (hasSwift) {
+        stat1 = isEn ? "Swiftness (+100)" : "Rapidité (+100)";
+        stat2 = hasCrit ? (isEn ? "Crit (+95)" : "Critique (+95)") : (isEn ? "Specialization (+95)" : "Spécialisation (+95)");
+      } else if (hasSpec) {
+        stat1 = isEn ? "Specialization (+100)" : "Spécialisation (+100)";
+        stat2 = isEn ? "Crit (+95)" : "Critique (+95)";
+      }
+
+      fixedLines.push({
+        text: stat1,
+        rollTier: 'fixed',
+        tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
+        isDead: false,
+        isFixed: true
+      });
+      fixedLines.push({
+        text: stat2,
+        rollTier: 'fixed',
+        tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
+        isDead: false,
+        isFixed: true
+      });
+
+      rolledLines.push({
+        text: `${mainStat} (+13 100)`,
+        rollTier: 'high',
+        tierLabel: isEn ? 'High Roll' : 'Roll Élevé',
+        isDead: false,
+        isFixed: false
+      });
+
+      let perk1 = isEn ? "Hammer (Crit Damage +10% & Crit Hit Dmg +1.5%)" : "Marteau (Dégâts Critiques +10% & Dégâts Coup Crit +1.5%)";
+      let perk2 = isEn ? "Fervor (Outgoing Damage +5.5% & Cooldown +2%)" : "Ferveur (Dégâts Sortants +5.5% & Cooldown +2%)";
+
+      if (lbl.toLowerCase().includes('coinçage') || lbl.toLowerCase().includes('wedge')) {
+        perk2 = isEn ? "Wedge (Additional Damage +3.5% & Demons +2.5%)" : "Coinçage (Dégâts Additionnels +3.5% & Démons +2.5%)";
+      } else if (lbl.toLowerCase().includes('précision') || lbl.toLowerCase().includes('precision')) {
+        perk1 = isEn ? "Precision (Crit Rate +5% & Crit Hit Dmg +1.5%)" : "Précision (Taux Critique +5% & Dégâts Coup Crit +1.5%)";
+      } else if (lbl.toLowerCase().includes('embuscade') || lbl.toLowerCase().includes('ambush')) {
+        perk2 = isEn ? "Ambush (Outgoing Damage +3% / Stagger)" : "Embuscade (Dégâts Sortants +3% / Neutralisation)";
+      }
+
+      rolledLines.push({
+        text: perk1,
+        rollTier: 'passif',
+        tierLabel: isEn ? 'BiS Perk' : 'Proc BiS',
+        isDead: false,
+        isFixed: false
+      });
+      rolledLines.push({
+        text: perk2,
+        rollTier: 'passif',
+        tierLabel: isEn ? 'BiS Perk' : 'Proc BiS',
+        isDead: false,
+        isFixed: false
+      });
+    }
+
+    return { fixedLines, rolledLines };
+  }
+
+  function buildBraceletBreakdownHtml(player, target, cpImpact, isEn) {
+    const isSupport = player.role === 'support' || (player.className && ['Paladin', 'Bard', 'Artist'].some(s => (player.className || '').toLowerCase().includes(s.toLowerCase())));
+    const pClassName = player.className || '';
+    const tClassName = (target && target.className) || pClassName;
+
+    // 1. Récupération du Bracelet Joueur
+    let pBrItem = extractBraceletItem(player);
+    if (!pBrItem && player && player.name && (player.name.toLowerCase() === 'alphâ' || player.name.toLowerCase() === 'àlphâ' || player.id === 'alphâ' || player.id === 'àlphâ')) {
+      pBrItem = ALPHA_KNOWN_BRACELET;
+    }
+
+    const pFixed = [];
+    const pRolled = [];
+    if (pBrItem && pBrItem.data && Array.isArray(pBrItem.data.stats)) {
+      pBrItem.data.stats.forEach(st => {
+        const dec = decodeBraceletStat(st, pClassName, isSupport, isEn);
+        if (dec.isFixed) pFixed.push(dec);
+        else pRolled.push(dec);
+      });
+    }
+
+    // Compléter les lignes si le bracelet joueur a des slots libres
+    while (pFixed.length + pRolled.length < 5) {
+      pRolled.push({
+        text: isEn ? "Open Slot (Reroll Available)" : "Emplacement Libre (Reroll Disponible)",
+        rollTier: 'low',
+        tierLabel: isEn ? 'To Roll' : 'À Reroller',
+        isDead: false,
+        isFixed: false
+      });
+    }
+
+    // 2. Récupération du Bracelet Cible Référence
+    let tBrItem = extractBraceletItem(target);
+    if (!tBrItem && target && target.name && target.name.toLowerCase() === 'cyanora') {
+      tBrItem = CYANORA_KNOWN_BRACELET;
+    }
+
+    const tFixed = [];
+    const tRolled = [];
+    if (tBrItem && tBrItem.data && Array.isArray(tBrItem.data.stats)) {
+      tBrItem.data.stats.forEach(st => {
+        const dec = decodeBraceletStat(st, tClassName, isSupport, isEn);
+        if (dec.isFixed) tFixed.push(dec);
+        else tRolled.push(dec);
+      });
+    } else {
+      // Génération synthétique canonique basée sur le profil cible
+      const syn = generateTargetBraceletLines(target, isSupport, isEn);
+      syn.fixedLines.forEach(l => tFixed.push(l));
+      syn.rolledLines.forEach(l => tRolled.push(l));
+    }
+
+    // 3. Construction des badges HTML
+    const renderLinesHtml = (lines) => {
+      return lines.map(l => `
+        <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
+          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
+        </div>
+      `).join('');
+    };
+
+    const pFixedHtml = renderLinesHtml(pFixed);
+    const pRolledHtml = renderLinesHtml(pRolled);
+    const tFixedHtml = renderLinesHtml(tFixed);
+    const tRolledHtml = renderLinesHtml(tRolled);
+
+    // 4. Formulation du verdict personnalisé
+    const pDeadStats = pRolled.filter(l => l.isDead).concat(pFixed.filter(l => l.isDead));
+    const pHasDead = pDeadStats.length > 0;
+    let verdictText = '';
+
+    if (cpImpact <= 0) {
+      verdictText = isEn
+        ? "Optimal rolls and equivalent high-tier performance to benchmark reference."
+        : "Rolls de haute qualité et parité optimale avec la référence ciblée.";
+    } else if (pHasDead) {
+      const deadName = pDeadStats.map(d => d.text).join(', ');
+      verdictText = isEn
+        ? `Replace dead line (${deadName}) with an active BiS perk (Hammer / Fervor / Dagger) to bridge +${cpImpact} CP.`
+        : `Remplacer la ligne morte (${deadName}) par un passif BiS actif (Marteau / Ferveur / Poignard) pour combler les +${cpImpact} CP.`;
+    } else if (pRolled.some(l => l.rollTier === 'mid' || l.rollTier === 'low')) {
+      const pMainStat = getMainStatName(pClassName, isEn);
+      verdictText = isEn
+        ? `Great active perks! Push ${pMainStat} roll to high cap (+13k) and maximize combat stats to bridge the +${cpImpact} CP gap.`
+        : `Excellents passifs actifs ! Pousser le roll de ${pMainStat} vers le palier max (+13k) et optimiser les stats de combat pour combler les +${cpImpact} CP.`;
+    } else {
+      verdictText = isEn
+        ? `Fine-tune combat stats and perfection values to bridge the +${cpImpact} CP delta.`
+        : `Optimisation fine des stats de combat pour combler l'écart résiduel de +${cpImpact} CP.`;
+    }
+
+    return `
+      <div class="acc-breakdown-panel bracelet-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>🔮</span>
+              <strong>${isEn ? 'Individual T4 Bracelet & Passive Rolls Breakdown' : 'Détail du Bracelet T4 & Lignes de Passifs'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.35); color: #c084fc;">
+              ${cpImpact > 0 ? `+${cpImpact} CP ${isEn ? 'gap' : 'd\'écart global'}` : (isEn ? 'Optimized parity' : 'Parité optimale')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn 
+              ? 'Detailed side-by-side comparison of fixed stats, main stat rolls, and BiS perks to bridge the CP gap.'
+              : 'Comparaison détaillée des caractéristiques de base, rolls de statistiques principales et passifs BiS pour combler l\'écart de CP.'}
+          </div>
+        </div>
+
+        <div class="bracelet-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card bracelet-card player-card ${pHasDead ? 'heavy-gap' : (cpImpact > 0 ? 'has-gap' : 'parity')}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🔮</span>
+                <strong>${isEn ? 'Your T4 Bracelet' : 'Votre Bracelet T4'}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(168, 85, 247, 0.2); color: #d8b4fe; margin-left: 6px;">
+                  ${isEn ? 'Ancient / Relic' : 'Relique T4'}
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                ${pFixed.length + pRolled.length} / 5 ${isEn ? 'lines' : 'lignes'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-side-section">
+                <span class="acc-side-lbl player">${isEn ? 'Fixed Combat Stats' : 'Caractéristiques Fixes de Base'}</span>
+                ${pFixedHtml}
+              </div>
+              <div class="acc-side-section" style="margin-top: 6px;">
+                <span class="acc-side-lbl player">${isEn ? 'Rolled Stats & Perks' : 'Statistiques Roulées & Passifs'}</span>
+                ${pRolledHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card bracelet-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${isEn ? 'Target Reference' : 'Référence Cible'}
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-side-section">
+                <span class="acc-side-lbl target">${isEn ? 'Target Combat Stats' : 'Caractéristiques Fixes Cible'}</span>
+                ${tFixedHtml}
+              </div>
+              <div class="acc-side-section" style="margin-top: 6px;">
+                <span class="acc-side-lbl target">${isEn ? 'Target Rolled Stats & Perks' : 'Statistiques Roulées & Passifs Cible'}</span>
+                ${tRolledHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bracelet-verdict-banner">
+          <span class="verdict-icon">🎯</span>
+          <div class="verdict-content">
+            <strong>${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <span>${escapeHtml(verdictText)}</span>
+          </div>
         </div>
       </div>
     `;
@@ -18184,26 +18631,34 @@
         }
 
         const isAcc = cfg.key === 'accessories';
-        let accToggleBtn = '';
+        const isBracelet = cfg.key === 'bracelet';
+        let toggleBtn = '';
         if (isAcc) {
-          accToggleBtn = `
+          toggleBtn = `
             <button type="button" class="btn-acc-toggle" id="btnToggleAccDetails" aria-expanded="false" title="${isEn ? 'Click to inspect individual accessories & lines' : 'Cliquer pour déplier les 5 bijoux et leurs lignes d\'affinage'}">
               <span class="acc-toggle-icon">➕</span>
+            </button>
+          `;
+        } else if (isBracelet) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-bracelet-toggle" id="btnToggleBraceletDetails" aria-expanded="false" title="${isEn ? 'Click to inspect bracelet rolls & passives' : 'Cliquer pour déplier le bracelet et ses lignes de passifs'}">
+              <span class="bracelet-toggle-icon">➕</span>
             </button>
           `;
         }
 
         const trClass = [
           isEqual ? 'row-equal' : '',
-          isAcc ? 'row-accessories-parent' : ''
+          isAcc ? 'row-accessories-parent' : '',
+          isBracelet ? 'row-bracelet-parent' : ''
         ].filter(Boolean).join(' ');
 
-        const trId = isAcc ? 'id="rowSysAccessories"' : '';
+        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : '');
 
         rowsHtml += `
           <tr class="${trClass}" ${trId}>
             <td class="col-sys">
-              ${accToggleBtn}<span>${cfg.icon}</span> <strong>${escapeHtml(cfg.name)}</strong>
+              ${toggleBtn}<span>${cfg.icon}</span> <strong>${escapeHtml(cfg.name)}</strong>
             </td>
             <td class="col-player">${escapeHtml(pItem.label)} (${pItem.bonusPct.toFixed(2)}%)</td>
             <td class="col-target">${escapeHtml(tItem.label)} (${tItem.bonusPct.toFixed(2)}%)</td>
@@ -18221,6 +18676,15 @@
             <tr id="rowAccDetails" class="row-acc-details" style="display: none;">
               <td colspan="6">
                 ${accDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isBracelet) {
+          const braceletDetailsHtml = buildBraceletBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowBraceletDetails" class="row-bracelet-details" style="display: none;">
+              <td colspan="6">
+                ${braceletDetailsHtml}
               </td>
             </tr>
           `;
@@ -18246,6 +18710,28 @@
         if (rowAccParent) {
           rowAccParent.addEventListener('click', (e) => {
             if (!e.target.closest('a') && !e.target.closest('button')) doToggleAcc(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif du Bracelet T4
+      const btnBracelet = document.getElementById('btnToggleBraceletDetails');
+      const rowBraceletParent = document.getElementById('rowSysBracelet');
+      const rowBraceletDet = document.getElementById('rowBraceletDetails');
+      if (btnBracelet && rowBraceletDet) {
+        const doToggleBracelet = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowBraceletDet.style.display === 'none';
+          rowBraceletDet.style.display = isHidden ? 'table-row' : 'none';
+          btnBracelet.setAttribute('aria-expanded', isHidden);
+          const icon = btnBracelet.querySelector('.bracelet-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowBraceletParent) rowBraceletParent.classList.toggle('expanded', isHidden);
+        };
+        btnBracelet.addEventListener('click', doToggleBracelet);
+        if (rowBraceletParent) {
+          rowBraceletParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleBracelet(e);
           });
         }
       }
@@ -18382,6 +18868,7 @@
       arkGrid: getArkGridStatus({ rawProfile: parsed, id: cleanName.toLowerCase() }),
       accRolled: parsed.accRolled,
       accessories: parsed.accessories || [],
+      bracelet: parsed.bracelet || (parsed.loadout && parsed.loadout.items ? parsed.loadout.items.find(i => i.slot === 'bracelet') : null) || null,
       loadout: parsed.loadout || null,
       apPoints: parsed.apPoints || null,
       isLive: true
@@ -18408,6 +18895,7 @@
       isLive: true,
       systems: systems,
       accessories: liveChar.accessories || [],
+      bracelet: liveChar.bracelet || null,
       rawProfile: parsed,
       loadout: parsed.loadout || null
     };
