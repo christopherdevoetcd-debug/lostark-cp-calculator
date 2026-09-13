@@ -3878,6 +3878,7 @@
     const bpParts = (charObj.rawProfile && charObj.rawProfile.battlePoint && charObj.rawProfile.battlePoint.parts)
       || (charObj.battlePoint && charObj.battlePoint.parts)
       || (charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.battlePoint && charObj.rawProfile.loadout.battlePoint.parts)
+      || (charObj.rawProfile && charObj.rawProfile.loadouts && charObj.rawProfile.loadouts[0] && charObj.rawProfile.loadouts[0].battlePoint && charObj.rawProfile.loadouts[0].battlePoint.parts)
       || (charObj.loadout && charObj.loadout.battlePoint && charObj.loadout.battlePoint.parts);
     if (Array.isArray(bpParts)) {
       bpParts.filter(p => p.type === 29 || p.type === 30).forEach(p => {
@@ -16936,6 +16937,7 @@
     const allBpParts = (playerChar.rawProfile && playerChar.rawProfile.battlePoint && playerChar.rawProfile.battlePoint.parts)
       || (playerChar.battlePoint && playerChar.battlePoint.parts)
       || (playerChar.rawProfile && playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.battlePoint && playerChar.rawProfile.loadout.battlePoint.parts)
+      || (playerChar.rawProfile && playerChar.rawProfile.loadouts && playerChar.rawProfile.loadouts[0] && playerChar.rawProfile.loadouts[0].battlePoint && playerChar.rawProfile.loadouts[0].battlePoint.parts)
       || (playerChar.loadout && playerChar.loadout.battlePoint && playerChar.loadout.battlePoint.parts)
       || [];
 
@@ -16992,7 +16994,8 @@
       const sumVal = t26Part.value !== undefined ? (t26Part.value / 100) : 0;
       if (sumVal > 0) {
         combatStatsBonusPct = Number(sumVal.toFixed(2));
-        combatStatsLabel = isEn ? `Combat Stats (+${combatStatsBonusPct.toFixed(2)}%)` : `Stats de Combat (+${combatStatsBonusPct.toFixed(2)}%)`;
+        const totalPts = t26Part.total ? ` (${formatNumber(t26Part.total)} pts)` : '';
+        combatStatsLabel = isEn ? `Combat Stats${totalPts} (+${combatStatsBonusPct.toFixed(2)}%)` : `Stats de Combat${totalPts} (+${combatStatsBonusPct.toFixed(2)}%)`;
       }
     }
 
@@ -18546,6 +18549,8 @@
       bpParts = charObj.rawProfile.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
     } else if (charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.battlePoint && Array.isArray(charObj.rawProfile.loadout.battlePoint.parts)) {
       bpParts = charObj.rawProfile.loadout.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
+    } else if (charObj.rawProfile && charObj.rawProfile.loadouts && charObj.rawProfile.loadouts[0] && charObj.rawProfile.loadouts[0].battlePoint && Array.isArray(charObj.rawProfile.loadouts[0].battlePoint.parts)) {
+      bpParts = charObj.rawProfile.loadouts[0].battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
     } else if (charObj.loadout && charObj.loadout.battlePoint && Array.isArray(charObj.loadout.battlePoint.parts)) {
       bpParts = charObj.loadout.battlePoint.parts.filter(p => p.type === 31 || p.type === 32);
     }
