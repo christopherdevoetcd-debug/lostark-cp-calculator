@@ -18799,6 +18799,578 @@
     ];
   }
 
+  function extractCharacterBaseAtkDetails(c, isEn = false) {
+    if (!c) return { mainStatName: isEn ? 'Strength' : 'Force', mainStat: 627038, baseAtk: 162736, weaponPower: 218877, ilvl: 1750 };
+    const pId = (c.id || c.name || '').toLowerCase();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+
+    const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
+      || (c.battlePoint && c.battlePoint.parts)
+      || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.battlePoint && c.rawProfile.loadout.battlePoint.parts)
+      || (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0] && c.rawProfile.loadouts[0].battlePoint && c.rawProfile.loadouts[0].battlePoint.parts)
+      || (c.loadout && c.loadout.battlePoint && c.loadout.battlePoint.parts)
+      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
+      || (canon && canon.battlePoint && canon.battlePoint.parts)
+      || [];
+
+    const t1 = allBpParts.find(p => p.type === 1);
+    const ilvl = c.ilvl || (canon && canon.ilvl) || 1750;
+    const className = c.className || (canon && canon.className) || '';
+    const mainStatName = getMainStatName(className, isEn);
+
+    let mainStat = 0;
+    let baseAtk = 0;
+    let weaponPower = 0;
+
+    if (t1) {
+      mainStat = t1.mainStat || 0;
+      baseAtk = t1.baseAttackPower || 0;
+      weaponPower = t1.weaponPower || 0;
+    }
+
+    if (!mainStat) {
+      mainStat = c.mainStat || (canon && canon.mainStat) || (ilvl >= 1770 ? 735000 : (ilvl >= 1750 ? 627038 : 580000));
+    }
+    if (!baseAtk) {
+      baseAtk = c.baseAtk || (canon && canon.baseAtk) || (ilvl >= 1770 ? 185000 : (ilvl >= 1750 ? 162736 : 150000));
+    }
+    if (!weaponPower) {
+      weaponPower = c.weaponPower || (canon && canon.weaponPower) || Math.round((baseAtk * baseAtk * 6) / Math.max(1, mainStat));
+    }
+
+    return {
+      mainStatName,
+      mainStat: Math.round(mainStat),
+      baseAtk: Math.round(baseAtk),
+      weaponPower: Math.round(weaponPower),
+      ilvl
+    };
+  }
+
+  function extractCharacterCombatStatsDetails(c, isEn = false) {
+    if (!c) return { totalPts: 2386, bonusPct: 95.44, swift: 1820, specStat: 566, crit: 0, role: 'support' };
+    const pId = (c.id || c.name || '').toLowerCase();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+
+    const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
+      || (c.battlePoint && c.battlePoint.parts)
+      || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.battlePoint && c.rawProfile.loadout.battlePoint.parts)
+      || (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0] && c.rawProfile.loadouts[0].battlePoint && c.rawProfile.loadouts[0].battlePoint.parts)
+      || (c.loadout && c.loadout.battlePoint && c.loadout.battlePoint.parts)
+      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
+      || (canon && canon.battlePoint && canon.battlePoint.parts)
+      || [];
+
+    const t26 = allBpParts.find(p => p.type === 26 || p.total);
+    const ilvl = c.ilvl || (canon && canon.ilvl) || 1750;
+    let totalPts = t26 && t26.total ? t26.total : 0;
+    let bonusPct = t26 && t26.value !== undefined ? Number((t26.value / 100).toFixed(2)) : 0;
+
+    if (!totalPts) {
+      totalPts = ilvl >= 1770 ? 2495 : (ilvl >= 1750 ? 2386 : 2280);
+    }
+    if (!bonusPct) {
+      bonusPct = Number(((totalPts / 2500) * 100).toFixed(2));
+    }
+
+    const role = c.role || (canon && canon.role) || (['paladin', 'bard', 'artist'].some(s => (c.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
+    const spec = (c.spec || (canon && canon.spec) || '').toLowerCase();
+
+    let swift = 0;
+    let specStat = 0;
+    let crit = 0;
+
+    const items = c.items || (canon && canon.items) || (c.loadout && c.loadout.items) || [];
+    let foundSwift = 0, foundSpec = 0, foundCrit = 0;
+    if (Array.isArray(items)) {
+      items.forEach(it => {
+        if (it && it.data && Array.isArray(it.data.stats)) {
+          it.data.stats.forEach(st => {
+            if (st.index === 15) foundCrit += st.value || 0;
+            else if (st.index === 16) foundSpec += st.value || 0;
+            else if (st.index === 17) foundSwift += st.value || 0;
+          });
+        }
+      });
+    }
+
+    if (foundSwift + foundSpec + foundCrit > 1000) {
+      swift = foundSwift;
+      specStat = foundSpec;
+      crit = foundCrit;
+    } else {
+      if (role === 'support') {
+        swift = Math.round(totalPts * 0.763);
+        specStat = totalPts - swift;
+        crit = 0;
+      } else if (spec.includes('executioner') || spec.includes('igniter') || spec.includes('surge') || spec.includes('brawler') || spec.includes('asura')) {
+        specStat = Math.round(totalPts * 0.74);
+        crit = totalPts - specStat;
+        swift = 0;
+      } else {
+        swift = Math.round(totalPts * 0.65);
+        crit = totalPts - swift;
+        specStat = 0;
+      }
+    }
+
+    return {
+      totalPts: Math.round(totalPts),
+      bonusPct,
+      swift: Math.round(swift),
+      specStat: Math.round(specStat),
+      crit: Math.round(crit),
+      role
+    };
+  }
+
+  function buildBaseAtkBreakdownHtml(player, target, cpImpact, isEn) {
+    const p = extractCharacterBaseAtkDetails(player, isEn);
+    const t = extractCharacterBaseAtkDetails(target, isEn);
+    const pSys = extractPlayerSystems(player, isEn);
+    const tSys = resolveTargetSystems(target, isEn);
+
+    const pPct = (pSys.baseAttackStat && pSys.baseAttackStat.bonusPct) ? pSys.baseAttackStat.bonusPct : 32.55;
+    const tPct = (tSys.baseAttackStat && tSys.baseAttackStat.bonusPct) ? tSys.baseAttackStat.bonusPct : 35.17;
+    const deltaPct = Number((tPct - pPct).toFixed(2));
+
+    const dMainStat = t.mainStat - p.mainStat;
+    const dWp = t.weaponPower - p.weaponPower;
+    const dBaseAtk = t.baseAtk - p.baseAtk;
+
+    const isSupport = player.role === 'support' || (player.className && ['Paladin', 'Bard', 'Artist'].some(s => (player.className || '').toLowerCase().includes(s.toLowerCase())));
+    const mainStatName = p.mainStatName;
+
+    return `
+      <div class="acc-breakdown-panel baseatk-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>💪</span>
+              <strong>${isEn ? 'Main Stat & Base Attack Power (Base AP) Breakdown' : 'Détail de la Stat Principale & Puissance d\'Attaque de Base (Base AP)'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.35); color: #fb923c;">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Optimized parity' : 'Parité optimale')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn
+              ? 'Comprehensive comparison of Main Stat (Str/Dex/Int) and Weapon Power, the two mathematical foundations that dictate your Base AP and support buff power.'
+              : 'Comparaison détaillée de la Stat Principale (Force/Dex/Int) et de la Puissance d\'Arme, les deux piliers mathématiques qui déterminent votre Attaque de Base et l\'efficacité de vos buffs.'}
+          </div>
+        </div>
+
+        <!-- Bannière Pédagogique : Définition & Formule -->
+        <div class="stats-educational-banner baseatk">
+          <span class="edu-icon">💡</span>
+          <div class="edu-content">
+            <strong>${isEn ? 'Understanding Main Stat & Base Attack Power (Base AP)' : 'Comprendre la Stat Principale & l\'Attaque de Base (Base AP)'}</strong>
+            <div>
+              ${isEn
+                ? `In Lost Ark, your <strong>Base Attack Power (Base AP)</strong> is computed using the official formula: <code>Base AP = &radic;(Main Stat &times; Weapon Power / 6)</code>.<br>`
+                : `Dans Lost Ark, la <strong>Puissance d'Attaque de Base (Base AP)</strong> découle de la formule officielle : <code>Base AP = &radic;(Stat Principale &times; Puissance d'Arme / 6)</code>.<br>`
+              }
+              ${isSupport
+                ? (isEn
+                  ? `<strong>For Supports (${escapeHtml(player.className || 'Support')}):</strong> Base AP is <strong>vitally crucial</strong>. Your party attack buffs (<em>Heavenly Blessings</em>, <em>Wrath of God</em>) transfer <strong>15% of your Base AP directly to party members</strong> (on top of a flat +6% Atk Power bonus). A higher Base AP directly makes your DPS teammates hit vastly harder!`
+                  : `<strong>En Support (${escapeHtml(player.className || 'Support')}) :</strong> Le Base AP est <strong>capital</strong>. Vos compétences de buff d'attaque (<em>Bénédiction céleste</em>, <em>Colère de Dieu</em>) transfèrent <strong>15% de votre Attaque de Base directement à vos alliés</strong> (en plus du bonus fixe de +6% de PA). Un Base AP plus élevé augmente directement et massivement la frappe de vos DPS en raid !`)
+                : (isEn
+                  ? `<strong>For DPS Classes:</strong> Base AP is the core scalar for all your skill damage formulas before engravings, set multipliers, and gems are compounded.`
+                  : `<strong>En Rôle DPS :</strong> Le Base AP constitue le socle multiplicateur fondamental sur lequel tous les dégâts de vos compétences sont calculés avant les gravures et les gemmes.`)
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartes Face-à-Face Joueur vs Cible -->
+        <div class="astrogems-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">👤</span>
+                <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                  ${(player.ilvl || 1750).toFixed(2)} iLvl
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                +${pPct.toFixed(2)}% Mult.
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>💪 <strong>${escapeHtml(mainStatName)}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.mainStat)}</span>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🗡️ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.weaponPower)}</span>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>⚡ <strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.baseAtk)} AP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card astrogems-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${(target && target.ilvl ? target.ilvl.toFixed(2) : '1759.17')} iLvl
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>💪 <strong>${escapeHtml(mainStatName)}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.mainStat)}</span>
+                  ${dMainStat > 0 ? `<span class="line-cp-pill">+${formatNumber(dMainStat)}</span>` : ''}
+                </div>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🗡️ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.weaponPower)}</span>
+                  ${dWp > 0 ? `<span class="line-cp-pill">+${formatNumber(dWp)}</span>` : ''}
+                </div>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>⚡ <strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.baseAtk)} AP</span>
+                  ${dBaseAtk > 0 ? `<span class="line-cp-pill">+${formatNumber(dBaseAtk)} AP</span>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé -->
+        <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
+          <div class="astrogems-compare-table-title">
+            <span>📊</span>
+            <strong>${isEn ? 'Mathematical Breakdown: Main Stat & Weapon Power' : 'Décomposition Mathématique : Stat Principale & Puissance d\'Arme'}</strong>
+          </div>
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Metric / Component' : 'Métrique / Composant'}</th>
+                <th>${isEn ? 'Your Character' : 'Votre Personnage'}</th>
+                <th>${isEn ? 'Benchmark Target' : 'Référence Cible'}</th>
+                <th style="text-align:right;">${isEn ? 'Delta / Impact' : 'Écart / Impact'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>💪 ${escapeHtml(mainStatName)}</strong></td>
+                <td>${formatNumber(p.mainStat)}</td>
+                <td>${formatNumber(t.mainStat)}</td>
+                <td class="col-cp-gain">${dMainStat > 0 ? `+${formatNumber(dMainStat)} pts` : `${formatNumber(dMainStat)} pts`}</td>
+              </tr>
+              <tr>
+                <td><strong>🗡️ ${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></td>
+                <td>${formatNumber(p.weaponPower)}</td>
+                <td>${formatNumber(t.weaponPower)}</td>
+                <td class="col-cp-gain">${dWp > 0 ? `+${formatNumber(dWp)} pts` : `${formatNumber(dWp)} pts`}</td>
+              </tr>
+              <tr>
+                <td><strong>⚡ ${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque de Base'}</strong></td>
+                <td><strong>${formatNumber(p.baseAtk)} AP</strong></td>
+                <td><strong style="color:#34d399;">${formatNumber(t.baseAtk)} AP</strong></td>
+                <td class="col-cp-gain"><strong>${dBaseAtk > 0 ? `+${formatNumber(dBaseAtk)} AP` : `${formatNumber(dBaseAtk)} AP`}</strong></td>
+              </tr>
+              <tr>
+                <td><strong>📈 ${isEn ? 'Lost Ark Multiplier Score' : 'Multiplicateur Battre Point'}</strong></td>
+                <td>+${pPct.toFixed(2)}%</td>
+                <td>+${tPct.toFixed(2)}%</td>
+                <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Combat Power Impact (Compounding Formula)' : 'Impact Total sur le Combat Power'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- 4 Leviers & Facteurs d'Écart -->
+        <div style="margin-top: 14px;">
+          <div style="font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <span>🔍</span> <span>${isEn ? 'Where does this +' + cpImpact + ' CP difference come from?' : 'D\'où vient cette différence de +' + cpImpact + ' CP ?'}</span>
+          </div>
+          <div class="stats-factor-grid">
+            <div class="stats-factor-card">
+              <strong>🛡️ ${isEn ? 'Armor & Honing ilvl' : 'Affinage & Pièces d\'Armure'}</strong>
+              <span>${isEn ? 'Each T4 gear tier (Head, Chest, Pants, Shoulders, Gloves) gives an exponential jump in Main Stat.' : 'Chaque niveau d\'armure T4 (Torse, Jambes, Épaules, etc.) et affinage avancé apporte une augmentation massive de Force/Dex/Int.'}</span>
+            </div>
+            <div class="stats-factor-card">
+              <strong>🗡️ ${isEn ? 'Weapon ilvl & Quality' : 'Arme T4 & Qualité'}</strong>
+              <span>${isEn ? 'Weapon honing rank and Quality (95-100) are the primary sources of Weapon Power scaling Base AP.' : 'Le niveau d\'affinage d\'arme et une qualité 95-100 sont le moteur principal de la Puissance d\'Arme alimentant le Base AP.'}</span>
+            </div>
+            <div class="stats-factor-card">
+              <strong>✨ ${isEn ? 'Transcendence & Elixirs' : 'Transcendance & Élixirs'}</strong>
+              <span>${isEn ? 'Weapon R3 (21 pts) & Armor R3 (105 pts) grant tens of thousands in flat Main Stat and Weapon Power.' : 'La Transcendance Arme R3 (21 pts) et Armures (105 pts) donne des dizaines de milliers de points de Main Stat et Puissance d\'Arme fixes.'}</span>
+            </div>
+            <div class="stats-factor-card">
+              <strong>📜 ${isEn ? 'Roster & Permanent Potions' : 'Potions Codex & Expédition'}</strong>
+              <span>${isEn ? 'Stat potions from Adventurer\'s Tomes, Una Tasks, and Towers yield ~2,500-4,000 permanent Main Stat.' : 'Les potions permanentes des Tomes d\'Aventurier, Réputations Una et Tours offrent plusieurs milliers de points de Main Stat.'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommandation Finale -->
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#f97316;">
+          <span class="verdict-icon">🎯</span>
+          <div class="verdict-content">
+            <strong style="color:#fb923c;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <span>${isEn
+              ? `To bridge the +${cpImpact} CP gap: prioritize honing your T4 weapon, unlock Rank 3 weapon/armor transcendence, roll legendary 40-set elixirs with Atk Power, and collect missing permanent stat potions from your Codex (Alt+D).`
+              : `Pour combler les +${cpImpact} CP de retard : prioriser l'affinage de votre Arme T4, finaliser la Transcendance R3 (Arme et Armures), sécuriser un set 40 d'élixirs avec Puissance d'Attaque, et vérifier dans votre Codex (Alt+D) les potions permanentes de caractéristiques non récupérées.`}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
+    const p = extractCharacterCombatStatsDetails(player, isEn);
+    const t = extractCharacterCombatStatsDetails(target, isEn);
+    const pSys = extractPlayerSystems(player, isEn);
+    const tSys = resolveTargetSystems(target, isEn);
+
+    const pPct = (pSys.combatStats && pSys.combatStats.bonusPct) ? pSys.combatStats.bonusPct : 95.44;
+    const tPct = (tSys.combatStats && tSys.combatStats.bonusPct) ? tSys.combatStats.bonusPct : 99.68;
+    const deltaPct = Number((tPct - pPct).toFixed(2));
+    const deltaPts = t.totalPts - p.totalPts;
+
+    return `
+      <div class="acc-breakdown-panel combatstats-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>🎯</span>
+              <strong>${isEn ? 'Combat Stats Breakdown (Crit / Spec / Swiftness)' : 'Détail des Caractéristiques de Combat (Crit / Spé / Rapide)'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399;">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Optimized parity' : 'Parité optimale')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn
+              ? 'Detailed breakdown of your total combat stat points (' + formatNumber(p.totalPts) + ' vs ' + formatNumber(t.totalPts) + ' pts), explaining why there is an écart and how accessory qualities and bracelet rolls dictate performance.'
+              : 'Décomposition détaillée de vos points de caractéristiques de combat (' + formatNumber(p.totalPts) + ' vs ' + formatNumber(t.totalPts) + ' pts), expliquant pourquoi il y a un écart et comment la qualité des bijoux et le bracelet gouvernent ces chiffres.'}
+          </div>
+        </div>
+
+        <!-- Bannière Pédagogique : Différence essentielle entre Combat Stats et Main Stat -->
+        <div class="stats-educational-banner combatstats">
+          <span class="edu-icon">💡</span>
+          <div class="edu-content">
+            <strong>${isEn ? 'Crucial Distinction: Combat Stats vs Main Stat' : 'Distinction Fondamentale : Caractéristiques de Combat vs Stat Principale'}</strong>
+            <div>
+              ${isEn
+                ? `<strong>Main Stat (Str/Dex/Int):</strong> Directly increases raw Attack Power and damage scaling.<br>
+                   <strong>Combat Stats (Crit/Spec/Swift):</strong> Do NOT increase raw weapon attack; instead, they amplify <strong>mechanical gameplay percentages</strong>:
+                   <ul style="margin:6px 0 0 16px; padding:0;">
+                     <li><strong>⚡ Swiftness:</strong> Increases Attack/Move Speed and provides massive <strong>Cooldown Reduction (CDR %)</strong>. For Supports, this is mandatory to sustain 100% uptime on identity auras, shields, and attack buffs.</li>
+                     <li><strong>🔮 Specialization:</strong> Speeds up Identity Gauge gain (Piety for Paladin) and directly scales Identity Aura buff efficiency.</li>
+                     <li><strong>🎯 Crit Rate:</strong> Increases the probability of landing critical strikes (critical for DPS).</li>
+                   </ul>`
+                : `<strong>Stat Principale (Force / Dex / Int) :</strong> Augmente la Puissance d'Attaque brute en points (Base AP).<br>
+                   <strong>Caractéristiques de Combat (Crit / Spé / Rapide) :</strong> N'augmentent pas l'attaque brute de l'arme, mais amplifient des <strong>pourcentages mécaniques de gameplay</strong> :
+                   <ul style="margin:6px 0 0 16px; padding:0;">
+                     <li><strong>⚡ Rapidité (Swiftness) :</strong> Vitesse d'attaque, vitesse de déplacement, et surtout <strong>Réduction du Temps de Recharge (CDR %)</strong> ! En Support, c'est indispensable pour maintenir 100% d'uptime sur l'Aura de Bénédiction, la marque et les buffs d'attaque.</li>
+                     <li><strong>🔮 Spécialisation (Specialization) :</strong> Accélère le remplissage de la jauge d'identité (Piété pour Paladin) et amplifie le bonus de dégâts accordé par l'Aura.</li>
+                     <li><strong>🎯 Critique (Crit Rate) :</strong> Augmente le taux de coup critique (vital pour les DPS).</li>
+                   </ul>`
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartes Face-à-Face Joueur vs Cible -->
+        <div class="astrogems-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">👤</span>
+                <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                  ${formatNumber(p.totalPts)} pts
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                +${pPct.toFixed(2)}% Mult.
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>⚡ <strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.swift)} pts</span>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🔮 <strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.specStat)} pts</span>
+              </div>
+              ${p.crit > 0 ? `
+                <div class="acc-line-badge low">
+                  <span>🎯 <strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
+                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.crit)} pts</span>
+                </div>
+              ` : ''}
+              <div class="acc-line-badge fixed">
+                <span>📊 <strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.totalPts)} pts</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card astrogems-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${formatNumber(t.totalPts)} pts
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>⚡ <strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.swift)} pts</span>
+                  ${t.swift > p.swift ? `<span class="line-cp-pill">+${t.swift - p.swift}</span>` : ''}
+                </div>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🔮 <strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.specStat)} pts</span>
+                  ${t.specStat > p.specStat ? `<span class="line-cp-pill">+${t.specStat - p.specStat}</span>` : ''}
+                </div>
+              </div>
+              ${t.crit > 0 ? `
+                <div class="acc-line-badge low">
+                  <span>🎯 <strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.crit)} pts</span>
+                    ${t.crit > p.crit ? `<span class="line-cp-pill">+${t.crit - p.crit}</span>` : ''}
+                  </div>
+                </div>
+              ` : ''}
+              <div class="acc-line-badge fixed">
+                <span>📊 <strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.totalPts)} pts</span>
+                  ${deltaPts > 0 ? `<span class="line-cp-pill">+${deltaPts} pts</span>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé -->
+        <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
+          <div class="astrogems-compare-table-title">
+            <span>📊</span>
+            <strong>${isEn ? 'Comparative Breakdown: Combat Stat Points' : 'Décomposition Détaillée : Points de Caractéristiques de Combat'}</strong>
+          </div>
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Combat Stat Metric' : 'Statistique de Combat'}</th>
+                <th>${isEn ? 'Your Character' : 'Votre Personnage'}</th>
+                <th>${isEn ? 'Benchmark Target' : 'Référence Cible'}</th>
+                <th style="text-align:right;">${isEn ? 'Point Delta' : 'Écart en Points'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>⚡ ${isEn ? 'Swiftness (CDR & Speed)' : 'Rapidité (CDR & Vitesse)'}</strong></td>
+                <td>${formatNumber(p.swift)} pts</td>
+                <td>${formatNumber(t.swift)} pts</td>
+                <td class="col-cp-gain">${t.swift >= p.swift ? `+${t.swift - p.swift} pts` : `${t.swift - p.swift} pts`}</td>
+              </tr>
+              <tr>
+                <td><strong>🔮 ${isEn ? 'Specialization (Identity & Aura)' : 'Spécialisation (Identité & Aura)'}</strong></td>
+                <td>${formatNumber(p.specStat)} pts</td>
+                <td>${formatNumber(t.specStat)} pts</td>
+                <td class="col-cp-gain">${t.specStat >= p.specStat ? `+${t.specStat - p.specStat} pts` : `${t.specStat - p.specStat} pts`}</td>
+              </tr>
+              <tr>
+                <td><strong>📊 ${isEn ? 'Total Combined Points' : 'Total Points Combinés'}</strong></td>
+                <td><strong>${formatNumber(p.totalPts)} pts</strong></td>
+                <td><strong style="color:#34d399;">${formatNumber(t.totalPts)} pts</strong></td>
+                <td class="col-cp-gain"><strong>${deltaPts > 0 ? `+${deltaPts} pts` : `${deltaPts} pts`}</strong></td>
+              </tr>
+              <tr>
+                <td><strong>📈 ${isEn ? 'Lost Ark Multiplier Score' : 'Multiplicateur Battre Point'}</strong></td>
+                <td>+${pPct.toFixed(2)}%</td>
+                <td>+${tPct.toFixed(2)}%</td>
+                <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Combat Power Impact (Point Differential Contribution)' : 'Gain de Combat Power (Impact de l\'Écart de Points)'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- 3 Raisons de l'écart de points -->
+        <div style="margin-top: 14px;">
+          <div style="font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <span>🔍</span> <span>${isEn ? 'Why does the reference profile have +' + deltaPts + ' more Combat Stat points?' : 'Pourquoi la référence a-t-elle +' + deltaPts + ' points de Combat Stats en plus ?'}</span>
+          </div>
+          <div class="stats-factor-grid">
+            <div class="stats-factor-card">
+              <strong>💎 ${isEn ? 'T4 Accessory Quality (Neck/Ear/Ring)' : 'Qualité des 5 Bijoux T4 (Collier/Boucles/Anneaux)'}</strong>
+              <span>${isEn ? 'Accessory stats directly scale with Quality (0-100). High quality (90-100) vs mid quality (65-75) yields ~70-110 extra combat stat points across all 5 pieces!' : 'Les stats des bijoux sont indexées sur la Qualité (0-100). Des bijoux qualité 90-100 vs qualité 65-75 apportent ~70 à 110 points de combat stat en plus sur les 5 bijoux !'}</span>
+            </div>
+            <div class="stats-factor-card">
+              <strong>🔮 ${isEn ? 'T4 Bracelet Stat Rolls' : 'Rolls de Stats sur Bracelet T4'}</strong>
+              <span>${isEn ? 'A top-tier bracelet with double high combat stat rolls (+100 to +120 Swift/Spec) provides an immediate +40-60 point lead over a bracelet with mid rolls.' : 'Un bracelet avec double roll de stats de combat élevées (+100 à +120 Rapide/Spé) creuse une avance immédiate de 40 à 60 points sur un bracelet moyen.'}</span>
+            </div>
+            <div class="stats-factor-card">
+              <strong>📜 ${isEn ? 'Permanent Stat Potions (Codex)' : 'Potions de Combat Permanentes (Codex)'}</strong>
+              <span>${isEn ? 'Adventurer\'s Tome completion (80-90% brackets), Giant Hearts, and Una reputations grant ~30-50 permanent combat stat points across your roster.' : 'Les Tomes d\'Aventurier (paliers 80-90%), Cœurs de Géants et réputations offrent ~30 à 50 points de combat stats permanents sur le compte.'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommandation Finale -->
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#10b981;">
+          <span class="verdict-icon">🎯</span>
+          <div class="verdict-content">
+            <strong style="color:#34d399;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <span>${isEn
+              ? `To bridge the +${cpImpact} CP gap: prioritize acquiring high-quality (85-100) T4 accessories on your main stats (Swiftness/Spec), roll a bracelet with dual high combat stat lines, and verify missing permanent combat stat potions in your Codex (Alt+D).`
+              : `Pour combler les +${cpImpact} CP d'écart : viser des bijoux T4 de haute qualité (85 à 100) sur vos stats maîtresses (Rapidité / Spécialisation), chercher un bracelet avec double roll de stats de combat élevées, et vérifier les potions permanentes de combat stats non validées dans votre Codex (Alt+D).`}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function buildEngravingsBreakdownHtml(player, target, cpImpact, isEn) {
     const pEngs = extractCharacterEngravings(player, isEn);
     const tEngs = extractCharacterEngravings(target, isEn);
@@ -19525,6 +20097,8 @@
         const isBracelet = cfg.key === 'bracelet';
         const isAstrogems = cfg.key === 'arkGridAstrogems';
         const isEngravings = cfg.key === 'engravings';
+        const isBaseAtk = cfg.key === 'baseAttackStat';
+        const isCombatStats = cfg.key === 'combatStats';
         let toggleBtn = '';
         if (isAcc) {
           toggleBtn = `
@@ -19550,6 +20124,18 @@
               <span class="engravings-toggle-icon">➕</span>
             </button>
           `;
+        } else if (isBaseAtk) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-baseatk-toggle" id="btnToggleBaseAtkDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Main Stat, Weapon Power, and Base AP differences' : 'Cliquer pour inspecter la Stat Principale, la Puissance d\'Arme et l\'Attaque de Base'}">
+              <span class="baseatk-toggle-icon">➕</span>
+            </button>
+          `;
+        } else if (isCombatStats) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-combatstats-toggle" id="btnToggleCombatStatsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Combat Stats (Crit/Spec/Swift), accessory qualities, and bracelet rolls' : 'Cliquer pour inspecter les Stats de Combat (Crit/Spé/Rapide), la qualité des bijoux et le bracelet'}">
+              <span class="combatstats-toggle-icon">➕</span>
+            </button>
+          `;
         }
 
         const trClass = [
@@ -19557,10 +20143,12 @@
           isAcc ? 'row-accessories-parent' : '',
           isBracelet ? 'row-bracelet-parent' : '',
           isAstrogems ? 'row-astrogems-parent' : '',
-          isEngravings ? 'row-engravings-parent' : ''
+          isEngravings ? 'row-engravings-parent' : '',
+          isBaseAtk ? 'row-baseatk-parent' : '',
+          isCombatStats ? 'row-combatstats-parent' : ''
         ].filter(Boolean).join(' ');
 
-        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : '')));
+        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : (isBaseAtk ? 'id="rowSysBaseAtk"' : (isCombatStats ? 'id="rowSysCombatStats"' : '')))));
 
         rowsHtml += `
           <tr class="${trClass}" ${trId}>
@@ -19610,6 +20198,24 @@
             <tr id="rowEngravingsDetails" class="row-engravings-details" style="display: none;">
               <td colspan="6">
                 ${engravingsDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isBaseAtk) {
+          const baseAtkDetailsHtml = buildBaseAtkBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowBaseAtkDetails" class="row-baseatk-details" style="display: none;">
+              <td colspan="6">
+                ${baseAtkDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isCombatStats) {
+          const combatStatsDetailsHtml = buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowCombatStatsDetails" class="row-combatstats-details" style="display: none;">
+              <td colspan="6">
+                ${combatStatsDetailsHtml}
               </td>
             </tr>
           `;
@@ -19701,6 +20307,50 @@
         if (rowEngParent) {
           rowEngParent.addEventListener('click', (e) => {
             if (!e.target.closest('a') && !e.target.closest('button')) doToggleEng(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif de Stat Principale & Attaque de Base
+      const btnBaseAtk = document.getElementById('btnToggleBaseAtkDetails');
+      const rowBaseAtkParent = document.getElementById('rowSysBaseAtk');
+      const rowBaseAtkDet = document.getElementById('rowBaseAtkDetails');
+      if (btnBaseAtk && rowBaseAtkDet) {
+        const doToggleBaseAtk = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowBaseAtkDet.style.display === 'none';
+          rowBaseAtkDet.style.display = isHidden ? 'table-row' : 'none';
+          btnBaseAtk.setAttribute('aria-expanded', isHidden);
+          const icon = btnBaseAtk.querySelector('.baseatk-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowBaseAtkParent) rowBaseAtkParent.classList.toggle('expanded', isHidden);
+        };
+        btnBaseAtk.addEventListener('click', doToggleBaseAtk);
+        if (rowBaseAtkParent) {
+          rowBaseAtkParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleBaseAtk(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Stats de Combat (Crit/Spé/Rapide)
+      const btnCombatStats = document.getElementById('btnToggleCombatStatsDetails');
+      const rowCombatStatsParent = document.getElementById('rowSysCombatStats');
+      const rowCombatStatsDet = document.getElementById('rowCombatStatsDetails');
+      if (btnCombatStats && rowCombatStatsDet) {
+        const doToggleCombatStats = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowCombatStatsDet.style.display === 'none';
+          rowCombatStatsDet.style.display = isHidden ? 'table-row' : 'none';
+          btnCombatStats.setAttribute('aria-expanded', isHidden);
+          const icon = btnCombatStats.querySelector('.combatstats-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowCombatStatsParent) rowCombatStatsParent.classList.toggle('expanded', isHidden);
+        };
+        btnCombatStats.addEventListener('click', doToggleCombatStats);
+        if (rowCombatStatsParent) {
+          rowCombatStatsParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleCombatStats(e);
           });
         }
       }

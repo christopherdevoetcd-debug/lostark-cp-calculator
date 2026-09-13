@@ -5141,6 +5141,38 @@ select optgroup {
   border-color: #38bdf8;
 }
 
+.btn-baseatk-toggle {
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+}
+.btn-baseatk-toggle:hover {
+  background: rgba(249, 115, 22, 0.28);
+  border-color: #fb923c;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-baseatk-parent.expanded .btn-baseatk-toggle {
+  background: #f97316;
+  color: #0b1120;
+  border-color: #fb923c;
+}
+
+.btn-combatstats-toggle {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+.btn-combatstats-toggle:hover {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #34d399;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-combatstats-parent.expanded .btn-combatstats-toggle {
+  background: #10b981;
+  color: #0b1120;
+  border-color: #34d399;
+}
+
 .row-acc-details td {
   padding: 0 !important;
   background: rgba(10, 15, 26, 0.85);
@@ -5163,6 +5195,92 @@ select optgroup {
   padding: 0 !important;
   background: rgba(10, 15, 26, 0.85);
   border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.row-baseatk-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+.row-combatstats-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.baseatk-breakdown-panel {
+  border-left: 3px solid #f97316 !important;
+}
+
+.combatstats-breakdown-panel {
+  border-left: 3px solid #10b981 !important;
+}
+
+.stats-educational-banner {
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid #38bdf8;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+.stats-educational-banner .edu-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.stats-educational-banner .edu-content strong {
+  color: #f1f5f9;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+.stats-educational-banner.baseatk {
+  border-left-color: #f97316;
+}
+.stats-educational-banner.baseatk .edu-content strong {
+  color: #fb923c;
+}
+.stats-educational-banner.combatstats {
+  border-left-color: #10b981;
+}
+.stats-educational-banner.combatstats .edu-content strong {
+  color: #34d399;
+}
+
+.stats-factor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.stats-factor-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stats-factor-card strong {
+  font-size: 12px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stats-factor-card span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .acc-breakdown-panel {
