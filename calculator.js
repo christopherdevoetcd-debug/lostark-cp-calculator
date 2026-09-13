@@ -14421,6 +14421,26 @@
       });
     }
 
+    if (dom.importModal) {
+      dom.importModal.addEventListener('click', (e) => {
+        if (e.target === dom.importModal) {
+          dom.importModal.classList.remove('active');
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (dom.importModal && dom.importModal.classList.contains('active')) {
+          dom.importModal.classList.remove('active');
+        }
+        const aModal = document.getElementById('agentDownloadModal');
+        if (aModal && aModal.classList.contains('active')) {
+          aModal.classList.remove('active');
+        }
+      }
+    });
+
     // Modal Téléchargement Agent Local
     const agentModal = document.getElementById('agentDownloadModal');
     const btnOpenAgentModal = document.getElementById('btnOpenAgentModal');
