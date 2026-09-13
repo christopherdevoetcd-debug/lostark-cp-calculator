@@ -18111,6 +18111,133 @@
     return { fixedLines, rolledLines };
   }
 
+  function computeBraceletLineCps(pFixed, pRolled, tFixed, tRolled, cpImpact, isSupport) {
+    if (cpImpact <= 0) {
+      return {
+        combatCp: 0,
+        mainStatCp: 0,
+        perk1Cp: 0,
+        perk2Cp: 0,
+        pairedP1: pRolled.filter(l => l.isPerk)[0] || null,
+        pairedT1: tRolled.filter(l => l.isPerk)[0] || null,
+        pairedP2: pRolled.filter(l => l.isPerk)[1] || null,
+        pairedT2: tRolled.filter(l => l.isPerk)[1] || null,
+        pMainObj: pRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int'))),
+        tMainObj: tRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')))
+      };
+    }
+
+    const isCombatStatLine = (txt) => {
+      const l = (txt || '').toLowerCase();
+      return l.includes('spé') || l.includes('spec') || l.includes('crit') || l.includes('rapid') || l.includes('swift') || l.includes('dom') || l.includes('endur') || l.includes('expert');
+    };
+
+    const extractStatNum = (txt) => {
+      const m = (txt || '').match(/\+([0-9\s ,]+)/);
+      if (!m) return 0;
+      return parseInt(m[1].replace(/[\s ,]/g, ''), 10) || 0;
+    };
+
+    const pCombatList = pFixed.filter(l => isCombatStatLine(l.text) && !l.isDead);
+    const tCombatList = tFixed.filter(l => isCombatStatLine(l.text) && !l.isDead);
+    const pCombatSum = pCombatList.reduce((sum, l) => sum + extractStatNum(l.text), 0);
+    const tCombatSum = tCombatList.reduce((sum, l) => sum + extractStatNum(l.text), 0);
+    const combatDiff = Math.max(0, tCombatSum - pCombatSum);
+    const wCombat = combatDiff > 0 ? combatDiff * 0.7 : 0.1;
+
+    const pMainObj = pRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')));
+    const tMainObj = tRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')));
+    const pMainVal = pMainObj ? extractStatNum(pMainObj.text) : 11904;
+    const tMainVal = tMainObj ? extractStatNum(tMainObj.text) : 13100;
+    const mainDiff = Math.max(0, tMainVal - pMainVal);
+    const wMain = mainDiff > 0 ? (mainDiff / 1000) * 15 : 0.1;
+
+    const pPerks = pRolled.filter(l => l.isPerk || (!l.text.includes('Force') && !l.text.includes('Strength') && !l.text.includes('Dext') && !l.text.includes('Int') && !l.isFixed));
+    const tPerks = tRolled.filter(l => l.isPerk || (!l.text.includes('Force') && !l.text.includes('Strength') && !l.text.includes('Dext') && !l.text.includes('Int') && !l.isFixed));
+
+    const getPerkKey = (txt) => {
+      const l = (txt || '').toLowerCase();
+      for (const k of ['marteau', 'hammer', 'ferveur', 'fervor', 'précision', 'precision', 'coinçage', 'wedge', 'embuscade', 'ambush', 'poignard', 'dagger', 'ovation', 'cheers', 'exposition', 'expose']) {
+        if (l.includes(k)) return k.replace('hammer', 'marteau').replace('fervor', 'ferveur').replace('precision', 'précision').replace('wedge', 'coinçage').replace('ambush', 'embuscade').replace('dagger', 'poignard').replace('cheers', 'ovation').replace('expose', 'exposition');
+      }
+      return 'other';
+    };
+
+    let pairedP1 = pPerks[0] || null, pairedT1 = tPerks[0] || null;
+    let pairedP2 = pPerks[1] || null, pairedT2 = tPerks[1] || null;
+
+    if (pPerks.length > 0 && tPerks.length > 0) {
+      const p0Key = getPerkKey(pPerks[0].text);
+      const p1Key = pPerks[1] ? getPerkKey(pPerks[1].text) : null;
+      const t0Key = getPerkKey(tPerks[0].text);
+      const t1Key = tPerks[1] ? getPerkKey(tPerks[1].text) : null;
+
+      if (p1Key && p1Key === t0Key) {
+        pairedP1 = pPerks[1];
+        pairedT1 = tPerks[0];
+        pairedP2 = pPerks[0];
+        pairedT2 = tPerks[1] || null;
+      } else if (p0Key && p0Key === t1Key) {
+        pairedP1 = pPerks[0];
+        pairedT1 = tPerks[1];
+        pairedP2 = pPerks[1] || null;
+        pairedT2 = tPerks[0];
+      }
+    }
+
+    const estimatePerkPower = (line) => {
+      if (!line || line.isDead) return 0;
+      const txt = (line.text || '').toLowerCase();
+      if (txt.includes('ferveur') || txt.includes('fervor')) return 5.5;
+      if (txt.includes('marteau') || txt.includes('hammer')) {
+        return txt.includes('10%') ? 4.8 : (txt.includes('8.4%') ? 3.8 : 3.0);
+      }
+      if (txt.includes('précision') || txt.includes('precision')) {
+        return txt.includes('5%') ? 5.0 : 3.8;
+      }
+      if (txt.includes('coinçage') || txt.includes('wedge')) return 2.5;
+      if (txt.includes('embuscade') || txt.includes('ambush')) return 3.2;
+      if (txt.includes('poignard') || txt.includes('dagger')) return 6.0;
+      if (txt.includes('ovation') || txt.includes('cheers')) return 6.0;
+      if (txt.includes('exposition') || txt.includes('expose')) return 5.5;
+      if (line.rollTier === 'passif') return 4.5;
+      if (line.rollTier === 'high') return 3.5;
+      return 2.0;
+    };
+
+    const pP1Eff = estimatePerkPower(pairedP1);
+    const pP2Eff = estimatePerkPower(pairedP2);
+    const tP1Eff = estimatePerkPower(pairedT1);
+    const tP2Eff = estimatePerkPower(pairedT2);
+
+    const diffP1 = Math.max(0.1, tP1Eff - pP1Eff);
+    const diffP2 = Math.max(0.1, tP2Eff - pP2Eff);
+    const wPerk1 = diffP1 * 18;
+    const wPerk2 = diffP2 * 18;
+
+    const totalW = wCombat + wMain + wPerk1 + wPerk2;
+
+    const combatCp = Math.round((wCombat / totalW) * cpImpact);
+    const mainStatCp = Math.round((wMain / totalW) * cpImpact);
+    const perk1Cp = Math.round((wPerk1 / totalW) * cpImpact);
+    const perk2Cp = Math.max(0, cpImpact - (combatCp + mainStatCp + perk1Cp));
+
+    return {
+      combatCp,
+      mainStatCp,
+      perk1Cp,
+      perk2Cp,
+      combatDiff,
+      mainDiff,
+      pairedP1,
+      pairedT1,
+      pairedP2,
+      pairedT2,
+      pMainObj,
+      tMainObj
+    };
+  }
+
   function buildBraceletBreakdownHtml(player, target, cpImpact, isEn) {
     const isSupport = player.role === 'support' || (player.className && ['Paladin', 'Bard', 'Artist'].some(s => (player.className || '').toLowerCase().includes(s.toLowerCase())));
     const pClassName = player.className || '';
@@ -18164,22 +18291,64 @@
       syn.rolledLines.forEach(l => tRolled.push(l));
     }
 
-    // 3. Construction des badges HTML
-    const renderLinesHtml = (lines) => {
-      return lines.map(l => `
+    // 3. Calcul de la distribution exacte du CP par composante / perk
+    const lineCps = computeBraceletLineCps(pFixed, pRolled, tFixed, tRolled, cpImpact, isSupport);
+
+    // 4. Rendu des badges du Joueur
+    const pFixedHtml = pFixed.map(l => `
+      <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
+        <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+        <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
+      </div>
+    `).join('');
+
+    const pRolledHtml = pRolled.map(l => `
+      <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
+        <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+        <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
+      </div>
+    `).join('');
+
+    // 5. Rendu des badges de la Cible avec pillule de gain individuel de CP
+    const tFixedHtml = tFixed.map((l, idx) => {
+      let lineCp = 0;
+      if (lineCps.combatCp > 0) {
+        if (tFixed.length >= 2) {
+          lineCp = idx === 0 ? Math.round(lineCps.combatCp * 0.55) : (lineCps.combatCp - Math.round(lineCps.combatCp * 0.55));
+        } else {
+          lineCp = lineCps.combatCp;
+        }
+      }
+      const cpBadge = lineCp > 0 ? `<span class="line-cp-pill">+${lineCp} CP</span>` : '';
+      return `
         <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
           <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          ${cpBadge}
           <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
         </div>
-      `).join('');
-    };
+      `;
+    }).join('');
 
-    const pFixedHtml = renderLinesHtml(pFixed);
-    const pRolledHtml = renderLinesHtml(pRolled);
-    const tFixedHtml = renderLinesHtml(tFixed);
-    const tRolledHtml = renderLinesHtml(tRolled);
+    const tRolledHtml = tRolled.map(l => {
+      let lineCp = 0;
+      if (lineCps.mainStatCp > 0 && lineCps.tMainObj && l.text === lineCps.tMainObj.text) {
+        lineCp = lineCps.mainStatCp;
+      } else if (lineCps.perk1Cp > 0 && lineCps.pairedT1 && l.text === lineCps.pairedT1.text) {
+        lineCp = lineCps.perk1Cp;
+      } else if (lineCps.perk2Cp > 0 && lineCps.pairedT2 && l.text === lineCps.pairedT2.text) {
+        lineCp = lineCps.perk2Cp;
+      }
+      const cpBadge = lineCp > 0 ? `<span class="line-cp-pill">+${lineCp} CP</span>` : '';
+      return `
+        <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
+          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          ${cpBadge}
+          <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
+        </div>
+      `;
+    }).join('');
 
-    // 4. Formulation du verdict personnalisé
+    // 6. Formulation du verdict personnalisé
     const pDeadStats = pRolled.filter(l => l.isDead).concat(pFixed.filter(l => l.isDead));
     const pHasDead = pDeadStats.length > 0;
     let verdictText = '';
@@ -18275,6 +18444,56 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé des Gains par Perk / Stat -->
+        <div class="bracelet-compare-table-wrap">
+          <div class="bracelet-compare-table-title">
+            <span>📊</span>
+            <strong>${isEn ? 'Individual CP Contribution by Perk & Stat' : 'Décomposition Détaillée des Gains de CP par Statistique & Passif'}</strong>
+          </div>
+          <table class="bracelet-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Component / Perk' : 'Composante / Ligne'}</th>
+                <th>${isEn ? 'Your Bracelet' : 'Votre Bracelet'}</th>
+                <th>${isEn ? 'Benchmark Target' : 'Référence Cible'}</th>
+                <th style="text-align:right;">${isEn ? 'CP Delta' : 'Gain en CP'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>${isEn ? 'Fixed Combat Stats' : 'Stats de Combat Fixes'}</strong></td>
+                <td>${pFixed.map(l => l.text).join(' & ') || '—'}</td>
+                <td>${tFixed.map(l => l.text).join(' & ') || '—'}</td>
+                <td class="col-cp-gain">${lineCps.combatCp > 0 ? `+${lineCps.combatCp} CP` : '= 0 CP'}</td>
+              </tr>
+              <tr>
+                <td><strong>${isEn ? 'Main Stat Roll' : 'Statistique Principale'}</strong></td>
+                <td>${lineCps.pMainObj ? lineCps.pMainObj.text : '—'}</td>
+                <td>${lineCps.tMainObj ? lineCps.tMainObj.text : '—'}</td>
+                <td class="col-cp-gain">${lineCps.mainStatCp > 0 ? `+${lineCps.mainStatCp} CP` : '= 0 CP'}</td>
+              </tr>
+              <tr>
+                <td><strong>${isEn ? 'Special Passive #1' : 'Passif Spécial #1'}</strong></td>
+                <td>${lineCps.pairedP1 ? lineCps.pairedP1.text : (isEn ? 'Empty Slot' : 'Emplacement Libre')}</td>
+                <td>${lineCps.pairedT1 ? lineCps.pairedT1.text : (isEn ? 'Passive Perk #1' : 'Passif #1')}</td>
+                <td class="col-cp-gain">${lineCps.perk1Cp > 0 ? `+${lineCps.perk1Cp} CP` : '= 0 CP'}</td>
+              </tr>
+              <tr>
+                <td><strong>${isEn ? 'Special Passive #2' : 'Passif Spécial #2'}</strong></td>
+                <td>${lineCps.pairedP2 ? lineCps.pairedP2.text : (isEn ? 'Empty Slot' : 'Emplacement Libre')}</td>
+                <td>${lineCps.pairedT2 ? lineCps.pairedT2.text : (isEn ? 'Passive Perk #2' : 'Passif #2')}</td>
+                <td class="col-cp-gain">${lineCps.perk2Cp > 0 ? `+${lineCps.perk2Cp} CP` : '= 0 CP'}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Total Bracelet System Gap' : 'Gain Total du Système Bracelet'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
 
         <div class="bracelet-verdict-banner">

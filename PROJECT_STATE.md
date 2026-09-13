@@ -67,7 +67,7 @@ Document de transmission complet du projet pour reprise instantanée de contexte
     - *Anneau #1* : Taux Critique (+1.55%) [✨ Roll Élevé], Récupération PV en Combat (+10) [⚠️ Ligne Inutile], Points de Vie Max (+3250) [⚠️ Ligne Inutile].
     - *Anneau #2* : Puissance d'Attaque (+195) [🔹 Roll Moyen], Effet Augmentation Dégâts d'Allié (+2.00%) [⚠️ Ligne Inutile], Dégâts Critiques (+4.00%) [✨ Roll Élevé].
   - **Lignes Référence Best-in-Slot** : Véritables High Rolls T4 par slot pour DPS et Supports.
-- **Cache Busters actuels** : `calculator.js?v=12.0`, `style.css?v=8.0`.
+- **Cache Busters actuels** : `calculator.js?v=13.0`, `style.css?v=9.0`.
 
 ### D. Dépliage Interactif du Bracelet T4 (Stats & Passifs)
 - **Bouton `➕` / `➖`** : Ajouté directement sur la ligne « 🔮 Bracelet T4 (Stats & Passifs) » (`rowSysBracelet`) du tableau de benchmark.
@@ -76,6 +76,16 @@ Document de transmission complet du projet pour reprise instantanée de contexte
   - **Carte Cible Référence** : Affiche les stats fixes de la cible (ex: `Critique +81`, `Rapidité +100`) et ses passifs (ex: `Embuscade +3%`, `Marteau +6.8%` / `Ferveur +5.5%`), ou génère une référence BiS canonique selon le rôle (DPS / Support).
   - **Détection des Stats Mortes** : Identifie et signale en rouge `⚠️ [Stat Morte]` les caractéristiques inefficaces (ex: Vitalité sur DPS, ou stats critiques sur Support).
 - **Bannière d'Optimisation & Diagnostic** : Recommandation claire et actionnable pour combler l'écart de CP (ex: reroll de stat morte, passage au palier max de stat principale ou reroll de passif BiS).
+
+### E. Décomposition Détaillée des Gains de CP par Statistique & Passif (Mini-Tableau Bracelet)
+- **Tableau Intégré `bracelet-compare-table`** : Inséré directement dans la zone dépliée sous les deux cartes de bracelet.
+- **Ventilation Ligne par Ligne** :
+  1. **Stats de Combat Fixes** : Compare le cumul des stats primaires (Spécialisation, Critique, Rapidité) et attribue le gain en CP correspondant (ex: `+18 CP`).
+  2. **Statistique Principale** : Compare le palier de Force / Dextérité / Intelligence (ex: `Force +11 904` vs `Force +13 100`) et attribue le gain en CP (ex: `+13 CP`).
+  3. **Passif Spécial #1** : Appariement intelligent des passifs identiques (ex: `Marteau +8.4%` vs `Marteau +10%`) avec gain en CP dédié (ex: `+13 CP`).
+  4. **Passif Spécial #2** : Comparaison du second passif (ex: `Coinçage +3%` vs `Ferveur +5.5%`) avec gain en CP dédié (ex: `+38 CP`).
+- **Badges Visuels Intégrés (`line-cp-pill`)** : Des pilules cyan `+X CP` sont également incrustées directement sur les badges de la carte cible pour une lecture visuelle immédiate.
+- **Garantie Mathématique Stricte** : La somme des 4 composantes est rigoureusement égale à 100% du `cpImpact` du système bracelet (ex: $18 + 13 + 13 + 38 = 82\text{ CP}$).
 
 ---
 

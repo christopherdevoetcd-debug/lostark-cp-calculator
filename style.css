@@ -5154,6 +5154,84 @@ select optgroup {
   border-color: rgba(52, 211, 153, 0.3);
 }
 
+.line-cp-pill {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10.5px;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+/* TABLEAU COMPARATIF DES GAINS DE CP PAR PERK / STAT */
+.bracelet-compare-table-wrap {
+  margin-top: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+.bracelet-compare-table-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.bracelet-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.bracelet-compare-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 41, 59, 0.4);
+}
+.bracelet-compare-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+.bracelet-compare-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+.bracelet-compare-table td.col-cp-gain {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #34d399;
+  white-space: nowrap;
+}
+.bracelet-compare-table tr.row-total td {
+  border-top: 2px solid rgba(168, 85, 247, 0.4);
+  border-bottom: none;
+  padding-top: 10px;
+  padding-bottom: 6px;
+  font-size: 12.5px;
+  color: #f1f5f9;
+  background: rgba(168, 85, 247, 0.06);
+}
+.bracelet-compare-table td.col-cp-gain.total {
+  font-size: 13px;
+  color: #34d399;
+}
+
 .bracelet-verdict-banner {
   margin-top: 14px;
   padding: 12px 16px;
