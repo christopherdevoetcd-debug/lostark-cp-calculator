@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="paladinGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="#fbbf24" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0c0e14" stop-opacity="0.95"/>
+    </radialGradient>
+    <linearGradient id="holyGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="shieldBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="24" fill="#0f172a"/>
+  <circle cx="100" cy="100" r="90" fill="url(#paladinGlow)"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4 4" opacity="0.6"/>
+  
+  <!-- Shield Icon -->
+  <path d="M 100 40 L 145 60 C 145 115 100 155 100 155 C 100 155 55 115 55 60 Z" fill="url(#shieldBlue)" stroke="url(#holyGold)" stroke-width="4"/>
+  <!-- Cross in Shield -->
+  <path d="M 100 65 L 100 130 M 75 88 L 125 88" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <!-- Holy Aura Sunburst -->
+  <circle cx="100" cy="88" r="14" fill="none" stroke="#fde68a" stroke-width="2.5"/>
+  <text x="100" y="180" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#fde68a" text-anchor="middle" letter-spacing="1">PALADIN</text>
+</svg>

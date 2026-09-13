@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="souleaterGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="#e879f9" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0c0e14" stop-opacity="0.95"/>
+    </radialGradient>
+    <linearGradient id="scythePurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="24" fill="#0f172a"/>
+  <circle cx="100" cy="100" r="90" fill="url(#souleaterGlow)"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="#c084fc" stroke-width="2" stroke-dasharray="4 4" opacity="0.6"/>
+
+  <!-- Soul Scythe Blade -->
+  <path d="M 60 145 C 75 110 100 80 140 55 C 130 80 115 115 110 145 C 95 130 75 140 60 145 Z" fill="url(#scythePurple)" stroke="#e879f9" stroke-width="3"/>
+  <!-- Soul Flame -->
+  <path d="M 125 50 Q 155 40 145 75 Q 165 65 145 95 C 135 75 145 60 125 50 Z" fill="#f43f5e" opacity="0.8"/>
+  <circle cx="95" cy="105" r="8" fill="#fbcfe8" filter="drop-shadow(0 0 6px #e879f9)"/>
+  <text x="100" y="180" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#f472b6" text-anchor="middle" letter-spacing="1">SOULEATER</text>
+</svg>

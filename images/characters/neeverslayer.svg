@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="slayerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.45"/>
+      <stop offset="70%" stop-color="#b91c1c" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#0c0e14" stop-opacity="0.95"/>
+    </radialGradient>
+    <linearGradient id="bloodBlade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185"/>
+      <stop offset="50%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="24" fill="#0f172a"/>
+  <circle cx="100" cy="100" r="90" fill="url(#slayerGlow)"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="4 4" opacity="0.6"/>
+
+  <!-- Greatsword -->
+  <path d="M 96 35 L 104 35 L 112 120 L 100 135 L 88 120 Z" fill="url(#bloodBlade)" stroke="#ffffff" stroke-width="2"/>
+  <!-- Crossguard & Hilt -->
+  <rect x="75" y="120" width="50" height="8" rx="3" fill="#fbbf24"/>
+  <rect x="97" y="128" width="6" height="25" rx="2" fill="#78350f"/>
+  <circle cx="100" cy="156" r="6" fill="#fbbf24"/>
+  <!-- Berserk Flames -->
+  <path d="M 70 80 Q 85 60 88 95 Q 100 65 112 95 Q 115 60 130 80 Q 120 115 100 120 Q 80 115 70 80 Z" fill="none" stroke="#fb7185" stroke-width="2" opacity="0.7"/>
+  <text x="100" y="180" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#fb7185" text-anchor="middle" letter-spacing="1">SLAYER</text>
+</svg>

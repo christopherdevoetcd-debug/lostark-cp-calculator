@@ -1,0 +1,2657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur & Prédicteur CP / iLvl - Lost Ark T4</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpolygon%20points%3D%2250%2C8%2092%2C50%2050%2C92%208%2C50%22%20fill%3D%22%230b1120%22%20stroke%3D%22%23f59e0b%22%20stroke-width%3D%227%22%2F%3E%3Ctext%20x%3D%2250%22%20y%3D%2261%22%20font-size%3D%2232%22%20font-weight%3D%22bold%22%20fill%3D%22%23fbbf24%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%3ECP%3C%2Ftext%3E%3C%2Fsvg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=7.0">
+</head>
+<body>
+  <div class="app-container">
+    <!-- En-tête épuré -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="logo-area">
+          <span class="badge-t4" data-i18n="app_badge">LOST ARK T4</span>
+          <h1 data-i18n="app_title">Calculateur & Prédicteur de CP</h1>
+          <p class="subtitle" data-i18n="app_subtitle">Simulateur d'iLvl et de Combat Power basé sur les courbes réelles de lostark.bible</p>
+        </div>
+
+        <!-- Action Import & Rôle & Langue -->
+        <div class="header-actions" style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <button type="button" class="btn-import-bible" id="btnOpenImportModal">
+            🌐 <span data-i18n="btn_import_bible">Importer (lostark.bible)</span>
+          </button>
+
+          <!-- Sélecteur de Rôle épuré -->
+          <div class="role-switch-container">
+            <span class="switch-label" data-i18n="role_label">Rôle :</span>
+            <div class="role-toggle" id="roleToggle">
+              <button type="button" class="role-btn active" data-role="support" id="roleSupport">
+                <span class="icon">🛡️</span> <span data-i18n="role_support">Support</span>
+              </button>
+              <button type="button" class="role-btn" data-role="dps" id="roleDps">
+                <span class="icon">⚔️</span> <span data-i18n="role_dps">DPS</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sélecteur de Langue (FR / EN) -->
+          <div class="lang-switch-container">
+            <div class="lang-toggle" id="langToggle">
+              <button type="button" class="lang-btn active" data-lang="fr" id="langFr" title="Français">
+                🇫🇷 FR
+              </button>
+              <button type="button" class="lang-btn" data-lang="en" id="langEn" title="English">
+                🇬🇧 EN
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sélecteur de Roster Multi-Utilisateurs (Presets dynamiques) -->
+      <div class="presets-bar">
+        <div class="presets-left-group">
+          <div class="presets-title-area">
+            <span class="presets-title" id="presetsTitle" data-i18n="roster_label">Roster :</span>
+            <span class="roster-status-badge" id="rosterStatusBadge" data-i18n="roster_badge_demo">Démo</span>
+          </div>
+          <div class="presets-list" id="presetsList">
+            <!-- Injecté dynamiquement par calculator.js -->
+          </div>
+        </div>
+
+        <div class="presets-actions">
+          <button type="button" class="btn-sync-roster-pill" id="btnSyncRosterNav" title="Synchroniser votre propre Roster depuis lostark.bible">
+            <span>🌐</span> <strong data-i18n="btn_sync_roster">Synchroniser mon Roster</strong>
+          </button>
+          <button type="button" class="btn-action-pill" id="btnManageRoster" title="Gérer ou actualiser vos personnages" style="display: none;">
+            ⚙️ Gérer (<span id="rosterCountTag">0</span>)
+          </button>
+          <button type="button" class="btn-action-pill" id="btnSwitchDemoRoster" title="Basculer vers le Roster Démo" style="display: none;">
+            <span data-i18n="btn_switch_demo">↺ Roster Démo</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bannière Visuelle du Personnage Actif (Grand Format) -->
+      <div class="active-character-card role-support" id="activeCharacterCard">
+        <!-- Portrait Haute Définition à gauche -->
+        <div class="char-avatar-wrapper">
+          <img id="charAvatarImg" class="char-avatar-img" src="images/classes/paladin.png" alt="Portrait du Personnage">
+          <div class="char-avatar-overlay"></div>
+          <span class="char-avatar-role-badge" id="charAvatarRoleBadge"><img class="class-sigil-badge" src="images/classes/paladin.png" alt=""> <span>Support</span></span>
+        </div>
+
+        <!-- Colonne d'Informations et Métriques détaillées à droite -->
+        <div class="char-info-col">
+          <div class="char-identity-row">
+            <div class="char-name-group">
+              <h2 id="charCardName" data-i18n="char_active_default">Personnage Actif</h2>
+              <span class="char-class-tag" id="charCardClass"><img class="class-sigil-tag" src="images/classes/paladin.png" alt=""> <span>Paladin</span></span>
+              <span class="char-server-tag" id="charCardServer">Elpon (CE)</span>
+              <button type="button" class="btn-share-character" id="btnShareCharacter" title="Copier le lien direct de ce personnage pour l'envoyer à un ami">
+                <span>🔗</span> <span data-i18n="btn_share_char">Partager</span>
+              </button>
+            </div>
+            <div class="char-ilvl-container">
+              <span class="ilvl-label" data-i18n="card_ilvl_label">Item Level</span>
+              <span class="char-ilvl-tag" id="charCardIlvl">1750.00</span>
+            </div>
+          </div>
+
+          <!-- Grille des 4 métriques clés -->
+          <div class="char-metrics-grid">
+            <div class="char-metric-box metric-cp">
+              <div class="metric-icon">🏆</div>
+              <div class="metric-content">
+                <span class="metric-label" data-i18n="card_metric_cp">Combat Power Réel</span>
+                <strong class="metric-value cp" id="charCardCp">3 368 CP</strong>
+              </div>
+            </div>
+
+            <div class="char-metric-box">
+              <div class="metric-icon">⚔️</div>
+              <div class="metric-content">
+                <span class="metric-label" data-i18n="card_metric_weapon">Niveau d'Arme T4</span>
+                <strong class="metric-value" id="charCardWeapon">+17</strong>
+              </div>
+            </div>
+
+            <div class="char-metric-box">
+              <div class="metric-icon">🛡️</div>
+              <div class="metric-content">
+                <span class="metric-label" data-i18n="card_metric_armor">Armures T4</span>
+                <strong class="metric-value" id="charCardArmor">+14 / +15</strong>
+              </div>
+            </div>
+
+            <div class="char-metric-box metric-adv">
+              <div class="metric-icon">✨</div>
+              <div class="metric-content">
+                <span class="metric-label" data-i18n="card_metric_adv">Affinage Avancé</span>
+                <strong class="metric-value adv" id="charCardAdv">+40</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ligne inférieure : Statut -->
+          <div class="char-footer-row">
+            <div class="char-sub-info">
+              <span class="sub-pill"><span data-i18n="card_level_prefix">Niveau</span> <strong>70</strong></span>
+              <span class="sub-pill" id="charCardRoster">Roster <strong>319</strong></span>
+              <span class="sub-pill source-pill" data-i18n="card_source_live">🌐 Source : lostark.bible (Live)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation onglets épurée -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-predictor">
+        <span class="tab-icon">🔮</span>
+        <span data-i18n="tab_predictor">Prédicteur Rapide (iLvl ➔ CP)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-advisor">
+        <span class="tab-icon">🎯</span>
+        <span data-i18n="tab_advisor">Smart Advisor (Rentabilité)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-honing">
+        <span class="tab-icon">🔨</span>
+        <span data-i18n="tab_honing">Simulateur d'Affinage par Pièce</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-arkpassive">
+        <span class="tab-icon">🌟</span>
+        <span data-i18n="tab_arkpassive">Simulateur Ark Passive (T4)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-optimization">
+        <span class="tab-icon">💎</span>
+        <span data-i18n="tab_optimization">Optimisation T4 (Accessoires, Bracelets & Gemmes)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-canonical">
+        <span class="tab-icon">📐</span>
+        <span data-i18n="tab_canonical">Moteur Canonique (lostark.bible)</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-raidtracker">
+        <span class="tab-icon">💰</span>
+        <span data-i18n="tab_raidtracker">Suivi des Raids & Gold</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-benchmark">
+        <span class="tab-icon">⚖️</span>
+        <span data-i18n="tab_benchmark">Benchmark & Comparateur</span>
+      </button>
+    </div>
+
+    <!-- Contenu Principal -->
+    <main class="main-content">
+      
+      <!-- ONGLET 1 : PRÉDICTEUR RAPIDE -->
+      <section class="tab-pane active" id="tab-predictor">
+        <div class="grid-split">
+          <!-- Formulaire de saisie -->
+          <div class="card input-card">
+            <div class="card-header">
+              <h2 data-i18n="pred_input_title">Paramètres Actuels & Objectif</h2>
+              <span class="info-pill" data-i18n="pred_realtime">Temps réel</span>
+            </div>
+
+            <div class="form-group">
+              <div class="label-row">
+                <label for="currentIlvl" data-i18n="pred_cur_ilvl">Niveau d'Objet Actuel (iLvl)</label>
+                <span class="val-display" id="dispCurrentIlvl">1740.00</span>
+              </div>
+              <div class="slider-input-combo">
+                <input type="range" id="sliderCurrentIlvl" min="1640" max="1800" step="0.83" value="1740">
+                <input type="number" id="numCurrentIlvl" min="1640" max="1800" step="0.83" value="1740">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="label-row">
+                <label for="currentCp" data-i18n="pred_cur_cp">Combat Power Actuel (CP)</label>
+                <span class="val-display" id="dispCurrentCp">3 235</span>
+              </div>
+              <div class="slider-input-combo">
+                <input type="range" id="sliderCurrentCp" min="600" max="7500" step="10" value="3235">
+                <input type="number" id="numCurrentCp" min="600" max="7500" step="1" value="3235">
+              </div>
+              <small class="helper-text" data-i18n="pred_cp_helper">CP actuel tel qu'affiché sur ta fiche lostark.bible.</small>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-group target-group">
+              <div class="label-row">
+                <label for="targetIlvl" class="highlight-label" data-i18n="pred_target_ilvl">🎯 iLvl Cible (Objectif)</label>
+                <span class="val-display target" id="dispTargetIlvl">1770.00</span>
+              </div>
+              <div class="slider-input-combo">
+                <input type="range" id="sliderTargetIlvl" min="1640" max="1820" step="0.83" value="1770">
+                <input type="number" id="numTargetIlvl" min="1640" max="1820" step="0.83" value="1770">
+              </div>
+              <!-- Boutons de saut rapide -->
+              <div class="quick-targets">
+                <button type="button" class="target-btn" data-target="1750">1750</button>
+                <button type="button" class="target-btn" data-target="1760">1760</button>
+                <button type="button" class="target-btn active" data-target="1770">1770</button>
+                <button type="button" class="target-btn" data-target="1780">1780</button>
+                <button type="button" class="target-btn" data-target="1790">1790</button>
+              </div>
+            </div>
+
+            <!-- Option d'optimisation annexe -->
+            <div class="form-group gem-opt-group">
+              <label for="gemLevelSelect" data-i18n="pred_gem_label">Amélioration des Gemmes T4 (Simulation) :</label>
+              <select id="gemLevelSelect" class="clean-select">
+                <option value="current" data-i18n="pred_gem_opt_current">Garder les gemmes actuelles (aucun changement)</option>
+                <option value="major8" id="optGemMajor8" data-i18n="pred_gem_opt_major8">2-3 Gemmes clés Niv. 8 (Buffs AP / Top Skills) (+80 à +95 CP)</option>
+                <option value="full8" id="optGemFull8" data-i18n="pred_gem_opt_full8">Deck Complet 11x Gemmes Niv. 8 (+200 à +355 CP)</option>
+                <option value="full9" id="optGemFull9" data-i18n="pred_gem_opt_full9">Deck Complet 11x Gemmes Niv. 9 (+550 à +745 CP)</option>
+                <option value="full10" id="optGemFull10" data-i18n="pred_gem_opt_full10">Deck Complet 11x Gemmes Niv. 10 Endgame (+1 000 à +1 250 CP)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Carte de Résultat Prédictif -->
+          <div class="card result-card">
+            <div class="card-header">
+              <h2 data-i18n="pred_res_title">Résultat de la Prédiction</h2>
+              <span class="model-badge" id="roleBadge" data-i18n="pred_model_support">Modèle Support</span>
+            </div>
+
+            <!-- Mode de calcul : Affinage Pur vs Évolution Globale -->
+            <div style="display: flex; gap: 6px; margin-bottom: 14px;" id="predModeToggle">
+              <button type="button" class="role-btn active" id="btnPredModeHoning" style="flex: 1; padding: 6px 10px; font-size: 11.5px; border-radius: 4px; text-align: center;">
+                <span data-i18n="pred_mode_honing">🔨 Affinage Pur (Stuff Seul)</span>
+              </button>
+              <button type="button" class="role-btn" id="btnPredModeGlobal" style="flex: 1; padding: 6px 10px; font-size: 11.5px; border-radius: 4px; text-align: center;">
+                <span data-i18n="pred_mode_global">🌟 Évolution Globale (Endgame)</span>
+              </button>
+            </div>
+
+            <div class="big-result-box">
+              <span class="result-label"><span data-i18n="pred_cp_at">Combat Power Estimé à</span> <strong id="resTargetIlvlText">1770.00</strong> :</span>
+              <div class="result-number-row">
+                <span class="big-cp" id="predictedCp">4 885</span>
+                <span class="cp-unit">CP</span>
+              </div>
+              <div class="range-text" id="predictedRange">Fourchette estimée : 4 810 – 4 960 CP</div>
+            </div>
+
+            <div class="stats-summary-grid">
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="pred_diff_cp">Gain de CP Net</span>
+                <span class="stat-val positive" id="diffCp">+1 650 CP</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="pred_diff_ilvl">Progression iLvl</span>
+                <span class="stat-val" id="diffIlvl">+30.00 iLvl</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="pred_efficiency">Efficacité Moyenne</span>
+                <span class="stat-val" id="efficiencyCp">55.0 CP / iLvl</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="pred_bracket">Tranche CP (Bracket)</span>
+                <span class="stat-val highlight" id="bracketText">4500 - 5000</span>
+              </div>
+            </div>
+
+            <!-- Jauge visuelle -->
+            <div class="gauge-container">
+              <div class="gauge-labels">
+                <span data-i18n="pred_gauge_start">1640 (Départ T4)</span>
+                <span id="gaugeCenterLabel">Actuel : 1740</span>
+                <span data-i18n="pred_gauge_end">1800+ (Endgame)</span>
+              </div>
+              <div class="gauge-track">
+                <div class="gauge-bar-current" id="gaugeCurrent" style="width: 62.5%;"></div>
+                <div class="gauge-bar-target" id="gaugeTarget" style="width: 81.25%;"></div>
+              </div>
+            </div>
+
+            <!-- Notes analytiques dynamiques -->
+            <div class="analysis-box" id="analysisNote">
+              <div class="analysis-title" data-i18n="pred_analysis_title">💡 Analyse de ton saut d'iLvl :</div>
+              <p id="analysisText">
+                Passer de 1740 à 1770 génère environ +1 650 CP avec une efficacité estimée de ~55 CP / iLvl selon la courbe de progression observée sur lostark.bible.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ONGLET 2 : SMART UPGRADE ADVISOR (PLANIFICATEUR RENTABLE) -->
+      <section class="tab-pane" id="tab-advisor">
+        <div class="advisor-container">
+          
+          <!-- Carte En-tête / Contrôles de Planification -->
+          <div class="card advisor-control-card">
+            <div class="advisor-header">
+              <div class="advisor-title-area">
+                <span class="badge-advisor" data-i18n="adv_badge">✨ ALGORITHME DE RENTABILITÉ EUC</span>
+                <h2 data-i18n="adv_title">Smart Upgrade Advisor — Planificateur Rentable</h2>
+                <p class="subtitle" data-i18n="adv_subtitle">Calcule automatiquement le chemin optimal le moins cher en Gold pour maximiser vos CP et atteindre vos paliers de raid.</p>
+              </div>
+              <div class="advisor-char-pill" id="advisorCharPill">
+                <span class="advisor-char-name" id="advisorCharName" data-i18n="char_active_default">Personnage Actif</span>
+                <span class="advisor-char-stats" id="advisorCharStats">1750.00 iLvl • 3 368 CP</span>
+              </div>
+            </div>
+
+            <!-- Sélection du Mode d'Optimisation -->
+            <div class="advisor-modes-grid">
+              <div class="advisor-mode-option">
+                <label class="advisor-mode-label" data-i18n="adv_mode_label">Mode d'Optimisation :</label>
+                <div class="role-toggle advisor-mode-toggle" id="advisorModeToggle">
+                  <button type="button" class="role-btn active" id="btnAdvisorModeBudget" data-mode="budget" data-i18n="adv_mode_budget_btn">💰 Budget Gold</button>
+                  <button type="button" class="role-btn" id="btnAdvisorModeIlvl" data-mode="ilvl" data-i18n="adv_mode_ilvl_btn">🎯 Objectif iLvl</button>
+                  <button type="button" class="role-btn" id="btnAdvisorModeCp" data-mode="cp" data-i18n="adv_mode_cp_btn">⚡ Objectif CP</button>
+                </div>
+              </div>
+
+              <!-- Champ Dynamique : Budget Gold -->
+              <div class="advisor-input-wrapper" id="advInputBudgetGroup">
+                <div class="label-row">
+                  <label for="advInputBudget" data-i18n="adv_budget_label">Budget en Gold disponible :</label>
+                  <span class="val-display" id="dispAdvisorBudget">500 000 g</span>
+                </div>
+                <div class="advisor-quick-pills" id="advQuickBudgetBtns">
+                  <button type="button" class="btn-action-pill" data-val="100000">100k</button>
+                  <button type="button" class="btn-action-pill" data-val="250000">250k</button>
+                  <button type="button" class="btn-action-pill active" data-val="500000">500k</button>
+                  <button type="button" class="btn-action-pill" data-val="1000000">1M</button>
+                  <button type="button" class="btn-action-pill" data-val="2000000">2M</button>
+                </div>
+                <input type="number" id="advInputBudget" class="clean-number-input" value="500000" min="10000" step="10000">
+              </div>
+
+              <!-- Champ Dynamique : Objectif iLvl -->
+              <div class="advisor-input-wrapper" id="advInputIlvlGroup" style="display: none;">
+                <div class="label-row">
+                  <label for="advInputIlvl" data-i18n="adv_target_ilvl_label">Niveau d'Objet Cible (iLvl) :</label>
+                  <span class="val-display" id="dispAdvisorIlvl">1760.00</span>
+                </div>
+                <div class="advisor-quick-pills" id="advQuickIlvlBtns">
+                  <button type="button" class="btn-action-pill" data-diff="5">+5 iLvl</button>
+                  <button type="button" class="btn-action-pill active" data-diff="10">+10 iLvl</button>
+                  <button type="button" class="btn-action-pill" data-diff="15">+15 iLvl</button>
+                  <button type="button" class="btn-action-pill" data-diff="20">+20 iLvl</button>
+                </div>
+                <input type="number" id="advInputIlvl" class="clean-number-input" value="1760" min="1640" max="1800" step="0.83">
+              </div>
+
+              <!-- Champ Dynamique : Objectif CP -->
+              <div class="advisor-input-wrapper" id="advInputCpGroup" style="display: none;">
+                <div class="label-row">
+                  <label for="advInputCp" data-i18n="adv_target_cp_label">Gain de Combat Power Visé :</label>
+                  <span class="val-display" id="dispAdvisorCp">+300 CP</span>
+                </div>
+                <div class="advisor-quick-pills" id="advQuickCpBtns">
+                  <button type="button" class="btn-action-pill" data-diff="100">+100 CP</button>
+                  <button type="button" class="btn-action-pill" data-diff="200">+200 CP</button>
+                  <button type="button" class="btn-action-pill active" data-diff="300">+300 CP</button>
+                  <button type="button" class="btn-action-pill" data-diff="500">+500 CP</button>
+                  <button type="button" class="btn-action-pill" data-diff="800">+800 CP</button>
+                </div>
+                <input type="number" id="advInputCp" class="clean-number-input" value="300" min="50" max="2000" step="50">
+              </div>
+            </div>
+
+            <!-- Filtres de Catégories d'Amélioration (Scope) -->
+            <div class="advisor-scope-section">
+              <span class="scope-title" data-i18n="adv_scope_title">Catégories autorisées pour le planificateur :</span>
+              <div class="scope-checkboxes">
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeGear" checked>
+                  <span data-i18n="adv_scope_gear">🔨 Affinage T4 (Arme & Armures)</span>
+                </label>
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeAdvHoning" checked>
+                  <span data-i18n="adv_scope_adv">⭐ Affinage Avancé (+10, +20...)</span>
+                </label>
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeGems" checked>
+                  <span data-i18n="adv_scope_gems">💎 Gemmes T4 (Niv. 8, Niv. 9)</span>
+                </label>
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeArkGrid" checked>
+                  <span data-i18n="adv_scope_arkgrid">☀️ Grille d'Ark (Cœurs 17P)</span>
+                </label>
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeAcc" checked>
+                  <span data-i18n="adv_scope_acc">💍 Accessoires Polish (Lignes Arme %)</span>
+                </label>
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeEngravings" checked>
+                  <span data-i18n="adv_scope_books">📜 Gravures Reliques T4 (Livres)</span>
+                </label>
+                <label class="scope-checkbox-label">
+                  <input type="checkbox" id="advScopeBracelet" checked>
+                  <span data-i18n="adv_scope_bracelet">📿 Bracelet T4 (Perks BiS & Reroll)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Bouton de Calcul -->
+            <div class="advisor-action-row">
+              <button type="button" class="btn-calc-advisor" id="btnRunAdvisor">
+                <span data-i18n="adv_btn_calc">🚀 Calculer la Feuille de Route Optimale</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Carte Synthèse & KPI du Plan -->
+          <div class="advisor-kpi-grid" id="advisorKpiGrid">
+            <div class="advisor-kpi-card highlight-cp">
+              <div class="kpi-label" data-i18n="adv_kpi_total_gain">Gain Total Estimé</div>
+              <div class="kpi-value" id="advResGainCp">+0 CP</div>
+              <div class="kpi-sub" id="advResProjectedCp">CP Projeté : 3 368 CP</div>
+            </div>
+            <div class="advisor-kpi-card highlight-ilvl">
+              <div class="kpi-label" data-i18n="adv_kpi_ilvl_prog">Progression iLvl</div>
+              <div class="kpi-value" id="advResNewIlvl">1750.00</div>
+              <div class="kpi-sub" id="advResDiffIlvl">+0.00 iLvl</div>
+            </div>
+            <div class="advisor-kpi-card highlight-gold">
+              <div class="kpi-label" data-i18n="adv_kpi_total_cost">Coût Total Estimé</div>
+              <div class="kpi-value" id="advResTotalGold">0 g</div>
+              <div class="kpi-sub" id="advResBudgetRemaining">Budget restant : 500 000 g</div>
+            </div>
+            <div class="advisor-kpi-card highlight-roi">
+              <div class="kpi-label" data-i18n="adv_kpi_avg_roi_lbl">Rentabilité Moyenne</div>
+              <div class="kpi-value" id="advResAvgRoi">—</div>
+              <div class="kpi-sub" data-i18n="adv_kpi_avg_roi_sub">Indice coût / gain de CP</div>
+            </div>
+          </div>
+
+          <!-- Carte Diagnostic & Potentiel du Bracelet T4 -->
+          <div class="card advisor-bracelet-card" id="advisorBraceletCard">
+            <div class="card-header bracelet-diag-header">
+              <div class="bracelet-diag-title-area">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span class="step-icon-area" style="font-size: 20px;">📿</span>
+                  <h3 data-i18n="adv_brace_diag_title">Diagnostic & Potentiel du Bracelet T4</h3>
+                  <span class="bracelet-tier-badge good" id="advBraceTierBadge">Tier B • Bon</span>
+                </div>
+                <p class="subtitle" id="advBraceSubtitle" data-i18n="adv_brace_diag_sub">
+                  Évaluation d'efficacité globale, détection des stats mortes et procs BiS cibles pour votre classe.
+                </p>
+              </div>
+              <div class="bracelet-kpi-pill" id="advBraceGainPill">
+                <span class="kpi-tag" data-i18n="adv_brace_potential_gain">Gain potentiel :</span>
+                <strong id="advBraceGainVal">+240 CP</strong>
+              </div>
+            </div>
+
+            <div class="bracelet-diag-body">
+              <!-- Barre d'efficacité et score -->
+              <div class="bracelet-score-row">
+                <div class="bracelet-efficiency-meta">
+                  <span class="meta-label" data-i18n="adv_brace_eff_lbl">Efficacité globale estimée :</span>
+                  <strong class="meta-value" id="advBraceEffVal">8.00%</strong>
+                  <span class="meta-rating" id="advBraceRatingDesc">(Correct de transition • 1 stat morte détectée)</span>
+                </div>
+                <div class="bracelet-progress-track">
+                  <div class="bracelet-progress-bar" id="advBraceProgressBar" style="width: 57%;"></div>
+                </div>
+              </div>
+
+              <!-- 2 Colonnes : Lignes Actuelles vs Procs Cibles Recommandés -->
+              <div class="bracelet-columns-grid">
+                <!-- Colonne 1 : Analyse des lignes actuelles -->
+                <div class="bracelet-col current-lines-col">
+                  <div class="col-title" data-i18n="adv_brace_col_current">🔍 Lignes équipées sur votre bracelet :</div>
+                  <div class="bracelet-lines-list" id="advBraceLinesList">
+                    <!-- Rempli dynamiquement par calculator.js -->
+                  </div>
+                </div>
+
+                <!-- Colonne 2 : Procs BiS Recommandés sur mesure -->
+                <div class="bracelet-col bis-targets-col">
+                  <div class="col-title" data-i18n="adv_brace_col_targets">🎯 Procs BiS cibles à viser (Reroll / Achat) :</div>
+                  <div class="bracelet-targets-list" id="advBraceTargetsList">
+                    <!-- Rempli dynamiquement par calculator.js -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feuille de Route Détaillée (Timeline / Liste des Étapes) -->
+          <div class="card advisor-roadmap-card">
+            <div class="card-header roadmap-header">
+              <div>
+                <h2 data-i18n="adv_roadmap_title">Feuille de Route Prioritaire (Ordre d'Achat Optimisé)</h2>
+                <p class="subtitle" id="advRoadmapSubtitle" data-i18n="adv_plan_subtitle">Classée par retour sur investissement décroissant pour maximiser votre impact à chaque gold dépensé.</p>
+              </div>
+              <button type="button" class="btn-apply-roadmap" id="btnApplyRoadmap">
+                <span data-i18n="adv_btn_apply_plan">✨ Appliquer ce Plan dans le Simulateur d'Affinage</span>
+              </button>
+            </div>
+
+            <!-- Liste des Étapes -->
+            <div class="roadmap-timeline" id="advisorRoadmapList">
+              <!-- Rempli dynamiquement par calculator.js -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ONGLET 3 : SIMULATEUR D'AFFINAGE PIÈCE PAR PIÈCE -->
+      <section class="tab-pane" id="tab-honing">
+        <div class="grid-split">
+          <!-- Carte d'Affinage par pièce -->
+          <div class="card gear-card">
+            <div class="card-header">
+              <h2 data-i18n="honing_gear_levels_title">Niveaux d'Affinage T4 (Honing)</h2>
+              <div class="adv-honing-selector">
+                <label for="advHoningSelect" data-i18n="honing_adv_select_label">Affinage Avancé :</label>
+                <select id="advHoningSelect" class="clean-select compact">
+                  <option value="0">+0</option>
+                  <option value="20">+20 (Echidna)</option>
+                  <option value="40" selected>+40 (Echidna + Aegir)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="gear-pieces-grid">
+              <!-- Arme -->
+              <div class="gear-row weapon-row" data-piece="weapon">
+                <div class="gear-info">
+                  <span class="gear-icon">⚔️</span>
+                  <div>
+                    <span class="gear-name" data-i18n="honing_gear_weapon">Arme T4</span>
+                    <span class="gear-desc" data-i18n="honing_gear_weapon_desc">Bonus Puissance d'Attaque élevé</span>
+                  </div>
+                </div>
+                <div class="gear-controls">
+                  <button type="button" class="btn-step dec">-</button>
+                  <span class="gear-level" id="lvlWeapon">+17</span>
+                  <button type="button" class="btn-step inc">+</button>
+                </div>
+              </div>
+
+              <!-- Tête -->
+              <div class="gear-row" data-piece="head">
+                <div class="gear-info">
+                  <span class="gear-icon">🪖</span>
+                  <span class="gear-name" data-i18n="honing_gear_head">Casque</span>
+                </div>
+                <div class="gear-controls">
+                  <button type="button" class="btn-step dec">-</button>
+                  <span class="gear-level" id="lvlHead">+12</span>
+                  <button type="button" class="btn-step inc">+</button>
+                </div>
+              </div>
+
+              <!-- Épaulières -->
+              <div class="gear-row" data-piece="shoulder">
+                <div class="gear-info">
+                  <span class="gear-icon">🛡️</span>
+                  <span class="gear-name" data-i18n="honing_gear_shoulder">Épaulières</span>
+                </div>
+                <div class="gear-controls">
+                  <button type="button" class="btn-step dec">-</button>
+                  <span class="gear-level" id="lvlShoulder">+12</span>
+                  <button type="button" class="btn-step inc">+</button>
+                </div>
+              </div>
+
+              <!-- Plastron -->
+              <div class="gear-row" data-piece="chest">
+                <div class="gear-info">
+                  <span class="gear-icon">🥋</span>
+                  <div>
+                    <span class="gear-name" data-i18n="honing_gear_chest">Plastron (Torse)</span>
+                    <span class="gear-desc" data-i18n="honing_gear_armor_desc">Gros apport de Force brute</span>
+                  </div>
+                </div>
+                <div class="gear-controls">
+                  <button type="button" class="btn-step dec">-</button>
+                  <span class="gear-level" id="lvlChest">+12</span>
+                  <button type="button" class="btn-step inc">+</button>
+                </div>
+              </div>
+
+              <!-- Pantalon -->
+              <div class="gear-row" data-piece="pants">
+                <div class="gear-info">
+                  <span class="gear-icon">👖</span>
+                  <div>
+                    <span class="gear-name" data-i18n="honing_gear_pants">Pantalon (Jambes)</span>
+                    <span class="gear-desc" data-i18n="honing_gear_armor_desc">Gros apport de Force brute</span>
+                  </div>
+                </div>
+                <div class="gear-controls">
+                  <button type="button" class="btn-step dec">-</button>
+                  <span class="gear-level" id="lvlPants">+12</span>
+                  <button type="button" class="btn-step inc">+</button>
+                </div>
+              </div>
+
+              <!-- Gants -->
+              <div class="gear-row" data-piece="gloves">
+                <div class="gear-info">
+                  <span class="gear-icon">🧤</span>
+                  <span class="gear-name" data-i18n="honing_gear_gloves">Gants</span>
+                </div>
+                <div class="gear-controls">
+                  <button type="button" class="btn-step dec">-</button>
+                  <span class="gear-level" id="lvlGloves">+12</span>
+                  <button type="button" class="btn-step inc">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions rapides d'affinage -->
+            <div class="quick-honing-actions">
+              <span class="quick-label" data-i18n="honing_actions_collective">Action collective :</span>
+              <button type="button" class="btn-honing-all" id="btnAll14" data-i18n="honing_btn_all_14">Tout à +14</button>
+              <button type="button" class="btn-honing-all" id="btnAll16" data-i18n="honing_btn_all_16">Tout à +16</button>
+              <button type="button" class="btn-honing-all" id="btnAll18" data-i18n="honing_btn_all_18">Tout à +18</button>
+              <button type="button" class="btn-honing-all" id="btnAll20" data-i18n="honing_btn_all_20">Tout à +20</button>
+              <button type="button" class="btn-honing-all" id="btnResetHoning" style="border-color: var(--accent-gold); color: var(--accent-gold); font-weight: 700;" data-i18n="honing_btn_reset">↺ Réinitialiser</button>
+            </div>
+          </div>
+
+          <!-- Résultat du simulateur de pièces -->
+          <div class="card result-card">
+            <div class="card-header">
+              <h2 data-i18n="honing_impact_title">Impact de l'Équipement</h2>
+              <span class="model-badge" data-i18n="honing_model_badge">Simulateur Pièce</span>
+            </div>
+
+            <div class="honing-computed-box">
+              <div class="computed-ilvl-cell">
+                <span class="res-sub" data-i18n="honing_calc_ilvl_lbl">iLvl Calculé de l'Équipement</span>
+                <span class="res-main-ilvl" id="simulatedIlvl">1740.00</span>
+              </div>
+              <div class="computed-cp-cell">
+                <span class="res-sub" data-i18n="honing_est_cp_lbl">Combat Power Estimé</span>
+                <span class="res-main-cp" id="simulatedCp">3 235</span>
+              </div>
+            </div>
+
+            <!-- Comparatif versus état initial -->
+            <div class="stats-summary-grid">
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="honing_diff_ilvl_lbl">Gain iLvl vs Base</span>
+                <span class="stat-val" id="simDiffIlvl">+0.00</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="honing_diff_cp_lbl">Gain CP vs Base</span>
+                <span class="stat-val positive" id="simDiffCp">+0 CP</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="honing_cost_gold_lbl">Coût Estimé (Gold)</span>
+                <span class="stat-val highlight" id="simEstimatedGold">0 g</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="honing_roi_lbl">Ratio Gold / CP</span>
+                <span class="stat-val" id="simGoldPerCp">—</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" id="lblMainStatEst" data-i18n="honing_str_est_lbl">Force (STR) estimée</span>
+                <span class="stat-val" id="simEstimatedStr">~455 000</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="honing_base_atk_lbl">Attaque de Base</span>
+                <span class="stat-val" id="simEstimatedAtk">~158 100</span>
+              </div>
+            </div>
+
+            <div class="advice-card">
+              <div class="advice-icon">💡</div>
+              <div class="advice-body">
+                <h4 data-i18n="honing_advice_header">Recommandation d'optimisation Rentabilité Gold / CP</h4>
+                <p id="honingAdviceText">
+                  Actuellement, tes armures sont à +12. Monter le <strong>Torse</strong> et les <strong>Jambes</strong> vers <strong>+16 / +18</strong> est l'investissement le plus rentable pour débloquer de la Force brute et franchir les 3500 CP rapidement.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ONGLET 4 : SIMULATEUR ARK PASSIVE (ÉVOLUTION, ÉCLAIRAGE & BOND) -->
+      <section class="tab-pane" id="tab-arkpassive">
+        <div class="ark-container">
+          
+          <!-- En-tête du Simulateur Ark Passive -->
+          <div class="card ark-header-card">
+            <div class="ark-header-top">
+              <div class="ark-title-area">
+                <span class="badge-t4-special" data-i18n="ark_badge">🌟 SYSTÈME DE PROGRESSION MAJEUR T4</span>
+                <h2 data-i18n="ark_main_title">Simulateur Ark Passive — Évolution, Éclairage & Bond</h2>
+                <p class="subtitle" data-i18n="ark_subtitle">Simulez la répartition de vos points d'Ark Passive T4, testez l'impact des Livres Reliques et de l'Hyper Awakening sur votre Combat Power et vos multiplicateurs.</p>
+              </div>
+              <div class="advisor-char-pill" id="arkCharPill">
+                <span class="advisor-char-name" id="arkCharName" data-i18n="char_active_default">Personnage Actif</span>
+                <span class="advisor-char-stats" id="arkCharStats">1750.00 iLvl • 3 368 CP</span>
+              </div>
+            </div>
+
+            <!-- Barre d'actions rapides et presets -->
+            <div class="ark-actions-bar">
+              <div class="ark-presets-group">
+                <button type="button" class="btn-action-pill active" id="btnArkResetCurrent">
+                  <span data-i18n="ark_btn_current_points">🔄 Points Actuels du Personnage</span>
+                </button>
+                <button type="button" class="btn-action-pill" id="btnArkPresetSupport">
+                  <span data-i18n="ark_btn_sup_build">🛡️ Build Support Recommandé (Aura Max)</span>
+                </button>
+                <button type="button" class="btn-action-pill" id="btnArkPresetDps">
+                  <span data-i18n="ark_btn_dps_build">⚔️ Build DPS Recommandé (Burst Max)</span>
+                </button>
+              </div>
+              <div class="ark-quick-tools">
+                <button type="button" class="btn-secondary compact" id="btnApplyArkToSim">
+                  <span data-i18n="ark_btn_apply_sim">✨ Injecter dans le Prédicteur de CP</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grille des 3 Arbres d'Ark Passive -->
+          <div class="ark-trees-grid">
+
+            <!-- ARBRE 1 : ÉVOLUTION -->
+            <div class="card ark-tree-card evo-tree">
+              <div class="tree-card-header">
+                <div class="tree-title-group">
+                  <span class="tree-icon">🧬</span>
+                  <div>
+                    <h3 data-i18n="ark_tree_evo_title">Arbre Évolution</h3>
+                    <span class="tree-sub" data-i18n="ark_tree_evo_sub">Stats de Base & Multiplicateur Brute</span>
+                  </div>
+                </div>
+                <span class="tree-tier-badge" id="arkEvoTierBadge" data-i18n="ark_tier_iv_reached">Palier IV Atteint</span>
+              </div>
+
+              <div class="tree-points-control">
+                <div class="label-row">
+                  <label for="sliderArkEvoPoints" data-i18n="ark_tree_evo_points_label">Points Alloués en Évolution :</label>
+                  <span class="val-display" id="dispArkEvoPoints">140 pts</span>
+                </div>
+                <div class="slider-input-combo">
+                  <input type="range" id="sliderArkEvoPoints" min="0" max="140" step="5" value="140">
+                  <input type="number" id="numArkEvoPoints" min="0" max="140" step="1" value="140" class="clean-number-input compact">
+                </div>
+                <div class="tree-quick-pills" id="arkEvoQuickPills">
+                  <button type="button" class="btn-action-pill" data-pts="30">30 (P1)</button>
+                  <button type="button" class="btn-action-pill" data-pts="60">60 (P2)</button>
+                  <button type="button" class="btn-action-pill" data-pts="90">90 (P3)</button>
+                  <button type="button" class="btn-action-pill" data-pts="120">120 (P4)</button>
+                  <button type="button" class="btn-action-pill active" data-pts="140">140 (Max)</button>
+                </div>
+              </div>
+
+              <!-- Node Majeur Spécial Palier 4 -->
+              <div class="tree-node-select-group">
+                <label for="arkEvoNodeSelect" data-i18n="ark_tree_evo_node_label">Nœud Majeur Palier IV :</label>
+                <select id="arkEvoNodeSelect" class="clean-select">
+                  <option value="vigor" selected data-i18n="ark_tree_evo_node_vigor">✨ Vigueur Divine / Don de Vie (Focus Buff Puissance & AP Brute) [Recommandé Support]</option>
+                  <option value="strike" data-i18n="ark_tree_evo_node_strike">⚔️ Frappe Lourde / Perçage (Dégâts Critiques & Pénétration Brute) [Recommandé DPS]</option>
+                  <option value="flow" data-i18n="ark_tree_evo_node_flow">🌊 Flux Astral (Vitesse d'Attaque & Réduction de Mana)</option>
+                </select>
+              </div>
+
+              <!-- Indicateur Métrique de l'Arbre -->
+              <div class="tree-metric-footer">
+                <div class="tree-metric-cell">
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_mult_label">Multiplicateur Évolution</span>
+                  <span class="tree-metric-val" id="dispArkEvoMult">+176.00%</span>
+                </div>
+                <div class="tree-metric-cell">
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Gain CP Estimé</span>
+                  <span class="tree-metric-val highlight" id="dispArkEvoCp">+1 940 CP</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ARBRE 2 : ÉCLAIRAGE (ENLIGHTENMENT) -->
+            <div class="card ark-tree-card enlight-tree">
+              <div class="tree-card-header">
+                <div class="tree-title-group">
+                  <span class="tree-icon">💡</span>
+                  <div>
+                    <h3 data-i18n="ark_tree_enlight_title">Arbre Éclairage</h3>
+                    <span class="tree-sub" data-i18n="ark_tree_enlight_sub">Gravure de Classe & Spécialisation</span>
+                  </div>
+                </div>
+                <span class="tree-tier-badge" id="arkEnlightTierBadge" data-i18n="ark_tier_iv_reached">Palier IV Atteint</span>
+              </div>
+
+              <div class="tree-points-control">
+                <div class="label-row">
+                  <label for="sliderArkEnlightPoints" data-i18n="ark_tree_enlight_points_label">Points Alloués en Éclairage :</label>
+                  <span class="val-display" id="dispArkEnlightPoints">101 pts</span>
+                </div>
+                <div class="slider-input-combo">
+                  <input type="range" id="sliderArkEnlightPoints" min="0" max="120" step="5" value="101">
+                  <input type="number" id="numArkEnlightPoints" min="0" max="120" step="1" value="101" class="clean-number-input compact">
+                </div>
+                <div class="tree-quick-pills" id="arkEnlightQuickPills">
+                  <button type="button" class="btn-action-pill" data-pts="25">25 (P1)</button>
+                  <button type="button" class="btn-action-pill" data-pts="50">50 (P2)</button>
+                  <button type="button" class="btn-action-pill" data-pts="75">75 (P3)</button>
+                  <button type="button" class="btn-action-pill active" data-pts="100">100 (P4)</button>
+                  <button type="button" class="btn-action-pill" data-pts="110">110 (Max)</button>
+                </div>
+              </div>
+
+              <!-- Toggles Livres Reliques & Accessoires -->
+              <div class="tree-toggles-box">
+                <label class="toggle-chip">
+                  <input type="checkbox" id="chkArkRelicBooks" checked>
+                  <span data-i18n="ark_tree_enlight_relic_books">📚 2x Livres Reliques T4 de Classe (+10 Pts Éclairage)</span>
+                </label>
+                <label class="toggle-chip">
+                  <input type="checkbox" id="chkArkRelicAcc" checked>
+                  <span data-i18n="ark_relic_acc_chip">💍 Accessoires Reliques avec Éclairage (+6 Pts)</span>
+                </label>
+              </div>
+
+              <!-- Gravure de Classe Actuelle -->
+              <div class="tree-node-select-group">
+                <label for="arkClassSpecSelect" data-i18n="ark_class_spec_label">Spécialisation de Classe Active :</label>
+                <select id="arkClassSpecSelect" class="clean-select">
+                  <option value="blessed_aura" selected data-i18n="ark_class_opt_supp">🛡️ Bénédiction Sacrée (Aura Bénie / Paladin Support)</option>
+                  <option value="judgment" data-i18n="ark_class_opt_dps">⚔️ Jugement (Paladin DPS)</option>
+                </select>
+              </div>
+
+              <!-- Indicateur Métrique de l'Arbre -->
+              <div class="tree-metric-footer">
+                <div class="tree-metric-cell">
+                  <span class="tree-metric-label" data-i18n="ark_tree_enlight_mult_label">Multiplicateur Éclairage</span>
+                  <span class="tree-metric-val" id="dispArkEnlightMult">+72.50%</span>
+                </div>
+                <div class="tree-metric-cell">
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Gain CP Estimé</span>
+                  <span class="tree-metric-val highlight" id="dispArkEnlightCp">+870 CP</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ARBRE 3 : BOND (LEAP / HYPER AWAKENING) -->
+            <div class="card ark-tree-card leap-tree">
+              <div class="tree-card-header">
+                <div class="tree-title-group">
+                  <span class="tree-icon">⚡</span>
+                  <div>
+                    <h3 data-i18n="ark_tree_leap_title">Arbre Bond (Leap)</h3>
+                    <span class="tree-sub" data-i18n="ark_tree_leap_subtext">Hyper Awakening & Compétence T</span>
+                  </div>
+                </div>
+                <span class="tree-tier-badge" id="arkLeapTierBadge" data-i18n="ark_tier_iv_reached">Palier IV Atteint</span>
+              </div>
+
+              <div class="tree-points-control">
+                <div class="label-row">
+                  <label for="sliderArkLeapPoints" data-i18n="ark_tree_leap_points_lbl">Points Alloués en Bond :</label>
+                  <span class="val-display" id="dispArkLeapPoints">70 pts</span>
+                </div>
+                <div class="slider-input-combo">
+                  <input type="range" id="sliderArkLeapPoints" min="0" max="70" step="5" value="70">
+                  <input type="number" id="numArkLeapPoints" min="0" max="70" step="1" value="70" class="clean-number-input compact">
+                </div>
+                <div class="tree-quick-pills" id="arkLeapQuickPills">
+                  <button type="button" class="btn-action-pill" data-pts="15">15 (P1)</button>
+                  <button type="button" class="btn-action-pill" data-pts="35">35 (P2)</button>
+                  <button type="button" class="btn-action-pill" data-pts="55">55 (P3)</button>
+                  <button type="button" class="btn-action-pill active" data-pts="70">70 (Max)</button>
+                </div>
+              </div>
+
+              <!-- Toggles Quêtes & Raids Kazeros -->
+              <div class="tree-toggles-box">
+                <label class="toggle-chip">
+                  <input type="checkbox" id="chkArkHaUnlocked" checked>
+                  <span data-i18n="ark_ha_unlocked_chip">⚡ Éveil Supérieur & T-Skill Débloqués (+10% dégâts T)</span>
+                </label>
+                <label class="toggle-chip">
+                  <input type="checkbox" id="chkArkRaidsUnlocked" checked>
+                  <span data-i18n="ark_raids_unlocked_chip">🐉 Paliers Raids Behemoth / Aegir validés (Plafond 70 pts)</span>
+                </label>
+              </div>
+
+              <!-- Indicateur Métrique de l'Arbre -->
+              <div class="tree-metric-footer">
+                <div class="tree-metric-cell">
+                  <span class="tree-metric-label">Multiplicateur Bond</span>
+                  <span class="tree-metric-val" id="dispArkLeapMult">+14.00%</span>
+                </div>
+                <div class="tree-metric-cell">
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Gain CP Estimé</span>
+                  <span class="tree-metric-val highlight" id="dispArkLeapCp">+170 CP</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Synthèse Globale & KPI d'Ark Passive -->
+          <div class="card ark-summary-card">
+            <div class="card-header">
+              <h2>Impact Global sur le Combat Power & vos Buffs</h2>
+              <span class="model-badge" id="arkSummaryRoleBadge">Modèle Support T4</span>
+            </div>
+
+            <div class="ark-kpi-grid">
+              <div class="advisor-kpi-card highlight-cp">
+                <div class="kpi-label" data-i18n="ark_kpi_proj_cp">Combat Power Projeté</div>
+                <div class="kpi-value" id="arkResTotalCp">3 368 CP</div>
+                <div class="kpi-sub" id="arkResDiffCp">+0 CP vs profil actuel</div>
+              </div>
+
+              <div class="advisor-kpi-card highlight-roi">
+                <div class="kpi-label">Multiplicateur Global de Buff</div>
+                <div class="kpi-value" id="arkResGlobalMult">+246.00%</div>
+                <div class="kpi-sub" id="arkResBuffDetail">Buff AP Alliés : ~42.8% net</div>
+              </div>
+
+              <div class="advisor-kpi-card highlight-gold">
+                <div class="kpi-label" data-i18n="ark_kpi_allocated_pts">Total Points Alloués</div>
+                <div class="kpi-value" id="arkResTotalPoints">311 Pts</div>
+                <div class="kpi-sub" id="arkResPointsCap">Plafond actuel : 330 Pts</div>
+              </div>
+
+              <div class="advisor-kpi-card highlight-ilvl">
+                <div class="kpi-label" data-i18n="ark_kpi_setup_eff">Efficacité du Setup</div>
+                <div class="kpi-value" id="arkResEfficiency">Rang S+ (Opti)</div>
+                <div class="kpi-sub" id="arkResAdviceText">Palier 4 débloqué sur les 3 arbres</div>
+              </div>
+            </div>
+
+            <div class="analysis-box" id="arkAnalysisBox">
+              <div class="analysis-title" data-i18n="ark_analysis_header">💡 Recommandation Stratégique Ark Passive :</div>
+              <p id="arkAnalysisText">
+                Votre configuration actuelle est optimisée pour le contenu de raid Tier 4. Les 100+ points d'Éclairage débloquent le plein potentiel du multiplicateur de dégâts d'Aura Bénie (+25% bonus de groupe).
+              </p>
+            </div>
+          </div>
+
+          <!-- ÉVALUATEUR & GRADER DE GEMMES ASTRALES (ARK GRID / LOSEII) -->
+          <div class="card astrogem-grader-card">
+            <div class="card-header">
+              <div>
+                <span class="badge-t4-special">🌌 MODÈLE MATHÉMATIQUE ARK GRID (LOSEII.COM)</span>
+                <h2 data-i18n="astro_header_title">Évaluateur & Grader de Gemmes Astrales (Astrogem Grader T4)</h2>
+                <p class="subtitle" style="margin-top: 4px; font-size: 13px; color: var(--text-muted);" data-i18n="astro_subtitle">Notez instantanément votre gemme astrale (0 à 100+), son rang (S+ à F), son gain réel en % dégâts ou buff groupe, et sa viabilité pour compléter les cœurs à 17 points de votre Grille d'Ark.</p>
+              </div>
+              <div class="eff-badge-container">
+                <span class="model-badge" id="astroRoleBadge">Support T4 (Buff Groupe)</span>
+              </div>
+            </div>
+
+            <div class="astrogem-grid">
+              <!-- Colonne 1 : Configuration des 4 Lignes de la Gemme -->
+              <div class="astrogem-config-col">
+                <div class="astrogem-section-title">
+                  <span data-i18n="astro_sec1_heading">1. Châssis & Lignes Fondamentales</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="astroBaseCost" data-i18n="astro_cost_label">Coût de Base de la Gemme :</label>
+                  <select id="astroBaseCost" class="clean-select">
+                    <option value="8" selected data-i18n="astro_cost_8">Coût 8 (Pool : Dégâts Add, Arme %, Marque, Dégâts Alliés)</option>
+                    <option value="9" data-i18n="astro_cost_9">Coût 9 (Pool : Boss Dmg, Arme %, Dégâts Alliés, PA Alliés)</option>
+                    <option value="10" data-i18n="astro_cost_10">Coût 10 (Pool : Boss Dmg, Dégâts Add, Marque, PA Alliés)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <div class="label-row" style="display: flex; justify-content: space-between;">
+                    <label for="astroWpLevel" data-i18n="astro_wp_label">Ligne 1 : Volonté (Willpower) :</label>
+                    <span id="dispAstroWpLevel" style="font-weight: 700; color: #38bdf8;">Niveau 5</span>
+                  </div>
+                  <input type="range" id="astroWpLevel" min="1" max="5" step="1" value="5">
+                  <div class="gem-cost-badge-row" style="margin-top: 6px;">
+                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_eff_cost_lbl">Coût effectif dans le cœur :</span>
+                    <span class="gem-effective-cost optimal" id="dispAstroEffectiveCost">Coût 3 (Opti 17 pts)</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="label-row" style="display: flex; justify-content: space-between;">
+                    <label for="astroOrderLevel" data-i18n="astro_order_label">Ligne 2 : Ordre / Chaos :</label>
+                    <span id="dispAstroOrderLevel" style="font-weight: 700; color: #a855f7;">Niveau 5</span>
+                  </div>
+                  <input type="range" id="astroOrderLevel" min="1" max="5" step="1" value="5">
+                  <span style="font-size: 11px; color: var(--text-muted);" data-i18n="astro_order_sub">Multiplicateur direct au-dessus du plancher de 17 points (+0.16% par point).</span>
+                </div>
+
+                <div class="astrogem-section-title" style="margin-top: 8px;">
+                  <span data-i18n="astro_sec2_title">2. Effets Secondaires Spécialisés</span>
+                </div>
+
+                <!-- Effet 1 -->
+                <div class="form-group">
+                  <label for="astroEffect1" data-i18n="astro_eff1_label">Ligne 3 (Effet 1) :</label>
+                  <select id="astroEffect1" class="clean-select"></select>
+                  <div class="label-row" style="display: flex; justify-content: space-between; margin-top: 6px;">
+                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_eff1_lvl_lbl">Niveau de l'Effet 1 :</span>
+                    <span id="dispAstroEff1Level" style="font-weight: 700; color: #38bdf8;">Niv. 5</span>
+                  </div>
+                  <input type="range" id="astroEff1Level" min="1" max="5" step="1" value="5">
+                </div>
+
+                <!-- Effet 2 -->
+                <div class="form-group">
+                  <label for="astroEffect2" data-i18n="astro_eff2_label">Ligne 4 (Effet 2) :</label>
+                  <select id="astroEffect2" class="clean-select"></select>
+                  <div class="label-row" style="display: flex; justify-content: space-between; margin-top: 6px;">
+                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_eff2_lvl_lbl">Niveau de l'Effet 2 :</span>
+                    <span id="dispAstroEff2Level" style="font-weight: 700; color: #38bdf8;">Niv. 5</span>
+                  </div>
+                  <input type="range" id="astroEff2Level" min="1" max="5" step="1" value="5">
+                </div>
+              </div>
+
+              <!-- Colonne 2 : Score, Rareté, Verdict & Explication -->
+              <div class="astrogem-result-col">
+                <!-- Hero Score -->
+                <div class="gem-score-hero" id="astroScoreHero">
+                  <div class="gem-score-main">
+                    <span class="gem-score-label" data-i18n="astro_grade_label">Grade Global Loseii</span>
+                    <div class="gem-score-number" id="astroGradeVal">98.5 <span class="denom">/ 100</span></div>
+                    <span style="font-size: 11px; color: #a855f7; font-weight: 600;" id="astroRainbowLabel">✨ Rainbow Roll (True Perfect)</span>
+                  </div>
+                  <div class="gem-rank-display">
+                    <span class="gem-rank-pill rank-s-plus" id="astroRankPill">S+</span>
+                    <span class="gem-tier-badge relic" id="astroTierBadge">Relique (18/20)</span>
+                  </div>
+                </div>
+
+                <!-- Grille des 4 KPIs -->
+                <div class="cutting-kpis-grid">
+                  <div class="cut-kpi-card">
+                    <span class="cut-kpi-label" id="astroGainLabel" data-i18n="astro_gain_group">Gain Réel Buff Groupe</span>
+                    <div class="cut-kpi-val highlight" id="astroGainVal">+0.28%</div>
+                    <div class="gem-kpi-sub" id="astroGainSub" data-i18n="astro_gain_sub">Contribution nette par allié</div>
+                  </div>
+
+                  <div class="cut-kpi-card">
+                    <span class="cut-kpi-label" data-i18n="astro_rarity_label">Rareté de la Gemme</span>
+                    <div class="cut-kpi-val gold" id="astroRarityVal">Relique</div>
+                    <div class="gem-kpi-sub" id="astroRaritySub">Somme des 4 lignes : 18/20</div>
+                  </div>
+
+                  <div class="cut-kpi-card">
+                    <span class="cut-kpi-label" data-i18n="astro_cost_core_label">Coût dans le Cœur</span>
+                    <div class="cut-kpi-val" id="astroCostVal" style="color: #34d399;">3 Points</div>
+                    <div class="gem-kpi-sub" id="astroCostSub" data-i18n="astro_cost_sub">8 Base − 5 Volonté</div>
+                  </div>
+
+                  <div class="cut-kpi-card">
+                    <span class="cut-kpi-label" data-i18n="astro_viability_label">Viabilité Ark Grid</span>
+                    <div class="cut-kpi-val" id="astroViabilityVal" style="color: #38bdf8;">Optimal (17p)</div>
+                    <div class="gem-kpi-sub" id="astroViabilitySub" data-i18n="astro_viability_sub">Pilier de cœur à 17 points</div>
+                  </div>
+                </div>
+
+                <!-- Explication & Conseil -->
+                <div class="analysis-box cut-analysis-box">
+                  <div class="analysis-title" data-i18n="astro_verdict_title">📖 Verdict & Analyse de Placement (Modèle Loseii) :</div>
+                  <p id="astroAnalysisText">
+                    Gemme d'exception (Rang S+). Son coût effectif ultra-bas de 3 points permet de compléter facilement un cœur à 17 points. À équiper en priorité absolue.
+                  </p>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="cut-presets-bar">
+                  <span class="cut-presets-label" data-i18n="astro_presets_label">Exemples types :</span>
+                  <button type="button" class="btn-action-pill active" id="btnAstroPresetPerfect8">⭐ Perfect C8 (S+)</button>
+                  <button type="button" class="btn-action-pill" id="btnAstroPresetRelic9">🛡️ Relique C9 Support (A+)</button>
+                  <button type="button" class="btn-action-pill" id="btnAstroPresetRelic10">⚔️ Relique C10 DPS (S)</button>
+                  <button type="button" class="btn-action-pill" id="btnAstroPresetFodder">♻️ Gemme Fodder / Recyclage</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ONGLET 5 : OPTIMISATION T4 (ACCESSOIRES, BRACELETS & GEMMES - MOTEUR ARSONISTIC) -->
+      <section class="tab-pane" id="tab-optimization">
+        <div class="grid-split">
+          <!-- Carte de Configuration de l'Optimisation -->
+          <div class="card input-card">
+            <div class="card-header">
+              <h2 data-i18n="opt_title">Configuration T4 (Accessoires & Synergies)</h2>
+              <span class="info-pill" data-i18n="opt_matrix_pill">Matrice Arsonistic</span>
+            </div>
+
+            <!-- CONTROLES DU SUPPORT -->
+            <div id="optSupportControls" class="opt-role-section">
+              <div class="opt-section-title">
+                <span class="opt-icon">💍</span>
+                <span data-i18n="opt_acc_supp_title">Accessoires T4 Support (5 Pièces)</span>
+              </div>
+              
+              <div class="opt-grid-fields">
+                <div class="form-group compact-group">
+                  <label for="optSupBrand" data-i18n="opt_brand_label">Ligne de Marque (Brand Power) :</label>
+                  <select id="optSupBrand" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+2.15% | +0.19% Buff)</option>
+                    <option value="mid">Mid (+4.80% | +0.42% Buff)</option>
+                    <option value="high" selected>High (+8.00% | +0.70% Buff)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupAllyDmg" data-i18n="opt_ally_dmg_label">Amplif. Dégâts Alliés :</label>
+                  <select id="optSupAllyDmg" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+2.00% | +0.20% Buff)</option>
+                    <option value="mid">Mid (+4.50% | +0.45% Buff)</option>
+                    <option value="high" selected>High (+7.50% | +0.75% Buff)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupAllyAp" data-i18n="opt_ally_ap_label">Amplif. Puissance d'Attaque (PA) :</label>
+                  <select id="optSupAllyAp" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+1.35% | +0.21% Buff)</option>
+                    <option value="mid">Mid (+3.00% | +0.47% Buff)</option>
+                    <option value="high" selected>High (+5.00% | +0.78% Buff)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupWp" data-i18n="opt_wp_pct_label">Puissance d'Arme % :</label>
+                  <select id="optSupWp" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+0.80% | +0.10% Buff)</option>
+                    <option value="mid" selected>Mid (+1.80% | +0.22% Buff)</option>
+                    <option value="high">High (+3.00% | +0.36% Buff)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupWpFlat" data-i18n="opt_wp_flat_label">Puissance d'Arme Flat :</label>
+                  <select id="optSupWpFlat" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="195">Low (+195 WP)</option>
+                    <option value="480">Mid (+480 WP)</option>
+                    <option value="960" selected>High (+960 WP)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupQuality" data-i18n="opt_main_stat_label">Main Stat Bijoux (Quintiles Loseii) :</label>
+                  <select id="optSupQuality" class="clean-select">
+                    <option value="min">Min (0% Roll) • +60 714 Stat (+0.00% Buff)</option>
+                    <option value="low">Low (25% Roll) • +63 397 Stat (+0.36% Buff)</option>
+                    <option value="mid" selected>Mid (50% Roll) • +66 080 Stat (+0.72% Buff)</option>
+                    <option value="high">High (75% Roll) • +68 763 Stat (+1.08% Buff)</option>
+                    <option value="max">Max S+ (100% Roll) • +71 446 Stat (+1.44% Buff)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="opt-section-title">
+                <span class="opt-icon">🌀</span>
+                <span data-i18n="opt_bracelet_supp_title">Bracelet T4 Support</span>
+              </div>
+
+              <div class="opt-grid-fields">
+                <div class="form-group span-full">
+                  <label for="optSupBracePerk" data-i18n="opt_brace_perk_lbl">Synergie Majeure (Spécial Roll) :</label>
+                  <select id="optSupBracePerk" class="clean-select highlight-select">
+                    <option value="crit_ap" selected data-i18n="opt_brace_perk_crit_ap">👑 Taux Crit Alliés (+2.5%) + PA Alliés (+3%) [+2.43% Buff Groupe]</option>
+                    <option value="cdmg_ap" data-i18n="opt_brace_perk_cdmg_ap">Dégâts Crit Alliés (+4.8%) + PA Alliés (+3%) [+2.04% Buff Groupe]</option>
+                    <option value="def_ap" data-i18n="opt_brace_perk_def_ap">Réduction Défense (-2.5%) + PA Alliés (+3%) [+1.68% Buff Groupe]</option>
+                    <option value="shield_ap" data-i18n="opt_brace_perk_shield_ap">Dégâts sous Bouclier (+1.3%) + PA Alliés (+3%) [+1.65% Buff Groupe]</option>
+                    <option value="pure_ap" data-i18n="opt_brace_perk_pure_ap">PA Alliés Pure (+6.0%) [+0.94% Buff Groupe]</option>
+                    <option value="pure_dmg" data-i18n="opt_brace_perk_pure_dmg">Dégâts Alliés Purs (+9.0%) [+0.90% Buff Groupe]</option>
+                    <option value="none" data-i18n="opt_brace_perk_none">Aucune Synergie Spéciale (+0%)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupBraceWp" data-i18n="opt_brace_wp_label">Puissance d'Arme Bracelet :</label>
+                  <select id="optSupBraceWp" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="7200">Low (+7 200 WP | +0.59% Buff)</option>
+                    <option value="8100">Mid (+8 100 WP | +0.66% Buff)</option>
+                    <option value="9000" selected>High (+9 000 WP | +0.73% Buff)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupBraceStat" data-i18n="opt_brace_mainstat_lbl">Stat Principale INT/STR :</label>
+                  <select id="optSupBraceStat" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="12000">Low (+12 000 | +0.29% Buff)</option>
+                    <option value="14000" selected>Mid (+14 000 | +0.34% Buff)</option>
+                    <option value="16000">High (+16 000 | +0.39% Buff)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optSupBraceSwift" data-i18n="opt_brace_sub_lbl">Rapidité / Spécialisation :</label>
+                  <select id="optSupBraceSwift" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="80">Low (+80 | +0.24% Buff)</option>
+                    <option value="100" selected>Mid (+100 | +0.30% Buff)</option>
+                    <option value="120">High (+120 | +0.35% Buff)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- CONTROLES DU DPS -->
+            <div id="optDpsControls" class="opt-role-section" style="display: none;">
+              <div class="opt-section-title">
+                <span class="opt-icon">💍</span>
+                <span data-i18n="opt_acc_dps_title">Accessoires T4 DPS (5 Pièces)</span>
+              </div>
+
+              <div class="opt-grid-fields">
+                <div class="form-group compact-group">
+                  <label for="optDpsAddDmg" data-i18n="opt_dps_add_dmg_label">Dégâts Additionnels (Add Dmg) :</label>
+                  <select id="optDpsAddDmg" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+0.70% | +0.53% DPS)</option>
+                    <option value="mid">Mid (+1.60% | +1.20% DPS)</option>
+                    <option value="high" selected>High (+2.60% | +1.95% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsOutDmg" data-i18n="opt_dps_out_dmg_label">Dégâts Sortants (Outgoing Dmg) :</label>
+                  <select id="optDpsOutDmg" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+0.55% | +0.55% DPS)</option>
+                    <option value="mid">Mid (+1.20% | +1.20% DPS)</option>
+                    <option value="high" selected>High (+2.00% | +2.00% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsAp" data-i18n="opt_dps_ap_label">Puissance d'Attaque % :</label>
+                  <select id="optDpsAp" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+0.40% | +0.36% DPS)</option>
+                    <option value="mid">Mid (+0.95% | +0.85% DPS)</option>
+                    <option value="high" selected>High (+1.55% | +1.38% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsCrit" data-i18n="opt_dps_crit_label">Taux Critique % :</label>
+                  <select id="optDpsCrit" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+0.40% | +0.32% DPS)</option>
+                    <option value="mid" selected>Mid (+0.95% | +0.75% DPS)</option>
+                    <option value="high">High (+1.55% | +1.23% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsCdmg" data-i18n="opt_dps_cdmg_lbl">Dégâts Critiques % :</label>
+                  <select id="optDpsCdmg" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+1.10% | +0.28% DPS)</option>
+                    <option value="mid" selected>Mid (+2.40% | +0.61% DPS)</option>
+                    <option value="high">High (+4.00% | +1.02% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsWp" data-i18n="opt_wp_pct_label">Puissance d'Arme % :</label>
+                  <select id="optDpsWp" class="clean-select">
+                    <option value="none">Aucune (0%)</option>
+                    <option value="low">Low (+0.80% | +0.28% DPS)</option>
+                    <option value="mid">Mid (+1.80% | +0.62% DPS)</option>
+                    <option value="high" selected>High (+3.00% | +1.03% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsQuality" data-i18n="opt_main_stat_label">Main Stat Bijoux (Quintiles Loseii) :</label>
+                  <select id="optDpsQuality" class="clean-select">
+                    <option value="min">Min (0% Roll) • +60 714 Stat (+0.00% DPS)</option>
+                    <option value="low">Low (25% Roll) • +63 397 Stat (+0.85% DPS)</option>
+                    <option value="mid" selected>Mid (50% Roll) • +66 080 Stat (+1.70% DPS)</option>
+                    <option value="high">High (75% Roll) • +68 763 Stat (+2.55% DPS)</option>
+                    <option value="max">Max S+ (100% Roll) • +71 446 Stat (+3.40% DPS)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="opt-section-title">
+                <span class="opt-icon">🌀</span>
+                <span data-i18n="opt_bracelet_dps_title">Bracelet T4 DPS</span>
+              </div>
+
+              <div class="opt-grid-fields">
+                <div class="form-group span-full">
+                  <label for="optDpsBracePerk" data-i18n="opt_brace_perk_lbl">Synergie Majeure (Spécial Roll) :</label>
+                  <select id="optDpsBracePerk" class="clean-select highlight-select">
+                    <option value="crit_cdmg" selected data-i18n="opt_dps_brace_crit_cdmg">👑 Taux Crit (+5%) & Dégâts Crit (+1.5%) [+5.45% DPS Personnel]</option>
+                    <option value="add_demon" data-i18n="opt_dps_brace_add_demon">Dégâts Add (+3.5%) & Dégâts Démon (+2.5%) [+5.03% DPS Personnel]</option>
+                    <option value="cdmg_crit" data-i18n="opt_dps_brace_cdmg_crit">Dégâts Crit (+10%) & Dégâts Crit (+1.5%) [+5.20% DPS Personnel]</option>
+                    <option value="dmg_cd" data-i18n="opt_dps_brace_dmg_cd">Dégâts Purs (+5.5%) avec pénalité CD [+4.06% DPS Personnel]</option>
+                    <option value="wp_stack" data-i18n="opt_dps_brace_wp_stack">Puissance d'Arme Cumulable (+1480x6 + Vitesse) [+2.83% DPS Personnel]</option>
+                    <option value="none" data-i18n="opt_dps_brace_none">Aucune Synergie Spéciale (+0%)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsBraceWp" data-i18n="opt_brace_wp_label">Puissance d'Arme Bracelet :</label>
+                  <select id="optDpsBraceWp" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="7200">Low (+7 200 WP | +1.70% DPS)</option>
+                    <option value="8100">Mid (+8 100 WP | +1.91% DPS)</option>
+                    <option value="9000" selected>High (+9 000 WP | +2.12% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsBraceStat" data-i18n="opt_brace_mainstat_dps_lbl">Stat Principale STR/DEX :</label>
+                  <select id="optDpsBraceStat" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="12000">Low (+12 000 | +0.85% DPS)</option>
+                    <option value="14000" selected>Mid (+14 000 | +0.99% DPS)</option>
+                    <option value="16000">High (+16 000 | +1.13% DPS)</option>
+                  </select>
+                </div>
+
+                <div class="form-group compact-group">
+                  <label for="optDpsBraceSub" data-i18n="opt_brace_sub_lbl">Critique / Rapidité :</label>
+                  <select id="optDpsBraceSub" class="clean-select">
+                    <option value="0">Aucune (+0)</option>
+                    <option value="80">Low (+80 | +2.27% DPS)</option>
+                    <option value="100" selected>Mid (+100 | +2.84% DPS)</option>
+                    <option value="120">High (+120 | +3.40% DPS)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- MODULE DE GEMMES T4 AVANCÉ PAR COMPÉTENCE (OPTION C) -->
+            <div class="opt-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="opt-icon">💎</span>
+                <span data-i18n="opt_gem_sim_heading">Simulateur de Gemmes Avancé par Compétence</span>
+              </div>
+              <span class="badge-advisor" style="margin: 0;">Guide 2026</span>
+            </div>
+
+            <!-- Niveau Global du Deck T4 (Synchronisé) -->
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label for="optGemsDeck" data-i18n="opt_gem_deck_label">Niveau Global du Deck de Gemmes T4 :</label>
+              <select id="optGemsDeck" class="clean-select">
+                <option value="current" data-i18n="opt_gem_deck_current">Mix Actuel du Personnage</option>
+                <option value="lvl7" data-i18n="opt_gem_deck_lvl7">11x Gemmes T4 Niv. 7 (Palier de référence standard)</option>
+                <option value="lvl8" selected data-i18n="opt_gem_deck_lvl8">11x Gemmes T4 Niv. 8 (+312 CP total | +28.35 CP / gemme)</option>
+                <option value="lvl9" data-i18n="opt_gem_deck_lvl9">11x Gemmes T4 Niv. 9 (+664 CP total | +60.35 CP / gemme)</option>
+                <option value="lvl10" data-i18n="opt_gem_deck_lvl10">11x Gemmes T4 Niv. 10 Endgame (+1 082 CP total | +98.35 CP / gemme)</option>
+              </select>
+            </div>
+
+            <div class="gem-skills-container">
+                <!-- MODULE DE GEMMES SUPPORT (PALADIN) -->
+                <div id="gemContainerSupport" class="gem-role-wrapper">
+                  <div class="gem-presets-bar">
+                <button type="button" class="btn-action-pill active" id="btnGemPresetCurrent" data-i18n="opt_preset_current">🔄 Deck Actuel</button>
+                <button type="button" class="btn-action-pill" id="btnGemPresetMetaSupport" data-i18n="opt_preset_meta_supp">⭐ Meta Support (HB Niv. 9)</button>
+                <button type="button" class="btn-action-pill" id="btnGemPresetFull8" data-i18n="opt_preset_full8">💎 Full Niv. 8</button>
+                <button type="button" class="btn-action-pill" id="btnGemPresetFull9" data-i18n="opt_preset_full9">👑 Full Niv. 9</button>
+                <button type="button" class="btn-action-pill" id="btnGemPresetFull10" data-i18n="opt_preset_full10">🏆 Full Niv. 10</button>
+              </div>
+
+              <!-- Matrice des compétences clés Support & Ratios de Buff -->
+              <div class="gem-skills-matrix" id="gemSkillsMatrixSupport">
+                
+                <!-- Compétence 1 : Bénédiction Céleste (Heavenly Blessing) -->
+                <div class="gem-skill-row bottleneck">
+                  <div class="gem-skill-info">
+                    <div class="gem-skill-title-row">
+                      <strong class="gem-skill-name" id="dispSuppSkill1Name">Bénédiction Céleste</strong>
+                      <span class="gem-tag bottleneck" id="dispSuppSkill1Tag">⚠️ Bottleneck AP #1</span>
+                    </div>
+                    <div class="gem-skill-sub" id="dispSuppSkill1Sub">Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 30s</div>
+                  </div>
+                  <div class="gem-skill-control">
+                    <label for="gemLvl_hb" data-i18n="opt_gem_recharge_lbl">Gemme Recharge :</label>
+                    <select id="gemLvl_hb" class="clean-select compact-select">
+                      <option value="7">T4 Niv. 7 (-18%)</option>
+                      <option value="8" selected>T4 Niv. 8 (-20%)</option>
+                      <option value="9">T4 Niv. 9 (-22%) [Recommandé]</option>
+                      <option value="10">T4 Niv. 10 (-24%)</option>
+                    </select>
+                  </div>
+                  <div class="gem-skill-metrics">
+                    <span class="gem-metric-cd" id="dispCd_hb">14.7s CD</span>
+                    <span class="gem-metric-status ok" id="dispStatus_hb">✅ Gapless</span>
+                  </div>
+                </div>
+
+                <!-- Compétence 2 : Colère Divine (Wrath of God) -->
+                <div class="gem-skill-row">
+                  <div class="gem-skill-info">
+                    <div class="gem-skill-title-row">
+                      <strong class="gem-skill-name" id="dispSuppSkill2Name">Colère Divine</strong>
+                      <span class="gem-tag secondary" id="dispSuppSkill2Tag">Buff PA #2</span>
+                    </div>
+                    <div class="gem-skill-sub" id="dispSuppSkill2Sub">Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s</div>
+                  </div>
+                  <div class="gem-skill-control">
+                    <label for="gemLvl_wog" data-i18n="opt_gem_recharge_lbl">Gemme Recharge :</label>
+                    <select id="gemLvl_wog" class="clean-select compact-select">
+                      <option value="7">T4 Niv. 7 (-18%)</option>
+                      <option value="8" selected>T4 Niv. 8 (-20%)</option>
+                      <option value="9">T4 Niv. 9 (-22%)</option>
+                      <option value="10">T4 Niv. 10 (-24%)</option>
+                    </select>
+                  </div>
+                  <div class="gem-skill-metrics">
+                    <span class="gem-metric-cd" id="dispCd_wog">10.8s CD</span>
+                    <span class="gem-metric-status ok" id="dispStatus_wog">✅ Uptime Garanti</span>
+                  </div>
+                </div>
+
+                <!-- Compétence 3 : Foi Sacrée / Choc Lumineux (Brand) -->
+                <div class="gem-skill-row">
+                  <div class="gem-skill-info">
+                    <div class="gem-skill-title-row">
+                      <strong class="gem-skill-name" id="dispSuppSkill3Name">Foi Sacrée / Choc Lumineux</strong>
+                      <span class="gem-tag brand" id="dispSuppSkill3Tag">Marque Alliés</span>
+                    </div>
+                    <div class="gem-skill-sub" id="dispSuppSkill3Sub">Brand Power (+10% dégâts subis) • Durée : 6.0s • Base CD : 8s</div>
+                  </div>
+                  <div class="gem-skill-control">
+                    <label for="gemLvl_brand" data-i18n="opt_gem_recharge_lbl">Gemme Recharge :</label>
+                    <select id="gemLvl_brand" class="clean-select compact-select">
+                      <option value="7" selected>T4 Niv. 7 (-18%)</option>
+                      <option value="8">T4 Niv. 8 (-20%)</option>
+                      <option value="9">T4 Niv. 9 (-22%)</option>
+                      <option value="10">T4 Niv. 10 (-24%)</option>
+                    </select>
+                  </div>
+                  <div class="gem-skill-metrics">
+                    <span class="gem-metric-cd" id="dispCd_brand">3.9s CD</span>
+                    <span class="gem-metric-status ok" id="dispStatus_brand">✅ 100% Marque</span>
+                  </div>
+                </div>
+
+                <!-- Compétence 4 : Protection Sacrée (Holy Protection) -->
+                <div class="gem-skill-row">
+                  <div class="gem-skill-info">
+                    <div class="gem-skill-title-row">
+                      <strong class="gem-skill-name" id="dispSuppSkill4Name">Protection Sacrée</strong>
+                      <span class="gem-tag shield" id="dispSuppSkill4Tag">Bouclier & True Gauge</span>
+                    </div>
+                    <div class="gem-skill-sub" id="dispSuppSkill4Sub">Shield & Divine Wave • Base CD : 30s • Génère de la True Gauge pour l'Aura</div>
+                  </div>
+                  <div class="gem-skill-control">
+                    <label for="gemLvl_hp" data-i18n="opt_gem_recharge_lbl">Gemme Recharge :</label>
+                    <select id="gemLvl_hp" class="clean-select compact-select">
+                      <option value="7">T4 Niv. 7 (-18%)</option>
+                      <option value="8" selected>T4 Niv. 8 (-20%)</option>
+                      <option value="9">T4 Niv. 9 (-22%)</option>
+                      <option value="10">T4 Niv. 10 (-24%)</option>
+                    </select>
+                  </div>
+                  <div class="gem-skill-metrics">
+                    <span class="gem-metric-cd" id="dispCd_hp">14.7s CD</span>
+                    <span class="gem-metric-status ok" id="dispStatus_hp">✅ Shield Fréquent</span>
+                  </div>
+                </div>
+
+                <!-- Reste des 7 Gemmes T4 -->
+                <div class="gem-skill-row secondary-gems">
+                  <div class="gem-skill-info">
+                    <div class="gem-skill-title-row">
+                      <strong class="gem-skill-name">7 Gemmes Secondaires (Utilitaires & Éveil)</strong>
+                      <span class="gem-tag utility">7 Slots Restants</span>
+                    </div>
+                    <div class="gem-skill-sub">Exécuteur Sacré, Frappe Céleste, Épée de Justice, Éveil</div>
+                  </div>
+                  <div class="gem-skill-control">
+                    <label for="gemLvl_other" data-i18n="opt_gem_avg_lbl">Niveau Moyen :</label>
+                    <select id="gemLvl_other" class="clean-select compact-select">
+                      <option value="7" selected>T4 Niv. 7 (Actuel)</option>
+                      <option value="8">T4 Niv. 8</option>
+                      <option value="9">T4 Niv. 9</option>
+                      <option value="10">T4 Niv. 10</option>
+                    </select>
+                  </div>
+                  <div class="gem-skill-metrics">
+                    <span class="gem-metric-cd" id="dispCd_other">7 Slots T4</span>
+                    <span class="gem-metric-status" id="dispStatus_other">CP Pur</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Synthèse en direct des Ratios de Buffs et CP -->
+              <div class="gem-ratios-summary">
+                <div class="gem-ratio-card highlight">
+                  <span class="gem-ratio-label" data-i18n="opt_ratio_ap_uptime">Uptime Buff PA Groupe</span>
+                  <div class="gem-ratio-val" id="dispGemApUptime">100.0%</div>
+                  <div class="gem-ratio-sub" id="dispGemApGap">Downtime : 0.0s (Buff continu)</div>
+                </div>
+
+                <div class="gem-ratio-card">
+                  <span class="gem-ratio-label">Uptime Marque (Brand)</span>
+                  <div class="gem-ratio-val" id="dispGemBrandUptime">100.0%</div>
+                  <div class="gem-ratio-sub">+10% dégâts groupe permanent</div>
+                </div>
+
+                <div class="gem-ratio-card">
+                  <span class="gem-ratio-label">Cycle Aura Bénie (True Gauge)</span>
+                  <div class="gem-ratio-val" id="dispGemGaugeRate">+18.5%</div>
+                  <div class="gem-ratio-sub">Vitesse de recharge d'identité</div>
+                </div>
+
+                <div class="gem-ratio-card highlight-gold">
+                  <span class="gem-ratio-label">Apport Combat Power (CP)</span>
+                  <div class="gem-ratio-val" id="dispGemTotalCp">+209 CP</div>
+                  <div class="gem-ratio-sub" id="dispGemCpDelta">+0 CP vs profil actuel</div>
+                </div>
+              </div>
+
+              <!-- Recommandation Stratégique All-In-One Support 2026 -->
+              <div class="analysis-box gem-analysis-box" id="gemAdvisorBox">
+                <div class="analysis-title" id="dispSuppAdvisorTitle">💡 Recommandation Gemmes Support (All-In-One Guide 2026) :</div>
+                <p id="gemAdvisorText">
+                  Votre configuration actuelle (Bénédiction Céleste Niv. 8 + Colère Divine Niv. 8) assure un temps de rechargement sous les 16.0 secondes, garantissant un uptime d'AP à 100%. <strong data-i18n="opt_supp_gem_guide_prio">Priorité d'upgrade :</strong> Si vous investissez dans une gemme Niveau 9, montez exclusivement <em>Bénédiction Céleste</em> pour sécuriser la rotation même en cas de déplacement ou d'interruption. Monter <em>Colère Divine</em> au niveau 9 n'apporte que du CP brut mais aucun gain d'uptime effectif.
+                </p>
+              </div>
+            </div>
+
+            <!-- MODULE DE GEMMES DÉDIÉ DPS -->
+                <div id="gemContainerDps" class="gem-role-wrapper" style="display: none;">
+                  <!-- Presets rapides de gemmes DPS -->
+                  <div class="gem-presets-bar">
+                    <button type="button" class="btn-action-pill active" id="btnGemDpsPresetCurrent" data-i18n="opt_preset_current">🔄 Deck Actuel</button>
+                    <button type="button" class="btn-action-pill" id="btnGemDpsPresetMeta" data-i18n="opt_preset_meta_dps">⭐ Meta Burst (Top 2 Niv. 9)</button>
+                    <button type="button" class="btn-action-pill" id="btnGemDpsPresetFull8" data-i18n="opt_preset_full8">💎 Full Niv. 8</button>
+                    <button type="button" class="btn-action-pill" id="btnGemDpsPresetFull9" data-i18n="opt_preset_full9">👑 Full Niv. 9</button>
+                    <button type="button" class="btn-action-pill" id="btnGemDpsPresetFull10" data-i18n="opt_preset_full10">🏆 Full Niv. 10</button>
+                  </div>
+
+                  <!-- Matrice des compétences clés DPS -->
+                  <div class="gem-skills-matrix">
+                    <!-- Sort 1 -->
+                    <div class="gem-skill-row bottleneck">
+                      <div class="gem-skill-info">
+                        <div class="gem-skill-title-row">
+                          <strong class="gem-skill-name" id="dispDpsSkill1Name">Compétence Burst Principale #1</strong>
+                          <span class="gem-tag bottleneck" id="dispDpsSkill1Tag">🔥 ~35% du DPS</span>
+                        </div>
+                        <div class="gem-skill-sub" id="dispDpsSkill1Sub">Gemme de Dégâts Majeure T4 • Dégâts maximisés</div>
+                      </div>
+                      <div class="gem-skill-control">
+                        <label for="gemLvl_dps1" data-i18n="opt_gem_dmg_lbl">Gemme Dégâts :</label>
+                        <select id="gemLvl_dps1" class="clean-select compact-select">
+                          <option value="7">T4 Niv. 7 (+32% Dmg)</option>
+                          <option value="8" selected>T4 Niv. 8 (+36% Dmg)</option>
+                          <option value="9">T4 Niv. 9 (+40% Dmg) [Meta]</option>
+                          <option value="10">T4 Niv. 10 (+44% Dmg)</option>
+                        </select>
+                      </div>
+                      <div class="gem-skill-metrics">
+                        <span class="gem-metric-cd" id="dispDpsSkill1Val">+36.0% Dmg</span>
+                        <span class="gem-metric-status ok">👑 Burst S+</span>
+                      </div>
+                    </div>
+
+                    <!-- Sort 2 -->
+                    <div class="gem-skill-row">
+                      <div class="gem-skill-info">
+                        <div class="gem-skill-title-row">
+                          <strong class="gem-skill-name" id="dispDpsSkill2Name">Compétence Burst Principale #2</strong>
+                          <span class="gem-tag secondary" id="dispDpsSkill2Tag">⚡ ~25% du DPS</span>
+                        </div>
+                        <div class="gem-skill-sub" id="dispDpsSkill2Sub">Gemme de Dégâts Majeure T4 • Pilier de rotation</div>
+                      </div>
+                      <div class="gem-skill-control">
+                        <label for="gemLvl_dps2" data-i18n="opt_gem_dmg_lbl">Gemme Dégâts :</label>
+                        <select id="gemLvl_dps2" class="clean-select compact-select">
+                          <option value="7">T4 Niv. 7 (+32% Dmg)</option>
+                          <option value="8" selected>T4 Niv. 8 (+36% Dmg)</option>
+                          <option value="9">T4 Niv. 9 (+40% Dmg)</option>
+                          <option value="10">T4 Niv. 10 (+44% Dmg)</option>
+                        </select>
+                      </div>
+                      <div class="gem-skill-metrics">
+                        <span class="gem-metric-cd" id="dispDpsSkill2Val">+36.0% Dmg</span>
+                        <span class="gem-metric-status ok">✅ Burst S</span>
+                      </div>
+                    </div>
+
+                    <!-- Sort 3 -->
+                    <div class="gem-skill-row">
+                      <div class="gem-skill-info">
+                        <div class="gem-skill-title-row">
+                          <strong class="gem-skill-name" id="dispDpsSkill3Name">Compétence Burst Secondaire #3</strong>
+                          <span class="gem-tag utility" id="dispDpsSkill3Tag">⚔️ ~15% du DPS</span>
+                        </div>
+                        <div class="gem-skill-sub" id="dispDpsSkill3Sub">Gemme de Dégâts T4 • Finition de cycle</div>
+                      </div>
+                      <div class="gem-skill-control">
+                        <label for="gemLvl_dps3" data-i18n="opt_gem_dmg_lbl">Gemme Dégâts :</label>
+                        <select id="gemLvl_dps3" class="clean-select compact-select">
+                          <option value="7">T4 Niv. 7 (+32% Dmg)</option>
+                          <option value="8" selected>T4 Niv. 8 (+36% Dmg)</option>
+                          <option value="9">T4 Niv. 9 (+40% Dmg)</option>
+                          <option value="10">T4 Niv. 10 (+44% Dmg)</option>
+                        </select>
+                      </div>
+                      <div class="gem-skill-metrics">
+                        <span class="gem-metric-cd" id="dispDpsSkill3Val">+36.0% Dmg</span>
+                        <span class="gem-metric-status ok">✅ Actif</span>
+                      </div>
+                    </div>
+
+                    <!-- Sort 4 Cooldown -->
+                    <div class="gem-skill-row">
+                      <div class="gem-skill-info">
+                        <div class="gem-skill-title-row">
+                          <strong class="gem-skill-name" id="dispDpsCdName">Sort Pivot de Rotation (Cooldown)</strong>
+                          <span class="gem-tag brand" id="dispDpsCdTag">🔄 Fluidité du Cycle</span>
+                        </div>
+                        <div class="gem-skill-sub" id="dispDpsCdSub">Réduction de temps de recharge • Alignement du cycle de burst</div>
+                      </div>
+                      <div class="gem-skill-control">
+                        <label for="gemLvl_dpsCd" data-i18n="opt_gem_recharge_lbl">Gemme Recharge :</label>
+                        <select id="gemLvl_dpsCd" class="clean-select compact-select">
+                          <option value="7">T4 Niv. 7 (-18% CD)</option>
+                          <option value="8" selected>T4 Niv. 8 (-20% CD)</option>
+                          <option value="9">T4 Niv. 9 (-22% CD)</option>
+                          <option value="10">T4 Niv. 10 (-24% CD)</option>
+                        </select>
+                      </div>
+                      <div class="gem-skill-metrics">
+                        <span class="gem-metric-cd" id="dispDpsCdVal">-20.0% CD</span>
+                        <span class="gem-metric-status ok">✅ Cycle Fluide</span>
+                      </div>
+                    </div>
+
+                    <!-- Reste des 7 Gemmes T4 -->
+                    <div class="gem-skill-row secondary-gems">
+                      <div class="gem-skill-info">
+                        <div class="gem-skill-title-row">
+                          <strong class="gem-skill-name">7 Gemmes Secondaires (Dégâts / Cooldown)</strong>
+                          <span class="gem-tag utility">7 Slots Restants</span>
+                        </div>
+                        <div class="gem-skill-sub">Sorts de remplissage, compteurs, mobilité et utilitaires</div>
+                      </div>
+                      <div class="gem-skill-control">
+                        <label for="gemLvl_dpsOther" data-i18n="opt_gem_avg_lbl">Niveau Moyen :</label>
+                        <select id="gemLvl_dpsOther" class="clean-select compact-select">
+                          <option value="7">T4 Niv. 7</option>
+                          <option value="8" selected>T4 Niv. 8</option>
+                          <option value="9">T4 Niv. 9</option>
+                          <option value="10">T4 Niv. 10</option>
+                        </select>
+                      </div>
+                      <div class="gem-skill-metrics">
+                        <span class="gem-metric-cd">7 Slots T4</span>
+                        <span class="gem-metric-status">CP & DPS</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Synthèse en direct des Ratios DPS -->
+                  <div class="gem-ratios-summary">
+                    <div class="gem-ratio-card highlight">
+                      <span class="gem-ratio-label" data-i18n="opt_ratio_burst_gain">Multiplicateur Burst Majeur</span>
+                      <div class="gem-ratio-val" id="dispDpsGemBurstGain">+36.0%</div>
+                      <div class="gem-ratio-sub">Sur votre plus gros sort</div>
+                    </div>
+
+                    <div class="gem-ratio-card">
+                      <span class="gem-ratio-label" data-i18n="opt_ratio_total_dps">Gain DPS Effectif Global</span>
+                      <div class="gem-ratio-val" id="dispDpsGemTotalDps">+18.5%</div>
+                      <div class="gem-ratio-sub" data-i18n="opt_ratio_total_sub">Apport cumulé du deck</div>
+                    </div>
+
+                    <div class="gem-ratio-card">
+                      <span class="gem-ratio-label" data-i18n="opt_ratio_avg_cd">Réduction CD Moyenne</span>
+                      <div class="gem-ratio-val" id="dispDpsGemAvgCd">-20.0%</div>
+                      <div class="gem-ratio-sub">Vitesse de rotation du cycle</div>
+                    </div>
+
+                    <div class="gem-ratio-card highlight-gold">
+                      <span class="gem-ratio-label">Apport Combat Power (CP)</span>
+                      <div class="gem-ratio-val" id="dispDpsGemTotalCp">+312 CP</div>
+                      <div class="gem-ratio-sub" id="dispDpsGemCpDelta">+0 CP vs profil actuel</div>
+                    </div>
+                  </div>
+
+                  <!-- Recommandation Stratégique DPS -->
+                  <div class="analysis-box gem-analysis-box">
+                    <div class="analysis-title" data-i18n="opt_strategic_advice_dps">💡 Recommandation Stratégique DPS (All-In-One Meta 2026) :</div>
+                    <p id="gemDpsAdvisorText">
+                      Pour un DPS, la priorité absolue est d'investir dans une gemme de <strong data-i18n="opt_dps_gem_recom">Dégâts Niveau 9 (+40%) ou Niveau 10 (+44%)</strong> sur vos 2 plus grosses compétences de burst (qui représentent 50% à 60% de votre DPS total en raid) plutôt que de monter uniformément tout votre deck au niveau 9.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+            <!-- SYSTÈMES PASSIFS T4 (KARMA & ARK GRID) -->
+            <div class="opt-section-title">
+              <span class="opt-icon">⚡</span>
+              <span data-i18n="opt_passives_title">Systèmes T4 Débloqués (Karma & Grille)</span>
+            </div>
+
+            <div class="opt-toggles-row">
+              <label class="toggle-chip">
+                <input type="checkbox" id="optKarmaEnlight" checked>
+                <span>Karma Illumination (Rang 6)</span>
+              </label>
+              <label class="toggle-chip">
+                <input type="checkbox" id="optKarmaEvo" checked>
+                <span>Karma Évolution (Rang 6)</span>
+              </label>
+              <label class="toggle-chip">
+                <input type="checkbox" id="optArkGrid" checked>
+                <span>Grille d'Ark (17 Points)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Carte de Résultats d'Optimisation Arsonistic -->
+          <div class="card result-card">
+            <div class="card-header">
+              <h2 data-i18n="opt_res_title">Impact & Efficacité Réelle</h2>
+              <span class="model-badge" id="optBadge" data-i18n="opt_matrix_pill">Matrice Arsonistic</span>
+            </div>
+
+            <div class="big-result-box">
+              <span class="result-label" id="optResultTypeLabel" data-i18n="opt_res_supp_gain_lbl">Gain Réel de Buff Dégâts pour le Groupe :</span>
+              <div class="result-number-row">
+                <span class="big-cp" id="optDpsGainDisplay">+6.45%</span>
+                <span class="cp-unit" id="optDpsUnit">Dmg</span>
+              </div>
+              <div class="range-text" id="optCpGainDisplay">+485 CP générés par les synergies</div>
+            </div>
+
+            <div class="stats-summary-grid">
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="opt_res_gain_acc">Gain Accessoires T4</span>
+                <span class="stat-val positive" id="optBreakdownAcc">+2.45%</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="opt_res_gain_brace">Gain Bracelet T4</span>
+                <span class="stat-val positive" id="optBreakdownBrace">+2.77%</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="opt_res_gain_gems">Gain Gemmes T4</span>
+                <span class="stat-val positive" id="optBreakdownGems">+1.23%</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-label" data-i18n="opt_res_total_cp">Total CP Synergies</span>
+                <span class="stat-val highlight" id="optTotalCpVal">+485 CP</span>
+              </div>
+            </div>
+
+            <!-- Décomposition visuelle des sources de gain -->
+            <div class="breakdown-bars-container">
+              <div class="breakdown-header">
+                <span data-i18n="opt_power_breakdown_title">Décomposition de l'apport en puissance :</span>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span id="barLabel1">Marque / Brand Power</span>
+                  <span class="bar-val" id="barVal1">+0.70%</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" id="barFill1" style="width: 25%; background: var(--accent);"></div>
+                </div>
+              </div>
+
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span id="barLabel2">Buff PA Alliés (Ally AP)</span>
+                  <span class="bar-val" id="barVal2">+0.78%</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" id="barFill2" style="width: 28%; background: var(--accent-gold);"></div>
+                </div>
+              </div>
+
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span id="barLabel3">Dégâts Alliés (Ally Dmg)</span>
+                  <span class="bar-val" id="barVal3">+0.75%</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" id="barFill3" style="width: 26%; background: var(--accent-green);"></div>
+                </div>
+              </div>
+
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span id="barLabel4">Bracelet Spécial (Crit/AP/Def)</span>
+                  <span class="bar-val" id="barVal4">+2.43%</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" id="barFill4" style="width: 65%; background: #a855f7;"></div>
+                </div>
+              </div>
+
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span data-i18n="opt_bar_gems">Gemmes T4 (Niveau global)</span>
+                  <span class="bar-val" id="barVal5">+1.25%</span>
+                </div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill" id="barFill5" style="width: 35%; background: #ec4899;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Conseil Stratégique Arsonistic -->
+            <div class="advice-card">
+              <div class="advice-icon">🎯</div>
+              <div class="advice-body">
+                <h4 data-i18n="opt_roi_advice_header">Recommandation Rentabilité Or / Gain (Arsonistic Sheet)</h4>
+                <p id="optAdviceText">
+                  Le roll bracelet <strong>Taux Critique Alliés + PA Alliés</strong> est le plus gros multiplicateur de puissance de tout Lost Ark T4 (+2.43% dégâts raid). Vise cette ligne avant d'investir des centaines de milliers de golds dans les gemmes 10.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLEAU D'ARBITRAGE RENTABILITÉ GOLD / DÉGÂTS (MARCHÉ EUC) -->
+        <div class="card efficiency-table-card">
+          <div class="card-header">
+            <div>
+              <h2 data-i18n="eff_title">Arbitrage Rentabilité Gold / Dégâts (Marché EUC)</h2>
+              <span class="eff-subtitle" data-i18n="eff_subtitle">Matrice d'optimisation T4 calibrée d'après les classements Riyon & Cracine (Données EUC réelles)</span>
+            </div>
+            <div class="eff-badge-container">
+              <span class="model-badge" id="effRoleBadge">Support : Coût par 0.01% Buff Alliés</span>
+            </div>
+          </div>
+
+          <!-- Recommandation personnalisée (Next Best Upgrade) -->
+          <div class="eff-recommendation-box" id="effNextBestBox">
+            <div class="eff-rec-icon">🏆</div>
+            <div class="eff-rec-content">
+              <div class="eff-rec-title" data-i18n="eff_rec_title">Prochaine Amélioration Prioritaire Recommandée (ROI Max) :</div>
+              <div class="eff-rec-desc" id="effNextBestDesc">Calcul des priorités EUC en cours...</div>
+            </div>
+          </div>
+
+          <!-- Table scrollable -->
+          <div class="eff-table-wrapper">
+            <table class="eff-table" id="effTable">
+              <thead>
+                <tr>
+                  <th class="col-rank">#</th>
+                  <th class="col-name" data-i18n="eff_col_name">Amélioration / Système T4</th>
+                  <th class="col-gain" id="effColGainHeader" data-i18n="opt_th_gain">Gain Groupe</th>
+                  <th class="col-cost" data-i18n="eff_col_cost">Coût EUC Moyen</th>
+                  <th class="col-ratio" id="effColRatioHeader" data-i18n="eff_col_ratio_supp">Coût / 0.01% Buff</th>
+                  <th class="col-prio" data-i18n="eff_col_prio">Priorité ROI</th>
+                </tr>
+              </thead>
+              <tbody id="effTableBody">
+                <!-- Rempli dynamiquement par calculator.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CONSEILLER DE TAILLAGE D'ACCESSOIRES T4 (LOSEII BELLMAN DP) -->
+        <div class="card cutting-advisor-card">
+          <div class="card-header">
+            <div>
+              <span class="badge-t4-special" data-i18n="cut_badge">⚖️ MODÈLE MATHÉMATIQUE BELLMAN DP (LOSEII.COM)</span>
+              <h2 data-i18n="cut_title">Conseiller & Assistant de Taillage d'Accessoires T4 (Stop-Loss EV)</h2>
+              <p class="subtitle" style="margin-top: 4px; font-size: 13px; color: var(--text-muted);" data-i18n="cut_subtitle">
+                Déterminez instantanément après le 1ᵉʳ ou 2ᵉ cut si votre bijou brut a une espérance de gain nette positive (EV &gt; 0) justifiant de payer les 1 200 g suivants, ou s'il faut stopper immédiatement pour arrêter de brûler de l'or.
+              </p>
+            </div>
+            <div class="eff-badge-container">
+              <span class="model-badge" id="cutRoleBadge">Support T4 (Vente / Équipement)</span>
+            </div>
+          </div>
+
+          <div class="cutting-grid">
+            <!-- Colonne 1 : Configuration du Bijou Dropé -->
+            <div class="cutting-config-col">
+              <div class="cutting-section-title">
+                <span data-i18n="cut_step1_heading">1. Caractéristiques du Bijou Dropé</span>
+              </div>
+
+              <div class="form-group">
+                <label for="cutSlotSelect" data-i18n="cut_slot_lbl">Type d'Accessoire :</label>
+                <select id="cutSlotSelect" class="clean-select">
+                  <option value="neck" selected data-i18n="cut_slot_neck">Collier (Plage Main Stat : 15 178 - 17 857)</option>
+                  <option value="earring" data-i18n="cut_slot_earring">Boucle d'oreille (Plage Main Stat : 11 806 - 13 889)</option>
+                  <option value="ring" data-i18n="cut_slot_ring">Anneau (Plage Main Stat : 10 962 - 12 897)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="cutStatQuintile" data-i18n="cut_quality_main_lbl">Qualité / Main Stat du Drop :</label>
+                <select id="cutStatQuintile" class="clean-select">
+                  <option value="min" data-i18n="cut_q_min">Min (0% Quintile) — Stat minimale</option>
+                  <option value="low" data-i18n="cut_q_low">Low (25% Quintile) — Basse</option>
+                  <option value="mid" selected data-i18n="cut_q_mid">Mid (50% Quintile) — Moyenne (Standard)</option>
+                  <option value="high" data-i18n="cut_q_high">High (75% Quintile) — Haute</option>
+                  <option value="max" data-i18n="cut_q_max">Max S+ (100% Quintile) — Jackpot</option>
+                </select>
+              </div>
+
+              <div class="cutting-section-title" style="margin-top: 12px;">
+                <span data-i18n="cut_step2_heading">2. Tirage Obtenu au 1ᵉʳ Cut (Ligne 1)</span>
+              </div>
+
+              <div class="form-group">
+                <label for="cut1Effect" data-i18n="cut_line_lbl">Ligne Révélée (Cut 1) :</label>
+                <select id="cut1Effect" class="clean-select">
+                  <option value="primary" selected data-i18n="cut_line_primary">⭐ Ligne Primaire Majeure (ex: Stigma / Ally Dmg / Outgoing)</option>
+                  <option value="flat" data-i18n="cut_line_flat">Puissance d'Arme / Attaque Flat (Secondaire Utile)</option>
+                  <option value="hp" data-i18n="cut_line_hp">Points de Vie Max Flat (Support / Défense)</option>
+                  <option value="trash" data-i18n="cut_line_trash">Ligne Inutile (MP Max, Récupération HP, Debuff)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="cut1Tier" data-i18n="cut_tier_lbl">Tier Obtenu (Cut 1) :</label>
+                <select id="cut1Tier" class="clean-select">
+                  <option value="none" data-i18n="cut_tier_none">Aucun Tier / Raté (Poubelle)</option>
+                  <option value="low" data-i18n="cut_tier_low">Tier Low (6.3% proba)</option>
+                  <option value="mid" selected data-i18n="cut_tier_mid">Tier Mid (3.0% proba)</option>
+                  <option value="high" data-i18n="cut_tier_high">Tier High (0.7% proba)</option>
+                </select>
+              </div>
+
+              <div class="cutting-section-title" style="margin-top: 12px;">
+                <span>3. Tirage Obtenu au 2ᵉ Cut (Ligne 2 - Optionnel)</span>
+              </div>
+
+              <div class="form-group">
+                <label for="cut2Status" data-i18n="cut_step2_status_lbl">État du 2ᵉ Cut :</label>
+                <select id="cut2Status" class="clean-select">
+                  <option value="not_cut" selected data-i18n="cut2_opt_not_cut">Pas encore taillé (Évaluer la décision après le Cut 1)</option>
+                  <option value="done" data-i18n="cut_status_done">Cut 2 déjà effectué (Évaluer le Cut 3)</option>
+                </select>
+              </div>
+
+              <div id="cut2DetailsGroup" style="display: none;">
+                <div class="form-group">
+                  <label for="cut2Effect" data-i18n="cut_step2_effect_lbl">Ligne Révélée (Cut 2) :</label>
+                  <select id="cut2Effect" class="clean-select">
+                    <option value="primary" selected data-i18n="cut_line_primary">⭐ Ligne Primaire Majeure (ex: Stigma / Ally Dmg / Outgoing)</option>
+                    <option value="flat" data-i18n="cut_line_flat">Puissance d'Arme / Attaque Flat (Secondaire Utile)</option>
+                    <option value="hp" data-i18n="cut_line_hp">Points de Vie Max Flat (Support / Défense)</option>
+                    <option value="trash" data-i18n="cut_line_trash">Ligne Inutile (MP Max, Récupération HP, Debuff)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cut2Tier" data-i18n="cut_tier_lbl">Tier Obtenu (Cut 2) :</label>
+                  <select id="cut2Tier" class="clean-select">
+                    <option value="none" data-i18n="cut_tier_none">Aucun Tier / Raté (Poubelle)</option>
+                    <option value="low" data-i18n="cut_tier_low">Tier Low (6.3% proba)</option>
+                    <option value="mid" selected data-i18n="cut_tier_mid">Tier Mid (3.0% proba)</option>
+                    <option value="high" data-i18n="cut_tier_high">Tier High (0.7% proba)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Colonne 2 : Verdict Mathématique & Espérance de Gain Bellman -->
+            <div class="cutting-result-col">
+              <div class="cutting-decision-banner continue" id="cutDecisionBanner">
+                <div class="cut-decision-icon" id="cutDecisionIcon">🟢</div>
+                <div class="cut-decision-text-group">
+                  <div class="cut-decision-title" id="cutDecisionTitle">CONTINUER À TAILLER</div>
+                  <div class="cut-decision-sub" id="cutDecisionSub">Espérance de gain nette positive (EV &gt; 0). Payer 1 200 g est mathématiquement rentable.</div>
+                </div>
+              </div>
+
+              <div class="cutting-kpis-grid">
+                <div class="cut-kpi-card">
+                  <span class="cut-kpi-label" data-i18n="cut_kpi_ev_lbl">Espérance Nette (EV)</span>
+                  <div class="cut-kpi-val highlight" id="cutEvVal">+6 512 g</div>
+                  <div class="cut-kpi-sub" data-i18n="cut_kpi_ev_sub">Net de tous les coûts résiduels</div>
+                </div>
+
+                <div class="cut-kpi-card">
+                  <span class="cut-kpi-label" data-i18n="cut_kpi_market">Valeur Finale Estimée</span>
+                  <div class="cut-kpi-val gold" id="cutMarketVal">~65 000 g</div>
+                  <div class="cut-kpi-sub" data-i18n="cut_market_sub">Net taxe phéons (60k g)</div>
+                </div>
+
+                <div class="cut-kpi-card">
+                  <span class="cut-kpi-label" data-i18n="cut_kpi_prob">Proba de Réussite Mid+</span>
+                  <div class="cut-kpi-val" id="cutProbSuccess">3.70%</div>
+                  <div class="cut-kpi-sub">0.7% High • 3.0% Mid</div>
+                </div>
+
+                <div class="cut-kpi-card">
+                  <span class="cut-kpi-label" data-i18n="cut_kpi_next_cost_lbl">Coût du Taillage Suivant</span>
+                  <div class="cut-kpi-val" id="cutNextCost">1 200 g</div>
+                  <div class="cut-kpi-sub" data-i18n="cut_kpi_next_cost_sub">Coût fixe par tentative</div>
+                </div>
+              </div>
+
+              <div class="analysis-box cut-analysis-box" id="cutAnalysisBox">
+                <div class="analysis-title" data-i18n="cut_analysis_title">📖 Explication Mathématique (Modèle Bellman Loseii) :</div>
+                <p id="cutAnalysisText">
+                  Premier cut réussi (Primary Tier Mid). Vous avez de grandes chances de finaliser une pièce vendable ou équipable (High/Mid ou Mid/Mid). L'EV est positive (+6 512 g net). Recommandation : Payez le 2ᵉ cut.
+                </p>
+              </div>
+
+              <!-- Quick Presets de test de tirage -->
+              <div class="cut-presets-bar">
+                <span class="cut-presets-label" data-i18n="astro_presets_label">Exemples types :</span>
+                <button type="button" class="btn-action-pill" id="btnCutPresetJackpot" data-i18n="cut_preset_jackpot">⭐ 1er Cut High (Jackpot)</button>
+                <button type="button" class="btn-action-pill active" id="btnCutPresetMid" data-i18n="cut_preset_mid">🟢 1er Cut Mid (Rentable)</button>
+                <button type="button" class="btn-action-pill" id="btnCutPresetLow" data-i18n="cut_preset_low">🔴 1er Cut Low (Stop & Recycler)</button>
+                <button type="button" class="btn-action-pill" id="btnCutPresetTrash" data-i18n="cut_preset_trash">⛔ 1er Cut Poubelle (Stop)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ONGLET 4 : MOTEUR CANONIQUE (LOSTARK.BIBLE) -->
+      <section class="tab-pane" id="tab-canonical">
+        <div class="card canon-main-card">
+          <div class="card-header">
+            <div>
+              <h2 data-i18n="canon_title">Moteur Mathématique Canonique T4 (Smilegate & lostark.bible)</h2>
+              <p class="subtitle" style="margin-top: 4px; font-size: 13px; color: var(--text-muted);" data-i18n="canon_subtitle">
+                Décomposition exacte décompilée : Combat Power = Base Value × ∏ (1 + Multiplicateurs) / 100
+              </p>
+            </div>
+            <span class="info-pill" id="canonRoleBadge">Support Split</span>
+          </div>
+
+          <!-- Grille des indicateurs majeurs -->
+          <div class="canonical-grid">
+            <div class="canon-card">
+              <div class="canon-card-header">
+                <span data-i18n="canon_score_ingame">Score en Jeu (Réel)</span>
+                <span>🎮</span>
+              </div>
+              <div class="canon-val ingame" id="canonInGameScore">3 367.92</div>
+              <div class="canon-sub" id="canonInGameSub" data-i18n="canon_sub_ingame">Relevé sur le profil lostark.bible</div>
+            </div>
+
+            <div class="canon-card">
+              <div class="canon-card-header">
+                <span data-i18n="canon_score_calc">Score Calculé Canonique</span>
+                <span>🧮</span>
+              </div>
+              <div class="canon-val total" id="canonCalculatedScore">3 426.55</div>
+              <div class="canon-sub" id="canonCalculatedRange" data-i18n="canon_sub_calc">Précision : ±1.7% vs jeu</div>
+            </div>
+
+            <div class="canon-card" id="canonBuffCard">
+              <div class="canon-card-header">
+                <span data-i18n="canon_score_buff">Buff Power (Support)</span>
+                <span>⚔️</span>
+              </div>
+              <div class="canon-val buff" id="canonBuffPower">2 802.43</div>
+              <div class="canon-sub" data-i18n="canon_sub_buff">Basé sur Attaque de Base & Arme</div>
+            </div>
+
+            <div class="canon-card" id="canonHealCard">
+              <div class="canon-card-header">
+                <span data-i18n="canon_score_heal">Heal / Shield Power</span>
+                <span>💖</span>
+              </div>
+              <div class="canon-val heal" id="canonHealPower">624.12</div>
+              <div class="canon-sub" data-i18n="canon_sub_heal">Basé sur Max HP & Vitalité Armures</div>
+            </div>
+          </div>
+
+          <!-- Explication technique -->
+          <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+            <strong data-i18n="canon_analysis_title">💡 Analyse de la formule officielle :</strong>
+            <ul style="margin-left: 20px; margin-top: 6px;">
+              <li data-i18n="canon_analysis_dps">Pour les <strong>DPS</strong>, le CP est le produit pur de la Base d'Attaque (<code>MainStat × Puissance Arme / 6</code>) par l'ensemble des multiplicateurs de dégâts.</li>
+              <li data-i18n="canon_analysis_sup">Pour les <strong>Supports</strong>, le CP additionne directement le <strong>Buff Power</strong> (puissance des buffs PA d'équipe) et le <strong>Heal/Shield Power</strong> (taille des boucliers et soins basée sur les Max HP).</li>
+              <li data-i18n="canon_analysis_delta">L'écart résiduel de 1 à 2% entre le jeu et le site s'explique par les <strong>Festins de guilde/forteresse</strong> (+10k HP / +5k Arme), la <strong>nourriture active</strong> (+3 000 AP) et les sous-niveaux d'avancement d'Ark Grid.</li>
+            </ul>
+          </div>
+
+          <!-- Table de décomposition intégrale -->
+          <div class="canon-breakdown-card">
+            <div class="card-header" style="padding: 0 0 12px 0; border-bottom: 1px solid var(--border-subtle);">
+              <h3 data-i18n="canon_breakdown_title">Décomposition Analytique par Système</h3>
+              <span class="info-pill" id="canonPartsCount">48 Composants</span>
+            </div>
+
+            <div class="canon-table-wrapper">
+              <table class="canon-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="canon_col_cat">Catégorie</th>
+                    <th data-i18n="canon_col_detail">Système & Détail</th>
+                    <th data-i18n="canon_col_val">Valeur Brute / Roll</th>
+                    <th data-i18n="canon_col_mult">Multiplicateur Net</th>
+                    <th data-i18n="canon_col_impact">Impact Rôle</th>
+                  </tr>
+                </thead>
+                <tbody id="canonTableBody">
+                  <!-- Rempli dynamiquement -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ONGLET 7 : SUIVI DES RAIDS & GOLD HEBDOMADAIRE (RAID TRACKER) -->
+      <section class="tab-pane" id="tab-raidtracker">
+        <div class="raidtracker-container">
+          
+          <!-- En-tête de section -->
+          <div class="card raidtracker-header-card">
+            <div class="raidtracker-title-area">
+              <span class="badge-t4" data-i18n="raid_badge">T4 GOLD REVENUE & RAID TRACKER</span>
+              <h2 data-i18n="raid_title">Suivi Hebdomadaire des Raids & Revenus Gold</h2>
+              <p class="subtitle" data-i18n="raid_subtitle">
+                Suivi automatique de vos 18 raids à gold (Horizon Cathedral, Serca, Final Act: Kazeros) synchronisé avec LOA Logs.
+              </p>
+            </div>
+            
+            <div class="raidtracker-header-actions">
+              <!-- Compte à rebours Reset Hebdo -->
+              <div class="reset-countdown-pill" id="raidResetCountdownPill" title="Reset hebdomadaire chaque mercredi à 12h00 CEST">
+                <span class="reset-icon">⏳</span>
+                <span class="reset-label" data-i18n="raid_reset_lbl">Prochain Reset :</span>
+                <strong id="raidResetCountdownVal">--j --h --m</strong>
+              </div>
+
+              <!-- Statut Sync Agent -->
+              <div class="agent-status-pill checking" id="raidAgentStatusPill">
+                <span class="agent-dot"></span>
+                <span id="raidAgentStatusText">Connexion Agent...</span>
+              </div>
+
+              <button type="button" class="btn-refresh-raids" id="btnRefreshRaidsSync" title="Actualiser la synchronisation">
+                <span>🔄</span> <span data-i18n="raid_btn_sync">Actualiser</span>
+              </button>
+
+              <button type="button" class="btn-download-agent" id="btnOpenAgentModal" title="Installer ou télécharger l'agent local">
+                <span>⚡</span> <span data-i18n="raid_btn_agent_download">Installer l'Agent</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Cartes KPI Global du Compte -->
+          <div class="raid-kpi-grid">
+            <div class="advisor-kpi-card highlight-gold">
+              <div class="kpi-label" data-i18n="raid_kpi_earned_lbl">Golds Hebdomadaires Encaissés</div>
+              <div class="kpi-value" id="raidKpiEarnedVal">0 g</div>
+              <div class="kpi-sub" id="raidKpiEarnedSub">0% du potentiel hebdomadaire</div>
+            </div>
+            <div class="advisor-kpi-card highlight-cp">
+              <div class="kpi-label" data-i18n="raid_kpi_remaining_lbl">Golds Restants à Gagner</div>
+              <div class="kpi-value" id="raidKpiRemainingVal">0 g</div>
+              <div class="kpi-sub" id="raidKpiRemainingSub">Sur les 18 raids autorisés</div>
+            </div>
+            <div class="advisor-kpi-card highlight-ilvl">
+              <div class="kpi-label" data-i18n="raid_kpi_progress_lbl">Progression des Raids</div>
+              <div class="kpi-value" id="raidKpiProgressVal">0 / 18</div>
+              <div class="kpi-sub" id="raidKpiGatesSub">0 / 36 Portes Validées</div>
+            </div>
+            <div class="advisor-kpi-card highlight-roi">
+              <div class="kpi-label" data-i18n="raid_kpi_potential_lbl">Potentiel Hebdo Total</div>
+              <div class="kpi-value" id="raidKpiPotentialVal">0 g</div>
+              <div class="kpi-sub" data-i18n="raid_kpi_potential_sub">6 personnages × 3 raids max</div>
+            </div>
+          </div>
+
+          <!-- Grille des Personnages du Roster -->
+          <div class="roster-raids-grid" id="rosterRaidsGrid">
+            <!-- Rempli dynamiquement par calculator.js -->
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ONGLET 8 : BENCHMARK & COMPARATEUR DE PROFILS -->
+      <section class="tab-pane" id="tab-benchmark">
+        <div class="benchmark-layout">
+          
+          <!-- En-tête et Barre de Contrôle Benchmark -->
+          <div class="card benchmark-header-card">
+            <div class="benchmark-header-top">
+              <div>
+                <span class="badge-t4" data-i18n="bench_badge">OPTIMISATION & BENCHMARK T4</span>
+                <h2 data-i18n="bench_title">Comparateur de Profil & Benchmark de Référence</h2>
+                <p class="subtitle" data-i18n="bench_subtitle">
+                  Comparez votre personnage à un profil de référence de même classe, même spécialisation et même iLvl pour identifier vos axes d'amélioration et combler l'écart de CP.
+                </p>
+              </div>
+            </div>
+
+            <!-- Barre de Contrôle Interactive -->
+            <div class="benchmark-controls-bar">
+              <div class="bench-controls-left">
+                <button type="button" class="btn-benchmark-auto" id="btnBenchmarkAutoMatch" title="Sélectionne automatiquement le meilleur profil correspondant à votre classe, spécialisation et palier d'iLvl">
+                  <span>⚡</span> <strong data-i18n="bench_btn_auto">Auto-Match Optimal</strong>
+                </button>
+
+                <div class="bench-select-group">
+                  <label for="benchmarkPresetSelect" data-i18n="bench_select_lbl">Profils de référence :</label>
+                  <select id="benchmarkPresetSelect" class="bench-select clean-select">
+                    <!-- Options injectées dynamiquement selon la classe active -->
+                  </select>
+                </div>
+
+                <div class="bench-gem-filter-group">
+                  <span class="bench-filter-title" data-i18n="bench_gem_filter_lbl">Palier Gemmes :</span>
+                  <div class="bench-filter-pills" id="benchmarkGemFilterGroup">
+                    <button type="button" class="bench-filter-pill active" data-filter="all" data-i18n="bench_filter_all">Tous les profils</button>
+                    <button type="button" class="bench-filter-pill" data-filter="gem8" data-i18n="bench_filter_gem8">Full Gemmes 8</button>
+                    <button type="button" class="bench-filter-pill" data-filter="gem9" data-i18n="bench_filter_gem9">Gemmes 9+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bench-controls-right">
+                <div class="bench-search-box">
+                  <span class="bench-search-icon">🌐</span>
+                  <input type="text" id="benchCustomSearchInput" placeholder="Pseudo lostark.bible (ex: Siwilpal, Cyanora...)" data-i18n-placeholder="bench_search_placeholder">
+                  <button type="button" id="btnBenchSearchSubmit" class="btn-bench-search">
+                    <span data-i18n="bench_btn_compare">Comparer</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div id="benchLoadingStatus" class="bench-status-msg" style="display: none;"></div>
+          </div>
+
+          <!-- Carte Hero : Face à Face & Delta CP -->
+          <div class="card benchmark-hero-card" id="benchmarkHeroCard">
+            <!-- Rendu dynamique par calculator.js -->
+          </div>
+
+          <!-- Section Diagnostic : D'où vient l'écart de CP ? -->
+          <div class="card benchmark-gap-card" id="benchmarkGapSection">
+            <div class="card-header">
+              <div>
+                <h3 data-i18n="bench_gap_title">🎯 Diagnostic des Écarts : Où gagner vos prochains points de CP ?</h3>
+                <p class="subtitle" data-i18n="bench_gap_sub" style="margin-bottom: 0;">
+                  Classement des systèmes par potentiel de gain pour atteindre ou dépasser le profil de référence.
+                </p>
+              </div>
+            </div>
+            <div class="benchmark-gaps-grid" id="benchmarkGapsGrid">
+              <!-- Injecté dynamiquement -->
+            </div>
+          </div>
+
+          <!-- Grand Tableau Comparatif Système par Système -->
+          <div class="card benchmark-table-card">
+            <div class="card-header">
+              <div>
+                <h3 data-i18n="bench_table_title">📊 Tableau Comparatif Système par Système (% & Paliers)</h3>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="benchmark-table" id="benchmarkCompareTable">
+                <thead>
+                  <tr>
+                    <th data-i18n="bench_th_system">Système & Composant</th>
+                    <th class="col-player" data-i18n="bench_th_player">Mon Personnage</th>
+                    <th class="col-target" data-i18n="bench_th_target">Profil Référence</th>
+                    <th class="col-delta" data-i18n="bench_th_delta">Écart Relatif</th>
+                    <th class="col-cp" data-i18n="bench_th_cp">Impact CP</th>
+                    <th class="col-prio" data-i18n="bench_th_priority">Conseil d'Optimisation</th>
+                  </tr>
+                </thead>
+                <tbody id="benchmarkTableBody">
+                  <!-- Lignes générées dynamiquement -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Toggle pour afficher/masquer les lignes à 0% d'écart -->
+            <div class="benchmark-toggle-equal-wrap" id="wrapToggleEqualRows" style="display: none;">
+              <button type="button" id="btnToggleEqualRows" class="btn-toggle-equal">
+                <span>⚖️</span>
+                <span id="lblToggleEqualRows">Afficher les systèmes équivalents (0% d'écart) ▾</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Plan d'Action Recommandé & Ordre de Rentabilité -->
+          <div class="card benchmark-action-card">
+            <div class="card-header">
+              <div>
+                <h3 data-i18n="bench_plan_title">💡 Plan d'Action Recommandé (Ordre de Rentabilité)</h3>
+                <p class="subtitle" data-i18n="bench_plan_sub" style="margin-bottom: 0;">
+                  Les étapes les plus rentables en golds pour combler l'écart avec la référence.
+                </p>
+              </div>
+            </div>
+            <div class="benchmark-action-list" id="benchmarkActionList">
+              <!-- Recommandations chiffrées -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>Lost Ark Tier 4 • Calibré d'après les logs & profils réels de <strong data-i18n="canon_badge">lostark.bible</strong></span>
+      </div>
+      <div class="footer-right">
+        <span data-i18n="footer_right">Formule actualisée Support (42.5% AP / 32.5% ID / 25% Brand) & DPS</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal d'Importation lostark.bible -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal-container" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 data-i18n="modal_sync_title">🌐 Synchronisation Personnage lostark.bible</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseImportModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Section 1 : Connexion Officielle OAuth 2.0 (lostark.bible) -->
+        <div class="oauth-section" id="oauthSection">
+          <!-- État non connecté -->
+          <div id="oauthDisconnectedView" style="display: block;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px;">
+              <span style="color: var(--text-muted); font-weight: 600;" data-i18n="modal_oauth_client">Client OAuth :</span>
+              <div style="display: flex; gap: 4px;" id="oauthEnvToggle">
+                <button type="button" id="btnOAuthEnvProd" class="role-btn active" style="padding: 3px 10px; font-size: 11px; border-radius: 4px;" data-i18n="modal_env_prod">Production</button>
+                <button type="button" id="btnOAuthEnvDev" class="role-btn" style="padding: 3px 10px; font-size: 11px; border-radius: 4px;" data-i18n="modal_env_dev">Développement</button>
+              </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 8px;">
+                <span style="color: var(--text-muted);">URI : </span>
+                <code id="oauthRedirectUriPreview" style="color: var(--accent-gold); font-family: monospace;">https://lostark.nevercry-prox.com/</code>
+              </div>
+              <button type="button" id="btnCopyRedirectUri" style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;" data-i18n="modal_btn_copy">📋 Copier</button>
+            </div>
+
+            <button type="button" class="btn-primary" id="btnOAuthLogin" style="width: 100%; justify-content: center; padding: 12px 16px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-color: #a855f7; font-size: 14px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);">
+              <span style="font-size: 16px;">🔑</span> <strong data-i18n="modal_btn_login">Se connecter avec lostark.bible</strong>
+            </button>
+            <p style="font-size: 11.5px; color: var(--text-muted); text-align: center; margin-top: 6px;" data-i18n="modal_oauth_helper">OAuth 2.0 PKCE officiel • Synchronisation instantanée de votre Roster et de vos logs</p>
+          </div>
+
+          <!-- État connecté -->
+          <div id="oauthConnectedView" style="display: none; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-sm); padding: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+                <strong id="oauthUsername" style="color: #34d399; font-size: 13px;" data-i18n="modal_status_connected">Connecté</strong>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btnOAuthRefresh" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: var(--text-main); font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                  🔄 Actualiser
+                </button>
+                <button type="button" id="btnOAuthLogout" style="background: none; border: 1px solid rgba(255,255,255,0.15); color: var(--text-dim); font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_logout">Déconnexion</button>
+              </div>
+            </div>
+
+            <button type="button" class="btn-primary" id="btnOAuthSyncAllRoster" style="width: 100%; justify-content: center; padding: 10px 14px; margin-bottom: 10px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: #34d399; font-size: 13px;">
+              <span data-i18n="modal_btn_sync_roster">⚡ Tout synchroniser dans Mon Roster (Top 6)</span>
+            </button>
+
+            <div id="oauthRosterList" style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;">
+              <!-- Liste des personnages injectée dynamiquement -->
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin: 6px 0;">
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">ou ajout direct par pseudo</span>
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+        </div>
+
+        <div class="modal-input-row">
+          <div style="flex: 1;">
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="modal_region_lbl">Région</label>
+            <select id="importRegion">
+              <option value="CE" selected>Europe Central (CE)</option>
+              <option value="NAW">North America West (NAW)</option>
+              <option value="NAE">North America East (NAE)</option>
+              <option value="SA">South America (SA)</option>
+            </select>
+          </div>
+          <div style="flex: 2;">
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nom du Personnage</label>
+            <input type="text" id="importCharName" placeholder="Ex: Siwilpal, MonPerso..." value="">
+          </div>
+        </div>
+
+        <div style="margin-top: 6px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="chkAutoAddToRoster" checked style="cursor: pointer; width: 15px; height: 15px;">
+          <label for="chkAutoAddToRoster" style="font-size: 12px; color: var(--text-muted); cursor: pointer;">
+            Ajouter et sauvegarder automatiquement dans <strong>Mon Roster</strong>
+          </label>
+        </div>
+
+        <button type="button" class="btn-primary" id="btnFetchBible" style="width: 100%; justify-content: center; padding: 12px;" data-i18n="modal_btn_fetch">
+          ⚡ Importer & Charger le personnage
+        </button>
+
+        <div class="modal-status" id="importStatus"></div>
+
+        <!-- Section Gestion de Mon Roster personnel -->
+        <div class="user-roster-manager-section" id="userRosterManagerSection" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">
+              👥 Personnages dans Mon Roster (<span id="modalRosterCount">0</span>) :
+            </span>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" id="btnRestoreNevercryRoster" style="background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;" title="Restaurer la sauvegarde du Roster Neevercry (6 personnages)" data-i18n="btn_restore_nevercry">
+                🛡️ Restaurer Roster Neevercry
+              </button>
+              <button type="button" id="btnRefreshAllUserRoster" data-i18n="btn_refresh_all_roster" style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+                🔄 Tout réactualiser
+              </button>
+              <button type="button" id="btnClearUserRoster" style="background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.3); color: #fb7185; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_clear_roster">🗑️ Réinitialiser</button>
+            </div>
+          </div>
+          <div id="modalUserRosterList" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+            <!-- Liste des personnages enregistrés injectée ici -->
+          </div>
+        </div>
+
+        <details style="font-size: 12px; color: var(--text-muted); cursor: pointer; margin-top: 10px;">
+          <summary style="font-weight: 600; color: var(--text-main); margin-bottom: 8px;">Option manuelle : Import JSON brut ou Bearer Token</summary>
+          <p style="margin-bottom: 8px;">Si le navigateur bloque la requête directe (CORS/Cloudflare), tu peux coller ici le JSON brut de <code>https://lostark.bible/character/CE/TON_PERSO/__data.json</code> ou ton Bearer Token :</p>
+          <textarea id="importJsonDirect" rows="4" placeholder="Colle le JSON ou Bearer Token uwo_... ici"></textarea>
+          <button type="button" class="btn-secondary" id="btnParseDirectJson" style="margin-top: 8px; width: 100%; justify-content: center;">
+            Charger depuis le texte
+          </button>
+        </details>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btnCloseImportModalFooter" data-i18n="modal_btn_close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Téléchargement de l'Agent Local -->
+  <div class="modal-overlay" id="agentDownloadModal">
+    <div class="modal-container agent-modal-container">
+      <div class="modal-header">
+        <h3 data-i18n="agent_modal_title">⚡ Agent de Synchronisation en Direct (Local & Privé)</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseAgentModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 14px 0; line-height: 1.5;" data-i18n="agent_modal_subtitle">
+          Synchronisez automatiquement vos clears de raids et vos gains de golds depuis LOA Logs en temps réel.
+        </p>
+
+        <!-- 3 Étapes claires -->
+        <div class="agent-steps-grid">
+          <div class="agent-step-box">
+            <div class="agent-step-num" data-i18n="agent_step1_title">1. Téléchargez</div>
+            <div class="agent-step-desc" data-i18n="agent_step1_desc">Choisissez l'exécutable autonome (.exe) ou le script (.zip).</div>
+          </div>
+          <div class="agent-step-box">
+            <div class="agent-step-num" data-i18n="agent_step2_title">2. Lancez</div>
+            <div class="agent-step-desc" data-i18n="agent_step2_desc">Double-cliquez pour démarrer l'agent local (port 4848).</div>
+          </div>
+          <div class="agent-step-box">
+            <div class="agent-step-num" data-i18n="agent_step3_title">3. C'est tout !</div>
+            <div class="agent-step-desc" data-i18n="agent_step3_desc">Vos portes et golds se valident en direct sans aucune saisie manuelle.</div>
+          </div>
+        </div>
+
+        <!-- 2 Cartes de Téléchargement -->
+        <div class="agent-dl-grid">
+          <!-- Option 1: Exécutable Windows -->
+          <div class="agent-dl-card highlight">
+            <div class="agent-dl-card-top">
+              <span class="agent-dl-badge" data-i18n="agent_dl_exe_badge">Recommandé • Zéro installation</span>
+              <div class="agent-dl-title" data-i18n="agent_dl_exe_title">Exécutable Autonome (.exe)</div>
+              <div class="agent-dl-desc" data-i18n="agent_dl_exe_desc">
+                Prêt à l'emploi. Aucun logiciel tiers nécessaire, double-cliquez et jouez.
+              </div>
+            </div>
+            <a href="downloads/LostArkRaidAgent.exe" download="LostArkRaidAgent.exe" class="agent-dl-btn primary">
+              <span>📥</span> <span data-i18n="agent_dl_exe_btn">Télécharger LostArkRaidAgent.exe</span>
+            </a>
+          </div>
+
+          <!-- Option 2: Script ZIP -->
+          <div class="agent-dl-card">
+            <div class="agent-dl-card-top">
+              <span class="agent-dl-badge" data-i18n="agent_dl_zip_badge">Ultra-léger (6 Ko) • Open Source</span>
+              <div class="agent-dl-title" data-i18n="agent_dl_zip_title">Archive Script (.zip)</div>
+              <div class="agent-dl-desc" data-i18n="agent_dl_zip_desc">
+                Contient start-agent.bat et le code source JS. Nécessite Node.js.
+              </div>
+            </div>
+            <a href="downloads/lostark-raid-agent-script.zip" download="lostark-raid-agent-script.zip" class="agent-dl-btn secondary">
+              <span>📦</span> <span data-i18n="agent_dl_zip_btn">Télécharger le Script (.zip)</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Reassurance & Confidentialité -->
+        <div class="agent-notice-box">
+          <span style="font-size: 16px;">🛡️</span>
+          <div>
+            <strong style="color: #4ade80;" data-i18n="agent_privacy_notice">🔒 100% Local & Privé : L'agent s'exécute exclusivement sur votre propre PC (http://127.0.0.1:4848). Vos identifiants et combats ne transitent jamais sur internet.</strong>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;" data-i18n="agent_compatibility_notice">
+              Compatible avec LOA Logs / Lost Ark Logs (%LOCALAPPDATA%\LOA Logs\encounters.db).
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btnCloseAgentModalFooter" data-i18n="agent_modal_close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE BIENVENUE / NOUVEAU VISITEUR (ONBOARDING) -->
+  <div class="modal-overlay" id="welcomeModal">
+    <div class="modal-container welcome-modal-box">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">⚔️🛡️</span>
+          <div>
+            <h3 data-i18n="welcome_modal_title">Bienvenue sur Lost Ark CP & Optimizer T4</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;" data-i18n="welcome_modal_sub">
+              Analysez votre personnage et calculez votre Combat Power réel en quelques clics
+            </p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseWelcomeModal" title="Fermer">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding: 22px;">
+        <p style="font-size: 13px; line-height: 1.5; color: var(--text-main); margin-bottom: 16px;" data-i18n="welcome_modal_intro">
+          Entrez le <strong>pseudo</strong> de votre personnage pour charger instantanément ses statistiques, son affinage et son roster depuis <strong>lostark.bible</strong> :
+        </p>
+
+        <div class="modal-input-row" style="margin-bottom: 12px;">
+          <div style="flex: 1;">
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="modal_region_lbl">Région</label>
+            <select id="welcomeRegion">
+              <option value="CE" selected>Europe Central (CE)</option>
+              <option value="NAW">North America West (NAW)</option>
+              <option value="NAE">North America East (NAE)</option>
+              <option value="SA">South America (SA)</option>
+            </select>
+          </div>
+          <div style="flex: 2;">
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="welcome_char_name_lbl">Pseudo du Personnage</label>
+            <input type="text" id="welcomeCharName" placeholder="Ex: Àlphâ, Frieedhof, Siwilpal..." autofocus>
+          </div>
+        </div>
+
+        <div class="welcome-suggestions" style="margin-bottom: 16px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--text-dim);" data-i18n="welcome_suggestions_lbl">Suggestions :</span>
+          <button type="button" class="welcome-chip-suggestion" data-name="Àlphâ">Àlphâ (Soulfist)</button>
+          <button type="button" class="welcome-chip-suggestion" data-name="Frieedhof">Frieedhof (Scrapper)</button>
+          <button type="button" class="welcome-chip-suggestion" data-name="Siwilpal">Siwilpal (Paladin)</button>
+          <button type="button" class="welcome-chip-suggestion" data-name="Bascojin">Bascojin (Shadowhunter)</button>
+        </div>
+
+        <button type="button" class="btn-primary" id="btnWelcomeFetch" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; font-weight: 700;">
+          <span>🚀</span> <span data-i18n="welcome_btn_fetch">Charger mon personnage</span>
+        </button>
+
+        <div class="modal-status" id="welcomeStatus" style="display: none; margin-top: 12px;"></div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin: 18px 0 14px;">
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="welcome_or_label">ou découvrez l'outil</span>
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary" id="btnWelcomeDemo" style="flex: 1; justify-content: center; padding: 9px; font-size: 12px;">
+            <span>👁️</span> <span data-i18n="welcome_btn_demo">Explorer en mode Démo</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btnWelcomeRestoreNevercry" style="flex: 1; justify-content: center; padding: 9px; font-size: 12px; background: rgba(168,85,247,0.12); border-color: rgba(168,85,247,0.3); color: #c084fc;">
+            <span>🛡️</span> <span data-i18n="welcome_btn_restore_nevercry">Restaurer Roster Neevercry</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.js?v=6.6"></script>
+  <script src="calculator.js?v=10.0"></script>
+</body>
+</html>
