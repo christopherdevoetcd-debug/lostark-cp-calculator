@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=9.0">
+  <link rel="stylesheet" href="style.css?v=10.0">
 </head>
 <body>
   <div class="app-container">
@@ -2256,9 +2256,9 @@
 
             <!-- Barre de Contrôle Interactive -->
             <div class="benchmark-controls-bar">
-              <div class="bench-controls-left">
-                <button type="button" class="btn-benchmark-auto" id="btnBenchmarkAutoMatch" title="Sélectionne automatiquement le meilleur profil correspondant à votre classe, spécialisation et palier d'iLvl">
-                  <span>⚡</span> <strong data-i18n="bench_btn_auto">Auto-Match Optimal</strong>
+              <div class="bench-controls-top-row">
+                <button type="button" class="btn-benchmark-auto" id="btnBenchmarkAutoMatch" title="Sélectionne automatiquement le profil optimal (+1-3 iLvl, mêmes gemmes, même classe & spé)">
+                  <span>⚡</span> <strong data-i18n="bench_btn_auto">Auto-Match Optimal (+1-3 iLvl)</strong>
                 </button>
 
                 <div class="bench-select-group">
@@ -2271,19 +2271,27 @@
                 <div class="bench-gem-filter-group">
                   <span class="bench-filter-title" data-i18n="bench_gem_filter_lbl">Palier Gemmes :</span>
                   <div class="bench-filter-pills" id="benchmarkGemFilterGroup">
-                    <button type="button" class="bench-filter-pill active" data-filter="all" data-i18n="bench_filter_all">Tous les profils</button>
+                    <button type="button" class="bench-filter-pill active" data-filter="all" data-i18n="bench_filter_all">Tous</button>
                     <button type="button" class="bench-filter-pill" data-filter="gem8" data-i18n="bench_filter_gem8">Full Gemmes 8</button>
                     <button type="button" class="bench-filter-pill" data-filter="gem9" data-i18n="bench_filter_gem9">Gemmes 9+</button>
                   </div>
                 </div>
               </div>
 
-              <div class="bench-controls-right">
+              <!-- Ligne Dédiée : Interrogation directe lostark.bible -->
+              <div class="bench-search-bar-row">
                 <div class="bench-search-box">
                   <span class="bench-search-icon">🌐</span>
-                  <input type="text" id="benchCustomSearchInput" placeholder="Pseudo lostark.bible (ex: Siwilpal, Cyanora...)" data-i18n-placeholder="bench_search_placeholder">
+                  <input type="text" id="benchCustomSearchInput" placeholder="Entrez un pseudo ou lien lostark.bible (ex: Cyanora, Genkidama, https://lostark.bible/...)" data-i18n-placeholder="bench_search_placeholder">
+                  <select id="benchSearchRegion" class="bench-region-select" title="Région du serveur">
+                    <option value="AUTO">Région : Auto</option>
+                    <option value="CE">Europe (CE)</option>
+                    <option value="NAE">Amérique Est (NAE)</option>
+                    <option value="NAW">Amérique Ouest (NAW)</option>
+                    <option value="SA">Amérique Sud (SA)</option>
+                  </select>
                   <button type="button" id="btnBenchSearchSubmit" class="btn-bench-search">
-                    <span data-i18n="bench_btn_compare">Comparer</span>
+                    <span>⚡</span> <span data-i18n="bench_btn_compare">Interroger lostark.bible</span>
                   </button>
                 </div>
               </div>
@@ -2652,6 +2660,6 @@
   </div>
 
   <script src="i18n.js?v=6.6"></script>
-  <script src="calculator.js?v=13.0"></script>
+  <script src="calculator.js?v=14.0"></script>
 </body>
 </html>

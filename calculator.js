@@ -16768,6 +16768,7 @@
   const benchmarkState = {
     currentTargetId: null,
     customTarget: null,
+    searchedTargets: [],
     gemFilter: 'all' // 'all', 'gem8', 'gem9'
   };
 
@@ -17163,20 +17164,22 @@
     const tAstro = Math.min(isSupport ? 5.50 : 6.80, Number((pAstro + 0.80).toFixed(2)));
     const tAstroLabel = isEn ? `Astrogems (+${tAstro.toFixed(2)}% Substats)` : `Astrogemmes (+${tAstro.toFixed(2)}% Sous-stats Grille)`;
 
-    // 2f. Gemmes T4 :
+    // 2f. Gemmes T4 (strictement calquées sur les gemmes du joueur sauf filtre explicite)
     const pGems = (pSys.gems && pSys.gems.bonusPct) || 36.00;
-    let tGems = 36.00;
-    let gemDesc = '';
+    const playerGemSummary = getCharacterGemSummary(playerChar, isEn);
+    let tGems = pGems;
+    let gemDesc = playerGemSummary;
     const isGem9 = gemFilter === 'gem9';
     if (isGem9) {
       tGems = Math.max(40.50, Number((pGems + 4.50).toFixed(2)));
       gemDesc = isEn ? 'Mix T4 Gems 8 / 9 (5x Lvl 9)' : 'Mix Gemmes 8 / 9 T4 (5x Niv. 9)';
     } else if (gemFilter === 'gem8') {
-      tGems = pGems < 36.00 ? 36.00 : Math.min(38.00, Number((pGems + 1.50).toFixed(2)));
-      gemDesc = isEn ? 'Full T4 Gems 8 (Optimized DMG)' : 'Full Gemmes 8 T4 (Optimisées Dégâts)';
+      tGems = 36.00;
+      gemDesc = isEn ? 'Full T4 Gems 8' : 'Full Gemmes 8 T4';
     } else {
-      tGems = pGems < 36.00 ? 36.00 : Math.min(48.00, Number((pGems + 2.50).toFixed(2)));
-      gemDesc = tGems > 36.00 ? (isEn ? 'Mix T4 Gems 8 / 9' : 'Mix Gemmes 8 / 9 T4') : (isEn ? 'Full T4 Gems 8' : 'Full Gemmes 8 T4');
+      // Même niveau de gemmes que le joueur pour un benchmark réaliste et fidèle
+      tGems = pGems;
+      gemDesc = playerGemSummary;
     }
 
     // 2g. Cœurs Ark Grid (Sun, Moon, Star)
@@ -17253,42 +17256,25 @@
     });
 
     const targetCp = pCp + totalGapCp;
-
-    // Top player archetypes for dynamic fallback
-    const topAliases = {
-      'Breaker': 'Lethimsmashh',
-      'Shadowhunter': 'Bascojin',
-      'Bard': 'Incyra',
-      'Paladin': 'Siwilpal',
-      'Slayer': 'Canilux',
-      'Souleater': 'Hanekâwâ',
-      'Artist': 'Yukinosere',
-      'Gunlancer': 'Resiox',
-      'Gunslinger': 'Viorella',
-      'Reaper': 'Mastahrip',
-      'Scrapper': 'Frieedhof',
-      'Wardancer': 'Granchey',
-      'Soulfist': 'Cyanora',
-      'Destroyer': 'Neverbreak'
-    };
-    const hasRealAlias = !!topAliases[normClass];
-    const fallbackName = topAliases[normClass] || (isEn ? `${normClass} Benchmark (T4)` : `Benchmark ${normClass} (T4)`);
+    const dynamicBenchName = isEn 
+      ? `Step Target +2.0 iLvl (${spec})`
+      : `Palier Cible +2.0 iLvl (${spec})`;
 
     return {
       id: `dynamic_${(playerChar.name || 'char').toLowerCase()}`,
-      name: fallbackName,
+      name: dynamicBenchName,
       className: normClass,
       spec: spec,
       role: playerChar.role || (isSupport ? 'support' : 'dps'),
-      ilvl: Number((pIlvl + 2.5).toFixed(2)),
+      ilvl: Number((pIlvl + 2.0).toFixed(2)),
       cp: targetCp,
-      server: 'Elpon (CE)',
-      guild: 'lostark.bible Top',
-      rosterLevel: 325,
+      server: playerChar.server || 'Elpon (CE)',
+      guild: isEn ? 'Optimal Step (+2 iLvl)' : 'Palier Progrès (+2 iLvl)',
+      rosterLevel: playerChar.rosterLevel || 300,
       gemTier: isGem9 ? 'gem9' : (gemFilter === 'gem8' ? 'gem8' : 'all'),
       gemDesc: gemDesc,
       avatarUrl: getClassIconUrl(normClass, playerChar.role || (isSupport ? 'support' : 'dps')),
-      bibleUrl: hasRealAlias ? `https://lostark.bible/character/CE/${encodeURIComponent(fallbackName)}` : null,
+      bibleUrl: null,
       isDynamic: true,
       systems: tSys
     };
@@ -17297,26 +17283,35 @@
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
     const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
+    const pIlvl = playerChar.ilvl || 1740;
+    const pCp = playerChar.cp || 3500;
+    const pSpec = getCharacterSpecName(playerChar).toLowerCase();
     const filter = benchmarkState.gemFilter;
 
-    let matches = BENCHMARK_DATABASE.filter(b => {
+    // 1. Benchmark dynamique optimal strictement calibré (+2.0 iLvl, mêmes gemmes, même spé)
+    const dynamicBench = generateDynamicBenchmark(playerChar, filter);
+
+    // 2. Profils réels de la MÊME CLASSE dans la base de données
+    let classMatches = BENCHMARK_DATABASE.filter(b => {
       const bClass = normalizeClassName(b.className || '').toLowerCase();
-      const classMatch = (bClass === pClass);
-      if (!classMatch) return false;
+      if (bClass !== pClass) return false;
       if (filter === 'gem8' && b.gemTier !== 'gem8') return false;
       if (filter === 'gem9' && b.gemTier !== 'gem9') return false;
-      // Règle d'or : Ne proposer QUE des profils ayant un Combat Power supérieur au joueur (benchmark inspirant)
-      if (playerChar.cp && b.cp <= playerChar.cp) return false;
+      if (pCp && b.cp < pCp) return false;
       return true;
     });
 
-    const pSpec = getCharacterSpecName(playerChar).toLowerCase();
-    const hasSameSpec = matches.some(b => (b.spec || '').toLowerCase() === pSpec);
-    if (!hasSameSpec) {
-      matches.unshift(generateDynamicBenchmark(playerChar, filter));
-    }
+    // Tri rigoureux des profils de la classe :
+    // - En priorité la même spécialisation
+    // - Puis par proximité absolue d'iLvl (|b.ilvl - pIlvl|)
+    classMatches.sort((a, b) => {
+      const aSameSpec = (a.spec || '').toLowerCase() === pSpec ? 0 : 1;
+      const bSameSpec = (b.spec || '').toLowerCase() === pSpec ? 0 : 1;
+      if (aSameSpec !== bSameSpec) return aSameSpec - bSameSpec;
+      return Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl);
+    });
 
-    return matches;
+    return [dynamicBench, ...classMatches];
   }
 
   function findOptimalBenchmark(playerChar) {
@@ -17327,46 +17322,16 @@
     const pCp = playerChar.cp || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
 
-    // 1. Cherche en priorité même spécialisation avec CP supérieur
-    const sameSpec = avail.filter(b => (b.spec || '').toLowerCase() === pSpec && b.cp > pCp);
-    if (sameSpec.length > 0) {
-      // Priorité 1 : Fourchette très serrée (±3.5 iLvl - exactement 2-3 iLvl d'écart)
-      const tightBracket = sameSpec.filter(b => Math.abs(b.ilvl - pIlvl) <= 3.5);
-      if (tightBracket.length > 0) {
-        tightBracket.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl) || (a.cp - b.cp));
-        return tightBracket[0];
-      }
-
-      // Priorité 2 : Fourchette proche (±8.0 iLvl)
-      const closeIlvl = sameSpec.filter(b => Math.abs(b.ilvl - pIlvl) <= 8.0);
-      if (closeIlvl.length > 0) {
-        closeIlvl.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl) || (a.cp - b.cp));
-        return closeIlvl[0];
-      }
-
-      // Priorité 3 : Plus proche en iLvl globalement
-      sameSpec.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return sameSpec[0];
+    // Priorité 1 : Profil réel existant de même spé, ayant une différence d'iLvl très proche (1 à 3.5 iLvl) et CP supérieur
+    const realTight = avail.filter(b => !b.isDynamic && (b.spec || '').toLowerCase() === pSpec && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 3.5);
+    if (realTight.length > 0) {
+      realTight.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return realTight[0];
     }
 
-    // 2. Sinon cherche dans toute la classe avec CP supérieur (fourchette serrée d'abord)
-    const higherCp = avail.filter(b => b.cp > pCp);
-    if (higherCp.length > 0) {
-      const tightHigher = higherCp.filter(b => Math.abs(b.ilvl - pIlvl) <= 3.5);
-      if (tightHigher.length > 0) {
-        tightHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-        return tightHigher[0];
-      }
-      higherCp.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return higherCp[0];
-    }
-
-    // 3. Fallback : le plus proche en iLvl dans la spécialisation
-    const specAny = avail.filter(b => (b.spec || '').toLowerCase() === pSpec);
-    if (specAny.length > 0) {
-      specAny.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return specAny[0];
-    }
+    // Priorité 2 : Le benchmark dynamique calibré (+2.0 iLvl, mêmes gemmes, même spé)
+    const dynamicBench = avail.find(b => b.isDynamic);
+    if (dynamicBench) return dynamicBench;
 
     return avail[0];
   }
@@ -18554,7 +18519,7 @@
       const targetName = target.name;
       const originalTargetId = target.id;
       benchmarkState.syncingTarget = targetName;
-      fetchLiveBibleBenchmark(targetName, 'CE').then(liveData => {
+      fetchLiveBibleBenchmark(targetName, 'AUTO').then(liveData => {
         benchmarkState.syncingTarget = null;
         if (liveData) {
           // Contrôle de cohérence de classe : ne pas écraser si la classe ne correspond pas
@@ -18583,45 +18548,46 @@
     if (select) {
       let optionsHtml = '';
 
-      // 1. Profil personnalisé live en cours (recherche manuelle directe)
-      if (benchmarkState.customTarget) {
-        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Custom Searched Profile' : 'Profil Recherché'}">
-          <option value="custom" selected>🌐 ${escapeHtml(benchmarkState.customTarget.name)} (${escapeHtml(benchmarkState.customTarget.className)} • ${benchmarkState.customTarget.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(benchmarkState.customTarget.cp))} CP)</option>
-        </optgroup>`;
+      // 1. Profils personnalisés / recherchés en direct sur lostark.bible
+      const searchedList = benchmarkState.searchedTargets || [];
+      if (benchmarkState.customTarget && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
+        searchedList.unshift(benchmarkState.customTarget);
       }
-
-      // 2. Profils recommandés pour la classe active
-      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Recommended (' + escapeHtml(player.className) + ')' : 'Profils Recommandés (' + escapeHtml(player.className) + ')'}">`;
-      avail.forEach(b => {
-        const isSel = target && (target.id === b.id) && !benchmarkState.customTarget;
-        optionsHtml += `<option value="${escapeHtml(b.id)}" ${isSel ? 'selected' : ''}>
-          ${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(b.cp))} CP) [${b.gemTier === 'gem8' ? 'Full 8' : 'Mix 8/9'}]
-        </option>`;
-      });
-      optionsHtml += `</optgroup>`;
-
-      // 3. Références & Top Joueurs Légendaires (Multi-classes)
-      const topStarIds = ['frieedhof_taijutsu_8', 'siwilpal_blessed_8', 'bascojin_demonic_9', 'ebeneben_demonic_9', 'casy_demonic_10', 'lethimsmashh_asura_8', 'canilux_predator_9', 'viorella_peacemaker_9', 'granchey_intention_9'];
-      const topStars = BENCHMARK_DATABASE.filter(b => topStarIds.includes(b.id) && b.className.toLowerCase() !== (player.className || '').toLowerCase());
-      if (topStars.length > 0) {
-        optionsHtml += `<optgroup label="⭐ ${isEn ? 'Top Players & Legends (All Classes)' : 'Références & Top Joueurs (Multi-classes)'}">`;
-        topStars.forEach(b => {
-          const isSel = target && (target.id === b.id) && !benchmarkState.customTarget;
-          optionsHtml += `<option value="${escapeHtml(b.id)}" ${isSel ? 'selected' : ''}>
-            ${escapeHtml(b.name)} (${escapeHtml(b.className)} • ${b.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(b.cp))} CP)
+      if (searchedList.length > 0) {
+        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Bible Profiles (Searched)' : 'Profils Recherchés (lostark.bible)'}">`;
+        searchedList.forEach(s => {
+          const isSel = target && (target.id === s.id);
+          const deltaIlvl = s.ilvl - (player.ilvl || 1700);
+          const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
+          optionsHtml += `<option value="${escapeHtml(s.id)}" ${isSel ? 'selected' : ''}>
+            🌐 ${escapeHtml(s.name)} (${escapeHtml(s.className)} • ${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP)
           </option>`;
         });
         optionsHtml += `</optgroup>`;
       }
 
-      // 4. Personnages de votre Roster (comparaison libre entre persos)
+      // 2. Profils recommandés strictement calibrés pour la classe active
+      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Recommended (' + escapeHtml(player.className) + ')' : 'Profils Recommandés (' + escapeHtml(player.className) + ')'}">`;
+      avail.forEach(b => {
+        const isSel = target && (target.id === b.id) && (!benchmarkState.customTarget || !searchedList.some(s => s.id === target.id));
+        const deltaIlvl = b.ilvl - (player.ilvl || 1700);
+        const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
+        const iconPrefix = b.isDynamic ? '⚡ ' : '👤 ';
+        const gemLabel = b.gemDesc ? ` [${b.gemDesc}]` : (b.gemTier === 'gem8' ? ' [Full 8]' : ' [Mix 8/9]');
+        optionsHtml += `<option value="${escapeHtml(b.id)}" ${isSel ? 'selected' : ''}>
+          ${iconPrefix}${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(b.cp))} CP)${escapeHtml(gemLabel)}
+        </option>`;
+      });
+      optionsHtml += `</optgroup>`;
+
+      // 3. Personnages de votre Roster (comparaison libre entre persos enregistrés)
       const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : DEFAULT_DEMO_ROSTER) || [];
       const otherChars = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id));
       if (otherChars.length > 0) {
         optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other Characters (Roster)' : 'Vos Autres Personnages (Roster)'}">`;
         otherChars.forEach(c => {
           const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
-          const isSel = target && (target.id === rId) && !benchmarkState.customTarget;
+          const isSel = target && (target.id === rId);
           optionsHtml += `<option value="${escapeHtml(rId)}" ${isSel ? 'selected' : ''}>
             ${escapeHtml(c.name)} (${escapeHtml(c.className || '')} • ${(c.ilvl || 1700).toFixed(1)} iLvl - ${formatNumber(Math.round(c.cp || 0))} CP)
           </option>`;
@@ -19020,35 +18986,100 @@
   // --- SYNC LIVE LOSTARK.BIBLE ENGINE (TEMPS RÉEL SANS SNAPSHOT) ---
   const liveBibleBenchmarkCache = {};
 
-  async function fetchLiveBibleBenchmark(characterName, region = 'CE') {
+  async function fetchLiveBibleBenchmark(characterName, region = 'AUTO') {
     if (!characterName) return null;
-    const cleanName = characterName.trim();
-    const cacheKey = cleanName.toLowerCase();
+    let cleanName = characterName.trim();
+    if (!cleanName) return null;
+
+    let targetRegion = (region || 'AUTO').toUpperCase();
+
+    // 1. Détection automatique d'une URL lostark.bible complète
+    const urlMatch = cleanName.match(/(?:https?:\/\/)?(?:www\.)?lostark\.bible\/character\/([a-zA-Z]+)\/([^/?#\s]+)/i);
+    if (urlMatch) {
+      targetRegion = urlMatch[1].toUpperCase();
+      cleanName = decodeURIComponent(urlMatch[2]);
+    }
+
+    // 2. Détection d'une région entre parenthèses : "Pseudo (CE)" ou "Pseudo (NAE)"
+    const parenMatch = cleanName.match(/^([^(]+)\s*\((CE|NAE|NAW|SA)\)$/i);
+    if (parenMatch) {
+      cleanName = parenMatch[1].trim();
+      targetRegion = parenMatch[2].toUpperCase();
+    }
+
+    const cacheKey = `${cleanName.toLowerCase()}_${targetRegion}`;
     if (liveBibleBenchmarkCache[cacheKey]) {
       return liveBibleBenchmarkCache[cacheKey];
     }
 
-    const reg = region.toUpperCase();
-    const encodedName = encodeURIComponent(cleanName);
-    const proxyUrl = `/api/bible/character/${reg}/${encodedName}/__data.json`;
-    const directUrl = `https://lostark.bible/character/${reg}/${encodedName}/__data.json`;
-
-    let res = null;
-    try {
-      const proxyRes = await fetch(proxyUrl);
-      if (proxyRes.ok) res = proxyRes;
-    } catch (e) {}
-
-    if (!res) {
-      try {
-        res = await fetch(directUrl, { mode: 'cors' });
-      } catch (e) {}
+    // Définition de l'ordre des régions à interroger (Auto ou région sélectionnée en priorité)
+    let regionsToTry = ['CE', 'NAE', 'NAW', 'SA'];
+    if (targetRegion !== 'AUTO') {
+      regionsToTry = [targetRegion, 'CE', 'NAE', 'NAW', 'SA'].filter((v, i, a) => a.indexOf(v) === i);
     }
 
-    if (!res || !res.ok) return null;
-    const json = await res.json();
-    if (!json.nodes || !json.nodes[2] || !json.nodes[2].data) return null;
+    let validData = null;
+    let successfulRegion = 'CE';
 
+    for (const reg of regionsToTry) {
+      const encodedName = encodeURIComponent(cleanName);
+      const proxyUrl = `/api/bible/character/${reg}/${encodedName}/__data.json`;
+      const directUrl = `https://lostark.bible/character/${reg}/${encodedName}/__data.json`;
+
+      let res = null;
+      try {
+        const proxyRes = await fetch(proxyUrl);
+        if (proxyRes.ok) res = proxyRes;
+      } catch (e) {}
+
+      if (!res) {
+        try {
+          res = await fetch(directUrl, { mode: 'cors' });
+        } catch (e) {}
+      }
+
+      if (!res || !res.ok) continue;
+
+      try {
+        let json = await res.json();
+
+        // Résolution automatique des redirections HTTP (ex: casse du pseudo genkidama -> Genkidama)
+        if (json.type === 'redirect' && json.location) {
+          const redirectProxyUrl = `/api/bible${json.location}/__data.json`;
+          const redirectDirectUrl = `https://lostark.bible${json.location}/__data.json`;
+          let rRes = null;
+          try {
+            const rProxy = await fetch(redirectProxyUrl);
+            if (rProxy.ok) rRes = rProxy;
+          } catch (e) {}
+          if (!rRes) {
+            try {
+              rRes = await fetch(redirectDirectUrl, { mode: 'cors' });
+            } catch (e) {}
+          }
+          if (rRes && rRes.ok) {
+            json = await rRes.json();
+          }
+        }
+
+        if (!json.nodes || !json.nodes[2] || !json.nodes[2].data) continue;
+
+        const nodeData = json.nodes[2].data;
+        const parsed = parseBibleCharacter(nodeData, 'dps');
+        if (parsed && parsed.ilvl && parsed.ilvl > 500) {
+          validData = { json, parsed };
+          successfulRegion = reg;
+          break;
+        }
+      } catch (err) {
+        // En cas d'erreur ou de profil vide sur cette région, on tente la suivante
+        continue;
+      }
+    }
+
+    if (!validData) return null;
+
+    const { json, parsed } = validData;
     let header = {};
     if (json.nodes[1] && json.nodes[1].data) {
       try {
@@ -19057,34 +19088,31 @@
       } catch (e) {}
     }
 
-    const nodeData = json.nodes[2].data;
-    const parsed = parseBibleCharacter(nodeData, 'dps');
-    if (!parsed) return null;
-
     const normClass = normalizeClassName(header.class || parsed.className || '');
     const isSupport = ['paladin', 'bard', 'artist'].some(s => normClass.toLowerCase().includes(s));
     const liveIlvl = header.ilvl ? Number(header.ilvl.toFixed(2)) : (parsed.ilvl || 1740);
     const liveCp = Math.round(header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000);
+    const displayName = capitalize(header.name || cleanName);
 
     const liveChar = {
-      name: capitalize(cleanName),
+      name: displayName,
       className: normClass,
       role: isSupport ? 'support' : 'dps',
       ilvl: liveIlvl,
       cp: liveCp,
-      server: header.world ? `${header.world} (${reg})` : `${reg} Server`,
+      server: header.world ? `${header.world} (${successfulRegion})` : `${successfulRegion} Server`,
       guild: (header.guild && header.guild.name) || (typeof header.guild === 'string' ? header.guild : '') || 'lostark.bible',
       rosterLevel: header.rosterLevel || 300,
       portraitUrl: (header.portrait && header.portrait.url) || null,
       avatarUrl: (header.portrait && header.portrait.url) || getClassIconUrl(normClass, isSupport ? 'support' : 'dps'),
-      bibleUrl: `https://lostark.bible/character/${reg}/${encodedName}`,
+      bibleUrl: `https://lostark.bible/character/${successfulRegion}/${encodeURIComponent(displayName)}`,
       rawProfile: parsed,
       gear: parsed.gear,
       advHoning: parsed.advHoning,
       gemParts: parsed.gemParts,
       engravings: parsed.engravings,
       arkGridCores: parsed.arkGridCores,
-      arkGrid: getArkGridStatus({ rawProfile: parsed, id: cleanName.toLowerCase() }),
+      arkGrid: getArkGridStatus({ rawProfile: parsed, id: displayName.toLowerCase() }),
       accRolled: parsed.accRolled,
       accessories: parsed.accessories || [],
       bracelet: parsed.bracelet || (parsed.loadout && parsed.loadout.items ? parsed.loadout.items.find(i => i.slot === 'bracelet') : null) || null,
@@ -19097,7 +19125,7 @@
     const systems = extractPlayerSystems(liveChar, isEn);
 
     const fullBenchmark = {
-      id: `live_${cleanName.toLowerCase()}`,
+      id: `live_${displayName.toLowerCase()}`,
       name: liveChar.name,
       className: liveChar.className,
       spec: getCharacterSpecName(liveChar),
@@ -19120,31 +19148,42 @@
     };
 
     liveBibleBenchmarkCache[cacheKey] = fullBenchmark;
+    liveBibleBenchmarkCache[displayName.toLowerCase()] = fullBenchmark;
     return fullBenchmark;
   }
 
 
-  async function searchAndCompareBibleProfile(cleanName, region = 'CE') {
+  async function searchAndCompareBibleProfile(cleanName, region = 'AUTO') {
     const statusEl = document.getElementById('benchLoadingStatus');
+    const regionSelect = document.getElementById('benchSearchRegion');
+    const reg = regionSelect ? regionSelect.value : (region || 'AUTO');
+
     if (statusEl) {
       statusEl.className = 'bench-status-msg info';
       statusEl.style.display = 'block';
-      statusEl.innerHTML = `⏳ Interrogation directe de <strong>${escapeHtml(cleanName)} (${escapeHtml(region)})</strong> sur lostark.bible (Live)...`;
+      statusEl.innerHTML = `⏳ Interrogation directe de <strong>${escapeHtml(cleanName)}</strong> sur lostark.bible (Live)...`;
     }
 
     try {
-      const liveBench = await fetchLiveBibleBenchmark(cleanName, region);
-      if (!liveBench) throw new Error("Impossible de récupérer les données");
+      const liveBench = await fetchLiveBibleBenchmark(cleanName, reg);
+      if (!liveBench) throw new Error("Profil introuvable");
+
+      if (!benchmarkState.searchedTargets) {
+        benchmarkState.searchedTargets = [];
+      }
+      // Ajouter en tête de liste sans doublon
+      benchmarkState.searchedTargets = benchmarkState.searchedTargets.filter(t => t.id !== liveBench.id);
+      benchmarkState.searchedTargets.unshift(liveBench);
 
       benchmarkState.customTarget = liveBench;
       benchmarkState.currentTargetId = liveBench.id;
 
       if (statusEl) {
         statusEl.className = 'bench-status-msg success';
-        statusEl.innerHTML = `✅ Données en direct récupérées pour <strong>${escapeHtml(liveBench.name)}</strong> : <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong> (${liveBench.ilvl.toFixed(2)} iLvl) !`;
+        statusEl.innerHTML = `✅ Données récupérées en direct de lostark.bible pour <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>) !`;
         setTimeout(() => {
           if (statusEl) statusEl.style.display = 'none';
-        }, 4000);
+        }, 5000);
       }
 
       renderBenchmarkTab();
@@ -19153,7 +19192,7 @@
       if (statusEl) {
         statusEl.className = 'bench-status-msg error';
         statusEl.style.display = 'block';
-        statusEl.innerHTML = `⚠️ <strong>Impossible d'interroger lostark.bible pour ${escapeHtml(cleanName)} :</strong> vérifiez l'orthographe du pseudo.`;
+        statusEl.innerHTML = `⚠️ <strong>Impossible d'interroger lostark.bible pour « ${escapeHtml(cleanName)} » :</strong> vérifiez l'orthographe du pseudo ou essayez de coller le lien complet du profil (ex: <code>https://lostark.bible/character/CE/...</code>).`;
       }
     }
   }
@@ -19177,9 +19216,14 @@
     if (select) {
       select.addEventListener('change', () => {
         const val = select.value;
-        if (val === 'custom') return;
-        benchmarkState.customTarget = null;
-        benchmarkState.currentTargetId = val;
+        const searched = (benchmarkState.searchedTargets || []).find(s => s.id === val);
+        if (searched) {
+          benchmarkState.customTarget = searched;
+          benchmarkState.currentTargetId = searched.id;
+        } else {
+          benchmarkState.customTarget = null;
+          benchmarkState.currentTargetId = val;
+        }
         renderBenchmarkTab();
       });
     }
@@ -19200,10 +19244,12 @@
 
     const searchBtn = document.getElementById('btnBenchSearchSubmit');
     const searchInput = document.getElementById('benchCustomSearchInput');
+    const searchRegion = document.getElementById('benchSearchRegion');
     if (searchBtn && searchInput) {
       const doSearch = () => {
         const val = searchInput.value.trim();
-        if (val) searchAndCompareBibleProfile(val, 'CE');
+        const reg = searchRegion ? searchRegion.value : 'AUTO';
+        if (val) searchAndCompareBibleProfile(val, reg);
       };
       searchBtn.addEventListener('click', doSearch);
       searchInput.addEventListener('keydown', (e) => {

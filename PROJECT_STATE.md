@@ -67,7 +67,7 @@ Document de transmission complet du projet pour reprise instantanée de contexte
     - *Anneau #1* : Taux Critique (+1.55%) [✨ Roll Élevé], Récupération PV en Combat (+10) [⚠️ Ligne Inutile], Points de Vie Max (+3250) [⚠️ Ligne Inutile].
     - *Anneau #2* : Puissance d'Attaque (+195) [🔹 Roll Moyen], Effet Augmentation Dégâts d'Allié (+2.00%) [⚠️ Ligne Inutile], Dégâts Critiques (+4.00%) [✨ Roll Élevé].
   - **Lignes Référence Best-in-Slot** : Véritables High Rolls T4 par slot pour DPS et Supports.
-- **Cache Busters actuels** : `calculator.js?v=13.0`, `style.css?v=9.0`.
+- **Cache Busters actuels** : `calculator.js?v=14.0`, `style.css?v=10.0`.
 
 ### D. Dépliage Interactif du Bracelet T4 (Stats & Passifs)
 - **Bouton `➕` / `➖`** : Ajouté directement sur la ligne « 🔮 Bracelet T4 (Stats & Passifs) » (`rowSysBracelet`) du tableau de benchmark.
@@ -86,6 +86,21 @@ Document de transmission complet du projet pour reprise instantanée de contexte
   4. **Passif Spécial #2** : Comparaison du second passif (ex: `Coinçage +3%` vs `Ferveur +5.5%`) avec gain en CP dédié (ex: `+38 CP`).
 - **Badges Visuels Intégrés (`line-cp-pill`)** : Des pilules cyan `+X CP` sont également incrustées directement sur les badges de la carte cible pour une lecture visuelle immédiate.
 - **Garantie Mathématique Stricte** : La somme des 4 composantes est rigoureusement égale à 100% du `cpImpact` du système bracelet (ex: $18 + 13 + 13 + 38 = 82\text{ CP}$).
+
+### F. Profils de Référence Épurés (+1-3 iLvl, Mêmes Gemmes) & Moteur de Recherche Live lostark.bible
+- **Épuration Complète du Menu Déroulant** : Suppression de l'injection arbitraire de 9 classes sans rapport (Top Stars multi-classes) qui polluaient la sélection. Désormais, le menu déroulant ne propose QUE :
+  1. `🌐 Profils Recherchés (lostark.bible)` : Profils interrogés en direct par l'utilisateur.
+  2. `🎯 Profils Recommandés (<Classe>)` : Strictement la classe du joueur, avec indication directe du delta iLvl (ex: `[+2.0]`) et des gemmes.
+  3. `👥 Vos Autres Personnages (Roster)` : Uniquement si l'utilisateur possède plusieurs personnages dans son roster.
+- **Calibrage Précis du Benchmark Recommandé** :
+  - **Écart d'iLvl** : Strictement de **+2.0 iLvl** (1 à 3 iLvl au-dessus du joueur, correspondant au palier d'affinage immédiat d'armes/armures).
+  - **Palier de Gemmes** : Strictement calqué sur les gemmes réelles du joueur (ex: si le joueur est en Full 8 ou Mix 8/9, la cible a exactement la même configuration de gemmes).
+- **Moteur de Recherche Live lostark.bible Haute Compatibilité** :
+  - **Champ & Contrôle Dédiés** : Champ de saisie spacieux, sélecteur de région (`Auto`, `CE`, `NAE`, `NAW`, `SA`) et bouton d'action lumineux `Interroger lostark.bible`.
+  - **Support des Liens URL Directs** : Détection et parsing automatique des URL complètes copiées-collées depuis le navigateur (ex: `https://lostark.bible/character/CE/...`).
+  - **Résolution Automatique des Redirections de Casse** : Si un pseudo est entré en minuscules (ex: `cyanora`), le système suit automatiquement la redirection HTTP de lostark.bible vers le pseudo canonique (`Cyanora`).
+  - **Multi-Région Automatique** : En mode `Auto`, si le pseudo n'existe pas en Europe (CE), le moteur tente immédiatement les serveurs Nord-Américains (NAE, NAW) et Sud-Américains (SA).
+  - **Historique de Session** : Les profils trouvés sont conservés dans `searchedTargets` et restent sélectionnables dans le menu déroulant.
 
 ---
 
