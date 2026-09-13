@@ -12770,6 +12770,19 @@
         loadout = l;
       }
     });
+    // Si le rôle souhaité est support, privilégier explicitement un loadout support si présent
+    if (preferredRole === 'support') {
+      const supLoadouts = raidLoadouts.filter(l => l.battlePoint?.isSupport === true || l.isSupport === true);
+      if (supLoadouts.length > 0) {
+        let bestSup = supLoadouts[0];
+        supLoadouts.forEach(l => {
+          if ((l.combatPower?.score || 0) > (bestSup?.combatPower?.score || 0)) {
+            bestSup = l;
+          }
+        });
+        loadout = bestSup;
+      }
+    }
 
     // Fallback de sécurité si aucun raidLoadout filtré
     if (!loadout) {
@@ -16710,17 +16723,23 @@
     }
 
     // 7c. Combat Stats (Type 26: Crit / Spec / Swift)
-    const t26Part = allBpParts.find(p => p.type === 26 || p.total);
-    let combatStatsBonusPct = 76.00;
-    let combatStatsLabel = isEn ? "Combat Stats (Crit/Spec/Swift)" : "Stats de Combat (Crit/Spé/Rap)";
-    if (t26Part) {
-      const sumVal = t26Part.value !== undefined ? (t26Part.value / 100) : 0;
-      if (sumVal > 0) {
-        combatStatsBonusPct = Number(sumVal.toFixed(2));
-        const totalPts = t26Part.total ? ` (${formatNumber(t26Part.total)} pts)` : '';
-        combatStatsLabel = isEn ? `Combat Stats${totalPts} (+${combatStatsBonusPct.toFixed(2)}%)` : `Stats de Combat${totalPts} (+${combatStatsBonusPct.toFixed(2)}%)`;
-      }
+    const t26Part = allBpParts.find(p => p && (p.type === 26 || p.total));
+    let totalPtsNum = t26Part && t26Part.total ? t26Part.total : 0;
+    if (!totalPtsNum && t26Part && t26Part.value) {
+      totalPtsNum = isSupport ? Math.round(t26Part.value / 4) : Math.round(t26Part.value / 3);
     }
+    if (!totalPtsNum) {
+      totalPtsNum = pIlvl >= 1770 ? 2495 : (pIlvl >= 1750 ? 2386 : 2280);
+    }
+
+    // Normalisation unifiée : Support base 2500 pts = 100% (+0.04%/pt), DPS base 2500 pts = 75% (+0.03%/pt)
+    let combatStatsBonusPct = isSupport
+      ? Number(((totalPtsNum / 2500) * 100).toFixed(2))
+      : Number((totalPtsNum * 0.03).toFixed(2));
+    const totalPtsLabel = ` (${formatNumber(totalPtsNum)} pts)`;
+    let combatStatsLabel = isEn
+      ? `Combat Stats${totalPtsLabel} (+${combatStatsBonusPct.toFixed(2)}%)`
+      : `Stats de Combat${totalPtsLabel} (+${combatStatsBonusPct.toFixed(2)}%)`;
 
     // 8. Ark Grid Percentages & Labels
     const sunBonusPct = hasSun17 ? (isSupport ? 1.13 : 2.24) : (isSupport ? 0.35 : 0.60);
@@ -16813,17 +16832,31 @@
     const ilvl = target.ilvl || 1750;
     const isSupport = target.role === 'support' || ['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s));
 
-    // Garde-fou 1 : Gravures Reliques T4 ne peuvent pas être < 60%
-    if (!sys.engravings || !sys.engravings.bonusPct || sys.engravings.bonusPct < 60) {
-      const engVal = ilvl >= 1770 ? 104.24 : 101.94;
-      const specName = target.spec || (target.className || (isEn ? 'Class' : 'Classe'));
-      const stoneBonus = isEn
-        ? (ilvl >= 1770 ? ' (Stone +3/+4 & Relic: +104.24%)' : ' (Stone +2/+3 & Relic: +101.94%)')
-        : (ilvl >= 1770 ? ' (Pierre +3/+4 & Relique: +104.24%)' : ' (Pierre +2/+3 & Relique: +101.94%)');
-      sys.engravings = {
-        label: (isEn ? `${specName} 3, 5 Full T4 Relic Engravings` : `${specName} 3, 5 Gravures Reliques T4`) + stoneBonus,
-        bonusPct: engVal
-      };
+    // Garde-fou 1 : Gravures Reliques T4 (Support: ~125-135%, DPS: ~101-105%)
+    if (isSupport) {
+      if (!sys.engravings || !sys.engravings.bonusPct || sys.engravings.bonusPct < 110) {
+        const engVal = ilvl >= 1770 ? 134.50 : (ilvl >= 1750 ? 133.89 : 125.00);
+        const specName = target.spec || (target.className || (isEn ? 'Support' : 'Support'));
+        const stoneBonus = isEn
+          ? (ilvl >= 1770 ? ` (Stone +3/+4 & Relic: +${engVal.toFixed(2)}%)` : ` (Stone +2/+3 & Relic: +${engVal.toFixed(2)}%)`)
+          : (ilvl >= 1770 ? ` (Pierre +3/+4 & Relique: +${engVal.toFixed(2)}%)` : ` (Pierre +2/+3 & Relique: +${engVal.toFixed(2)}%)`);
+        sys.engravings = {
+          label: (isEn ? `${specName} 3, 5 Full T4 Relic Engravings` : `${specName} 3, 5 Gravures Reliques T4`) + stoneBonus,
+          bonusPct: engVal
+        };
+      }
+    } else {
+      if (!sys.engravings || !sys.engravings.bonusPct || sys.engravings.bonusPct < 60) {
+        const engVal = ilvl >= 1770 ? 104.24 : 101.94;
+        const specName = target.spec || (target.className || (isEn ? 'Class' : 'Classe'));
+        const stoneBonus = isEn
+          ? (ilvl >= 1770 ? ` (Stone +3/+4 & Relic: +${engVal.toFixed(2)}%)` : ` (Stone +2/+3 & Relic: +${engVal.toFixed(2)}%)`)
+          : (ilvl >= 1770 ? ` (Pierre +3/+4 & Relique: +${engVal.toFixed(2)}%)` : ` (Pierre +2/+3 & Relique: +${engVal.toFixed(2)}%)`);
+        sys.engravings = {
+          label: (isEn ? `${specName} 3, 5 Full T4 Relic Engravings` : `${specName} 3, 5 Gravures Reliques T4`) + stoneBonus,
+          bonusPct: engVal
+        };
+      }
     }
 
     // Garde-fou 2 : Main Stat & Base AP (ne peut JAMAIS être <= 10% pour un profil T4 1700+)
@@ -16838,13 +16871,25 @@
       };
     }
 
-    // Garde-fou 3 : Combat Stats (Crit / Spec / Swift ne peut JAMAIS être <= 10% pour un profil T4 1700+)
-    if (!sys.combatStats || !sys.combatStats.bonusPct || sys.combatStats.bonusPct <= 10) {
-      const cPct = Number((ilvl >= 1770 ? 78.36 : (ilvl >= 1750 ? 77.07 : 76.00)).toFixed(2));
-      sys.combatStats = {
-        label: isEn ? `Combat Stats (+${cPct.toFixed(2)}%)` : `Stats de Combat (+${cPct.toFixed(2)}%)`,
-        bonusPct: cPct
-      };
+    // Garde-fou 3 : Combat Stats (Support base 2500 pts = 100%, DPS base 2500 pts = 75%)
+    if (isSupport) {
+      if (!sys.combatStats || !sys.combatStats.bonusPct || sys.combatStats.bonusPct < 85) {
+        const defaultPts = ilvl >= 1770 ? 2500 : (ilvl >= 1750 ? 2450 : 2380);
+        const cPct = Number(((defaultPts / 2500) * 100).toFixed(2));
+        sys.combatStats = {
+          label: isEn ? `Combat Stats (${formatNumber(defaultPts)} pts) (+${cPct.toFixed(2)}%)` : `Stats de Combat (${formatNumber(defaultPts)} pts) (+${cPct.toFixed(2)}%)`,
+          bonusPct: cPct
+        };
+      }
+    } else {
+      if (!sys.combatStats || !sys.combatStats.bonusPct || sys.combatStats.bonusPct <= 10) {
+        const defaultPts = ilvl >= 1770 ? 2500 : (ilvl >= 1750 ? 2450 : 2380);
+        const cPct = Number((defaultPts * 0.03).toFixed(2));
+        sys.combatStats = {
+          label: isEn ? `Combat Stats (${formatNumber(defaultPts)} pts) (+${cPct.toFixed(2)}%)` : `Stats de Combat (${formatNumber(defaultPts)} pts) (+${cPct.toFixed(2)}%)`,
+          bonusPct: cPct
+        };
+      }
     }
 
     // Garde-fou 4 : Astrogemmes Grille d'Ark
@@ -18862,19 +18907,20 @@
       || [];
 
     const t26 = allBpParts.find(p => p.type === 26 || p.total);
+    const role = c.role || (canon && canon.role) || (['paladin', 'bard', 'artist'].some(s => (c.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
+    const spec = (c.spec || (canon && canon.spec) || '').toLowerCase();
     const ilvl = c.ilvl || (canon && canon.ilvl) || 1750;
-    let totalPts = t26 && t26.total ? t26.total : 0;
-    let bonusPct = t26 && t26.value !== undefined ? Number((t26.value / 100).toFixed(2)) : 0;
 
+    let totalPts = t26 && t26.total ? t26.total : 0;
+    if (!totalPts && t26 && t26.value) {
+      totalPts = (role === 'support') ? Math.round(t26.value / 4) : Math.round(t26.value / 3);
+    }
     if (!totalPts) {
       totalPts = ilvl >= 1770 ? 2495 : (ilvl >= 1750 ? 2386 : 2280);
     }
-    if (!bonusPct) {
-      bonusPct = Number(((totalPts / 2500) * 100).toFixed(2));
-    }
-
-    const role = c.role || (canon && canon.role) || (['paladin', 'bard', 'artist'].some(s => (c.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
-    const spec = (c.spec || (canon && canon.spec) || '').toLowerCase();
+    const bonusPct = (role === 'support')
+      ? Number(((totalPts / 2500) * 100).toFixed(2))
+      : Number((totalPts * 0.03).toFixed(2));
 
     let swift = 0;
     let specStat = 0;
@@ -19785,7 +19831,8 @@
       const targetName = target.name;
       const originalTargetId = target.id;
       benchmarkState.syncingTarget = targetName;
-      fetchLiveBibleBenchmark(targetName, 'AUTO').then(liveData => {
+      const prefRole = target.role || player.role || (['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
+      fetchLiveBibleBenchmark(targetName, 'AUTO', prefRole).then(liveData => {
         benchmarkState.syncingTarget = null;
         if (liveData) {
           // Contrôle de cohérence de classe : ne pas écraser si la classe ne correspond pas
@@ -19798,6 +19845,15 @@
           // Protection contre les profils déconnectés en stuff de chaos ou dégradé
           if (player.cp && liveData.cp < player.cp && target.cp > player.cp) {
             console.warn(`[Benchmark Sync] Live data for ${targetName} has degraded CP (${liveData.cp} vs player ${player.cp}). Retaining reference.`);
+            return;
+          }
+          // Protection contre les profils Support déconnectés en build DPS (off-spec Grudge / Poupée Maudite)
+          const isTargetSupport = target.role === 'support' || (target.spec && target.spec.toLowerCase().includes('blessed')) || ['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s));
+          const isLiveDpsSpec = liveData.rawProfile?.battlePoint?.isSupport === false ||
+            (liveData.rawProfile?.loadout?.battlePoint?.isSupport === false) ||
+            (Array.isArray(liveData.engravings) && liveData.engravings.some(e => e.id === 1118 || e.id === 1254));
+          if (isTargetSupport && isLiveDpsSpec) {
+            console.warn(`[Benchmark Sync] Live data for ${targetName} is logged in DPS build (Grudge/isSupport:false) while benchmark target is Support (${target.spec || 'Blessed Aura'}). Retaining canonical Support preset.`);
             return;
           }
           Object.assign(target, liveData);
@@ -20420,7 +20476,7 @@
   // --- SYNC LIVE LOSTARK.BIBLE ENGINE (TEMPS RÉEL SANS SNAPSHOT) ---
   const liveBibleBenchmarkCache = {};
 
-  async function fetchLiveBibleBenchmark(characterName, region = 'AUTO') {
+  async function fetchLiveBibleBenchmark(characterName, region = 'AUTO', preferredRole = 'support') {
     if (!characterName) return null;
     let cleanName = characterName.trim();
     if (!cleanName) return null;
@@ -20499,7 +20555,7 @@
         if (!json.nodes || !json.nodes[2] || !json.nodes[2].data) continue;
 
         const nodeData = json.nodes[2].data;
-        const parsed = parseBibleCharacter(nodeData, 'dps');
+        const parsed = parseBibleCharacter(nodeData, preferredRole || 'support');
         if (parsed && parsed.ilvl && parsed.ilvl > 500) {
           validData = { json, parsed };
           successfulRegion = reg;
@@ -20599,7 +20655,8 @@
     }
 
     try {
-      const liveBench = await fetchLiveBibleBenchmark(cleanName, reg);
+      const activePlayer = getCurrentActiveCharacter();
+      const liveBench = await fetchLiveBibleBenchmark(cleanName, reg, (activePlayer && activePlayer.role) || 'support');
       if (!liveBench) throw new Error("Profil introuvable");
 
       if (!benchmarkState.searchedTargets) {
