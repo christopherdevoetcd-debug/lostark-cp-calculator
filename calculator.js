@@ -213,18 +213,18 @@
       className: 'Shadowhunter',
       spec: 'Demonic Impulse',
       role: 'dps',
-      ilvl: 1770.83,
-      cp: 5445,
+      ilvl: 1777.50,
+      cp: 5970,
       target: 1790.0,
       advHoning: 40,
       server: 'Elpon (CE)',
       guild: 'Keyboard Heroes',
-      rosterLevel: 319,
-      gemDesc: 'Mix Gemmes 8 / 9 T4 (5x Niv. 9)',
-      gemParts: [6.4, 6.4, 6.4, 6.4, 6.4, 5.76, 5.76, 5.76, 5.76, 5.76, 5.76],
+      rosterLevel: 320,
+      gemDesc: 'Mix Gemmes 8 / 9 T4 (8x Niv. 9)',
+      gemParts: [6.4, 6.4, 6.4, 6.4, 6.4, 6.4, 6.4, 6.4, 5.76, 5.76, 5.76],
       portraitUrl: 'images/characters/neevercry.webp',
       avatarUrl: 'images/characters/neevercry_avatar.webp',
-      gear: { weapon: 23, head: 18, shoulder: 18, chest: 18, pants: 19, gloves: 19 },
+      gear: { weapon: 23, head: 20, shoulder: 20, chest: 20, pants: 20, gloves: 20 },
       arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
       accRolled: true
     },
@@ -572,11 +572,11 @@
       name: 'Neevercry',
       className: 'Shadowhunter',
       role: 'dps',
-      ilvl: 1770.83,
-      cp: 5445,
+      ilvl: 1777.50,
+      cp: 5970,
       target: 1790.0,
       advHoning: 40,
-      gear: { weapon: 23, head: 18, shoulder: 18, chest: 18, pants: 19, gloves: 19 },
+      gear: { weapon: 23, head: 20, shoulder: 20, chest: 20, pants: 20, gloves: 20 },
       opt: {
         dpsAddDmg: 'high',
         dpsOutDmg: 'high',
@@ -2174,7 +2174,7 @@
   const KNOWN_GEM_PRESETS = {
     neversup: { major8: 80, full8: 199, full9: 596, full10: 1040 },
     kaarlach: { major8: 95, full8: 65, full9: 418, full10: 798 },
-    neevercry: { major8: 95, full8: 0, full9: 194, full10: 574 },
+    neevercry: { major8: 95, full8: 0, full9: 97, full10: 477 },
     neeverslayer: { major8: 95, full8: 0, full9: 194, full10: 574 },
     jigokuushoujo: { major8: 80, full8: 258, full9: 655, full10: 1099 },
     neverbreak: { major8: 95, full8: 182, full9: 537, full10: 917 }
@@ -4477,7 +4477,7 @@
       }
     } else {
       const demoGemCounts = {
-        neevercry: { to8: 0, to9: 6 },
+        neevercry: { to8: 0, to9: 3 },
         kaarlach: { to8: 2, to9: 10 },
         neeverslayer: { to8: 0, to9: 6 },
         neversup: { to8: 6, to9: 11 },
