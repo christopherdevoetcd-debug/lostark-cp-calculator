@@ -16941,6 +16941,9 @@
       { name: 'Câsy', region: 'CE', ilvl: 1789.17, cp: 6586 }
     ],
     'soulfist': [
+      { name: 'Leezek', region: 'CE', ilvl: 1774.17, cp: 4925 },
+      { name: 'Elthasaiyan', region: 'CE', ilvl: 1770.00, cp: 5837 },
+      { name: 'Jibril', region: 'NA', ilvl: 1800.00, cp: 8672 },
       { name: 'Àlphâ', region: 'CE', ilvl: 1770.00, cp: 4832 }
     ],
     'breaker': [
@@ -19834,28 +19837,17 @@
           target = (benchmarkState.searchedTargets || []).find(b => b.id === benchmarkState.currentTargetId && normalizeClassName(b.className || '').toLowerCase() === pClass);
         }
       }
-      if (!target) {
-        target = findOptimalBenchmark(player);
-        if (target) benchmarkState.currentTargetId = target.id;
-      }
     }
 
-    if (!target) {
-      // Auto-fetch d'un pair LIVE vérifié en direct depuis lostark.bible (MÊME CLASSE STRICTEMENT)
+    // Priorité absolue aux profils LIVE de lostark.bible :
+    // Si aucun profil LIVE réel n'est encore chargé/sélectionné pour cette classe, on tente l'auto-fetch du pair réel vérifié
+    const hasLivePeer = avail.some(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass) ||
+                        (benchmarkState.searchedTargets || []).some(b => b && b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass);
+    if ((!target || !target.isLive) && !hasLivePeer && !benchmarkState.manualDynamicChosen) {
       const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts);
       const peerKey = suggested ? `${suggested.name.toLowerCase()}_${(suggested.region || 'CE').toUpperCase()}` : null;
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
         benchmarkState.isAutoFetching = true;
-        searchAndCompareBibleProfile(suggested.name, suggested.region).catch(() => {
-          if (!benchmarkState.failedAttempts) benchmarkState.failedAttempts = new Set();
-          benchmarkState.failedAttempts.add(peerKey);
-        }).finally(() => {
-          benchmarkState.isAutoFetching = false;
-        });
-      }
-
-      // Si un fetch est activement en cours
-      if (benchmarkState.isAutoFetching && suggested) {
         heroCard.innerHTML = `
           <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
             <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
@@ -19874,9 +19866,23 @@
         if (select) {
           select.innerHTML = `<option value="">⏳ ${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
         }
+        searchAndCompareBibleProfile(suggested.name, suggested.region).catch(() => {
+          if (!benchmarkState.failedAttempts) benchmarkState.failedAttempts = new Set();
+          benchmarkState.failedAttempts.add(peerKey);
+        }).finally(() => {
+          benchmarkState.isAutoFetching = false;
+          renderBenchmarkTab();
+        });
         return;
       }
+    }
 
+    if (!target) {
+      target = findOptimalBenchmark(player);
+      if (target) benchmarkState.currentTargetId = target.id;
+    }
+
+    if (!target) {
       // Si aucun profil n'est disponible et aucun fetch n'est en cours :
       // État d'invitation à la recherche (NON BLOQUANT, interactif)
       heroCard.innerHTML = `
@@ -20062,7 +20068,10 @@
             <div class="bench-char-info">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#34d399;">${t('bench_card_target_title')}</span>
-                ${target.isLive ? `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🟢 LIVE lostark.bible</span>` : ''}
+                ${target.isLive 
+                  ? `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🟢 LIVE lostark.bible</span>` 
+                  : `<span style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #a5b4fc; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🎯 ${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
+                }
               </div>
               <div class="bench-char-name-row">
                 <span class="bench-char-name">${escapeHtml(target.name)}</span>
@@ -20076,14 +20085,17 @@
           <div class="bench-cp-box">
             <div>
               <div class="bench-cp-label">Combat Power</div>
-              <div style="font-size:11px; color:var(--text-muted);">${isEn ? 'Raid Preset (lostark.bible)' : 'Profil de Raid (lostark.bible)'}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${target.isLive ? (isEn ? 'Raid Preset (lostark.bible)' : 'Profil de Raid (lostark.bible)') : (isEn ? 'Calibrated Target (Progression)' : 'Palier de Progression Calibré')}</div>
             </div>
             <div class="bench-cp-val">${formatNumber(Math.round(tCp))} CP</div>
           </div>
 
           <div class="bench-pills-row">
             <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
-            <a href="${target.bibleUrl || `https://lostark.bible/character/CE/${encodeURIComponent(target.name)}`}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#38bdf8; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>
+            ${target.isLive && target.bibleUrl
+              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#38bdf8; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>`
+              : `<span class="bench-pill" style="margin-left:auto; background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3); color:#a5b4fc;">🎯 ${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
+            }
           </div>
         </div>
       </div>
@@ -20605,9 +20617,9 @@
     }
 
     // Définition de l'ordre des régions à interroger (Auto ou région sélectionnée en priorité)
-    let regionsToTry = ['CE', 'NAE', 'NAW', 'SA'];
+    let regionsToTry = ['CE', 'NA', 'NAE', 'NAW', 'SA'];
     if (targetRegion !== 'AUTO') {
-      regionsToTry = [targetRegion, 'CE', 'NAE', 'NAW', 'SA'].filter((v, i, a) => a.indexOf(v) === i);
+      regionsToTry = [targetRegion, 'CE', 'NA', 'NAE', 'NAW', 'SA'].filter((v, i, a) => a.indexOf(v) === i);
     }
 
     let validData = null;
@@ -20635,8 +20647,9 @@
       try {
         let json = await res.json();
 
-        // Résolution automatique des redirections HTTP (ex: casse du pseudo genkidama -> Genkidama)
+        // Résolution automatique des redirections HTTP (ex: casse du pseudo genkidama -> Genkidama ou NAE -> NA)
         if (json.type === 'redirect' && json.location) {
+          const locMatch = json.location.match(/^\/character\/([^\/]+)/i);
           const redirectProxyUrl = `/api/bible${json.location}/__data.json`;
           const redirectDirectUrl = `https://lostark.bible${json.location}/__data.json`;
           let rRes = null;
@@ -20651,6 +20664,9 @@
           }
           if (rRes && rRes.ok) {
             json = await rRes.json();
+            if (locMatch && locMatch[1]) {
+              successfulRegion = locMatch[1].toUpperCase();
+            }
           }
         }
 
@@ -20962,6 +20978,8 @@
   window.__getAvailableBenchmarks = getAvailableBenchmarks;
   window.__generateDynamicBenchmark = generateDynamicBenchmark;
   window.__findOptimalBenchmark = findOptimalBenchmark;
+  window.__getSuggestedLivePeerForClass = getSuggestedLivePeerForClass;
+  window.__VERIFIED_LIVE_PEERS = VERIFIED_LIVE_PEERS;
   window.__extractCharacterEngravings = extractCharacterEngravings;
   window.__buildEngravingsBreakdownHtml = buildEngravingsBreakdownHtml;
   window.__buildBaseAtkBreakdownHtml = buildBaseAtkBreakdownHtml;
