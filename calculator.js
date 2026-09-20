@@ -17059,20 +17059,172 @@
     return validPeers[0];
   }
 
-  // Fonction stub conservée pour rétro-compatibilité stricte des appels éventuels (retourne null, zéro profil synthétique)
   function generateDynamicBenchmark(playerChar, gemFilter = 'all') {
-    return null;
+    if (!playerChar) return null;
+    const charClassName = playerChar.className || playerChar.characterClass || playerChar.class || '';
+    const normClass = normalizeClassName(charClassName) || 'Soulfist';
+    const isSupport = playerChar.role === 'support' || ['Paladin', 'Bard', 'Artist'].some(s => normClass.toLowerCase().includes(s.toLowerCase()));
+    const pCp = playerChar.cp || playerChar.combatPower || 3500;
+    const pIlvl = playerChar.ilvl || 1740;
+    const spec = getCharacterSpecName(playerChar);
+    const isEn = isEnglishLang();
+
+    // 1. Extraction fidèle des systèmes actuels du joueur
+    const pSys = extractPlayerSystems(playerChar, isEn);
+
+    // Extraction des niveaux d'affinage réels du joueur
+    const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
+    const gear = playerChar.gear || (canon && canon.gear) || { weapon: 19, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 };
+    const wLvl = gear.weapon !== undefined ? gear.weapon : 19;
+    const avgArmor = Math.round(((gear.head || 19) + (gear.chest || 19) + (gear.pants || 19) + (gear.shoulder || 19) + (gear.gloves || 19)) / 5);
+
+    // 2. Modélisation dynamique du palier cible
+    // 2a. Arme T4 : +1 palier d'affinage (max 25)
+    const tWLvl = Math.min(25, wLvl + 1);
+    const tWeaponBonus = Number((30.10 + (tWLvl - 19) * 2.15).toFixed(2));
+    const tWeaponLabel = isEn ? `T4 Weapon +${tWLvl} (Quality 98+)` : `Arme T4 +${tWLvl} (Qualité 98+)`;
+
+    // 2b. Armures T4 : +1 palier moyen d'affinage (max 25)
+    const tAvgArmor = Math.min(25, avgArmor + 1);
+    const tArmorBonus = isSupport 
+      ? Number((12.00 + (tAvgArmor - 12) * 1.50).toFixed(2)) 
+      : Number((8.00 + (tAvgArmor - 12) * 1.37).toFixed(2));
+    const tArmorLabel = isEn ? `T4 Armors Avg +${tAvgArmor}` : `Armures T4 Moyenne +${tAvgArmor}`;
+
+    // 2c. Accessoires T4 : +0.80% à +1.20% (up to 15.20%)
+    const pAcc = (pSys.accessories && pSys.accessories.bonusPct) || 13.50;
+    const tAcc = Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2)));
+    const tAccLabel = isEn ? "3 High Rolls Weapon Atk / Supp Dmg (Optimized)" : "3 Rolls High Atk Arme / Dégâts Supp (Optimisés)";
+
+    // 2d. Bracelet T4 : +0.80% (up to 12.00%)
+    const pBrac = (pSys.bracelet && pSys.bracelet.bonusPct) || 10.20;
+    const tBrac = Math.min(12.00, Number((pBrac + 0.80).toFixed(2)));
+    const tBracLabel = isEn ? "Relic (Circularity + High Dmg/Buff Perk)" : "Relique (Circulaire + Passif Dégâts/Buff High)";
+
+    // 2e. Astrogemmes : +0.80% (up to 5.50% / 6.80%)
+    const pAstro = (pSys.arkGridAstrogems && pSys.arkGridAstrogems.bonusPct) || (isSupport ? 3.50 : 4.80);
+    const tAstro = Math.min(isSupport ? 5.50 : 6.80, Number((pAstro + 0.80).toFixed(2)));
+    const tAstroLabel = isEn ? `Astrogems (+${tAstro.toFixed(2)}% Substats)` : `Astrogemmes (+${tAstro.toFixed(2)}% Sous-stats Grille)`;
+
+    // 2f. Gemmes T4
+    const pGems = (pSys.gems && pSys.gems.bonusPct) || 36.00;
+    const playerGemSummary = getCharacterGemSummary(playerChar, isEn);
+    let tGems = pGems;
+    let gemDesc = playerGemSummary;
+    const isGem9 = gemFilter === 'gem9';
+    if (isGem9) {
+      tGems = Math.max(40.50, Number((pGems + 4.50).toFixed(2)));
+      gemDesc = isEn ? 'Mix T4 Gems 8 / 9 (5x Lvl 9)' : 'Mix Gemmes 8 / 9 T4 (5x Niv. 9)';
+    } else if (gemFilter === 'gem8') {
+      tGems = 36.00;
+      gemDesc = isEn ? 'Full T4 Gems 8' : 'Full Gemmes 8 T4';
+    } else {
+      tGems = pGems;
+      gemDesc = playerGemSummary;
+    }
+
+    // 2g. Cœurs Ark Grid (Sun, Moon, Star)
+    const pSun = (pSys.arkGridSun && pSys.arkGridSun.bonusPct) || 0;
+    const baseSun17 = isSupport ? 1.13 : 2.24;
+    const tSun = pSun < baseSun17 ? baseSun17 : Number((pSun + (isSupport ? 0.12 : 0.24)).toFixed(2));
+    const tSunLabel = isEn ? `Tier 18P (Order Sun: +${tSun.toFixed(2)}%)` : `Palier 18P (Ordre Soleil: +${tSun.toFixed(2)}%)`;
+
+    const pMoon = (pSys.arkGridMoon && pSys.arkGridMoon.bonusPct) || 0;
+    const baseMoon17 = isSupport ? 1.11 : 2.22;
+    const tMoon = pMoon < baseMoon17 ? baseMoon17 : Number((pMoon + (isSupport ? 0.12 : 0.24)).toFixed(2));
+    const tMoonLabel = isEn ? `Tier 18P (Order Moon: +${tMoon.toFixed(2)}%)` : `Palier 18P (Ordre Lune: +${tMoon.toFixed(2)}%)`;
+
+    const pStar = (pSys.arkGridStar && pSys.arkGridStar.bonusPct) || 0;
+    const baseStar17 = isSupport ? 0.60 : 1.20;
+    const tStar = pStar < baseStar17 ? baseStar17 : Number((pStar + (isSupport ? 0.10 : 0.18)).toFixed(2));
+    const tStarLabel = isEn ? `Tier 18P (Chaos Star: +${tStar.toFixed(2)}%)` : `Palier 18P (Chaos Étoile: +${tStar.toFixed(2)}%)`;
+
+    // 2h. Systèmes à Parité / Endgame Standards
+    const tEvo = Math.max(21.00, (pSys.arkEvolution && pSys.arkEvolution.bonusPct) || 21.00);
+    const tEnl = Math.max(28.28, (pSys.arkEnlightenment && pSys.arkEnlightenment.bonusPct) || 28.28);
+    const tLeap = Math.max(14.00, (pSys.arkLeap && pSys.arkLeap.bonusPct) || 14.00);
+    const tEng = (pSys.engravings && pSys.engravings.bonusPct >= 60) ? pSys.engravings.bonusPct : (playerChar.ilvl >= 1770 ? 104.24 : 101.94);
+    const tAdv = Math.max(8.80, (pSys.advHoning && pSys.advHoning.bonusPct) || 8.80);
+    const tTransW = (pSys.transWeapon && pSys.transWeapon.bonusPct) || 14.50;
+    const tTransA = (pSys.transArmor && pSys.transArmor.bonusPct) || 18.20;
+    const tKarma = (pSys.karma && pSys.karma.bonusPct) || 3.60;
+
+    let engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`;
+
+    const tSys = {
+      engravings: { label: engLabel, bonusPct: tEng },
+      baseAttackStat: pSys.baseAttackStat || { label: getMainStatName(normClass, isEn) + (playerChar.ilvl >= 1770 ? ' 735k' : ' 690k'), bonusPct: playerChar.ilvl >= 1770 ? 37.00 : 34.50 },
+      combatStats: pSys.combatStats || { label: isEn ? "Combat Stats" : "Stats de Combat", bonusPct: playerChar.ilvl >= 1770 ? 78.36 : 77.07 },
+      arkEvolution: { label: isEn ? '140 Evolution Pts' : '140 Pts Évolution', bonusPct: tEvo },
+      arkEnlightenment: { label: isEn ? '101 Enlightenment Pts' : '101 Pts Illumination', bonusPct: tEnl },
+      arkLeap: { label: isEn ? '70 Leap Pts' : '70 Pts Saut', bonusPct: tLeap },
+      arkGridSun: { label: tSunLabel, bonusPct: tSun },
+      arkGridMoon: { label: tMoonLabel, bonusPct: tMoon },
+      arkGridStar: { label: tStarLabel, bonusPct: tStar },
+      arkGridAstrogems: { label: tAstroLabel, bonusPct: tAstro },
+      weapon: { label: tWeaponLabel, bonusPct: Number(tWeaponBonus.toFixed(2)) },
+      armors: { label: tArmorLabel, bonusPct: Number(tArmorBonus.toFixed(2)) },
+      advHoning: { label: isEn ? "Advanced Honing +40" : "Affinage Avancé +40", bonusPct: tAdv },
+      transWeapon: { label: isEn ? "Weapon Transcendence R3" : "Transcendance Arme R3", bonusPct: tTransW },
+      transArmor: { label: isEn ? "Armor Transcendence R3" : "Transcendance Armures R3", bonusPct: tTransA },
+      accessories: { label: tAccLabel, bonusPct: tAcc },
+      bracelet: { label: tBracLabel, bonusPct: tBrac },
+      gems: { label: gemDesc, bonusPct: tGems },
+      karma: { label: isEn ? "Evolution Karma Rank 6" : "Karma Évolution Rang 6", bonusPct: tKarma }
+    };
+
+    // 3. Calcul de l'écart CP exact (Total Gap = Somme exacte des gains individuels des systèmes)
+    const cpPerPct = (pCp && pCp > 1000) ? (pCp / 100) : 38;
+    let totalGapCp = 0;
+    Object.keys(tSys).forEach(k => {
+      const pVal = (pSys[k] && pSys[k].bonusPct) || 0;
+      const tVal = (tSys[k] && tSys[k].bonusPct) || 0;
+      const d = Number((tVal - pVal).toFixed(2));
+      if (d > 0.01) {
+        totalGapCp += Math.round(d * cpPerPct);
+      }
+    });
+
+    const safeGap = Math.max(220, Math.min(480, totalGapCp));
+    const targetCp = pCp + safeGap;
+    const stepIlvl = Number((pIlvl + (pIlvl >= 1770 ? 2.5 : 5.0)).toFixed(2));
+    const dynamicBenchName = isEn 
+      ? `${normClass} (T4 Benchmark • Target Step)` 
+      : `${normClass} (Benchmark T4 • Palier Progrès)`;
+
+    return {
+      id: `dynamic_${(playerChar.id || playerChar.name || 'char').toLowerCase()}_${gemFilter || 'all'}`,
+      name: dynamicBenchName,
+      className: normClass,
+      characterClass: normClass,
+      spec: spec,
+      role: playerChar.role || (isSupport ? 'support' : 'dps'),
+      ilvl: stepIlvl,
+      cp: targetCp,
+      combatPower: targetCp,
+      server: playerChar.server || 'Elpon (CE)',
+      guild: isEn ? 'Benchmark Standard (T4)' : 'Standard Benchmark T4',
+      rosterLevel: playerChar.rosterLevel || 300,
+      gemTier: isGem9 ? 'gem9' : (gemFilter === 'gem8' ? 'gem8' : 'gem8'),
+      gemDesc: gemDesc,
+      avatarUrl: getClassIconUrl(normClass, playerChar.role || (isSupport ? 'support' : 'dps')),
+      bibleUrl: null,
+      isDynamic: true,
+      systems: tSys
+    };
   }
 
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
-    const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
+    const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
     const list = [];
 
     // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (MÊME CLASSE STRICTEMENT)
     const searchedList = benchmarkState.searchedTargets || [];
     searchedList.forEach(s => {
-      if (s && s.isLive && normalizeClassName(s.className || '').toLowerCase() === pClass) {
+      const sClass = normalizeClassName(s.className || s.characterClass || s.class || '').toLowerCase();
+      if (s && s.isLive && sClass === pClass) {
         list.push(s);
       }
     });
@@ -17080,11 +17232,17 @@
     // 2. Personnages du Roster actif DE LA MÊME CLASSE UNIQUEMENT
     const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
     currentRoster.forEach(c => {
-      const cClass = normalizeClassName(c.className || '').toLowerCase();
+      const cClass = normalizeClassName(c.className || c.characterClass || c.class || '').toLowerCase();
       if ((c.name || c.id) !== (playerChar.name || playerChar.id) && cClass === pClass) {
         list.push(convertCharToBenchmarkFormat(c, isEnLang()));
       }
     });
+
+    // 3. Palier Benchmark Calibré T4 (Garantit qu'aucun personnage n'est jamais sans profil de référence)
+    const dyn = generateDynamicBenchmark(playerChar, benchmarkState.gemFilter);
+    if (dyn) {
+      list.push(dyn);
+    }
 
     return list;
   }
@@ -17095,12 +17253,12 @@
     if (!avail || avail.length === 0) return null;
 
     const pIlvl = playerChar.ilvl || 1740;
-    const pCp = playerChar.cp || 3500;
+    const pCp = playerChar.cp || playerChar.combatPower || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
-    const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
+    const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
 
     // Filtre strict : même classe obligatoire (zéro classe différente)
-    const sameClass = avail.filter(b => normalizeClassName(b.className || '').toLowerCase() === pClass);
+    const sameClass = avail.filter(b => normalizeClassName(b.className || b.characterClass || b.class || '').toLowerCase() === pClass);
     if (sameClass.length === 0) return null;
 
     // 1. Cherche en priorité un profil LIVE réel de même spé avec CP >= pCp ET iLvl proche (écart <= 10 iLvl)
@@ -17131,14 +17289,18 @@
       return anyClassLiveHigher[0];
     }
 
-    // 5. Si aucun profil CP supérieur en cache, profil LIVE même classe le plus proche en iLvl
+    // 5. Si aucun profil LIVE avec CP supérieur, on prend le Benchmark Calibré (isDynamic)
+    const dyn = sameClass.find(b => b.isDynamic);
+    if (dyn) return dyn;
+
+    // 6. Profil LIVE même classe le plus proche en iLvl
     const anyLive = sameClass.filter(b => b.isLive);
     if (anyLive.length > 0) {
       anyLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return anyLive[0];
     }
 
-    // 6. Profil même classe (jamais une autre classe)
+    // 7. Profil même classe (jamais une autre classe)
     sameClass.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
     return sameClass[0] || null;
   }
@@ -19815,6 +19977,19 @@
         optionsHtml += `</optgroup>`;
       }
 
+      // 3. Palier Benchmark Calibré T4 (Garantit qu'aucune classe n'est jamais sans profil)
+      const dynBench = avail.find(b => b.isDynamic);
+      if (dynBench) {
+        optionsHtml += `<optgroup label="🎯 ${isEn ? 'Calibrated T4 Benchmark' : 'Benchmark Calibré T4'}">`;
+        const isSel = target && (target.id === dynBench.id);
+        const deltaIlvl = dynBench.ilvl - (player.ilvl || 1700);
+        const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
+        optionsHtml += `<option value="${escapeHtml(dynBench.id)}" ${isSel ? 'selected' : ''}>
+          🎯 ${escapeHtml(dynBench.name)} (${dynBench.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(dynBench.cp))} CP)
+        </option>`;
+        optionsHtml += `</optgroup>`;
+      }
+
       select.innerHTML = optionsHtml;
     }
 
@@ -20785,6 +20960,8 @@
   window.__fetchLiveBibleBenchmark = fetchLiveBibleBenchmark;
   window.__benchmarkState = benchmarkState;
   window.__getAvailableBenchmarks = getAvailableBenchmarks;
+  window.__generateDynamicBenchmark = generateDynamicBenchmark;
+  window.__findOptimalBenchmark = findOptimalBenchmark;
   window.__extractCharacterEngravings = extractCharacterEngravings;
   window.__buildEngravingsBreakdownHtml = buildEngravingsBreakdownHtml;
   window.__buildBaseAtkBreakdownHtml = buildBaseAtkBreakdownHtml;
