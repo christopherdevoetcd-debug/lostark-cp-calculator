@@ -15817,9 +15817,27 @@
 
       const total = parts.length;
       if (c10 === total) return isEn ? 'Full Tier 4 Lvl 10 Gems' : 'Full Gemmes 10 T4';
-      if (c9 + c10 === total && c9 > 0) return isEn ? `Tier 4 Lvl 9/10 Mix (${c10}x Lvl 10)` : `Mix Gemmes 9 / 10 T4 (${c10}x Niv. 10)`;
-      if (c8 === total && c9 === 0 && c10 === 0) return isEn ? 'Full Tier 4 Lvl 8 Gems' : 'Full Gemmes 8 T4';
-      if (c9 > 0) return isEn ? `Tier 4 Lvl 8/9 Mix (${c9}x Lvl 9)` : `Mix Gemmes 8 / 9 T4 (${c9}x Niv. 9)`;
+      if (c10 > 0) {
+        const details = [];
+        details.push(`${c10}x ${isEn ? 'Lvl' : 'Niv.'} 10`);
+        if (c9 > 0) details.push(`${c9}x ${isEn ? 'Lvl' : 'Niv.'} 9`);
+        if (c8 > 0) details.push(`${c8}x ${isEn ? 'Lvl' : 'Niv.'} 8`);
+        if (c7 > 0) details.push(`${c7}x ${isEn ? 'Lvl' : 'Niv.'} 7`);
+        return isEn 
+          ? `Tier 4 Gems (${details.join(', ')})`
+          : `Mix Gemmes T4 (${details.join(', ')})`;
+      }
+      if (c9 === total) return isEn ? 'Full Tier 4 Lvl 9 Gems' : 'Full Gemmes 9 T4';
+      if (c9 > 0) {
+        const details = [];
+        details.push(`${c9}x ${isEn ? 'Lvl' : 'Niv.'} 9`);
+        if (c8 > 0) details.push(`${c8}x ${isEn ? 'Lvl' : 'Niv.'} 8`);
+        if (c7 > 0) details.push(`${c7}x ${isEn ? 'Lvl' : 'Niv.'} 7`);
+        return isEn 
+          ? `Tier 4 Lvl 8/9 Mix (${details.join(', ')})` 
+          : `Mix Gemmes 8 / 9 T4 (${details.join(', ')})`;
+      }
+      if (c8 === total) return isEn ? 'Full Tier 4 Lvl 8 Gems' : 'Full Gemmes 8 T4';
       if (c8 > 0) {
         return isEn 
           ? `Tier 4 Lvl 7/8 Mix (${c8}x Lvl 8, ${c7}x Lvl 7)` 
@@ -19226,8 +19244,8 @@
             <span class="info-bulb">💡</span>
             <span>
               ${isEn
-                ? `<strong>Why doesn't the Top 3 impact (+${top3Sum} CP) equal the +${netGap} CP header?</strong> The Top 3 targets your most profitable upgrade levers. In reality, your gross deficit of <strong>+${grossDeficit} CP</strong> across other equipment is heavily cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${totalPlayerLeadCp} CP lead)</strong>, bringing the exact net gap down to <strong>+${netGap} CP</strong>.`
-                : `<strong>Pourquoi la somme du Top 3 (+${top3Sum} CP) ne fait pas +${netGap} CP ?</strong> Le Top 3 cible vos chantiers prioritaires les plus rentables. En réalité, votre retard brut global de <strong>+${grossDeficit} CP</strong> sur les autres équipements est massivement amorti par votre <strong>${escapeHtml(leadTitle)} surpuissante (+${totalPlayerLeadCp} CP d'avance)</strong>, ramenant l'écart net exact à <strong>+${netGap} CP</strong>.`
+                ? `<strong>Why doesn't the sum of improvement levers (+${totalPositiveCp} CP) equal the +${netGap} CP header?</strong> These cards rank your individual upgrade opportunities. In reality, your gross deficit of <strong>+${grossDeficit} CP</strong> across other equipment is heavily cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${totalPlayerLeadCp} CP lead)</strong>, bringing the exact net gap down to <strong>+${netGap} CP</strong>.`
+                : `<strong>Pourquoi la somme des leviers (+${totalPositiveCp} CP) ne fait pas +${netGap} CP ?</strong> Ces cartes classent vos opportunités individuelles d'amélioration. En réalité, votre retard cumulé de <strong>+${grossDeficit} CP</strong> sur ces équipements est massivement amorti par votre <strong>${escapeHtml(leadTitle)} surpuissante (+${totalPlayerLeadCp} CP d'avance)</strong>, ramenant l'écart net exact à <strong>+${netGap} CP</strong>.`
               }
             </span>
           </div>
@@ -19569,18 +19587,31 @@
         `;
       } else {
         let gapsHtml = '';
-        activeGaps.slice(0, 5).forEach((g, idx) => {
-          let rankBadge = `#${idx + 1} IMPACT`;
+        const targetLeads = activeGaps.filter(g => g.priority !== 'player_lead');
+        const playerLeads = activeGaps.filter(g => g.priority === 'player_lead');
+        const displayGaps = [];
+        if (playerLeads.length > 0) {
+          displayGaps.push(...targetLeads.slice(0, 4));
+          displayGaps.push(...playerLeads.slice(0, 2));
+        } else {
+          displayGaps.push(...targetLeads.slice(0, 5));
+        }
+
+        let impactIdx = 1;
+        displayGaps.forEach((g) => {
+          let rankBadge = `#${impactIdx} IMPACT`;
           let gainText = '+' + g.gainCp + ' CP';
           if (g.priority === 'player_lead') {
             rankBadge = isEn ? '★ ADVANTAGE' : '★ AVANTAGE';
             gainText = '+' + g.gainCp + ' CP (Lead)';
+          } else {
+            impactIdx++;
           }
 
           gapsHtml += `
-            <div class="bench-gap-card">
+            <div class="bench-gap-card ${g.priority === 'player_lead' ? 'bench-gap-card-lead' : ''}">
               <div class="bench-gap-card-top">
-                <span class="bench-gap-rank">${rankBadge}</span>
+                <span class="bench-gap-rank ${g.priority === 'player_lead' ? 'rank-lead' : ''}">${rankBadge}</span>
                 <span class="bench-gap-gain-pill ${g.priority === 'player_lead' ? 'player-lead' : ''}">${gainText}</span>
               </div>
               <div class="bench-gap-title">

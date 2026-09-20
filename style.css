@@ -4740,6 +4740,22 @@ select optgroup {
   border-radius: 9999px;
 }
 
+.bench-gap-gain-pill.player-lead {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.bench-gap-card-lead {
+  border-color: rgba(96, 165, 250, 0.35) !important;
+  background: rgba(30, 58, 138, 0.12) !important;
+}
+
+.bench-gap-rank.rank-lead {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+}
+
 .bench-gap-title {
   font-size: 14px;
   font-weight: 700;
