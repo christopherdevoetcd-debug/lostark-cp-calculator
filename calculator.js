@@ -16917,7 +16917,8 @@
       return 0;
     });
 
-    const positiveGaps = gaps.filter(g => g.gainCp > 0 && g.cost > 0 && g.priority !== 'player_lead');
+    const bothFullRelic = pSys.engravings && tSys.engravings && pSys.engravings.bonusPct >= 95 && tSys.engravings.bonusPct >= 95;
+    const positiveGaps = gaps.filter(g => g.gainCp > 0 && g.cost > 0 && g.priority !== 'player_lead' && (!bothFullRelic || g.key !== 'engravings'));
     positiveGaps.sort((a, b) => a.roi - b.roi);
 
     const plan = positiveGaps.slice(0, 5).map((g, idx) => ({
@@ -16940,8 +16941,7 @@
       { name: 'Câsy', region: 'CE', ilvl: 1789.17, cp: 6586 }
     ],
     'soulfist': [
-      { name: 'Broly', region: 'CE', ilvl: 1770.00, cp: 5195 },
-      { name: 'Àlphâ', region: 'CE', ilvl: 1765.83, cp: 4701 }
+      { name: 'Àlphâ', region: 'CE', ilvl: 1770.00, cp: 4832 }
     ],
     'breaker': [
       { name: 'Lethimsmashh', region: 'CE', ilvl: 1750.00, cp: 5005 },
@@ -17030,10 +17030,19 @@
     ]
   };
 
-  function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '', playerCp = 0) {
+  function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '', playerCp = 0, failedAttempts = null) {
     const norm = normalizeClassName(className || '').toLowerCase();
     const peers = VERIFIED_LIVE_PEERS[norm] || [];
-    const validPeers = peers.filter(p => p.name.toLowerCase() !== (excludeName || '').toLowerCase());
+    const validPeers = peers.filter(p => {
+      if (p.name.toLowerCase() === (excludeName || '').toLowerCase()) return false;
+      const reg = (p.region || 'CE').toUpperCase();
+      const pKey = `${p.name.toLowerCase()}_${reg}`;
+      const pKeyAuto = `${p.name.toLowerCase()}_auto`;
+      if (failedAttempts && (failedAttempts.has(pKey) || failedAttempts.has(pKeyAuto) || failedAttempts.has(p.name.toLowerCase()))) {
+        return false;
+      }
+      return true;
+    });
     if (validPeers.length === 0) return null;
 
     // Priorité 1 : un pair de même classe dont le CP est >= au CP du joueur (palier d'amélioration)
@@ -19671,8 +19680,8 @@
 
     if (!target) {
       // Auto-fetch d'un pair LIVE vérifié en direct depuis lostark.bible (MÊME CLASSE STRICTEMENT)
-      const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0);
-      const peerKey = suggested ? `${suggested.name.toLowerCase()}_${suggested.region}` : null;
+      const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts);
+      const peerKey = suggested ? `${suggested.name.toLowerCase()}_${(suggested.region || 'CE').toUpperCase()}` : null;
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
         benchmarkState.isAutoFetching = true;
         searchAndCompareBibleProfile(suggested.name, suggested.region).catch(() => {
@@ -19683,28 +19692,80 @@
         });
       }
 
+      // Si un fetch est activement en cours
+      if (benchmarkState.isAutoFetching && suggested) {
+        heroCard.innerHTML = `
+          <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
+            <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
+            <div style="font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
+              ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
+            </div>
+            <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
+              ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+              <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class required' : 'Même classe obligatoire'}</span>
+            </div>
+          </div>
+        `;
+        const select = document.getElementById('benchmarkPresetSelect');
+        if (select) {
+          select.innerHTML = `<option value="">⏳ ${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
+        }
+        return;
+      }
+
+      // Si aucun profil n'est disponible et aucun fetch n'est en cours :
+      // État d'invitation à la recherche (NON BLOQUANT, interactif)
       heroCard.innerHTML = `
         <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
-          <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
+          <div style="font-size: 36px; margin-bottom: 12px;">🔍</div>
           <div style="font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
-            ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
+            ${isEn ? 'No Benchmark Profile Selected' : 'Aucun Profil de Référence Sélectionné'}
           </div>
           <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
-            ${suggested 
-              ? (isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`)
-              : (isEn ? 'Search for any character on lostark.bible using the search box below to compare profiles.' : 'Recherchez un personnage en direct sur lostark.bible via le champ ci-dessous ou sélectionnez un profil de votre Roster.')
-            }
+            ${isEn
+              ? `To benchmark your <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), enter any player name or lostark.bible profile link in the search bar below.`
+              : `Pour comparer votre <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), saisissez le pseudo d'un joueur ou un lien lostark.bible dans la barre de recherche ci-dessous.`}
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-            <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class required' : 'Même classe obligatoire'}</span>
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+            <span>🌐 ${isEn ? '100% Live lostark.bible profiles supported' : 'Profils 100% LIVE lostark.bible supportés'}</span>
           </div>
         </div>
       `;
 
+      // Remplissage du sélecteur avec les profils recherchés disponibles de cette classe ou alts du roster
       const select = document.getElementById('benchmarkPresetSelect');
       if (select) {
-        select.innerHTML = `<option value="">⏳ ${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
+        let optionsHtml = `<option value="">${isEn ? 'Select or search a benchmark profile...' : 'Sélectionnez ou recherchez un profil...'} </option>`;
+        
+        const searchedList = (benchmarkState.searchedTargets || []).filter(s => s && s.isLive && normalizeClassName(s.className || '').toLowerCase() === pClass);
+        if (searchedList.length > 0) {
+          optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
+          searchedList.forEach(s => {
+            optionsHtml += `<option value="${escapeHtml(s.id)}">
+              🌐 ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
+            </option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        }
+
+        const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
+        const sameClassRoster = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id) && normalizeClassName(c.className || '').toLowerCase() === pClass);
+        if (sameClassRoster.length > 0) {
+          optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
+          sameClassRoster.forEach(c => {
+            const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
+            optionsHtml += `<option value="${escapeHtml(rId)}">
+              ${escapeHtml(c.name)} (${escapeHtml(c.className || '')} • ${(c.ilvl || 1700).toFixed(1)} iLvl - ${formatNumber(Math.round(c.cp || 0))} CP)
+            </option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        }
+
+        select.innerHTML = optionsHtml;
       }
+
       const gapsGrid = document.getElementById('benchmarkGapsGrid');
       if (gapsGrid) gapsGrid.innerHTML = '';
       const planEl = document.getElementById('benchmarkActionPlan');
