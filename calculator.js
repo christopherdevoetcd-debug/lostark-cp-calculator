@@ -15048,6 +15048,22 @@
     updateActiveCharacterCard(cId, c);
     benchmarkState.customTarget = null;
     benchmarkState.currentTargetId = null;
+
+    // Pré-chargement en tâche de fond du pair LIVE de la même classe pour ce personnage
+    try {
+      const suggestedPeer = getSuggestedLivePeerForClass(c.className, c.ilvl, c.name);
+      if (suggestedPeer && (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.name.toLowerCase() === suggestedPeer.name.toLowerCase()))) {
+        fetchLiveBibleBenchmark(suggestedPeer.name, suggestedPeer.region, c.role || 'support').then(b => {
+          if (b) {
+            if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
+            if (!benchmarkState.searchedTargets.some(s => s.id === b.id)) benchmarkState.searchedTargets.unshift(b);
+            const bp = document.getElementById('tab-benchmark');
+            if (bp && bp.classList.contains('active')) renderBenchmarkTab();
+          }
+        }).catch(() => {});
+      }
+    } catch (e) {}
+
     const benchPane = document.getElementById('tab-benchmark');
     if (benchPane && benchPane.classList.contains('active')) {
       renderBenchmarkTab();
@@ -16644,13 +16660,12 @@
       { name: 'Voyantshadow', region: 'CE' }
     ],
     'soulfist': [
-      { name: 'Cyanora', region: 'CE' },
-      { name: 'Àlphâ', region: 'CE' },
       { name: 'Sonny', region: 'CE' },
       { name: 'Kitsuu', region: 'CE' }
     ],
     'breaker': [
       { name: 'Lethimsmashh', region: 'CE' },
+      { name: 'Cyanora', region: 'CE' },
       { name: 'Capedbáldy', region: 'CE' },
       { name: 'Bubuszolot', region: 'CE' },
       { name: 'Bêornn', region: 'CE' }
@@ -16754,20 +16769,22 @@
 
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
+    const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
     const list = [];
 
-    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (100% données fraîches directes)
+    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (MÊME CLASSE STRICTEMENT)
     const searchedList = benchmarkState.searchedTargets || [];
     searchedList.forEach(s => {
-      if (s && s.isLive) {
+      if (s && s.isLive && normalizeClassName(s.className || '').toLowerCase() === pClass) {
         list.push(s);
       }
     });
 
-    // 2. Personnages de votre propre Roster actif (synchronisés depuis lostark.bible)
+    // 2. Personnages du Roster actif DE LA MÊME CLASSE UNIQUEMENT
     const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
     currentRoster.forEach(c => {
-      if ((c.name || c.id) !== (playerChar.name || playerChar.id)) {
+      const cClass = normalizeClassName(c.className || '').toLowerCase();
+      if ((c.name || c.id) !== (playerChar.name || playerChar.id) && cClass === pClass) {
         list.push(convertCharToBenchmarkFormat(c, isEnLang()));
       }
     });
@@ -16785,32 +16802,48 @@
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
     const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
 
-    // 1. Cherche en priorité un profil LIVE réel de même spé avec CP supérieur ET iLvl proche (écart <= 10 iLvl)
-    const closeSameSpecLive = avail.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 10.0);
+    // Filtre strict : même classe obligatoire (zéro classe différente)
+    const sameClass = avail.filter(b => normalizeClassName(b.className || '').toLowerCase() === pClass);
+    if (sameClass.length === 0) return null;
+
+    // 1. Cherche en priorité un profil LIVE réel de même spé avec CP >= pCp ET iLvl proche (écart <= 10 iLvl)
+    const closeSameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 10.0);
     if (closeSameSpecLive.length > 0) {
       closeSameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return closeSameSpecLive[0];
     }
 
-    // 2. Cherche un profil LIVE réel de la même classe avec CP supérieur ET iLvl proche (écart <= 10 iLvl)
-    const closeClassLive = avail.filter(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 10.0);
-    if (closeClassLive.length > 0) {
-      closeClassLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return closeClassLive[0];
+    // 2. Cherche un profil LIVE réel de même spé avec CP >= pCp (écart <= 20 iLvl)
+    const anySameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 20.0);
+    if (anySameSpecLive.length > 0) {
+      anySameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return anySameSpecLive[0];
     }
 
-    // 3. Cherche n'importe quel profil LIVE de même classe
-    const anyClassLive = avail.filter(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass);
-    if (anyClassLive.length > 0) {
-      anyClassLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return anyClassLive[0];
+    // 3. Cherche un profil LIVE réel de la même classe avec CP >= pCp ET iLvl proche (écart <= 15 iLvl)
+    const closeClassLiveHigher = sameClass.filter(b => b.isLive && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 15.0);
+    if (closeClassLiveHigher.length > 0) {
+      closeClassLiveHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return closeClassLiveHigher[0];
     }
 
-    // 4. Premier profil LIVE disponible
-    const anyLive = avail.find(b => b.isLive);
-    if (anyLive) return anyLive;
+    // 4. Cherche un profil LIVE de même classe avec CP >= pCp
+    const anyClassLiveHigher = sameClass.filter(b => b.isLive && b.cp >= pCp);
+    if (anyClassLiveHigher.length > 0) {
+      anyClassLiveHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return anyClassLiveHigher[0];
+    }
 
-    return avail[0] || null;
+    // 5. Si aucun profil CP supérieur en cache, profil LIVE même classe le plus proche en iLvl
+    const anyLive = sameClass.filter(b => b.isLive);
+    if (anyLive.length > 0) {
+      anyLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return anyLive[0];
+    }
+
+    // 6. Profil même classe (jamais une autre classe)
+    sameClass.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+    return sameClass[0] || null;
   }
 
   function convertCharToBenchmarkFormat(c, isEn) {
@@ -19294,26 +19327,27 @@
       if (!player.gemParts) player.gemParts = canonPlayer.gemParts;
     }
 
+    const pClass = normalizeClassName(player.className || '').toLowerCase();
     const avail = getAvailableBenchmarks(player);
 
     // Résolution du profil cible (100% profils LIVE ou Roster réel, zéro preset statique, zéro profil synthétique)
     let target = benchmarkState.customTarget;
+
+    // VALIDATION STRICTE DE LA CLASSE :
+    // Si la cible en cache ou sélectionnée n'est pas de la même classe que le joueur actif, on la rejette obligatoirement
+    if (target && normalizeClassName(target.className || '').toLowerCase() !== pClass) {
+      target = null;
+      benchmarkState.customTarget = null;
+      benchmarkState.currentTargetId = null;
+    }
+
     if (!target) {
       if (benchmarkState.currentTargetId) {
-        // 1. Cherche dans les profils disponibles (recherchés ou roster)
-        target = avail.find(b => b.id === benchmarkState.currentTargetId);
-        // 2. Cherche dans les profils LIVE recherchés
+        // 1. Cherche dans les profils disponibles de CETTE CLASSE
+        target = avail.find(b => b.id === benchmarkState.currentTargetId && normalizeClassName(b.className || '').toLowerCase() === pClass);
+        // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE
         if (!target) {
-          target = (benchmarkState.searchedTargets || []).find(b => b.id === benchmarkState.currentTargetId);
-        }
-        // 3. Cherche dans le Roster actif (roster_...)
-        if (!target && benchmarkState.currentTargetId.startsWith('roster_')) {
-          const rName = benchmarkState.currentTargetId.replace('roster_', '').toLowerCase();
-          const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
-          const foundChar = currentRoster.find(c => (c.id || c.name || '').toLowerCase() === rName || (c.name || '').toLowerCase() === rName);
-          if (foundChar) {
-            target = convertCharToBenchmarkFormat(foundChar, isEn);
-          }
+          target = (benchmarkState.searchedTargets || []).find(b => b.id === benchmarkState.currentTargetId && normalizeClassName(b.className || '').toLowerCase() === pClass);
         }
       }
       if (!target) {
@@ -19323,7 +19357,7 @@
     }
 
     if (!target) {
-      // Auto-fetch d'un pair LIVE vérifié en direct depuis lostark.bible
+      // Auto-fetch d'un pair LIVE vérifié en direct depuis lostark.bible (MÊME CLASSE STRICTEMENT)
       const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name);
       const peerKey = suggested ? `${suggested.name.toLowerCase()}_${suggested.region}` : null;
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
@@ -19340,7 +19374,7 @@
         <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
           <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
           <div style="font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
-            ${isEn ? 'Retrieving live reference profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
+            ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
           </div>
           <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
             ${suggested 
@@ -19349,7 +19383,7 @@
             }
           </div>
           <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-            <span>🟢 100% Profils LIVE lostark.bible</span> • <span>Zéro profil générique ou statique</span>
+            <span>🟢 100% Profils LIVE lostark.bible (${escapeHtml(player.className)})</span> • <span>Même classe obligatoire</span>
           </div>
         </div>
       `;
@@ -19369,35 +19403,35 @@
       return;
     }
 
-    // 1. Mise à jour du Sélecteur de Presets & Choix Libre
+    // 1. Mise à jour du Sélecteur de Presets & Choix Libre (MÊME CLASSE UNIQUEMENT)
     const select = document.getElementById('benchmarkPresetSelect');
     if (select) {
       let optionsHtml = '';
 
-      // 1. Profils LIVE recherchés & synchronisés en direct sur lostark.bible
-      const searchedList = benchmarkState.searchedTargets || [];
-      if (benchmarkState.customTarget && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
+      // 1. Profils LIVE de CETTE CLASSE recherchés & synchronisés en direct sur lostark.bible
+      const searchedList = (benchmarkState.searchedTargets || []).filter(s => s && s.isLive && normalizeClassName(s.className || '').toLowerCase() === pClass);
+      if (benchmarkState.customTarget && normalizeClassName(benchmarkState.customTarget.className || '').toLowerCase() === pClass && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
         searchedList.unshift(benchmarkState.customTarget);
       }
       if (searchedList.length > 0) {
-        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (lostark.bible)' : 'Profils LIVE Réels (lostark.bible)'}">`;
+        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
         searchedList.forEach(s => {
           const isSel = target && (target.id === s.id);
           const deltaIlvl = s.ilvl - (player.ilvl || 1700);
           const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
           optionsHtml += `<option value="${escapeHtml(s.id)}" ${isSel ? 'selected' : ''}>
-            🌐 ${escapeHtml(s.name)} (${escapeHtml(s.className)} • ${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
+            🌐 ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
           </option>`;
         });
         optionsHtml += `</optgroup>`;
       }
 
-      // 2. Personnages de votre Roster (comparaison libre entre persos réels enregistrés)
+      // 2. Personnages du Roster DE LA MÊME CLASSE UNIQUEMENT (ex: alt)
       const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
-      const otherChars = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id));
-      if (otherChars.length > 0) {
-        optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other Characters (Roster)' : 'Vos Autres Personnages (Roster)'}">`;
-        otherChars.forEach(c => {
+      const sameClassRoster = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id) && normalizeClassName(c.className || '').toLowerCase() === pClass);
+      if (sameClassRoster.length > 0) {
+        optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
+        sameClassRoster.forEach(c => {
           const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
           const isSel = target && (target.id === rId);
           optionsHtml += `<option value="${escapeHtml(rId)}" ${isSel ? 'selected' : ''}>
@@ -19968,7 +20002,18 @@
 
 
   // --- SYNC LIVE LOSTARK.BIBLE ENGINE (TEMPS RÉEL SANS SNAPSHOT) ---
-  const liveBibleBenchmarkCache = {};
+  let liveBibleBenchmarkCache = {};
+  try {
+    const savedLiveCache = localStorage.getItem('lostark_live_benchmarks_cache');
+    if (savedLiveCache) {
+      liveBibleBenchmarkCache = JSON.parse(savedLiveCache) || {};
+      Object.values(liveBibleBenchmarkCache).forEach(b => {
+        if (b && b.isLive && (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.id === b.id))) {
+          benchmarkState.searchedTargets.push(b);
+        }
+      });
+    }
+  } catch (e) {}
 
   async function fetchLiveBibleBenchmark(characterName, region = 'AUTO', preferredRole = 'support') {
     if (!characterName) return null;
@@ -20135,6 +20180,9 @@
 
     liveBibleBenchmarkCache[cacheKey] = fullBenchmark;
     liveBibleBenchmarkCache[displayName.toLowerCase()] = fullBenchmark;
+    try {
+      localStorage.setItem('lostark_live_benchmarks_cache', JSON.stringify(liveBibleBenchmarkCache));
+    } catch (e) {}
     return fullBenchmark;
   }
 
@@ -20338,7 +20386,8 @@
   window.__computeDynamicGapsAndPlan = computeDynamicGapsAndPlan;
   window.__buildCpReconciliationHtml = buildCpReconciliationHtml;
   window.__resolveTargetSystems = resolveTargetSystems;
-  window.__generateDynamicBenchmark = generateDynamicBenchmark;
+  window.__fetchLiveBibleBenchmark = fetchLiveBibleBenchmark;
+  window.__benchmarkState = benchmarkState;
   window.__getAvailableBenchmarks = getAvailableBenchmarks;
 
   if (document.readyState === 'loading') {
