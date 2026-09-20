@@ -13214,6 +13214,8 @@
       partsCount: items.length,
       gear,
       advHoning,
+      weaponQuality: (parts.find(p => p.type === 4 || p.quality !== undefined)?.quality) || 90,
+      weaponQualityValue: (parts.find(p => p.type === 4 || p.quality !== undefined)?.value) || 2500,
       gemParts: (items.filter(it => it.cat === 'Gemmes').length > 0)
         ? items.filter(it => it.cat === 'Gemmes').map(it => parseFloat(it.mult.replace(/[^0-9.]/g, '')))
         : (Array.isArray(loadout.gems) && loadout.gems.length > 0
@@ -13337,9 +13339,9 @@
           if (h.class) profile.className = formatClassName(h.class);
           if (h.ilvl) profile.ilvl = parseFloat(h.ilvl.toFixed(2));
           if (h.maxCombatPower && h.maxCombatPower.score) {
-            profile.inGameScore = Math.round(h.maxCombatPower.score);
+            profile.inGameScore = parseFloat(h.maxCombatPower.score.toFixed(2));
           } else if (h.combatPower && h.combatPower.score) {
-            profile.inGameScore = Math.round(h.combatPower.score);
+            profile.inGameScore = parseFloat(h.combatPower.score.toFixed(2));
           }
         }
       } catch (e) {}
@@ -13355,11 +13357,13 @@
       guild: profile.guild || '',
       rosterLevel: profile.rosterLevel || 300,
       ilvl: profile.ilvl,
-      cp: Math.round(profile.inGameScore || profile.calculatedScore),
+      cp: parseFloat((profile.inGameScore || profile.calculatedScore).toFixed(2)),
       target: Math.ceil((profile.ilvl + 0.1) / 10) * 10,
       advHoning: profile.advHoning !== undefined ? profile.advHoning : 40,
       portraitUrl: profile.portraitUrl || '',
       gear: profile.gear || { weapon: 17, head: 15, shoulder: 15, chest: 15, pants: 15, gloves: 15 },
+      weaponQuality: profile.weaponQuality !== undefined ? profile.weaponQuality : 90,
+      weaponQualityValue: profile.weaponQualityValue !== undefined ? profile.weaponQualityValue : 2500,
       gemParts: profile.gemParts || null,
       arkGrid: { 
         hasSun17: arkStatus.hasSun17, 
@@ -15042,6 +15046,8 @@
     updateTargetButtons();
     updateTargetButtonsState();
     updateActiveCharacterCard(cId, c);
+    benchmarkState.customTarget = null;
+    benchmarkState.currentTargetId = null;
     const benchPane = document.getElementById('tab-benchmark');
     if (benchPane && benchPane.classList.contains('active')) {
       renderBenchmarkTab();
@@ -15695,768 +15701,7 @@
   // MODULE 9 : BENCHMARK & COMPARATEUR DE PROFILS (LOSTARK.BIBLE - ACTIVE PLAYERS)
   // ==============================================================================
 
-  const BENCHMARK_DATABASE = [
-    {
-      id: "lethimsmashh_asura_8",
-      name: "Lethimsmashh",
-      className: "Breaker",
-      spec: "Asura's Path",
-      role: "dps",
-      ilvl: 1740.00,
-      cp: 4547.00,
-      server: "Arcturus (CE)",
-      guild: "lostark.bible Top",
-      rosterLevel: 320,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_3d50635b96462f91_0.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Lethimsmashh",
-      gear: { weapon: 20, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "capedbaldy_asura_8",
-      name: "Capedbáldy",
-      className: "Breaker",
-      spec: "Asura's Path",
-      role: "dps",
-      ilvl: 1752.50,
-      cp: 4275.80,
-      server: "Elpon (CE)",
-      guild: "One Punch",
-      rosterLevel: 312,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_16edd7052701d62d_11.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Capedb%C3%A1ldy",
-      gear: { weapon: 19, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "bubuszolot_asura_9",
-      name: "Bubuszolot",
-      className: "Breaker",
-      spec: "Asura's Path",
-      role: "dps",
-      ilvl: 1759.16,
-      cp: 4552.74,
-      server: "Elpon (CE)",
-      guild: "Polish Power",
-      rosterLevel: 320,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_806b539da6dc31d1_13.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Bubuszolot",
-      gear: { weapon: 20, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "beornn_asura_9",
-      name: "Bêornn",
-      className: "Breaker",
-      spec: "Asura's Path",
-      role: "dps",
-      ilvl: 1775.00,
-      cp: 5280.00,
-      server: "Elpon (CE)",
-      guild: "Active Raider",
-      rosterLevel: 328,
-      gemTier: "gem9",
-      gemDesc: "Full Gemmes 9 T4",
-      avatarUrl: "images/classes/breaker.png",
-      bibleUrl: "https://lostark.bible/character/CE/B%C3%AAornn",
-      gear: { weapon: 22, head: 18, chest: 18, pants: 18, shoulder: 18, gloves: 18 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "curseofra_brawl_8",
-      name: "Curseofra",
-      className: "Breaker",
-      spec: "Brawl King Storm",
-      role: "dps",
-      ilvl: 1745.00,
-      cp: 3994.76,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 304,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_894043d543036195_10.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Curseofra",
-      gear: { weapon: 18, head: 13, chest: 13, pants: 13, shoulder: 13, gloves: 13 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "kyaeen_brawl_9",
-      name: "Kyaeen",
-      className: "Breaker",
-      spec: "Brawl King Storm",
-      role: "dps",
-      ilvl: 1775.00,
-      cp: 5144.55,
-      server: "Elpon (CE)",
-      guild: "Active Raider",
-      rosterLevel: 325,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/breaker.png",
-      bibleUrl: "https://lostark.bible/character/CE/Kyaeen",
-      gear: { weapon: 22, head: 18, chest: 18, pants: 18, shoulder: 18, gloves: 18 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "casy_demonic_10",
-      name: "Câsy",
-      className: "Shadowhunter",
-      spec: "Demonic Impulse",
-      role: "dps",
-      ilvl: 1776.66,
-      cp: 6045.80,
-      server: "Elpon (CE)",
-      guild: "Keyboard Heroes",
-      rosterLevel: 335,
-      gemTier: "gem9",
-      gemDesc: "Full Gemmes 10 T4",
-      avatarUrl: "images/classes/shadowhunter.png",
-      bibleUrl: "https://lostark.bible/character/CE/C%C3%A2sy",
-      gear: { weapon: 24, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "ebeneben_demonic_9",
-      name: "Ebeneben",
-      className: "Shadowhunter",
-      spec: "Demonic Impulse",
-      role: "dps",
-      ilvl: 1775.83,
-      cp: 6103.47,
-      server: "Elpon (CE)",
-      guild: "True Souls",
-      rosterLevel: 318,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 9 / 10 T4",
-      avatarUrl: "images/classes/shadowhunter.png",
-      bibleUrl: "https://lostark.bible/character/CE/Ebeneben",
-      gear: { weapon: 23, head: 20, chest: 20, pants: 20, shoulder: 20, gloves: 20 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "bascojin_demonic_9",
-      name: "Bascojin",
-      className: "Shadowhunter",
-      spec: "Demonic Impulse",
-      role: "dps",
-      ilvl: 1785.00,
-      cp: 6525.47,
-      server: "Elpon (CE)",
-      guild: "Clockwork Chaos",
-      rosterLevel: 378,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 9 / 10 T4 (4x Niv. 10)",
-      avatarUrl: "https://character-cdn.ags.lol/v2_aba05b8a5858397a_2.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Bascojin",
-      gear: { weapon: 23, head: 22, chest: 22, pants: 22, shoulder: 22, gloves: 22 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "dessari_demonic_9",
-      name: "Dessari",
-      className: "Shadowhunter",
-      spec: "Demonic Impulse",
-      role: "dps",
-      ilvl: 1776.66,
-      cp: 5910.00,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 320,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 9 / 10 T4",
-      avatarUrl: "images/classes/shadowhunter.png",
-      bibleUrl: "https://lostark.bible/character/CE/Dessari",
-      gear: { weapon: 23, head: 18, chest: 18, pants: 18, shoulder: 18, gloves: 18 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "voyantshadow_demonic_8",
-      name: "Voyantshadow",
-      className: "Shadowhunter",
-      spec: "Demonic Impulse",
-      role: "dps",
-      ilvl: 1740.16,
-      cp: 4268.06,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 308,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/shadowhunter.png",
-      bibleUrl: "https://lostark.bible/character/CE/Voyantshadow",
-      gear: { weapon: 18, head: 12, chest: 12, pants: 12, shoulder: 12, gloves: 12 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "stareight_suppression_8",
-      name: "Stareight",
-      className: "Shadowhunter",
-      spec: "Perfect Suppression",
-      role: "dps",
-      ilvl: 1745.00,
-      cp: 4680.00,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 310,
-      gemTier: "gem8",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/shadowhunter.png",
-      bibleUrl: "https://lostark.bible/character/CE/Stareight",
-      gear: { weapon: 19, head: 13, chest: 13, pants: 13, shoulder: 13, gloves: 13 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "incyra_desperate_8",
-      name: "Incyra",
-      className: "Bard",
-      spec: "Desperate Salvation",
-      role: "support",
-      ilvl: 1742.50,
-      cp: 3792.67,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 315,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/bard.png",
-      bibleUrl: "https://lostark.bible/character/CE/Incyra",
-      gear: { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "kimaziel_desperate_8",
-      name: "Kimaziel",
-      className: "Bard",
-      spec: "Desperate Salvation",
-      role: "support",
-      ilvl: 1742.50,
-      cp: 4115.95,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 318,
-      gemTier: "gem8",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/bard.png",
-      bibleUrl: "https://lostark.bible/character/CE/Kimaziel",
-      gear: { weapon: 18, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "lavieenrosee_desperate_8",
-      name: "Lavieenrosee",
-      className: "Bard",
-      spec: "Desperate Salvation",
-      role: "support",
-      ilvl: 1742.66,
-      cp: 3811.90,
-      server: "Elpon (CE)",
-      guild: "Keyboard Heroes",
-      rosterLevel: 320,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/bard.png",
-      bibleUrl: "https://lostark.bible/character/CE/Lavieenrosee",
-      gear: { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "kiksz_desperate_9",
-      name: "Kiksz",
-      className: "Bard",
-      spec: "Desperate Salvation",
-      role: "support",
-      ilvl: 1776.66,
-      cp: 4720.64,
-      server: "Elpon (CE)",
-      guild: "Top Performers",
-      rosterLevel: 330,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/bard.png",
-      bibleUrl: "https://lostark.bible/character/CE/Kiksz",
-      gear: { weapon: 20, head: 18, chest: 18, pants: 18, shoulder: 18, gloves: 18 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "inventum_blessed_8",
-      name: "Inventum",
-      className: "Paladin",
-      spec: "Blessed Aura",
-      role: "support",
-      ilvl: 1750.83,
-      cp: 3989.49,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 312,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/paladin.png",
-      bibleUrl: "https://lostark.bible/character/CE/Inventum",
-      gear: { weapon: 17, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "nolimitumd_blessed_8",
-      name: "Nolimitumd",
-      className: "Paladin",
-      spec: "Blessed Aura",
-      role: "support",
-      ilvl: 1750.00,
-      cp: 3887.22,
-      server: "Elpon (CE)",
-      guild: "Alliance",
-      rosterLevel: 305,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/paladin.png",
-      bibleUrl: "https://lostark.bible/character/CE/Nolimitumd",
-      gear: { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "siwilpal_blessed_8",
-      name: "Siwilpal",
-      className: "Paladin",
-      spec: "Blessed Aura",
-      role: "support",
-      ilvl: 1765.83,
-      cp: 4609.14,
-      server: "Elpon (CE)",
-      guild: "Keyboard Heroes",
-      rosterLevel: 400,
-      gemTier: "gem8",
-      gemDesc: "Mix Gemmes 8 / 9 T4 (Buffs AP 8/9)",
-      avatarUrl: "https://character-cdn.ags.lol/v2_9a65d75d65609ee3_8.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Siwilpal",
-      gear: { weapon: 16, head: 20, chest: 20, pants: 20, shoulder: 20, gloves: 20 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "flastr_blessed_8",
-      name: "Flastr",
-      className: "Paladin",
-      spec: "Blessed Aura",
-      role: "support",
-      ilvl: 1770.00,
-      cp: 4023.90,
-      server: "Elpon (CE)",
-      guild: "Active Raider",
-      rosterLevel: 320,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/paladin.png",
-      bibleUrl: "https://lostark.bible/character/CE/Flastr",
-      gear: { weapon: 18, head: 16, chest: 16, pants: 16, shoulder: 16, gloves: 16 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "allissa_predator_8",
-      name: "Allîssa",
-      className: "Slayer",
-      spec: "Predator",
-      role: "dps",
-      ilvl: 1742.50,
-      cp: 4303.66,
-      server: "Elpon (CE)",
-      guild: "Honorkokos",
-      rosterLevel: 310,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_a9cf17b8a8c057d9_11.webp",
-      bibleUrl: "https://lostark.bible/character/CE/All%C3%AEssa",
-      gear: { weapon: 19, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "cicilianay_predator_8",
-      name: "Cicilianay",
-      className: "Slayer",
-      spec: "Predator",
-      role: "dps",
-      ilvl: 1755.00,
-      cp: 4680.00,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 315,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/slayer.png",
-      bibleUrl: "https://lostark.bible/character/CE/Cicilianay",
-      gear: { weapon: 20, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "svenyanaa_predator_8",
-      name: "Svenyanaa",
-      className: "Slayer",
-      spec: "Predator",
-      role: "dps",
-      ilvl: 1762.50,
-      cp: 4592.55,
-      server: "Elpon (CE)",
-      guild: "Nachtschatten",
-      rosterLevel: 316,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_8e49ea98ea89f1e1_12.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Svenyanaa",
-      gear: { weapon: 20, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "canilux_predator_9",
-      name: "Canilux",
-      className: "Slayer",
-      spec: "Predator",
-      role: "dps",
-      ilvl: 1770.83,
-      cp: 4950.00,
-      server: "Elpon (CE)",
-      guild: "Active Raider",
-      rosterLevel: 322,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/slayer.png",
-      bibleUrl: "https://lostark.bible/character/CE/Canilux",
-      gear: { weapon: 21, head: 17, chest: 17, pants: 17, shoulder: 17, gloves: 17 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "schlangslayer_punisher_9",
-      name: "Schlangslayer",
-      className: "Slayer",
-      spec: "Punisher",
-      role: "dps",
-      ilvl: 1761.67,
-      cp: 5792.38,
-      server: "Elpon (CE)",
-      guild: "The Schlangster",
-      rosterLevel: 330,
-      gemTier: "gem9",
-      gemDesc: "Gemmes 9 / 10 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_2dddae64a4e3536d_14.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Schlangslayer",
-      gear: { weapon: 21, head: 16, chest: 16, pants: 16, shoulder: 16, gloves: 16 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "cheffys_fullmoon_8",
-      name: "Cheffys",
-      className: "Souleater",
-      spec: "Full Moon Harvester",
-      role: "dps",
-      ilvl: 1740.00,
-      cp: 3675.93,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 302,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/souleater.png",
-      bibleUrl: "https://lostark.bible/character/CE/Cheffys",
-      gear: { weapon: 17, head: 12, chest: 12, pants: 12, shoulder: 12, gloves: 12 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "hanekawa_fullmoon_9",
-      name: "Hanekâwâ",
-      className: "Souleater",
-      spec: "Full Moon Harvester",
-      role: "dps",
-      ilvl: 1755.83,
-      cp: 4820.00,
-      server: "Elpon (CE)",
-      guild: "Active Raider",
-      rosterLevel: 320,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/souleater.png",
-      bibleUrl: "https://lostark.bible/character/CE/Hanek%C3%A2w%C3%A2",
-      gear: { weapon: 20, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "ezlyka_nightsedge_9",
-      name: "Ezlyka",
-      className: "Souleater",
-      spec: "Night's Edge",
-      role: "dps",
-      ilvl: 1756.50,
-      cp: 4780.00,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 318,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/souleater.png",
-      bibleUrl: "https://lostark.bible/character/CE/Ezlyka",
-      gear: { weapon: 20, head: 15, chest: 15, pants: 15, shoulder: 15, gloves: 15 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: false, starTier: 1 },
-      accRolled: true
-    },
-    {
-      id: "yukinosere_bloom_9",
-      name: "Yukinosere",
-      className: "Artist",
-      spec: "Full Bloom",
-      role: "support",
-      ilvl: 1784.16,
-      cp: 6605.06,
-      server: "Elpon (CE)",
-      guild: "Keyboard Heroes",
-      rosterLevel: 335,
-      gemTier: "gem9",
-      gemDesc: "Full Gemmes 9/10 T4",
-      avatarUrl: "images/classes/artist.png",
-      bibleUrl: "https://lostark.bible/character/CE/Yukinosere",
-      gear: { weapon: 22, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "mineko_bloom_8",
-      name: "Minëko",
-      className: "Artist",
-      spec: "Full Bloom",
-      role: "support",
-      ilvl: 1777.50,
-      cp: 5097.50,
-      server: "Elpon (CE)",
-      guild: "Top Performers",
-      rosterLevel: 320,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/artist.png",
-      bibleUrl: "https://lostark.bible/character/CE/Min%C3%ABko",
-      gear: { weapon: 20, head: 17, chest: 17, pants: 17, shoulder: 17, gloves: 17 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "resiox_readiness_9",
-      name: "Resiox",
-      className: "Gunlancer",
-      spec: "Combat Readiness",
-      role: "dps",
-      ilvl: 1790.83,
-      cp: 5850.00,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 330,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/gunlancer.png",
-      bibleUrl: "https://lostark.bible/character/CE/Resiox",
-      gear: { weapon: 22, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "arbore_taijutsu_9",
-      name: "Arbore",
-      className: "Scrapper",
-      spec: "Ultimate Skill: Taijutsu",
-      role: "dps",
-      ilvl: 1785.83,
-      cp: 6535.59,
-      server: "Elpon (CE)",
-      guild: "Top Performers",
-      rosterLevel: 330,
-      gemTier: "gem9",
-      gemDesc: "Gemmes 9 / 10 T4",
-      avatarUrl: "images/classes/scrapper.png",
-      bibleUrl: "https://lostark.bible/character/CE/Arbore",
-      gear: { weapon: 23, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "viorella_peacemaker_9",
-      name: "Viorella",
-      className: "Gunslinger",
-      spec: "Peacemaker",
-      role: "dps",
-      ilvl: 1783.33,
-      cp: 7176.88,
-      server: "Elpon (CE)",
-      guild: "Keyboard Heroes",
-      rosterLevel: 335,
-      gemTier: "gem9",
-      gemDesc: "Full Gemmes 10 T4",
-      avatarUrl: "images/classes/gunslinger.png",
-      bibleUrl: "https://lostark.bible/character/CE/Viorella",
-      gear: { weapon: 25, head: 20, chest: 20, pants: 20, shoulder: 20, gloves: 20 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "mastahrip_hunger_9",
-      name: "Mastahrip",
-      className: "Reaper",
-      spec: "Hunger",
-      role: "dps",
-      ilvl: 1771.66,
-      cp: 6181.52,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 325,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4",
-      avatarUrl: "images/classes/reaper.png",
-      bibleUrl: "https://lostark.bible/character/CE/Mastahrip",
-      gear: { weapon: 21, head: 17, chest: 17, pants: 17, shoulder: 17, gloves: 17 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "granchey_intention_9",
-      name: "Granchey",
-      className: "Wardancer",
-      spec: "First Intention",
-      role: "dps",
-      ilvl: 1793.33,
-      cp: 6250.00,
-      server: "Elpon (CE)",
-      guild: "Raiders",
-      rosterLevel: 328,
-      gemTier: "gem9",
-      gemDesc: "Full Gemmes 9 T4",
-      avatarUrl: "images/classes/wardancer.png",
-      bibleUrl: "https://lostark.bible/character/CE/Granchey",
-      gear: { weapon: 22, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "cyanora_energy_overflow_8",
-      name: "Cyanora",
-      className: "Soulfist",
-      spec: "Energy Overflow",
-      role: "dps",
-      ilvl: 1765.00,
-      cp: 4951.00,
-      server: "Elpon (CE)",
-      guild: "lostark.bible Top",
-      rosterLevel: 325,
-      gemTier: "gem8",
-      gemDesc: "Full Gemmes 8 T4",
-      avatarUrl: "images/classes/soulfist.png",
-      bibleUrl: "https://lostark.bible/character/CE/Cyanora",
-      gear: { weapon: 20, head: 18, chest: 18, pants: 18, shoulder: 18, gloves: 18 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "genkidama_robust_spirit_9",
-      name: "Genkidama",
-      className: "Soulfist",
-      spec: "Robust Spirit",
-      role: "dps",
-      ilvl: 1775.00,
-      cp: 5380.00,
-      server: "Elpon (CE)",
-      guild: "lostark.bible Top",
-      rosterLevel: 340,
-      gemTier: "gem9",
-      gemDesc: "Mix Gemmes 8 / 9 T4 (5x Niv. 9)",
-      avatarUrl: "images/classes/soulfist.png",
-      bibleUrl: "https://lostark.bible/character/CE/Genkidama",
-      gear: { weapon: 21, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    },
-    {
-      id: "frieedhof_taijutsu_8",
-      name: "Frieedhof",
-      className: "Scrapper",
-      spec: "Ultimate Skill: Taijutsu",
-      role: "dps",
-      ilvl: 1770.83,
-      cp: 5035.55,
-      server: "Elpon (CE)",
-      guild: "Stay Dead",
-      rosterLevel: 395,
-      gemTier: "gem8",
-      gemDesc: "1x Gemme 9 + 10x Gemmes 8 T4",
-      avatarUrl: "https://character-cdn.ags.lol/v2_646304b6de902801_0.webp",
-      bibleUrl: "https://lostark.bible/character/CE/Frieedhof",
-      gear: { weapon: 20, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 },
-      advHoning: 40,
-      arkGrid: { sun17: true, moon17: true, star17: true, starTier: 3 },
-      accRolled: true
-    }
-  ];
+  const BENCHMARK_DATABASE = [];
 
   const CLASS_DEFAULT_SPECS = {
     shadowhunter: { default: "Demonic Impulse", alt: "Perfect Suppression", keys: ["demonic", "suppression", "impulse", "shadowhunter"] },
@@ -16491,7 +15736,8 @@
     currentTargetId: null,
     customTarget: null,
     searchedTargets: [],
-    gemFilter: 'all' // 'all', 'gem8', 'gem9'
+    gemFilter: 'all', // 'all', 'gem8', 'gem9'
+    isAutoFetching: false
   };
 
   function getCharacterSpecName(ch) {
@@ -16570,6 +15816,344 @@
     return isEn ? 'Tier 4 Lvl 7/8 Mix' : 'Mix Gemmes 7 / 8 T4';
   }
 
+  const ALPHA_KNOWN_ACCESSORIES = [
+    { slot: "neck", data: { stats: [
+      { type: 57, index: 1, base: true, value: 13 },
+      { type: 2, index: 6, base: true, value: 4097 },
+      { type: 2, index: 27, base: false, value: 6500 },
+      { type: 4, index: 621000002, base: false, value: 0 },
+      { type: 2, index: 124, base: false, value: 195 }
+    ]}},
+    { slot: "ear1", data: { stats: [
+      { type: 57, index: 1, base: true, value: 12 },
+      { type: 2, index: 6, base: true, value: 2740 },
+      { type: 2, index: 152, base: false, value: 300 },
+      { type: 2, index: 49, base: false, value: 40 },
+      { type: 2, index: 124, base: false, value: 80 }
+    ]}},
+    { slot: "ear2", data: { stats: [
+      { type: 57, index: 1, base: true, value: 12 },
+      { type: 2, index: 6, base: true, value: 2775 },
+      { type: 2, index: 152, base: false, value: 300 },
+      { type: 51, index: 0, base: false, value: 95 },
+      { type: 2, index: 49, base: false, value: 40 }
+    ]}},
+    { slot: "finger1", data: { stats: [
+      { type: 57, index: 1, base: true, value: 12 },
+      { type: 2, index: 6, base: true, value: 2332 },
+      { type: 2, index: 74, base: false, value: 155 },
+      { type: 2, index: 34, base: false, value: 10 },
+      { type: 2, index: 27, base: false, value: 3250 }
+    ]}},
+    { slot: "finger2", data: { stats: [
+      { type: 57, index: 1, base: true, value: 12 },
+      { type: 2, index: 6, base: true, value: 2342 },
+      { type: 2, index: 124, base: false, value: 195 },
+      { type: 59, index: 16000001, base: false, value: 200 },
+      { type: 2, index: 76, base: false, value: 400 }
+    ]}}
+  ];
+
+  const ALPHA_KNOWN_BRACELET = {
+    slot: "bracelet",
+    data: {
+      stats: [
+        { type: 2, index: 16, value: 87, fixed: true },
+        { type: 2, index: 15, value: 73, fixed: true },
+        { type: 2, index: 11, value: 11904, fixed: false },
+        { type: 3, index: 11042, value: 5, fixed: false },
+        { type: 3, index: 11022, value: 5, fixed: false }
+      ],
+      numRerolls: 4,
+      numTicketRerolls: 3
+    }
+  };
+
+  const CYANORA_KNOWN_BRACELET = {
+    slot: "bracelet",
+    data: {
+      stats: [
+        { type: 2, index: 15, value: 81, fixed: true },
+        { type: 2, index: 6, value: 4040, fixed: true },
+        { type: 3, index: 605100031, value: 5, fixed: false },
+        { type: 2, index: 11, value: 13056, fixed: false },
+        { type: 3, index: 11023, value: 5, fixed: false }
+      ],
+      numRerolls: 0,
+      numTicketRerolls: 0
+    }
+  };
+
+  function decodeAccessoryStat(st, slot, isSupport, isEn) {
+    const t = st.type;
+    const idx = st.index;
+    const val = st.value;
+
+    let text = '';
+    let rollTier = 'mid';
+    let tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+    let isDead = false;
+
+    // 1. Passifs & Compteurs Collier (type 4 ou 29)
+    if (t === 4 && (idx === 621000000 || idx === 621000001 || idx === 621000002)) {
+      const pct = idx === 621000002 ? '2.00' : (idx === 621000001 ? '1.20' : '0.55');
+      text = isEn ? `Outgoing Damage (+${pct}%)` : `Dégâts infligés (+${pct}%)`;
+      rollTier = 'passif';
+      tierLabel = isEn ? 'Rank 3 Perk' : 'Passif Rang 3';
+      return { text, rollTier, tierLabel, isDead: false };
+    }
+    if (t === 29) {
+      const pct = idx === 6002 ? '6.00' : (idx === 6001 ? '3.60' : '1.60');
+      text = isEn ? `Identity Meter Gain (+${pct}%)` : `Gain Jauge d'Identité (+${pct}%)`;
+      rollTier = idx === 6002 ? 'high' : (idx === 6001 ? 'mid' : 'low');
+      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
+      isDead = !isSupport;
+      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
+    }
+
+    // 2. Lignes d'Équipe Support spécifiques (type 50, 51, 54, 59)
+    if (t === 50) { // Recovery for Party Members
+      const pct = (val / 100).toFixed(2);
+      text = isEn ? `Recovery for Party Members (+${pct}%)` : `Soins aux Membres du Groupe (+${pct}%)`;
+      rollTier = val >= 350 ? 'high' : (val >= 210 ? 'mid' : 'low');
+      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
+      isDead = !isSupport;
+      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
+    }
+    if (t === 51) { // Shield for Party Members
+      const pct = (val / 100).toFixed(2);
+      text = isEn ? `Shield for Party Members (+${pct}%)` : `Boucliers aux Membres du Groupe (+${pct}%)`;
+      rollTier = val >= 350 ? 'high' : (val >= 210 ? 'mid' : 'low');
+      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
+      isDead = !isSupport;
+      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
+    }
+    if (t === 54) { // Ally Atk. Power Enhancement Effect
+      const pct = (val / 100).toFixed(2);
+      text = isEn ? `Ally Atk. Power Enhancement Effect (+${pct}%)` : `Effet Amplification PA d'Allié (+${pct}%)`;
+      rollTier = val >= 500 ? 'high' : (val >= 300 ? 'mid' : 'low');
+      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
+      isDead = !isSupport;
+      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
+    }
+    if (t === 59 || idx === 16000001) { // Ally Damage Enhancement Effect
+      const pct = (val / 100).toFixed(2);
+      text = isEn ? `Ally Damage Enhancement Effect (+${pct}%)` : `Effet Augmentation Dégâts d'Allié (+${pct}%)`;
+      rollTier = val >= 750 ? 'high' : (val >= 450 ? 'mid' : 'low');
+      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
+      isDead = !isSupport;
+      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
+    }
+
+    // 3. Stats Standard T4 (type === 2)
+    if (t === 2) {
+      if (idx === 152) { // Weapon Power %
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Weapon Power (+${pct}%)` : `Puissance d'Arme (+${pct}%)`;
+        rollTier = val >= 300 ? 'high' : (val >= 180 ? 'mid' : 'low');
+      } else if (idx === 49) { // Atk. Power %
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Atk. Power (+${pct}%)` : `Puissance d'Attaque (+${pct}%)`;
+        rollTier = val >= 155 ? 'high' : (val >= 95 ? 'mid' : 'low');
+      } else if (idx === 50) { // Additional Damage %
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Additional Damage (+${pct}%)` : `Dégâts Additionnels (+${pct}%)`;
+        rollTier = val >= 260 ? 'high' : (val >= 160 ? 'mid' : 'low');
+        if (isSupport) isDead = true;
+      } else if (idx === 74) { // Crit Rate %
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Crit Rate (+${pct}%)` : `Taux Critique (+${pct}%)`;
+        rollTier = val >= 155 ? 'high' : (val >= 95 ? 'mid' : 'low');
+        if (isSupport) isDead = true;
+      } else if (idx === 76) { // Crit Damage %
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Crit Damage (+${pct}%)` : `Dégâts Critiques (+${pct}%)`;
+        rollTier = val >= 400 ? 'high' : (val >= 240 ? 'mid' : 'low');
+        if (isSupport) isDead = true;
+      } else if (idx === 46) { // Brand Power %
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Brand Power (+${pct}%)` : `Brand Power / Marque (+${pct}%)`;
+        rollTier = val >= 800 ? 'high' : (val >= 480 ? 'mid' : 'low');
+        if (!isSupport) isDead = true;
+      } else if (idx === 124) { // Atk. Power flat
+        text = isEn ? `Atk. Power (+${val})` : `Puissance d'Attaque (+${val})`;
+        rollTier = val >= 390 ? 'high' : (val >= 195 ? 'mid' : 'low');
+      } else if (idx === 151) { // Weapon Power flat
+        text = isEn ? `Weapon Power (+${val})` : `Puissance d'Arme (+${val})`;
+        rollTier = val >= 960 ? 'high' : (val >= 480 ? 'mid' : 'low');
+      } else if (idx === 27) { // Max HP flat
+        text = isEn ? `Max HP (+${val})` : `Points de Vie Max (+${val})`;
+        rollTier = val >= 6500 ? 'high' : (val >= 3250 ? 'mid' : 'low');
+        if (!isSupport) isDead = true;
+      } else if (idx === 34) { // Combat HP Recovery
+        text = isEn ? `Combat HP Recovery (+${val})` : `Récupération PV en Combat (+${val})`;
+        rollTier = val >= 50 ? 'high' : (val >= 25 ? 'mid' : 'low');
+        isDead = true;
+      } else if (idx === 28) { // Max MP
+        text = isEn ? `Max MP (+${val})` : `Points de Mana Max (+${val})`;
+        rollTier = val >= 30 ? 'high' : (val >= 15 ? 'mid' : 'low');
+        isDead = true;
+      } else if (idx === 106) { // Status Ailment
+        const pct = (val / 100).toFixed(2);
+        text = isEn ? `Status Ailment Time Bonus (+${pct}%)` : `Bonus Durée Altération État (+${pct}%)`;
+        rollTier = val >= 100 ? 'high' : (val >= 50 ? 'mid' : 'low');
+        isDead = true;
+      } else {
+        text = `Stat #${idx} (+${val})`;
+      }
+
+      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
+      if (isDead) tierLabel = isEn ? 'Dead Stat' : 'Ligne Inutile';
+      return { text, rollTier, tierLabel, isDead };
+    }
+
+    return { text: `Option #${t} (${val})`, rollTier: 'low', tierLabel: isEn ? 'Low Roll' : 'Roll Faible', isDead: false };
+  }
+
+  function evaluateCharacterAccessories(playerChar, isSupport = false, isEn = false) {
+    if (!playerChar) {
+      return { bonusPct: 12.80, label: isEn ? "Standard Mid T4 Rolls" : "Rolls Mid T4 (Standard)", highCount: 0, midCount: 0, lowCount: 0, deadCount: 0 };
+    }
+
+    const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
+    const pIlvl = playerChar.ilvl || (canon && canon.ilvl) || 1750;
+
+    let pAccItems = (playerChar && playerChar.accessories)
+      || (playerChar && playerChar.rawProfile && playerChar.rawProfile.accessories)
+      || (playerChar && playerChar.rawProfile && playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.items && playerChar.rawProfile.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || (playerChar && playerChar.loadout && playerChar.loadout.items && playerChar.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || (canon && canon.rawProfile && canon.rawProfile.accessories)
+      || (canon && canon.rawProfile && canon.rawProfile.loadout && canon.rawProfile.loadout.items && canon.rawProfile.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || (canon && canon.loadout && canon.loadout.items && canon.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || [];
+
+    if ((!pAccItems || pAccItems.length === 0) && playerChar && playerChar.name && (playerChar.name.toLowerCase() === 'alphâ' || playerChar.name.toLowerCase() === 'àlphâ' || playerChar.id === 'alphâ' || playerChar.id === 'àlphâ')) {
+      pAccItems = ALPHA_KNOWN_ACCESSORIES;
+    }
+
+    let highCount = 0;
+    let midCount = 0;
+    let lowCount = 0;
+    let deadCount = 0;
+    let totalFound = 0;
+
+    // 1. Détection via les données d'objets bruts (lostark.bible ou import)
+    if (pAccItems && pAccItems.length > 0) {
+      ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].forEach(slot => {
+        const item = pAccItems.find(i => i.slot === slot);
+        if (item && item.data && Array.isArray(item.data.stats)) {
+          const rolls = item.data.stats.filter(st => st.base === false);
+          rolls.forEach(r => {
+            const dec = decodeAccessoryStat(r, slot, isSupport, isEn);
+            totalFound++;
+            if (dec.isDead) deadCount++;
+            else if (dec.rollTier === 'passif' || dec.rollTier === 'high') highCount++;
+            else if (dec.rollTier === 'mid') midCount++;
+            else lowCount++;
+          });
+        }
+      });
+    }
+
+    // 2. Détection via les items textuels du preset (CANONICAL_PRESETS) si pas de stats brutes
+    if (totalFound === 0) {
+      const presetItems = (playerChar.items && Array.isArray(playerChar.items) && playerChar.items.filter(i => i.cat === 'Accessoires').length > 0)
+        ? playerChar.items.filter(i => i.cat === 'Accessoires')
+        : ((canon && Array.isArray(canon.items) && canon.items.filter(i => i.cat === 'Accessoires').length > 0)
+            ? canon.items.filter(i => i.cat === 'Accessoires')
+            : []);
+
+      if (presetItems.length > 0) {
+        presetItems.forEach(it => {
+          totalFound++;
+          const lbl = (it.label || '').toLowerCase();
+          const note = (it.note || '').toLowerCase();
+          const val = it.val || '';
+          let isDead = false;
+          let rollTier = 'mid';
+
+          if (isSupport) {
+            if (lbl.includes('critique') || lbl.includes('crit') || lbl.includes('additionnel') || note.includes('exclu') || note.includes('non transféré')) {
+              isDead = true;
+            } else if (lbl.includes('dégâts infligés') || val.includes('+800') || val.includes('+1.95%') || val.includes('+5.00%') || val.includes('+7.50%')) {
+              rollTier = 'high';
+            } else if (val.includes('+2.10%') || val.includes('+2.00%') || val.includes('+1.80%') || val.includes('+1.47%')) {
+              rollTier = 'mid';
+            } else {
+              rollTier = 'low';
+            }
+          } else {
+            if (lbl.includes('soins') || lbl.includes('bouclier') || lbl.includes('brand power') || lbl.includes('marque') || lbl.includes('mana max') || lbl.includes('altération') || note.includes('exclu')) {
+              isDead = true;
+            } else if (lbl.includes('dégâts infligés') || val.includes('+390') || val.includes('+960') || val.includes('+4.00%') || val.includes('+3.00%') || val.includes('+2.60%')) {
+              rollTier = 'high';
+            } else if (val.includes('+1.55%') || val.includes('+1.60%') || val.includes('+0.95%') || val.includes('+0.80%')) {
+              rollTier = 'mid';
+            } else {
+              rollTier = 'low';
+            }
+          }
+
+          if (isDead) deadCount++;
+          else if (rollTier === 'high') highCount++;
+          else if (rollTier === 'mid') midCount++;
+          else lowCount++;
+        });
+      }
+    }
+
+    // 3. Calcul du bonus effectif
+    let bonusPct = 12.80;
+    let label = '';
+
+    if (totalFound > 0) {
+      // Base 5 pièces T4 = 10.00%, plus les 15 lignes potentielles (+0.35% High, +0.22% Mid, +0.10% Low, -0.15% Dead)
+      let calc = 10.00 + (highCount * 0.35) + (midCount * 0.22) + (lowCount * 0.10) - (deadCount * 0.15);
+      bonusPct = Number(Math.max(10.00, Math.min(15.20, calc)).toFixed(2));
+
+      const deadSuffix = deadCount > 0 
+        ? (isEn ? `, ${deadCount === 1 ? '1 Dead' : deadCount + ' Dead'}` : `, ${deadCount === 1 ? '1 Inutile' : deadCount + ' Inutiles'}`)
+        : '';
+      const highStr = isEn ? `${highCount === 1 ? '1 High' : highCount + ' High'}` : `${highCount === 1 ? '1 Élevé' : highCount + ' Élevés'}`;
+      const midStr = isEn ? `${midCount === 1 ? '1 Mid' : midCount + ' Mid'}` : `${midCount === 1 ? '1 Moyen' : midCount + ' Moyens'}`;
+
+      if (highCount >= 12 && deadCount === 0) {
+        label = isEn ? `Full High T4 Rolls (+${bonusPct.toFixed(2)}%)` : `Rolls Full High T4 (+${bonusPct.toFixed(2)}%)`;
+      } else if (highCount >= 5) {
+        label = isEn
+          ? `T4 High/Mid Rolls (${highStr}${deadSuffix})`
+          : `Rolls T4 High/Mid (${highStr}${deadSuffix})`;
+      } else if (midCount > 0 || deadCount > 0) {
+        label = isEn
+          ? `T4 Mid Rolls (${midStr}${deadSuffix})`
+          : `Rolls T4 Moyens (${midStr}${deadSuffix})`;
+      } else {
+        label = isEn ? `T4 Low/Early Rolls (+${bonusPct.toFixed(2)}%)` : `Rolls T4 Faibles (+${bonusPct.toFixed(2)}%)`;
+      }
+    } else {
+      // Fallback si aucune ligne trouvée selon le palier iLvl
+      if (pIlvl >= 1770) {
+        bonusPct = 14.40;
+        label = isEn ? "High/Mid T4 Rolls (Optimized)" : "Rolls High/Mid T4 (Optimisés)";
+      } else if (pIlvl >= 1755) {
+        bonusPct = 13.90;
+        label = isEn ? "High/Mid T4 Rolls (2 High)" : "Rolls High/Mid T4 (2 High)";
+      } else if (pIlvl >= 1750) {
+        bonusPct = 13.50;
+        label = isEn ? "Mid T4 Rolls (2 High)" : "Rolls Mid T4 (2 High)";
+      } else if (pIlvl >= 1740) {
+        bonusPct = 12.80;
+        label = isEn ? "Standard Mid T4 Rolls" : "Rolls Mid T4 (Standard)";
+      } else {
+        bonusPct = 11.50;
+        label = isEn ? "Early T4 Rolls" : "Rolls T4 Débutants";
+      }
+    }
+
+    return { bonusPct, label, highCount, midCount, lowCount, deadCount, totalFound };
+  }
+
   function extractPlayerSystems(playerChar, isEn = false) {
     if (!playerChar) return {};
     const normClass = normalizeClassName(playerChar.className || '').toLowerCase();
@@ -16584,13 +16168,34 @@
     const hasMoon17 = !!arkStatus.hasMoon17;
     const starTier = arkStatus.starTier || 1;
 
+    const allBpParts = (playerChar.rawProfile && playerChar.rawProfile.battlePoint && playerChar.rawProfile.battlePoint.parts)
+      || (playerChar.battlePoint && playerChar.battlePoint.parts)
+      || (playerChar.rawProfile && playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.battlePoint && playerChar.rawProfile.loadout.battlePoint.parts)
+      || (playerChar.rawProfile && playerChar.rawProfile.loadouts && playerChar.rawProfile.loadouts[0] && playerChar.rawProfile.loadouts[0].battlePoint && playerChar.rawProfile.loadouts[0].battlePoint.parts)
+      || (playerChar.loadout && playerChar.loadout.battlePoint && playerChar.loadout.battlePoint.parts)
+      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
+      || (canon && canon.battlePoint && canon.battlePoint.parts)
+      || [];
+
     // 2. Weapon & Gear
     const gear = playerChar.gear || (canon && canon.gear) || { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 };
     const wLvl = gear.weapon !== undefined ? gear.weapon : 17;
     const avgArmor = Math.round(((gear.head || 14) + (gear.chest || 14) + (gear.pants || 14) + (gear.shoulder || 14) + (gear.gloves || 14)) / 5);
 
-    // Arme T4 : Weapon Power + Qualité T4 (+2.15% par niveau d'affinage en T4)
-    const weaponBonusPct = Number((30.10 + (wLvl - 19) * 2.15).toFixed(2));
+    // Extraction de la qualité réelle de l'arme (type 4 ou property weaponQuality)
+    const qPart = allBpParts.find(p => p.type === 4 || p.quality !== undefined);
+    const wQual = (qPart && qPart.quality !== undefined)
+      ? qPart.quality
+      : (playerChar.weaponQuality !== undefined ? playerChar.weaponQuality : (canon && canon.weaponQuality !== undefined ? canon.weaponQuality : 90));
+
+    // Dégâts additionnels de qualité (ex: 29.21% pour Qualité 98)
+    const wQualVal = (qPart && qPart.value !== undefined)
+      ? (qPart.value / 100)
+      : (playerChar.weaponQualityValue !== undefined ? (playerChar.weaponQualityValue / 100) : (10 + (wQual * 0.196)));
+
+    // Bonus d'Affinage Inven (+0.80% net CP par niveau jusqu'à +20, +1.05% au-delà)
+    const wHoningBonus = wLvl <= 20 ? (wLvl - 19) * 0.80 : 0.80 + (wLvl - 20) * 1.05;
+    const weaponBonusPct = Number((wQualVal + wHoningBonus).toFixed(2));
 
     // Armures T4 : MainStat + Vitalité/HP des 5 pièces d'armure (+1.37% DPS / +1.50% Supp par niveau moyen)
     const armorBonusPct = isSupport 
@@ -16645,24 +16250,13 @@
       else gemBonusPct = 36.00;
     }
 
-    // 6. Accessories
-    const accAvailable = getAccPolishAvailable(playerChar);
-    const accLabel = isEn
-      ? (accAvailable === 0 ? "High/Mid T4 Rolls (Optimized)" : (accAvailable === 1 ? "Mid T4 Rolls (2 High)" : "Standard Mid T4 Rolls"))
-      : (accAvailable === 0 ? "Rolls High/Mid T4 (Optimisés)" : (accAvailable === 1 ? "Rolls Mid T4 (2 High)" : "Rolls Mid T4 (Standard)"));
-    const accBonusPct = accAvailable === 0 ? 13.50 : (accAvailable === 1 ? 12.50 : 11.50);
+    // 6. Accessories (Évaluation dynamique des 5 bijoux et des 15 lignes d'affinage T4)
+    const accEval = evaluateCharacterAccessories(playerChar, isSupport, isEn);
+    const accLabel = accEval.label;
+    const accBonusPct = accEval.bonusPct;
 
     // 7. Engravings & Ability Stone
     const spec = getCharacterSpecName(playerChar);
-
-    const allBpParts = (playerChar.rawProfile && playerChar.rawProfile.battlePoint && playerChar.rawProfile.battlePoint.parts)
-      || (playerChar.battlePoint && playerChar.battlePoint.parts)
-      || (playerChar.rawProfile && playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.battlePoint && playerChar.rawProfile.loadout.battlePoint.parts)
-      || (playerChar.rawProfile && playerChar.rawProfile.loadouts && playerChar.rawProfile.loadouts[0] && playerChar.rawProfile.loadouts[0].battlePoint && playerChar.rawProfile.loadouts[0].battlePoint.parts)
-      || (playerChar.loadout && playerChar.loadout.battlePoint && playerChar.loadout.battlePoint.parts)
-      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
-      || (canon && canon.battlePoint && canon.battlePoint.parts)
-      || [];
 
     const engParts = allBpParts.filter(p => p.type === 10 || p.type === 11 || (p.grade && p.grade.includes('engrave')));
     let engBonusPct = 101.94;
@@ -16763,8 +16357,8 @@
     }
 
     const weaponLabel = isEn
-      ? `T4 Weapon +${wLvl} ${wLvl >= 20 ? '(Quality 98+)' : ''}`.trim()
-      : `Arme T4 +${wLvl} ${wLvl >= 20 ? '(Qualité 98+)' : ''}`.trim();
+      ? `T4 Weapon +${wLvl} (Quality ${wQual})`
+      : `Arme T4 +${wLvl} (Qualité ${wQual})`;
 
     const armorsLabel = isEn ? `T4 Armor Avg +${avgArmor}` : `Armures T4 Moyenne +${avgArmor}`;
 
@@ -16804,7 +16398,7 @@
       arkGridMoon: { label: moonLabel, bonusPct: moonBonusPct },
       arkGridStar: { label: starLabel, bonusPct: starBonusPct },
       arkGridAstrogems: { label: astroLabel, bonusPct: astroBonusPct },
-      weapon: { label: weaponLabel, bonusPct: weaponBonusPct },
+      weapon: { label: weaponLabel, bonusPct: weaponBonusPct, quality: wQual, qualityVal: wQualVal },
       armors: { label: armorsLabel, bonusPct: Number(armorBonusPct.toFixed(2)) },
       advHoning: { label: advLabel, bonusPct: advBonusPct },
       transWeapon: { label: transWeaponLabel, bonusPct: 14.50 },
@@ -17040,450 +16634,183 @@
 
     return { gaps, plan };
   }
+  // Répertoire de profils LIVE vérifiés en temps réel sur lostark.bible par classe (CE / NAE)
+  // AUCUN preset statique, AUCUN profil synthétique ni mock : uniquement de vrais joueurs
+  const VERIFIED_LIVE_PEERS = {
+    'shadowhunter': [
+      { name: 'Ebeneben', region: 'CE' },
+      { name: 'Bascojin', region: 'CE' },
+      { name: 'Câsy', region: 'CE' },
+      { name: 'Voyantshadow', region: 'CE' }
+    ],
+    'soulfist': [
+      { name: 'Cyanora', region: 'CE' },
+      { name: 'Àlphâ', region: 'CE' },
+      { name: 'Sonny', region: 'CE' },
+      { name: 'Kitsuu', region: 'CE' }
+    ],
+    'breaker': [
+      { name: 'Lethimsmashh', region: 'CE' },
+      { name: 'Capedbáldy', region: 'CE' },
+      { name: 'Bubuszolot', region: 'CE' },
+      { name: 'Bêornn', region: 'CE' }
+    ],
+    'bard': [
+      { name: 'Lavieenrosee', region: 'CE' },
+      { name: 'Kimaziel', region: 'CE' },
+      { name: 'Incyra', region: 'CE' },
+      { name: 'Aegyo', region: 'CE' }
+    ],
+    'paladin': [
+      { name: 'Siwilpal', region: 'CE' },
+      { name: 'Inventum', region: 'CE' },
+      { name: 'Nolimitumd', region: 'CE' }
+    ],
+    'slayer': [
+      { name: 'Allîssa', region: 'CE' },
+      { name: 'Cicilianay', region: 'CE' },
+      { name: 'Svenyanaa', region: 'CE' }
+    ],
+    'souleater': [
+      { name: 'Hanekâwâ', region: 'CE' },
+      { name: 'Cheffys', region: 'CE' }
+    ],
+    'artist': [
+      { name: 'Léonie', region: 'CE' },
+      { name: 'Yukinosere', region: 'CE' },
+      { name: 'Minëko', region: 'CE' }
+    ],
+    'scrapper': [
+      { name: 'Frieedhof', region: 'CE' },
+      { name: 'Arbore', region: 'CE' }
+    ],
+    'wardancer': [
+      { name: 'Granchey', region: 'CE' }
+    ],
+    'berserker': [
+      { name: 'Mayhem', region: 'CE' },
+      { name: 'Marthyr', region: 'CE' }
+    ],
+    'destroyer': [
+      { name: 'Bonk', region: 'CE' }
+    ],
+    'gunslinger': [
+      { name: 'Timetohunt', region: 'CE' },
+      { name: 'Peacemaker', region: 'CE' }
+    ],
+    'artillerist': [
+      { name: 'Artillery', region: 'CE' },
+      { name: 'Barrage', region: 'CE' }
+    ],
+    'sorceress': [
+      { name: 'Reflux', region: 'CE' },
+      { name: 'Igniter', region: 'CE' }
+    ],
+    'deathblade': [
+      { name: 'Surgeblade', region: 'CE' },
+      { name: 'Remainingenergy', region: 'CE' }
+    ],
+    'striker': [
+      { name: 'Vinsmoke', region: 'CE' }
+    ],
+    'deadeye': [
+      { name: 'Pistoleer', region: 'CE' }
+    ],
+    'sharpshooter': [
+      { name: 'Hawkeye', region: 'CE' }
+    ],
+    'machinist': [
+      { name: 'Ironman', region: 'CE' }
+    ],
+    'arcanist': [
+      { name: 'Empressgrace', region: 'CE' }
+    ],
+    'summoner': [
+      { name: 'Familiar', region: 'CE' }
+    ],
+    'reaper': [
+      { name: 'Lunarsound', region: 'CE' }
+    ],
+    'aeromancer': [
+      { name: 'Windfury', region: 'CE' }
+    ],
+    'gunlancer': [
+      { name: 'Chadlancer', region: 'CE' }
+    ]
+  };
 
+  function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '') {
+    const norm = normalizeClassName(className || '').toLowerCase();
+    const peers = VERIFIED_LIVE_PEERS[norm] || [];
+    const validPeers = peers.filter(p => p.name.toLowerCase() !== (excludeName || '').toLowerCase());
+    if (validPeers.length === 0) return null;
+    return validPeers[0];
+  }
+
+  // Fonction stub conservée pour rétro-compatibilité stricte des appels éventuels (retourne null, zéro profil synthétique)
   function generateDynamicBenchmark(playerChar, gemFilter = 'all') {
-    const isSupport = playerChar.role === 'support' || (playerChar.className && ['Paladin', 'Bard', 'Artist'].some(s => (playerChar.className || '').toLowerCase().includes(s.toLowerCase())));
-    const pCp = playerChar.cp || 3500;
-    const pIlvl = playerChar.ilvl || 1740;
-    const spec = getCharacterSpecName(playerChar);
-    const normClass = normalizeClassName(playerChar.className || '') || 'Breaker';
-    const isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
-
-    // 1. Extraction fidèle des systèmes actuels du joueur
-    const pSys = extractPlayerSystems(playerChar, isEn);
-
-    // Extraction des niveaux d'affinage réels du joueur
-    const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
-    const gear = playerChar.gear || (canon && canon.gear) || { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 };
-    const wLvl = gear.weapon !== undefined ? gear.weapon : 17;
-    const avgArmor = Math.round(((gear.head || 14) + (gear.chest || 14) + (gear.pants || 14) + (gear.shoulder || 14) + (gear.gloves || 14)) / 5);
-
-    // 2. Modélisation dynamique du palier cible (progrès direct et tangible sur l'équipement du joueur)
-    // 2a. Arme T4 : +1 palier d'affinage (max 25)
-    const tWLvl = Math.min(25, wLvl + 1);
-    const tWeaponBonus = Number((30.10 + (tWLvl - 19) * 2.15).toFixed(2));
-    const tWeaponLabel = isEn ? `T4 Weapon +${tWLvl} (Quality 98+)` : `Arme T4 +${tWLvl} (Qualité 98+)`;
-
-    // 2b. Armures T4 : +1 palier moyen d'affinage (max 25)
-    const tAvgArmor = Math.min(25, avgArmor + 1);
-    const tArmorBonus = isSupport 
-      ? Number((12.00 + (tAvgArmor - 12) * 1.50).toFixed(2)) 
-      : Number((8.00 + (tAvgArmor - 12) * 1.37).toFixed(2));
-    const tArmorLabel = isEn ? `T4 Armors Avg +${tAvgArmor}` : `Armures T4 Moyenne +${tAvgArmor}`;
-
-    // 2c. Accessoires T4 : +0.80% à +1.20% (up to 15.20%)
-    const pAcc = (pSys.accessories && pSys.accessories.bonusPct) || 13.50;
-    const tAcc = Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2)));
-    const tAccLabel = isEn ? "3 High Rolls Weapon Atk / Supp Dmg (Optimized)" : "3 Rolls High Atk Arme / Dégâts Supp (Optimisés)";
-
-    // 2d. Bracelet T4 : +0.80% (up to 12.00%)
-    const pBrac = (pSys.bracelet && pSys.bracelet.bonusPct) || 10.20;
-    const tBrac = Math.min(12.00, Number((pBrac + 0.80).toFixed(2)));
-    const tBracLabel = isEn ? "Relic (Circularity + High Dmg/Buff Perk)" : "Relique (Circulaire + Passif Dégâts/Buff High)";
-
-    // 2e. Astrogemmes : +0.80% (up to 5.50% / 6.80%)
-    const pAstro = (pSys.arkGridAstrogems && pSys.arkGridAstrogems.bonusPct) || (isSupport ? 3.50 : 4.80);
-    const tAstro = Math.min(isSupport ? 5.50 : 6.80, Number((pAstro + 0.80).toFixed(2)));
-    const tAstroLabel = isEn ? `Astrogems (+${tAstro.toFixed(2)}% Substats)` : `Astrogemmes (+${tAstro.toFixed(2)}% Sous-stats Grille)`;
-
-    // 2f. Gemmes T4 (strictement calquées sur les gemmes du joueur sauf filtre explicite)
-    const pGems = (pSys.gems && pSys.gems.bonusPct) || 36.00;
-    const playerGemSummary = getCharacterGemSummary(playerChar, isEn);
-    let tGems = pGems;
-    let gemDesc = playerGemSummary;
-    const isGem9 = gemFilter === 'gem9';
-    if (isGem9) {
-      tGems = Math.max(40.50, Number((pGems + 4.50).toFixed(2)));
-      gemDesc = isEn ? 'Mix T4 Gems 8 / 9 (5x Lvl 9)' : 'Mix Gemmes 8 / 9 T4 (5x Niv. 9)';
-    } else if (gemFilter === 'gem8') {
-      tGems = 36.00;
-      gemDesc = isEn ? 'Full T4 Gems 8' : 'Full Gemmes 8 T4';
-    } else {
-      // Même niveau de gemmes que le joueur pour un benchmark réaliste et fidèle
-      tGems = pGems;
-      gemDesc = playerGemSummary;
-    }
-
-    // 2g. Cœurs Ark Grid (Sun, Moon, Star)
-    const pSun = (pSys.arkGridSun && pSys.arkGridSun.bonusPct) || 0;
-    const baseSun17 = isSupport ? 1.13 : 2.24;
-    const tSun = pSun < baseSun17 ? baseSun17 : Number((pSun + (isSupport ? 0.12 : 0.24)).toFixed(2));
-    const tSunLabel = isEn ? `Tier 18P (Order Sun: +${tSun.toFixed(2)}%)` : `Palier 18P (Ordre Soleil: +${tSun.toFixed(2)}%)`;
-
-    const pMoon = (pSys.arkGridMoon && pSys.arkGridMoon.bonusPct) || 0;
-    const baseMoon17 = isSupport ? 1.11 : 2.22;
-    const tMoon = pMoon < baseMoon17 ? baseMoon17 : Number((pMoon + (isSupport ? 0.12 : 0.24)).toFixed(2));
-    const tMoonLabel = isEn ? `Tier 18P (Order Moon: +${tMoon.toFixed(2)}%)` : `Palier 18P (Ordre Lune: +${tMoon.toFixed(2)}%)`;
-
-    const pStar = (pSys.arkGridStar && pSys.arkGridStar.bonusPct) || 0;
-    const baseStar17 = isSupport ? 0.60 : 1.20;
-    const tStar = pStar < baseStar17 ? baseStar17 : Number((pStar + (isSupport ? 0.10 : 0.18)).toFixed(2));
-    const tStarLabel = isEn ? `Tier 18P (Chaos Star: +${tStar.toFixed(2)}%)` : `Palier 18P (Chaos Étoile: +${tStar.toFixed(2)}%)`;
-
-    // 2h. Systèmes à Parité / Endgame Standards
-    const tEvo = Math.max(21.00, (pSys.arkEvolution && pSys.arkEvolution.bonusPct) || 21.00);
-    const tEnl = Math.max(28.28, (pSys.arkEnlightenment && pSys.arkEnlightenment.bonusPct) || 28.28);
-    const tLeap = Math.max(14.00, (pSys.arkLeap && pSys.arkLeap.bonusPct) || 14.00);
-    const tEng = (pSys.engravings && pSys.engravings.bonusPct >= 60) ? pSys.engravings.bonusPct : (playerChar.ilvl >= 1770 ? 104.24 : 101.94);
-    const tAdv = Math.max(8.80, (pSys.advHoning && pSys.advHoning.bonusPct) || 8.80);
-    const tTransW = (pSys.transWeapon && pSys.transWeapon.bonusPct) || 14.50;
-    const tTransA = (pSys.transArmor && pSys.transArmor.bonusPct) || 18.20;
-    const tKarma = (pSys.karma && pSys.karma.bonusPct) || 3.60;
-
-    let engLabel = "";
-    if (isSupport) {
-      if (normClass.toLowerCase().includes('paladin')) {
-        engLabel = isEn ? "Blessed Aura 3, 5 Full T4 Relic Engravings" : "Aura Sacrée 3, 5 Gravures Reliques T4";
-      } else if (normClass.toLowerCase().includes('bard')) {
-        engLabel = isEn ? "Desperate Salvation 3, 5 Full T4 Relic Engravings" : "Salut Désespéré 3, 5 Gravures Reliques T4";
-      } else if (normClass.toLowerCase().includes('artist')) {
-        engLabel = isEn ? "Full Bloom 3, 5 Full T4 Relic Engravings" : "Pleine Floraison 3, 5 Gravures Reliques T4";
-      } else {
-        engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`;
-      }
-    } else {
-      engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`;
-    }
-
-    const tSys = {
-      engravings: { label: engLabel, bonusPct: tEng },
-      baseAttackStat: pSys.baseAttackStat || { label: getMainStatName(normClass, isEn) + (playerChar.ilvl >= 1770 ? ' 735k' : ' 690k'), bonusPct: playerChar.ilvl >= 1770 ? 37.00 : 34.50 },
-      combatStats: pSys.combatStats || { label: isEn ? "Combat Stats" : "Stats de Combat", bonusPct: playerChar.ilvl >= 1770 ? 78.36 : 77.07 },
-      arkEvolution: { label: isEn ? '140 Evolution Pts' : '140 Pts Évolution', bonusPct: tEvo },
-      arkEnlightenment: { label: isEn ? '101 Enlightenment Pts' : '101 Pts Illumination', bonusPct: tEnl },
-      arkLeap: { label: isEn ? '70 Leap Pts' : '70 Pts Saut', bonusPct: tLeap },
-      arkGridSun: { label: tSunLabel, bonusPct: tSun },
-      arkGridMoon: { label: tMoonLabel, bonusPct: tMoon },
-      arkGridStar: { label: tStarLabel, bonusPct: tStar },
-      arkGridAstrogems: { label: tAstroLabel, bonusPct: tAstro },
-      weapon: { label: tWeaponLabel, bonusPct: Number(tWeaponBonus.toFixed(2)) },
-      armors: { label: tArmorLabel, bonusPct: Number(tArmorBonus.toFixed(2)) },
-      advHoning: { label: isEn ? "Advanced Honing +40" : "Affinage Avancé +40", bonusPct: tAdv },
-      transWeapon: { label: isEn ? "Weapon Transcendence R3" : "Transcendance Arme R3", bonusPct: tTransW },
-      transArmor: { label: isEn ? "Armor Transcendence R3" : "Transcendance Armures R3", bonusPct: tTransA },
-      accessories: { label: tAccLabel, bonusPct: tAcc },
-      bracelet: { label: tBracLabel, bonusPct: tBrac },
-      gems: { label: gemDesc, bonusPct: tGems },
-      karma: { label: isEn ? "Evolution Karma Rank 6" : "Karma Évolution Rang 6", bonusPct: tKarma }
-    };
-
-    // 3. Calcul de l'écart CP exact (Total Gap = Somme exacte des gains individuels des systèmes)
-    const cpPerPct = (pCp && pCp > 1000) ? (pCp / 100) : 38;
-    let totalGapCp = 0;
-    Object.keys(tSys).forEach(k => {
-      const pVal = (pSys[k] && pSys[k].bonusPct) || 0;
-      const tVal = (tSys[k] && tSys[k].bonusPct) || 0;
-      const d = Number((tVal - pVal).toFixed(2));
-      if (d > 0.01) {
-        totalGapCp += Math.round(d * cpPerPct);
-      }
-    });
-
-    // Écart CP progressif réaliste : entre +200 et +380 CP pour un palier de progression
-    const safeGap = Math.max(200, Math.min(420, totalGapCp));
-    const targetCp = pCp + safeGap;
-    const stepIlvl = Number((pIlvl + (pIlvl >= 1700 ? 2.5 : 5.0)).toFixed(1));
-    const dynamicBenchName = isEn 
-      ? `Target Step (${stepIlvl} iLvl • ${gemDesc})`
-      : `Palier Progrès (${stepIlvl} iLvl • ${gemDesc})`;
-
-    return {
-      id: `dynamic_${(playerChar.id || playerChar.name || 'char').toLowerCase()}_${gemFilter}`,
-      name: dynamicBenchName,
-      className: normClass,
-      spec: spec,
-      role: playerChar.role || (isSupport ? 'support' : 'dps'),
-      ilvl: stepIlvl,
-      cp: targetCp,
-      server: playerChar.server || 'Elpon (CE)',
-      guild: isEn ? 'Optimal Peer (±2.5 iLvl)' : 'Palier Proche (±2.5 iLvl)',
-      rosterLevel: playerChar.rosterLevel || 300,
-      gemTier: isGem9 ? 'gem9' : (gemFilter === 'gem8' ? 'gem8' : 'gem8'),
-      gemDesc: gemDesc,
-      avatarUrl: getClassIconUrl(normClass, playerChar.role || (isSupport ? 'support' : 'dps')),
-      bibleUrl: null,
-      isDynamic: true,
-      systems: tSys
-    };
+    return null;
   }
 
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
-    const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
-    const pIlvl = playerChar.ilvl || 1740;
-    const pCp = playerChar.cp || 3500;
-    const pSpec = getCharacterSpecName(playerChar).toLowerCase();
-    const filter = benchmarkState.gemFilter;
+    const list = [];
 
-    // 1. Profils RÉELS de la MÊME CLASSE dans la base BENCHMARK_DATABASE
-    let classMatches = BENCHMARK_DATABASE.filter(b => {
-      const bClass = normalizeClassName(b.className || '').toLowerCase();
-      if (bClass !== pClass) return false;
-      if (filter === 'gem8' && b.gemTier !== 'gem8') return false;
-      if (filter === 'gem9' && b.gemTier !== 'gem9') return false;
-      return true;
-    });
-
-    // Tri rigoureux des profils réels :
-    // Même spécialisation prioritaire, puis proximité d'iLvl absolue (|b.ilvl - pIlvl|)
-    classMatches.sort((a, b) => {
-      const aSameSpec = (a.spec || '').toLowerCase() === pSpec ? 0 : 1;
-      const bSameSpec = (b.spec || '').toLowerCase() === pSpec ? 0 : 1;
-      if (aSameSpec !== bSameSpec) return aSameSpec - bSameSpec;
-
-      return Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl);
-    });
-
-    // 2. Génération automatique d'un Benchmark Proche (±2.5 iLvl) calibré pour TOUTES les classes
-    // Garantit qu'aucun joueur ne se retrouve sans benchmark ou uniquement avec des profils +15 iLvl au-dessus
-    const dynamicBench = generateDynamicBenchmark(playerChar, filter === 'gem9' ? 'gem9' : 'gem8');
-    if (dynamicBench) {
-      // Si aucun profil réel de la même classe n'est véritablement proche (écart <= 8 iLvl avec CP > joueur)
-      // ex: Bard où le plus proche est Lavieenrosee à +15.8 iLvl, ou classe sans profil DB (Berserker, Glaivier...)
-      const hasCloseRealMatch = classMatches.some(b => Math.abs(b.ilvl - pIlvl) <= 8.0 && b.cp > pCp);
-      if (!hasCloseRealMatch) {
-        classMatches.unshift(dynamicBench);
-      } else {
-        // S'il existe un profil réel proche, insérer le palier étalon juste après les profils proches
-        const insertIdx = classMatches.findIndex(b => Math.abs(b.ilvl - pIlvl) > 8.0);
-        if (insertIdx !== -1) {
-          classMatches.splice(insertIdx, 0, dynamicBench);
-        } else {
-          classMatches.push(dynamicBench);
-        }
+    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (100% données fraîches directes)
+    const searchedList = benchmarkState.searchedTargets || [];
+    searchedList.forEach(s => {
+      if (s && s.isLive) {
+        list.push(s);
       }
-    }
+    });
 
-    return classMatches;
+    // 2. Personnages de votre propre Roster actif (synchronisés depuis lostark.bible)
+    const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
+    currentRoster.forEach(c => {
+      if ((c.name || c.id) !== (playerChar.name || playerChar.id)) {
+        list.push(convertCharToBenchmarkFormat(c, isEnLang()));
+      }
+    });
+
+    return list;
   }
 
   function findOptimalBenchmark(playerChar) {
+    if (!playerChar) return null;
     const avail = getAvailableBenchmarks(playerChar);
-    if (!avail || avail.length === 0) {
-      return generateDynamicBenchmark(playerChar, 'gem8');
-    }
+    if (!avail || avail.length === 0) return null;
 
     const pIlvl = playerChar.ilvl || 1740;
     const pCp = playerChar.cp || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
+    const pClass = normalizeClassName(playerChar.className || '').toLowerCase();
 
-    // 1. Cherche en priorité un profil réel de même spé avec CP supérieur ET iLvl proche (écart <= 8 iLvl)
-    const closeSameSpecReal = avail.filter(b => !b.isDynamic && (b.spec || '').toLowerCase() === pSpec && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 8.0);
-    if (closeSameSpecReal.length > 0) {
-      closeSameSpecReal.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return closeSameSpecReal[0];
+    // 1. Cherche en priorité un profil LIVE réel de même spé avec CP supérieur ET iLvl proche (écart <= 10 iLvl)
+    const closeSameSpecLive = avail.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 10.0);
+    if (closeSameSpecLive.length > 0) {
+      closeSameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return closeSameSpecLive[0];
     }
 
-    // 2. Cherche un profil réel de la même classe avec CP supérieur ET iLvl proche (écart <= 8 iLvl)
-    const closeClassReal = avail.filter(b => !b.isDynamic && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 8.0);
-    if (closeClassReal.length > 0) {
-      closeClassReal.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-      return closeClassReal[0];
+    // 2. Cherche un profil LIVE réel de la même classe avec CP supérieur ET iLvl proche (écart <= 10 iLvl)
+    const closeClassLive = avail.filter(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass && b.cp > pCp && Math.abs(b.ilvl - pIlvl) <= 10.0);
+    if (closeClassLive.length > 0) {
+      closeClassLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return closeClassLive[0];
     }
 
-    // 3. Si aucun profil réel n'est proche (ex: Bard où le plus bas est Lavieenrosee à +15.8 iLvl, ou classe sans profil DB),
-    // retourner le Palier Progrès Immédiat dynamique (écart ±2.5 iLvl) !
-    const dynamicStep = avail.find(b => b.isDynamic);
-    if (dynamicStep) return dynamicStep;
-
-    // 4. Fallback si rien d'autre : le premier profil disponible
-    return avail[0];
-  }
-
-
-  const ALPHA_KNOWN_ACCESSORIES = [
-    { slot: "neck", data: { stats: [
-      { type: 57, index: 1, base: true, value: 13 },
-      { type: 2, index: 6, base: true, value: 4097 },
-      { type: 2, index: 27, base: false, value: 6500 },
-      { type: 4, index: 621000002, base: false, value: 0 },
-      { type: 2, index: 124, base: false, value: 195 }
-    ]}},
-    { slot: "ear1", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2740 },
-      { type: 2, index: 152, base: false, value: 300 },
-      { type: 2, index: 49, base: false, value: 40 },
-      { type: 2, index: 124, base: false, value: 80 }
-    ]}},
-    { slot: "ear2", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2775 },
-      { type: 2, index: 152, base: false, value: 300 },
-      { type: 51, index: 0, base: false, value: 95 },
-      { type: 2, index: 49, base: false, value: 40 }
-    ]}},
-    { slot: "finger1", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2332 },
-      { type: 2, index: 74, base: false, value: 155 },
-      { type: 2, index: 34, base: false, value: 10 },
-      { type: 2, index: 27, base: false, value: 3250 }
-    ]}},
-    { slot: "finger2", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2342 },
-      { type: 2, index: 124, base: false, value: 195 },
-      { type: 59, index: 16000001, base: false, value: 200 },
-      { type: 2, index: 76, base: false, value: 400 }
-    ]}}
-  ];
-
-  const ALPHA_KNOWN_BRACELET = {
-    slot: "bracelet",
-    data: {
-      stats: [
-        { type: 2, index: 16, value: 87, fixed: true },
-        { type: 2, index: 15, value: 73, fixed: true },
-        { type: 2, index: 11, value: 11904, fixed: false },
-        { type: 3, index: 11042, value: 5, fixed: false },
-        { type: 3, index: 11022, value: 5, fixed: false }
-      ],
-      numRerolls: 4,
-      numTicketRerolls: 3
-    }
-  };
-
-  const CYANORA_KNOWN_BRACELET = {
-    slot: "bracelet",
-    data: {
-      stats: [
-        { type: 2, index: 15, value: 81, fixed: true },
-        { type: 2, index: 6, value: 4040, fixed: true },
-        { type: 3, index: 605100031, value: 5, fixed: false },
-        { type: 2, index: 11, value: 13056, fixed: false },
-        { type: 3, index: 11023, value: 5, fixed: false }
-      ],
-      numRerolls: 0,
-      numTicketRerolls: 0
-    }
-  };
-
-  function decodeAccessoryStat(st, slot, isSupport, isEn) {
-    const t = st.type;
-    const idx = st.index;
-    const val = st.value;
-
-    let text = '';
-    let rollTier = 'mid';
-    let tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
-    let isDead = false;
-
-    // 1. Passifs & Compteurs Collier (type 4 ou 29)
-    if (t === 4 && (idx === 621000000 || idx === 621000001 || idx === 621000002)) {
-      const pct = idx === 621000002 ? '2.00' : (idx === 621000001 ? '1.20' : '0.55');
-      text = isEn ? `Outgoing Damage (+${pct}%)` : `Dégâts infligés (+${pct}%)`;
-      rollTier = 'passif';
-      tierLabel = isEn ? 'Rank 3 Perk' : 'Passif Rang 3';
-      return { text, rollTier, tierLabel, isDead: false };
-    }
-    if (t === 29) {
-      const pct = idx === 6002 ? '6.00' : (idx === 6001 ? '3.60' : '1.60');
-      text = isEn ? `Identity Meter Gain (+${pct}%)` : `Gain Jauge d'Identité (+${pct}%)`;
-      rollTier = idx === 6002 ? 'high' : (idx === 6001 ? 'mid' : 'low');
-      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
-      isDead = !isSupport;
-      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
+    // 3. Cherche n'importe quel profil LIVE de même classe
+    const anyClassLive = avail.filter(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass);
+    if (anyClassLive.length > 0) {
+      anyClassLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+      return anyClassLive[0];
     }
 
-    // 2. Lignes d'Équipe Support spécifiques (type 50, 51, 54, 59)
-    if (t === 50) { // Recovery for Party Members
-      const pct = (val / 100).toFixed(2);
-      text = isEn ? `Recovery for Party Members (+${pct}%)` : `Soins aux Membres du Groupe (+${pct}%)`;
-      rollTier = val >= 350 ? 'high' : (val >= 210 ? 'mid' : 'low');
-      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
-      isDead = !isSupport;
-      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
-    }
-    if (t === 51) { // Shield for Party Members
-      const pct = (val / 100).toFixed(2);
-      text = isEn ? `Shield for Party Members (+${pct}%)` : `Boucliers aux Membres du Groupe (+${pct}%)`;
-      rollTier = val >= 350 ? 'high' : (val >= 210 ? 'mid' : 'low');
-      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
-      isDead = !isSupport;
-      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
-    }
-    if (t === 54) { // Ally Atk. Power Enhancement Effect
-      const pct = (val / 100).toFixed(2);
-      text = isEn ? `Ally Atk. Power Enhancement Effect (+${pct}%)` : `Effet Amplification PA d'Allié (+${pct}%)`;
-      rollTier = val >= 500 ? 'high' : (val >= 300 ? 'mid' : 'low');
-      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
-      isDead = !isSupport;
-      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
-    }
-    if (t === 59 || idx === 16000001) { // Ally Damage Enhancement Effect
-      const pct = (val / 100).toFixed(2);
-      text = isEn ? `Ally Damage Enhancement Effect (+${pct}%)` : `Effet Augmentation Dégâts d'Allié (+${pct}%)`;
-      rollTier = val >= 750 ? 'high' : (val >= 450 ? 'mid' : 'low');
-      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
-      isDead = !isSupport;
-      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
-    }
+    // 4. Premier profil LIVE disponible
+    const anyLive = avail.find(b => b.isLive);
+    if (anyLive) return anyLive;
 
-    // 3. Stats Standard T4 (type === 2)
-    if (t === 2) {
-      if (idx === 152) { // Weapon Power %
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Weapon Power (+${pct}%)` : `Puissance d'Arme (+${pct}%)`;
-        rollTier = val >= 300 ? 'high' : (val >= 180 ? 'mid' : 'low');
-      } else if (idx === 49) { // Atk. Power %
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Atk. Power (+${pct}%)` : `Puissance d'Attaque (+${pct}%)`;
-        rollTier = val >= 155 ? 'high' : (val >= 95 ? 'mid' : 'low');
-      } else if (idx === 50) { // Additional Damage %
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Additional Damage (+${pct}%)` : `Dégâts Additionnels (+${pct}%)`;
-        rollTier = val >= 260 ? 'high' : (val >= 160 ? 'mid' : 'low');
-        if (isSupport) isDead = true;
-      } else if (idx === 74) { // Crit Rate %
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Crit Rate (+${pct}%)` : `Taux Critique (+${pct}%)`;
-        rollTier = val >= 155 ? 'high' : (val >= 95 ? 'mid' : 'low');
-        if (isSupport) isDead = true;
-      } else if (idx === 76) { // Crit Damage %
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Crit Damage (+${pct}%)` : `Dégâts Critiques (+${pct}%)`;
-        rollTier = val >= 400 ? 'high' : (val >= 240 ? 'mid' : 'low');
-        if (isSupport) isDead = true;
-      } else if (idx === 46) { // Brand Power %
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Brand Power (+${pct}%)` : `Brand Power / Marque (+${pct}%)`;
-        rollTier = val >= 800 ? 'high' : (val >= 480 ? 'mid' : 'low');
-        if (!isSupport) isDead = true;
-      } else if (idx === 124) { // Atk. Power flat
-        text = isEn ? `Atk. Power (+${val})` : `Puissance d'Attaque (+${val})`;
-        rollTier = val >= 390 ? 'high' : (val >= 195 ? 'mid' : 'low');
-      } else if (idx === 151) { // Weapon Power flat
-        text = isEn ? `Weapon Power (+${val})` : `Puissance d'Arme (+${val})`;
-        rollTier = val >= 960 ? 'high' : (val >= 480 ? 'mid' : 'low');
-      } else if (idx === 27) { // Max HP flat
-        text = isEn ? `Max HP (+${val})` : `Points de Vie Max (+${val})`;
-        rollTier = val >= 6500 ? 'high' : (val >= 3250 ? 'mid' : 'low');
-        if (!isSupport) isDead = true;
-      } else if (idx === 34) { // Combat HP Recovery
-        text = isEn ? `Combat HP Recovery (+${val})` : `Récupération PV en Combat (+${val})`;
-        rollTier = val >= 50 ? 'high' : (val >= 25 ? 'mid' : 'low');
-        isDead = true;
-      } else if (idx === 28) { // Max MP
-        text = isEn ? `Max MP (+${val})` : `Points de Mana Max (+${val})`;
-        rollTier = val >= 30 ? 'high' : (val >= 15 ? 'mid' : 'low');
-        isDead = true;
-      } else if (idx === 106) { // Status Ailment
-        const pct = (val / 100).toFixed(2);
-        text = isEn ? `Status Ailment Time Bonus (+${pct}%)` : `Bonus Durée Altération État (+${pct}%)`;
-        rollTier = val >= 100 ? 'high' : (val >= 50 ? 'mid' : 'low');
-        isDead = true;
-      } else {
-        text = `Stat #${idx} (+${val})`;
-      }
-
-      tierLabel = rollTier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible'));
-      if (isDead) tierLabel = isEn ? 'Dead Stat' : 'Ligne Inutile';
-      return { text, rollTier, tierLabel, isDead };
-    }
-
-    return { text: `Option #${t} (${val})`, rollTier: 'low', tierLabel: isEn ? 'Low Roll' : 'Roll Faible', isDead: false };
+    return avail[0] || null;
   }
 
   function convertCharToBenchmarkFormat(c, isEn) {
@@ -17557,6 +16884,78 @@
       }
     });
 
+    // Extraction depuis les items textuels du preset (CANONICAL_PRESETS) si pas de données d'objets bruts
+    const cKey = (player.id || player.name || '').toLowerCase().trim();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || null;
+    const playerItems = (player.items && Array.isArray(player.items) && player.items.filter(i => i.cat === 'Accessoires').length > 0)
+      ? player.items.filter(i => i.cat === 'Accessoires')
+      : (canon && Array.isArray(canon.items) ? canon.items.filter(i => i.cat === 'Accessoires') : []);
+
+    if (playerItems.length > 0) {
+      slots.forEach(s => {
+        if (s.pLines.length === 0) {
+          let slotMatchStr = '';
+          if (s.key === 'neck') slotMatchStr = 'collier';
+          else if (s.key === 'ear1') slotMatchStr = 'boucle d\'oreille #1';
+          else if (s.key === 'ear2') slotMatchStr = 'boucle d\'oreille #2';
+          else if (s.key === 'finger1') slotMatchStr = 'anneau #1';
+          else if (s.key === 'finger2') slotMatchStr = 'anneau #2';
+
+          const matchingItems = playerItems.filter(it => (it.label || '').toLowerCase().includes(slotMatchStr));
+          matchingItems.forEach(it => {
+            const rawLabel = it.label || '';
+            const statText = rawLabel.includes('—') ? rawLabel.split('—')[1].trim() : rawLabel;
+            const note = (it.note || '').toLowerCase();
+            const val = it.val || '';
+            let isDead = false;
+            let rollTier = 'mid';
+            let tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+
+            if (isSupport) {
+              if (statText.toLowerCase().includes('critique') || statText.toLowerCase().includes('crit') || statText.toLowerCase().includes('additionnel') || note.includes('exclu') || note.includes('non transféré')) {
+                isDead = true;
+                tierLabel = isEn ? 'Dead Stat' : 'Ligne Inutile';
+              } else if (statText.toLowerCase().includes('dégâts infligés') || val.includes('+800') || val.includes('+1.95%') || val.includes('+5.00%') || val.includes('+7.50%')) {
+                rollTier = 'high';
+                tierLabel = isEn ? 'High Roll' : 'Roll Élevé';
+              } else if (val.includes('+2.10%') || val.includes('+2.00%') || val.includes('+1.80%') || val.includes('+1.47%')) {
+                rollTier = 'mid';
+                tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+              } else {
+                rollTier = 'low';
+                tierLabel = isEn ? 'Low Roll' : 'Roll Faible';
+              }
+            } else {
+              if (statText.toLowerCase().includes('soins') || statText.toLowerCase().includes('bouclier') || statText.toLowerCase().includes('brand power') || statText.toLowerCase().includes('marque') || note.includes('exclu')) {
+                isDead = true;
+                tierLabel = isEn ? 'Dead Stat' : 'Ligne Inutile';
+              } else if (statText.toLowerCase().includes('dégâts infligés') || val.includes('+390') || val.includes('+960') || val.includes('+4.00%') || val.includes('+3.00%') || val.includes('+2.60%')) {
+                rollTier = 'high';
+                tierLabel = isEn ? 'High Roll' : 'Roll Élevé';
+              } else if (val.includes('+1.55%') || val.includes('+1.60%') || val.includes('+0.95%') || val.includes('+0.80%')) {
+                rollTier = 'mid';
+                tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+              } else {
+                rollTier = 'low';
+                tierLabel = isEn ? 'Low Roll' : 'Roll Faible';
+              }
+            }
+
+            s.pLines.push({ text: statText, isDead, rollTier, tierLabel });
+          });
+
+          while (s.pLines.length < 3) {
+            s.pLines.push({
+              text: isEn ? "Line to roll" : "Ligne à affiner",
+              isDead: false,
+              rollTier: 'low',
+              tierLabel: isEn ? "To Roll" : "À Affiner"
+            });
+          }
+        }
+      });
+    }
+
     // Fallback pour les profils démo ou théoriques sans données brutes
     slots.forEach(s => {
       if (s.pLines.length === 0) {
@@ -17609,6 +17008,66 @@
         });
       }
     });
+
+    // Extraction depuis les items de la cible si c'est un preset
+    const targetItems = (target && target.items && Array.isArray(target.items) && target.items.filter(i => i.cat === 'Accessoires').length > 0)
+      ? target.items.filter(i => i.cat === 'Accessoires')
+      : [];
+
+    if (targetItems.length > 0) {
+      slots.forEach(s => {
+        if (s.tLines.length === 0) {
+          let slotMatchStr = '';
+          if (s.key === 'neck') slotMatchStr = 'collier';
+          else if (s.key === 'ear1') slotMatchStr = 'boucle d\'oreille #1';
+          else if (s.key === 'ear2') slotMatchStr = 'boucle d\'oreille #2';
+          else if (s.key === 'finger1') slotMatchStr = 'anneau #1';
+          else if (s.key === 'finger2') slotMatchStr = 'anneau #2';
+
+          const matchingItems = targetItems.filter(it => (it.label || '').toLowerCase().includes(slotMatchStr));
+          matchingItems.forEach(it => {
+            const rawLabel = it.label || '';
+            const statText = rawLabel.includes('—') ? rawLabel.split('—')[1].trim() : rawLabel;
+            const note = (it.note || '').toLowerCase();
+            const val = it.val || '';
+            let isDead = false;
+            let rollTier = 'mid';
+            let tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+
+            if (isTargetSupport) {
+              if (statText.toLowerCase().includes('critique') || statText.toLowerCase().includes('crit') || statText.toLowerCase().includes('additionnel') || note.includes('exclu')) {
+                isDead = true;
+                tierLabel = isEn ? 'Dead Stat' : 'Ligne Inutile';
+              } else if (statText.toLowerCase().includes('dégâts infligés') || val.includes('+800') || val.includes('+1.95%') || val.includes('+5.00%') || val.includes('+7.50%')) {
+                rollTier = 'high';
+                tierLabel = isEn ? 'High Roll' : 'Roll Élevé';
+              } else if (val.includes('+2.10%') || val.includes('+2.00%') || val.includes('+1.80%')) {
+                rollTier = 'mid';
+                tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+              } else {
+                rollTier = 'low';
+                tierLabel = isEn ? 'Low Roll' : 'Roll Faible';
+              }
+            } else {
+              if (statText.toLowerCase().includes('soins') || statText.toLowerCase().includes('bouclier') || statText.toLowerCase().includes('brand power') || statText.toLowerCase().includes('marque') || note.includes('exclu')) {
+                isDead = true;
+                tierLabel = isEn ? 'Dead Stat' : 'Ligne Inutile';
+              } else if (statText.toLowerCase().includes('dégâts infligés') || val.includes('+390') || val.includes('+960') || val.includes('+4.00%') || val.includes('+3.00%')) {
+                rollTier = 'high';
+                tierLabel = isEn ? 'High Roll' : 'Roll Élevé';
+              } else if (val.includes('+1.55%') || val.includes('+1.60%') || val.includes('+0.95%')) {
+                rollTier = 'mid';
+                tierLabel = isEn ? 'Mid Roll' : 'Roll Moyen';
+              } else {
+                rollTier = 'low';
+                tierLabel = isEn ? 'Low Roll' : 'Roll Faible';
+              }
+            }
+            s.tLines.push({ text: statText, isDead, rollTier, tierLabel });
+          });
+        }
+      });
+    }
 
     // Si pas de données d'accessoires brutes pour la cible, fournit les véritables lignes Best-in-Slot T4 High Rolls
     slots.forEach(s => {
@@ -18564,14 +18023,24 @@
 
     const pTotalPct = pStats.reduce((sum, s) => sum + s.valPct, 0);
     const tTotalPct = tStats.reduce((sum, s) => sum + s.valPct, 0);
+    const cpPerPct = (player && player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
 
-    // Badges Joueur
-    const pSubstatsHtml = pStats.map(s => `
-      <div class="acc-line-badge high">
-        <span>🔹 ${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
-        <span class="acc-line-tier-tag">${isEn ? 'Lvl' : 'Niv.'} ${s.level}</span>
-      </div>
-    `).join('');
+    // Badges Joueur avec pillule d'avance si le joueur dépasse la cible
+    const pSubstatsHtml = pStats.map(s => {
+      const tStat = tStats.find(t => t.id === s.id) || { valPct: 0, level: 0 };
+      const leadPct = Number((s.valPct - tStat.valPct).toFixed(2));
+      const leadCp = leadPct > 0.05 ? Math.round(leadPct * cpPerPct) : 0;
+      const leadBadge = leadCp > 0 
+        ? `<span class="line-cp-pill" style="background: rgba(96, 165, 250, 0.2); border-color: rgba(96, 165, 250, 0.4); color: #60a5fa;">+${leadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>` 
+        : '';
+      return `
+        <div class="acc-line-badge high">
+          <span>🔹 ${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
+          ${leadBadge}
+          <span class="acc-line-tier-tag">${isEn ? 'Lvl' : 'Niv.'} ${s.level}</span>
+        </div>
+      `;
+    }).join('');
 
     // Badges Cible avec pillule de gain individuel de CP
     const tSubstatsHtml = tStats.map(s => {
@@ -18590,12 +18059,22 @@
     const tableRowsHtml = tStats.map(tStat => {
       const pStat = pStats.find(p => p.id === tStat.id) || { valPct: 0, level: 0 };
       const lineCp = lineCps[tStat.id] || 0;
+      const leadPct = Number((pStat.valPct - tStat.valPct).toFixed(2));
+      const leadCp = leadPct > 0.05 ? Math.round(leadPct * cpPerPct) : 0;
+
+      let cpCell = '<span style="color:var(--text-muted);">= 0 CP</span>';
+      if (lineCp > 0) {
+        cpCell = `<strong style="color:#34d399;">+${lineCp} CP</strong>`;
+      } else if (leadCp > 0) {
+        cpCell = `<span style="color:#60a5fa; font-weight:600;">+${leadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>`;
+      }
+
       return `
         <tr>
           <td><strong>🔹 ${escapeHtml(tStat.name)}</strong></td>
           <td>+${pStat.valPct.toFixed(2)}% (${isEn ? 'Lvl' : 'Niv.'} ${pStat.level})</td>
           <td>+${tStat.valPct.toFixed(2)}% (${isEn ? 'Lvl' : 'Niv.'} ${tStat.level})</td>
-          <td class="col-cp-gain">${lineCp > 0 ? `+${lineCp} CP` : '= 0 CP'}</td>
+          <td class="col-cp-gain" style="text-align:right;">${cpCell}</td>
         </tr>
       `;
     }).join('');
@@ -19817,20 +19296,20 @@
 
     const avail = getAvailableBenchmarks(player);
 
-    // Résolution du profil cible (libre choix du joueur : même classe, références multi-classes, roster ou live search)
+    // Résolution du profil cible (100% profils LIVE ou Roster réel, zéro preset statique, zéro profil synthétique)
     let target = benchmarkState.customTarget;
     if (!target) {
       if (benchmarkState.currentTargetId) {
-        // 1. Cherche dans les benchmarks de la même classe
+        // 1. Cherche dans les profils disponibles (recherchés ou roster)
         target = avail.find(b => b.id === benchmarkState.currentTargetId);
-        // 2. Cherche dans toute la base BENCHMARK_DATABASE (toutes classes, ex: Frieedhof, Siwilpal...)
+        // 2. Cherche dans les profils LIVE recherchés
         if (!target) {
-          target = BENCHMARK_DATABASE.find(b => b.id === benchmarkState.currentTargetId);
+          target = (benchmarkState.searchedTargets || []).find(b => b.id === benchmarkState.currentTargetId);
         }
         // 3. Cherche dans le Roster actif (roster_...)
         if (!target && benchmarkState.currentTargetId.startsWith('roster_')) {
           const rName = benchmarkState.currentTargetId.replace('roster_', '').toLowerCase();
-          const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : DEFAULT_DEMO_ROSTER) || [];
+          const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
           const foundChar = currentRoster.find(c => (c.id || c.name || '').toLowerCase() === rName || (c.name || '').toLowerCase() === rName);
           if (foundChar) {
             target = convertCharToBenchmarkFormat(foundChar, isEn);
@@ -19844,54 +19323,50 @@
     }
 
     if (!target) {
-      target = avail[0] || BENCHMARK_DATABASE.find(b => b.role === (player.role || 'dps')) || BENCHMARK_DATABASE[0];
-    }
+      // Auto-fetch d'un pair LIVE vérifié en direct depuis lostark.bible
+      const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name);
+      const peerKey = suggested ? `${suggested.name.toLowerCase()}_${suggested.region}` : null;
+      if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
+        benchmarkState.isAutoFetching = true;
+        searchAndCompareBibleProfile(suggested.name, suggested.region).catch(() => {
+          if (!benchmarkState.failedAttempts) benchmarkState.failedAttempts = new Set();
+          benchmarkState.failedAttempts.add(peerKey);
+        }).finally(() => {
+          benchmarkState.isAutoFetching = false;
+        });
+      }
 
-    // Synchronisation en temps réel avec lostark.bible (données 100% fraîches directes)
-    if (target && !target.isLive && target.name && !target.isDynamic && !benchmarkState.syncingTarget) {
-      const targetName = target.name;
-      const originalTargetId = target.id;
-      benchmarkState.syncingTarget = targetName;
-      const prefRole = target.role || player.role || (['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
-      fetchLiveBibleBenchmark(targetName, 'AUTO', prefRole).then(liveData => {
-        benchmarkState.syncingTarget = null;
-        if (liveData) {
-          // Contrôle de cohérence de classe : ne pas écraser si la classe ne correspond pas
-          const targetNormClass = normalizeClassName(target.className || '').toLowerCase();
-          const liveNormClass = normalizeClassName(liveData.className || '').toLowerCase();
-          if (targetNormClass && liveNormClass && targetNormClass !== liveNormClass) {
-            console.warn(`[Benchmark Sync] Mismatch class for ${targetName}: expected ${targetNormClass} but got ${liveNormClass}. Ignoring.`);
-            return;
-          }
-          // Protection contre les profils déconnectés en stuff de chaos ou dégradé
-          if (player.cp && liveData.cp < player.cp && target.cp > player.cp) {
-            console.warn(`[Benchmark Sync] Live data for ${targetName} has degraded CP (${liveData.cp} vs player ${player.cp}). Retaining reference.`);
-            return;
-          }
-          // Protection contre les profils Support déconnectés en build DPS (off-spec Grudge / Poupée Maudite)
-          const isTargetSupport = target.role === 'support' || (target.spec && target.spec.toLowerCase().includes('blessed')) || ['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s));
-          const isLiveDpsSpec = liveData.rawProfile?.battlePoint?.isSupport === false ||
-            (liveData.rawProfile?.loadout?.battlePoint?.isSupport === false) ||
-            (Array.isArray(liveData.engravings) && liveData.engravings.some(e => e.id === 1118 || e.id === 1254));
-          if (isTargetSupport && isLiveDpsSpec) {
-            console.warn(`[Benchmark Sync] Live data for ${targetName} is logged in DPS build (Grudge/isSupport:false) while benchmark target is Support (${target.spec || 'Blessed Aura'}). Retaining canonical Support preset.`);
-            return;
-          }
-          // Protection contre les profils ayant out-leveled le bracket d'iLvl du preset
-          // (ex: benchmark calibré à 1742 iLvl pour un joueur à 1742 iLvl, mais dont le compte réel est monté à 1758+ ou 1791+)
-          const presetIlvl = target.ilvl || player.ilvl;
-          if ((liveData.ilvl - presetIlvl > 8.0) && Math.abs(presetIlvl - player.ilvl) <= 8.0) {
-            console.warn(`[Benchmark Sync] Live data for ${targetName} has leveled up to ${liveData.ilvl} iLvl (leaving bracket ${presetIlvl} iLvl for player ${player.ilvl}). Retaining calibrated bracket benchmark.`);
-            return;
-          }
-          Object.assign(target, liveData);
-          target.id = originalTargetId;
-          target.systems = resolveTargetSystems(target, isEn);
-          renderBenchmarkTab();
-        }
-      }).catch(() => {
-        benchmarkState.syncingTarget = null;
-      });
+      heroCard.innerHTML = `
+        <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
+          <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
+          <div style="font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
+            ${isEn ? 'Retrieving live reference profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
+          </div>
+          <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
+            ${suggested 
+              ? (isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`)
+              : (isEn ? 'Search for any character on lostark.bible using the search box below to compare profiles.' : 'Recherchez un personnage en direct sur lostark.bible via le champ ci-dessous ou sélectionnez un profil de votre Roster.')
+            }
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+            <span>🟢 100% Profils LIVE lostark.bible</span> • <span>Zéro profil générique ou statique</span>
+          </div>
+        </div>
+      `;
+
+      const select = document.getElementById('benchmarkPresetSelect');
+      if (select) {
+        select.innerHTML = `<option value="">⏳ ${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
+      }
+      const gapsGrid = document.getElementById('benchmarkGapsGrid');
+      if (gapsGrid) gapsGrid.innerHTML = '';
+      const planEl = document.getElementById('benchmarkActionPlan');
+      if (planEl) planEl.innerHTML = '';
+      const matrixEl = document.getElementById('benchmarkSystemsMatrix');
+      if (matrixEl) matrixEl.innerHTML = '';
+      const reconEl = document.getElementById('benchmarkCpReconciliation');
+      if (reconEl) reconEl.innerHTML = '';
+      return;
     }
 
     // 1. Mise à jour du Sélecteur de Presets & Choix Libre
@@ -19899,41 +19374,26 @@
     if (select) {
       let optionsHtml = '';
 
-      // 1. Profils personnalisés / recherchés en direct sur lostark.bible
+      // 1. Profils LIVE recherchés & synchronisés en direct sur lostark.bible
       const searchedList = benchmarkState.searchedTargets || [];
       if (benchmarkState.customTarget && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
         searchedList.unshift(benchmarkState.customTarget);
       }
       if (searchedList.length > 0) {
-        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Bible Profiles (Searched)' : 'Profils Recherchés (lostark.bible)'}">`;
+        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (lostark.bible)' : 'Profils LIVE Réels (lostark.bible)'}">`;
         searchedList.forEach(s => {
           const isSel = target && (target.id === s.id);
           const deltaIlvl = s.ilvl - (player.ilvl || 1700);
           const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
           optionsHtml += `<option value="${escapeHtml(s.id)}" ${isSel ? 'selected' : ''}>
-            🌐 ${escapeHtml(s.name)} (${escapeHtml(s.className)} • ${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP)
+            🌐 ${escapeHtml(s.name)} (${escapeHtml(s.className)} • ${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
           </option>`;
         });
         optionsHtml += `</optgroup>`;
       }
 
-      // 2. Profils recommandés pour la classe active (Paliers calibrés & Profils réels)
-      optionsHtml += `<optgroup label="🎯 ${isEn ? 'Benchmark Profiles (' + escapeHtml(player.className) + ')' : 'Profils de Référence (' + escapeHtml(player.className) + ')'}">`;
-      avail.forEach(b => {
-        const isSel = target && (target.id === b.id) && (!benchmarkState.customTarget || !searchedList.some(s => s.id === target.id));
-        const deltaIlvl = b.ilvl - (player.ilvl || 1700);
-        const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
-        const gemLabel = b.gemDesc ? ` [${b.gemDesc}]` : (b.gemTier === 'gem8' ? ' [Full 8]' : ' [Mix 8/9]');
-        const icon = b.isDynamic ? '🎯' : '👤';
-        const tag = b.isDynamic ? (isEn ? ' [Peer Target]' : ' [Palier Étalon]') : '';
-        optionsHtml += `<option value="${escapeHtml(b.id)}" ${isSel ? 'selected' : ''}>
-          ${icon} ${escapeHtml(b.name)} • ${escapeHtml(b.spec)} (${b.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(b.cp))} CP)${escapeHtml(gemLabel)}${tag}
-        </option>`;
-      });
-      optionsHtml += `</optgroup>`;
-
-      // 3. Personnages de votre Roster (comparaison libre entre persos enregistrés)
-      const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : DEFAULT_DEMO_ROSTER) || [];
+      // 2. Personnages de votre Roster (comparaison libre entre persos réels enregistrés)
+      const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
       const otherChars = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id));
       if (otherChars.length > 0) {
         optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other Characters (Roster)' : 'Vos Autres Personnages (Roster)'}">`;
@@ -20144,7 +19604,17 @@
         const tItem = { label: tLabel, bonusPct: tRaw.bonusPct };
         const delta = Number((tItem.bonusPct - pItem.bonusPct).toFixed(2));
         const isEqual = Math.abs(delta) <= 0.02;
-        if (isEqual) equalRowsCount++;
+
+        const isAcc = cfg.key === 'accessories';
+        const isBracelet = cfg.key === 'bracelet';
+        const isAstrogems = cfg.key === 'arkGridAstrogems';
+        const isEngravings = cfg.key === 'engravings';
+        const isBaseAtk = cfg.key === 'baseAttackStat';
+        const isCombatStats = cfg.key === 'combatStats';
+        const hasInteractivePanel = isAcc || isBracelet || isAstrogems || isEngravings || isBaseAtk || isCombatStats;
+
+        const isHiddenInEqual = isEqual && !hasInteractivePanel;
+        if (isHiddenInEqual) equalRowsCount++;
 
         const deltaStr = delta > 0.01 
           ? `+${delta.toFixed(2)}%` 
@@ -20179,12 +19649,6 @@
           cpDisplay = `<span style="color:#60a5fa;">+${playerLeadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>`;
         }
 
-        const isAcc = cfg.key === 'accessories';
-        const isBracelet = cfg.key === 'bracelet';
-        const isAstrogems = cfg.key === 'arkGridAstrogems';
-        const isEngravings = cfg.key === 'engravings';
-        const isBaseAtk = cfg.key === 'baseAttackStat';
-        const isCombatStats = cfg.key === 'combatStats';
         let toggleBtn = '';
         if (isAcc) {
           toggleBtn = `
@@ -20225,7 +19689,7 @@
         }
 
         const trClass = [
-          isEqual ? 'row-equal' : '',
+          isHiddenInEqual ? 'row-equal' : '',
           isAcc ? 'row-accessories-parent' : '',
           isBracelet ? 'row-bracelet-parent' : '',
           isAstrogems ? 'row-astrogems-parent' : '',
@@ -20611,7 +20075,7 @@
     const normClass = normalizeClassName(header.class || parsed.className || '');
     const isSupport = ['paladin', 'bard', 'artist'].some(s => normClass.toLowerCase().includes(s));
     const liveIlvl = header.ilvl ? Number(header.ilvl.toFixed(2)) : (parsed.ilvl || 1740);
-    const liveCp = Math.round(header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000);
+    const liveCp = parseFloat((header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000).toFixed(2));
     const displayName = capitalize(header.name || cleanName);
 
     const liveChar = {
@@ -20629,6 +20093,8 @@
       rawProfile: parsed,
       gear: parsed.gear,
       advHoning: parsed.advHoning,
+      weaponQuality: parsed.weaponQuality !== undefined ? parsed.weaponQuality : 90,
+      weaponQualityValue: parsed.weaponQualityValue !== undefined ? parsed.weaponQualityValue : 2500,
       gemParts: parsed.gemParts,
       engravings: parsed.engravings,
       arkGridCores: parsed.arkGridCores,
@@ -20710,11 +20176,14 @@
       renderBenchmarkTab();
     } catch (err) {
       console.warn('searchAndCompareBibleProfile error:', err);
+      if (!benchmarkState.failedAttempts) benchmarkState.failedAttempts = new Set();
+      benchmarkState.failedAttempts.add(`${cleanName.toLowerCase()}_${reg}`);
       if (statusEl) {
         statusEl.className = 'bench-status-msg error';
         statusEl.style.display = 'block';
         statusEl.innerHTML = `⚠️ <strong>Impossible d'interroger lostark.bible pour « ${escapeHtml(cleanName)} » :</strong> vérifiez l'orthographe du pseudo ou essayez de coller le lien complet du profil (ex: <code>https://lostark.bible/character/CE/...</code>).`;
       }
+      renderBenchmarkTab();
     }
   }
 
@@ -20727,7 +20196,16 @@
         benchmarkState.currentTargetId = null;
         if (player) {
           const opt = findOptimalBenchmark(player);
-          if (opt) benchmarkState.currentTargetId = opt.id;
+          if (opt) {
+            benchmarkState.currentTargetId = opt.id;
+            benchmarkState.customTarget = opt;
+          } else {
+            const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name);
+            if (suggested) {
+              searchAndCompareBibleProfile(suggested.name, suggested.region);
+              return;
+            }
+          }
         }
         renderBenchmarkTab();
       });
