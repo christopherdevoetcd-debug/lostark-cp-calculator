@@ -15752,6 +15752,14 @@
     if (typeof window !== 'undefined' && window.i18n && typeof window.i18n.getLang === 'function') {
       return window.i18n.getLang() === 'en';
     }
+    if (typeof document !== 'undefined' && document.documentElement && document.documentElement.lang) {
+      return document.documentElement.lang === 'en';
+    }
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('lostark_cp_lang') === 'en') {
+        return true;
+      }
+    } catch (_) {}
     if (typeof currentLang !== 'undefined') {
       return currentLang === 'en';
     }
@@ -19616,7 +19624,7 @@
     if (!heroCard) return;
 
     const t = (window.i18n && window.i18n.t) || (k => k);
-    const isEn = (window.i18n && window.i18n.getLang() === 'en');
+    const isEn = isEnglishLang();
 
     const player = getCurrentActiveCharacter();
     if (!player) return;
@@ -19688,7 +19696,7 @@
             }
           </div>
           <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-            <span>🟢 100% Profils LIVE lostark.bible (${escapeHtml(player.className)})</span> • <span>Même classe obligatoire</span>
+            <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class required' : 'Même classe obligatoire'}</span>
           </div>
         </div>
       `;
@@ -20265,9 +20273,10 @@
         if (equalRowsCount > 0) {
           wrapToggle.style.display = 'flex';
           const isExp = tbl.classList.contains('show-equal');
+          const isEnglish = isEnglishLang();
           lblToggle.textContent = isExp
-            ? (isEn ? `Hide ${equalRowsCount} equivalent systems ▴` : `Masquer les ${equalRowsCount} systèmes équivalents ▴`)
-            : (isEn ? `Show ${equalRowsCount} equivalent systems (0% delta) ▾` : `Afficher les ${equalRowsCount} systèmes équivalents (0% d'écart) ▾`);
+            ? (isEnglish ? `Hide ${equalRowsCount} equivalent systems ▴` : `Masquer les ${equalRowsCount} systèmes équivalents ▴`)
+            : (isEnglish ? `Show ${equalRowsCount} equivalent systems (0% delta) ▾` : `Afficher les ${equalRowsCount} systèmes équivalents (0% d'écart) ▾`);
         } else {
           wrapToggle.style.display = 'none';
         }
@@ -20283,7 +20292,7 @@
             tTable.classList.toggle('show-equal');
             const isExpanded = tTable.classList.contains('show-equal');
             const eqCount = tTable.querySelectorAll('tr.row-equal').length;
-            const isEnglish = typeof currentLang !== 'undefined' && currentLang === 'en';
+            const isEnglish = isEnglishLang();
             tLbl.textContent = isExpanded
               ? (isEnglish ? `Hide ${eqCount} equivalent systems ▴` : `Masquer les ${eqCount} systèmes équivalents ▴`)
               : (isEnglish ? `Show ${eqCount} equivalent systems (0% delta) ▾` : `Afficher les ${eqCount} systèmes équivalents (0% d'écart) ▾`);

@@ -571,6 +571,12 @@
     "bench_prio_opt": "Endgame / Coûteux",
     "bench_toggle_show_equal": "Afficher les systèmes équivalents (0% d'écart) ▾",
     "bench_toggle_hide_equal": "Masquer les systèmes équivalents ▴",
+    "bench_region_title": "Région du serveur",
+    "bench_region_auto": "Région : Auto",
+    "bench_region_ce": "Europe (CE)",
+    "bench_region_nae": "Amérique Est (NAE)",
+    "bench_region_naw": "Amérique Ouest (NAW)",
+    "bench_region_sa": "Amérique Sud (SA)",
     "bench_parity_title": "Parfaite Parité / Avance Globale",
     "bench_parity_desc": "Tous vos systèmes d'équipement sont équivalents ou supérieurs à ce profil de référence.",
     "bench_loading": "Chargement du profil depuis lostark.bible...",
@@ -1158,6 +1164,12 @@
     "bench_prio_opt": "Endgame / Expensive",
     "bench_toggle_show_equal": "Show equivalent systems (0% delta) ▾",
     "bench_toggle_hide_equal": "Hide equivalent systems ▴",
+    "bench_region_title": "Server Region",
+    "bench_region_auto": "Region: Auto",
+    "bench_region_ce": "Europe (CE)",
+    "bench_region_nae": "North America East (NAE)",
+    "bench_region_naw": "North America West (NAW)",
+    "bench_region_sa": "South America (SA)",
     "bench_parity_title": "Perfect Parity / Ahead",
     "bench_parity_desc": "All your equipment systems are equal or superior to this reference benchmark.",
     "bench_loading": "Loading profile from lostark.bible...",
@@ -1201,19 +1213,23 @@
       localStorage.setItem(STORAGE_KEY, lang);
     } catch (e) {}
 
-    document.documentElement.lang = lang;
+    if (typeof document !== 'undefined') {
+      if (document.documentElement) document.documentElement.lang = lang;
 
-    // Update Toggle Buttons
-    const btnFr = document.getElementById('langFr');
-    const btnEn = document.getElementById('langEn');
-    if (btnFr) btnFr.classList.toggle('active', lang === 'fr');
-    if (btnEn) btnEn.classList.toggle('active', lang === 'en');
+      // Update Toggle Buttons
+      const btnFr = document.getElementById('langFr');
+      const btnEn = document.getElementById('langEn');
+      if (btnFr) btnFr.classList.toggle('active', lang === 'fr');
+      if (btnEn) btnEn.classList.toggle('active', lang === 'en');
 
-    // Apply translations to static DOM elements
-    applyTranslations();
+      // Apply translations to static DOM elements
+      applyTranslations();
+    }
 
     // Dispatch event so dynamic JS views can refresh
-    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+    }
   }
 
   function t(key, fallback = '') {
