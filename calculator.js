@@ -5637,9 +5637,9 @@
     }
 
     // Synchronisation automatique des spécialisations de classe
-    if (dom.arkClassSpecSelect && (!dom.arkClassSpecSelect.dataset.charId || dom.arkClassSpecSelect.dataset.charId !== (curChar ? (curChar.id || curChar.name) : ''))) {
+    if (dom.arkClassSpecSelect && (!dom.arkClassSpecSelect.dataset || dom.arkClassSpecSelect.dataset.charId !== (curChar ? (curChar.id || curChar.name) : ''))) {
       syncArkPassiveClassSpecs(curChar);
-      if (curChar) dom.arkClassSpecSelect.dataset.charId = curChar.id || curChar.name;
+      if (curChar && dom.arkClassSpecSelect.dataset) dom.arkClassSpecSelect.dataset.charId = curChar.id || curChar.name;
     }
 
     const sim = arkPassiveState.sim;
@@ -13427,7 +13427,7 @@
     if (selectedOAuthEnv === 'dev') return OAUTH_CONFIG.devClientId;
     if (selectedOAuthEnv === 'prod') return OAUTH_CONFIG.prodClientId;
 
-    const host = window.location.hostname;
+    const host = (window.location && window.location.hostname) || '';
     // Sur localhost, 127.0.0.1 ou IP LAN, basculer par défaut sur devClientId
     if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local')) {
       return OAUTH_CONFIG.devClientId;
@@ -14775,7 +14775,7 @@
       if (welcomeModal) {
         welcomeModal.classList.add('active');
         const inputName = document.getElementById('welcomeCharName');
-        if (inputName) setTimeout(() => inputName.focus(), 300);
+        if (inputName && typeof inputName.focus === 'function') setTimeout(() => inputName.focus(), 300);
       }
     }
   }
