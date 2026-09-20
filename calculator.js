@@ -15748,6 +15748,280 @@
     deadeye: { default: "Enhanced Weapon", alt: "Pistoleer", keys: ["enhanced weapon", "pistoleer", "deadeye", "devilhunter"] }
   };
 
+  function isEnglishLang() {
+    if (typeof window !== 'undefined' && window.i18n && typeof window.i18n.getLang === 'function') {
+      return window.i18n.getLang() === 'en';
+    }
+    if (typeof currentLang !== 'undefined') {
+      return currentLang === 'en';
+    }
+    return false;
+  }
+
+  function translateEngravingToEnglish(name) {
+    if (!name) return '';
+    const clean = name.replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
+    if (typeof BIBLE_ENGRAVINGS !== 'undefined') {
+      for (const [id, str] of Object.entries(BIBLE_ENGRAVINGS)) {
+        const mEn = str.match(/^([^(]+)/);
+        const mFr = str.match(/\(([^)]+)\)/);
+        const enName = mEn ? mEn[1].trim() : str.trim();
+        const frName = mFr ? mFr[1].trim() : '';
+        if (frName && clean === frName.toLowerCase()) {
+          return enName;
+        }
+        if (clean === enName.toLowerCase()) {
+          return enName;
+        }
+      }
+    }
+    const DIRECT_MAP = {
+      'rancune': 'Grudge',
+      'poupée maudite': 'Cursed Doll',
+      'poupée': 'Cursed Doll',
+      'adrénaline': 'Adrenaline',
+      'capitaine de raid': 'Raid Captain',
+      'capitaine': 'Raid Captain',
+      'arme affûtée': 'Keen Blunt Weapon',
+      'augmentation de masse': 'Mass Increase',
+      'maître des arrières': 'Ambush Master',
+      'maître de l\'embuscade': 'Hit Master',
+      'maître bagarreur': 'Master Brawler',
+      'frappe aux points vitaux': 'Vital Point Hit',
+      'frappe vitale': 'Vital Point Hit',
+      'gouttes d\'éther': 'Drops of Ether',
+      'éveil': 'Awakening',
+      'expert': 'Expert',
+      'barricade': 'Barricade',
+      'super charge': 'Super Charge',
+      'attaque totale': 'All-Out Attack',
+      'impulsion démoniaque': 'Demonic Impulse',
+      'suppression parfaite': 'Perfect Suppression',
+      'aura bénie': 'Blessed Aura',
+      'aura sacrée': 'Blessed Aura',
+      'salut désespéré': 'Desperate Salvation',
+      'pleine floraison': 'Full Bloom',
+      'carnage': 'Mayhem',
+      'marteau de rage': 'Rage Hammer',
+      'entraînement gravitationnel': 'Gravity Training',
+      'préparation au combat': 'Combat Readiness',
+      'chevalier solitaire': 'Lone Knight',
+      'énergie résiduelle': 'Remaining Energy',
+      'déferlement': 'Surge',
+      'faucheuse de la pleine lune': 'Full Moon Harvester',
+      'lame de la nuit': 'Night\'s Edge',
+      'pistolero': 'Pistoleer',
+      'compétence d\'arthetine': 'Arthetinean Skill',
+      'héritage de l\'évolution': 'Evolutionary Legacy',
+      'renforcement de barrage': 'Barrage Enhancement',
+      'renforcement de puissance de feu': 'Firepower Enhancement',
+      'compagnon fidèle': 'Loyal Companion',
+      'frappe mortelle': 'Death Strike',
+      'heure de la chasse': 'Time to Hunt',
+      'dague précise': 'Precise Dagger',
+      'pinacle': 'Pinnacle',
+      'contrôle': 'Control'
+    };
+    if (DIRECT_MAP[clean]) return DIRECT_MAP[clean];
+    return name;
+  }
+
+  function formatLostArkEnglish(str) {
+    if (!str || typeof str !== 'string') return str || '';
+    let res = str;
+
+    // 1. Gemmes & Tiers
+    res = res
+      .replace(/Full Gemmes 10 T4/gi, 'Full Tier 4 Lv. 10 Gems')
+      .replace(/Full Gemmes 9 T4/gi, 'Full Tier 4 Lv. 9 Gems')
+      .replace(/Full Gemmes 8 T4/gi, 'Full Tier 4 Lv. 8 Gems')
+      .replace(/Full Gemmes 7 T4/gi, 'Full Tier 4 Lv. 7 Gems')
+      .replace(/Mix Gemmes 8\s*\/\s*9\s*T4/gi, 'Tier 4 Lv. 8/9 Mix')
+      .replace(/Mix Gemmes 7\s*\/\s*8\s*T4/gi, 'Tier 4 Lv. 7/8 Mix')
+      .replace(/Mix Gemmes T4/gi, 'Tier 4 Gems')
+      .replace(/Mix Gemmes/gi, 'Tier 4 Gem Mix')
+      .replace(/Full Gemmes (\d+)/gi, 'Full Tier 4 Lv. $1 Gems')
+      .replace(/Full Gemmes/gi, 'Full Gems')
+      .replace(/Gemmes T4/gi, 'Tier 4 Gems')
+      .replace(/Gemmes\s*:/gi, 'Gems:')
+      .replace(/\bGemmes?\b/gi, 'Gems')
+      .replace(/Niv\.\s*(\d+)/gi, 'Lv. $1')
+      .replace(/Niveau\s*(\d+)/gi, 'Level $1');
+
+    // 2. Équipements & Affinage
+    res = res
+      .replace(/Affinage Arme T4/gi, 'T4 Weapon Honing')
+      .replace(/Affinage Armures T4/gi, 'T4 Armor Honing')
+      .replace(/Affinage Avancé T4/gi, 'T4 Advanced Honing')
+      .replace(/Affinage Avancé/gi, 'T4 Advanced Honing')
+      .replace(/Affinage Adv\s*:/gi, 'Adv. Honing:')
+      .replace(/Affinage Adv/gi, 'Adv. Honing')
+      .replace(/Affinage/gi, 'Honing')
+      .replace(/Armures T4 Moyenne/gi, 'T4 Armor Avg')
+      .replace(/Armures T4/gi, 'T4 Armor')
+      .replace(/Armure T4/gi, 'T4 Armor')
+      .replace(/Arme T4/gi, 'T4 Weapon')
+      .replace(/Qualité\s*(\d+)/gi, 'Quality $1')
+      .replace(/Qualité/gi, 'Quality')
+      .replace(/complet\b/gi, 'complete');
+
+    // 3. Transcendance
+    res = res
+      .replace(/Transcendance Arme/gi, 'Weapon Transcendence')
+      .replace(/Transcendance Armures/gi, 'Armor Transcendence')
+      .replace(/Transcendance/gi, 'Transcendence');
+
+    // 4. Ark Grid & Ark Passive
+    res = res
+      .replace(/Ark Grid\s*:\s*Cœur Ordre Soleil/gi, 'Ark Grid: Order Sun Core')
+      .replace(/Ark Grid\s*:\s*Cœur Ordre Lune/gi, 'Ark Grid: Order Moon Core')
+      .replace(/Ark Grid\s*:\s*Cœur Chaos Étoile/gi, 'Ark Grid: Chaos Star Core')
+      .replace(/Ark Grid\s*:\s*Astrogemmes\s*\(Sous-stats\)/gi, 'Ark Grid: Astrogems (Substats)')
+      .replace(/Ordre Soleil/gi, 'Order Sun')
+      .replace(/Ordre Lune/gi, 'Order Moon')
+      .replace(/Chaos Étoile/gi, 'Chaos Star')
+      .replace(/Palier\s*(\d+)P/gi, 'Tier $1P')
+      .replace(/Palier de Gemmes T4/gi, 'T4 Gem Tier')
+      .replace(/Palier/gi, 'Tier')
+      .replace(/\bAstrogemmes?\b/gi, 'Astrogems')
+      .replace(/\bAstrogemme\b/gi, 'Astrogem')
+      .replace(/Sous-stats Grille/gi, 'Grid Substats')
+      .replace(/Sous-stats/gi, 'Substats')
+      .replace(/Évolution/gi, 'Evolution')
+      .replace(/Illumination/gi, 'Enlightenment')
+      .replace(/Saut/gi, 'Leap')
+      .replace(/Grille d'Ark/gi, 'Ark Grid');
+
+    // 5. Gravures & Pierre
+    res = res
+      .replace(/Gravures Reliques T4/gi, 'T4 Relic Engravings')
+      .replace(/Gravures Reliques/gi, 'Relic Engravings')
+      .replace(/Gravures Actives & Pierre/gi, 'Equipped Engravings & Stone')
+      .replace(/Gravures Cible & Pierre/gi, 'Target Engravings & Stone')
+      .replace(/Gravures & Pierre de Naissance/gi, 'Engravings & Ability Stone')
+      .replace(/Gravures & Pierre/gi, 'Engravings & Ability Stone')
+      .replace(/Gravure Différente/gi, 'Alternative Engraving')
+      .replace(/Gravures/gi, 'Engravings')
+      .replace(/Gravure/gi, 'Engraving')
+      .replace(/Pierre de Naissance/gi, 'Ability Stone')
+      .replace(/Pierre & Relique/gi, 'Stone & Relic')
+      .replace(/\bReliques?\b/gi, 'Relic')
+      .replace(/Pierre \+(\d+)/gi, 'Stone +$1')
+      .replace(/\bPierre\b/gi, 'Stone');
+
+    // 6. Stats & Caractéristiques
+    res = res
+      .replace(/Stats de Combat/gi, 'Combat Stats')
+      .replace(/Caractéristiques de Combat/gi, 'Combat Stats')
+      .replace(/Stat Principale & Attaque de Base/gi, 'Main Stat & Base AP')
+      .replace(/Stat Principale & Attaque Base/gi, 'Main Stat & Base AP')
+      .replace(/Stat Principale/gi, 'Main Stat')
+      .replace(/Puissance d'Attaque Base/gi, 'Base Attack Power')
+      .replace(/Puissance d'Attaque de Base/gi, 'Base Attack Power')
+      .replace(/Puissance d'Attaque/gi, 'Attack Power')
+      .replace(/Puissance d'Arme/gi, 'Weapon Power')
+      .replace(/Dégâts Additionnels/gi, 'Additional Damage')
+      .replace(/Dégâts Suppl\./gi, 'Additional Damage')
+      .replace(/Dégâts Supplémentaires/gi, 'Additional Damage')
+      .replace(/Dégâts Critiques/gi, 'Crit Damage')
+      .replace(/Taux Critique/gi, 'Crit Rate')
+      .replace(/Dégâts aux Boss/gi, 'Boss Damage')
+      .replace(/Dégâts Boss/gi, 'Boss Damage')
+      .replace(/Dégâts infligés/gi, 'Outgoing Damage')
+      .replace(/Points de Vie Max/gi, 'Max HP')
+      .replace(/Points de Vie/gi, 'Max HP')
+      .replace(/Points de Mana Max/gi, 'Max MP')
+      .replace(/Soins aux Membres du Groupe/gi, 'Recovery for Party Members')
+      .replace(/Boucliers aux Membres du Groupe/gi, 'Shield for Party Members')
+      .replace(/Effet Amplification PA d'Allié/gi, 'Ally Atk. Power Enhancement Effect')
+      .replace(/Effet Augmentation Dégâts d'Allié/gi, 'Ally Damage Enhancement Effect')
+      .replace(/Soins aux Membres/gi, 'Recovery for Party Members')
+      .replace(/Boucliers aux Membres/gi, 'Shield for Party Members')
+      .replace(/Rapidité/gi, 'Swiftness')
+      .replace(/Spécialisation/gi, 'Specialization')
+      .replace(/Critique/gi, 'Crit')
+      .replace(/Force/gi, 'Strength')
+      .replace(/Dextérité/gi, 'Dexterity')
+      .replace(/Intelligence/gi, 'Intelligence');
+
+    // 7. Accessoires & Rolls
+    res = res
+      .replace(/Lignes d'Accessoires T4 \(High Rolls\)/gi, 'T4 Accessory Lines (High Rolls)')
+      .replace(/Lignes d'Accessoires T4/gi, 'T4 Accessory Lines')
+      .replace(/Accessoires T4 \(Rolls & Lignes\)/gi, 'T4 Accessories (Rolls & Lines)')
+      .replace(/Accessoires T4/gi, 'T4 Accessories')
+      .replace(/Passifs de Bracelet T4 \(Circulaire\)/gi, 'T4 Bracelet Passives (Circularity)')
+      .replace(/Passifs de Bracelet T4/gi, 'T4 Bracelet Passives')
+      .replace(/Bracelet T4 \(Stats & Passifs\)/gi, 'T4 Bracelet (Stats & Passives)')
+      .replace(/Rolls Full High T4/gi, 'Full High T4 Rolls')
+      .replace(/Rolls T4 High\/Mid/gi, 'T4 High/Mid Rolls')
+      .replace(/Rolls High\/Mid T4/gi, 'High/Mid T4 Rolls')
+      .replace(/Rolls T4 Moyens/gi, 'T4 Mid Rolls')
+      .replace(/Rolls Mid T4 \(Standard\)/gi, 'Standard Mid T4 Rolls')
+      .replace(/Rolls Mid T4/gi, 'Mid T4 Rolls')
+      .replace(/Rolls T4 Faibles/gi, 'T4 Low Rolls')
+      .replace(/Rolls T4 Débutants/gi, 'Early T4 Rolls')
+      .replace(/Rolls Élevés/gi, 'High Rolls')
+      .replace(/Roll Élevé/gi, 'High Roll')
+      .replace(/Rolls Moyens/gi, 'Mid Rolls')
+      .replace(/Roll Moyen/gi, 'Mid Roll')
+      .replace(/Rolls Faibles/gi, 'Low Rolls')
+      .replace(/Roll Faible/gi, 'Low Roll')
+      .replace(/Lignes Inutiles/gi, 'Dead Stats')
+      .replace(/Ligne Inutile/gi, 'Dead Stat')
+      .replace(/(\d+)\s*Inutiles/gi, '$1 Dead')
+      .replace(/1\s*Inutile/gi, '1 Dead')
+      .replace(/(\d+)\s*Élevés/gi, '$1 High')
+      .replace(/1\s*Élevé/gi, '1 High')
+      .replace(/(\d+)\s*Moyens/gi, '$1 Mid')
+      .replace(/1\s*Moyen/gi, '1 Mid')
+      .replace(/Circulaire/gi, 'Circularity')
+      .replace(/Passif Rang 3/gi, 'Rank 3 Perk')
+      .replace(/Passif/gi, 'Perk')
+      .replace(/Ligne à affiner/gi, 'Line to roll')
+      .replace(/À Affiner/gi, 'To Roll');
+
+    // 8. Phrases comparatives & Reconciliations
+    res = res
+      .replace(/chez la référence contre/gi, 'on benchmark vs')
+      .replace(/chez la référence/gi, 'on benchmark')
+      .replace(/contre/gi, 'vs')
+      .replace(/chez vous/gi, 'on your character')
+      .replace(/écart de \+/gi, 'gap of +')
+      .replace(/écart de/gi, 'gap of')
+      .replace(/d'écart/gi, 'gap')
+      .replace(/Votre avantage\s*:/gi, 'Your advantage:')
+      .replace(/Avantage Joueur/gi, 'Player Advantage')
+      .replace(/Retard Brut Équipements/gi, 'Gross Equipment Deficit')
+      .replace(/Votre Avance/gi, 'Your Advantage')
+      .replace(/Écart Réel Net In-Game/gi, 'Observed In-Game Gap')
+      .replace(/de performance/gi, 'performance gap')
+      .replace(/en votre faveur\s*!/gi, 'in your favor!')
+      .replace(/Guilde\s*:/gi, 'Guild:');
+
+    // 9. Gravures individuelles connues
+    res = res
+      .replace(/\bRancune\b/g, 'Grudge')
+      .replace(/\bPoupée Maudite\b/g, 'Cursed Doll')
+      .replace(/\bAdrénaline\b/g, 'Adrenaline')
+      .replace(/\bCapitaine de Raid\b/g, 'Raid Captain')
+      .replace(/\bArme Affûtée\b/g, 'Keen Blunt Weapon')
+      .replace(/\bAugmentation de Masse\b/g, 'Mass Increase')
+      .replace(/\bMaître des Arrières\b/g, 'Ambush Master')
+      .replace(/\bMaître Bagarreur\b/g, 'Master Brawler')
+      .replace(/\bFrappe aux Points Vitaux\b/g, 'Vital Point Hit')
+      .replace(/\bGouttes d'Éther\b/g, 'Drops of Ether')
+      .replace(/\bÉveil\b/g, 'Awakening')
+      .replace(/\bImpulsion Démoniaque\b/g, 'Demonic Impulse')
+      .replace(/\bSuppression Parfaite\b/g, 'Perfect Suppression')
+      .replace(/\bAura Bénie\b/g, 'Blessed Aura')
+      .replace(/\bAura Sacrée\b/g, 'Blessed Aura')
+      .replace(/\bSalut Désespéré\b/g, 'Desperate Salvation')
+      .replace(/\bPleine Floraison\b/g, 'Full Bloom');
+
+    return res;
+  }
+
   const benchmarkState = {
     currentTargetId: null,
     customTarget: null,
@@ -15816,38 +16090,40 @@
       });
 
       const total = parts.length;
-      if (c10 === total) return isEn ? 'Full Tier 4 Lvl 10 Gems' : 'Full Gemmes 10 T4';
+      if (c10 === total) return isEn ? 'Full Tier 4 Lv. 10 Gems' : 'Full Gemmes 10 T4';
       if (c10 > 0) {
         const details = [];
-        details.push(`${c10}x ${isEn ? 'Lvl' : 'Niv.'} 10`);
-        if (c9 > 0) details.push(`${c9}x ${isEn ? 'Lvl' : 'Niv.'} 9`);
-        if (c8 > 0) details.push(`${c8}x ${isEn ? 'Lvl' : 'Niv.'} 8`);
-        if (c7 > 0) details.push(`${c7}x ${isEn ? 'Lvl' : 'Niv.'} 7`);
+        details.push(`${c10}x ${isEn ? 'Lv.' : 'Niv.'} 10`);
+        if (c9 > 0) details.push(`${c9}x ${isEn ? 'Lv.' : 'Niv.'} 9`);
+        if (c8 > 0) details.push(`${c8}x ${isEn ? 'Lv.' : 'Niv.'} 8`);
+        if (c7 > 0) details.push(`${c7}x ${isEn ? 'Lv.' : 'Niv.'} 7`);
         return isEn 
           ? `Tier 4 Gems (${details.join(', ')})`
           : `Mix Gemmes T4 (${details.join(', ')})`;
       }
-      if (c9 === total) return isEn ? 'Full Tier 4 Lvl 9 Gems' : 'Full Gemmes 9 T4';
+      if (c9 === total) return isEn ? 'Full Tier 4 Lv. 9 Gems' : 'Full Gemmes 9 T4';
       if (c9 > 0) {
         const details = [];
-        details.push(`${c9}x ${isEn ? 'Lvl' : 'Niv.'} 9`);
-        if (c8 > 0) details.push(`${c8}x ${isEn ? 'Lvl' : 'Niv.'} 8`);
-        if (c7 > 0) details.push(`${c7}x ${isEn ? 'Lvl' : 'Niv.'} 7`);
+        details.push(`${c9}x ${isEn ? 'Lv.' : 'Niv.'} 9`);
+        if (c8 > 0) details.push(`${c8}x ${isEn ? 'Lv.' : 'Niv.'} 8`);
+        if (c7 > 0) details.push(`${c7}x ${isEn ? 'Lv.' : 'Niv.'} 7`);
         return isEn 
-          ? `Tier 4 Lvl 8/9 Mix (${details.join(', ')})` 
+          ? `Tier 4 Lv. 8/9 Mix (${details.join(', ')})` 
           : `Mix Gemmes 8 / 9 T4 (${details.join(', ')})`;
       }
-      if (c8 === total) return isEn ? 'Full Tier 4 Lvl 8 Gems' : 'Full Gemmes 8 T4';
+      if (c8 === total) return isEn ? 'Full Tier 4 Lv. 8 Gems' : 'Full Gemmes 8 T4';
       if (c8 > 0) {
         return isEn 
-          ? `Tier 4 Lvl 7/8 Mix (${c8}x Lvl 8, ${c7}x Lvl 7)` 
+          ? `Tier 4 Lv. 7/8 Mix (${c8}x Lv. 8, ${c7}x Lv. 7)` 
           : `Mix Gemmes 7 / 8 T4 (${c8}x Niv. 8, ${c7}x Niv. 7)`;
       }
-      return isEn ? 'Full Tier 4 Lvl 7 Gems' : 'Full Gemmes 7 T4';
+      return isEn ? 'Full Tier 4 Lv. 7 Gems' : 'Full Gemmes 7 T4';
     }
 
-    if (playerChar.gemDesc) return playerChar.gemDesc;
-    return isEn ? 'Tier 4 Lvl 7/8 Mix' : 'Mix Gemmes 7 / 8 T4';
+    if (playerChar.gemDesc) {
+      return isEn ? formatLostArkEnglish(playerChar.gemDesc) : playerChar.gemDesc;
+    }
+    return isEn ? 'Tier 4 Lv. 7/8 Mix' : 'Mix Gemmes 7 / 8 T4';
   }
 
   const ALPHA_KNOWN_ACCESSORIES = [
@@ -16537,32 +16813,11 @@
       };
     }
 
-    // Traduction bilingue des labels si isEn est vrai
+    // Traduction Lost Ark officielle des labels si isEn est vrai
     if (isEn) {
       for (const [k, v] of Object.entries(sys)) {
         if (v && v.label) {
-          v.label = v.label
-            .replace(/Palier/g, 'Tier')
-            .replace(/Ordre Soleil/g, 'Order Sun')
-            .replace(/Ordre Lune/g, 'Order Moon')
-            .replace(/Chaos Étoile/g, 'Chaos Star')
-            .replace(/Arme T4/g, 'T4 Weapon')
-            .replace(/Armures T4 Moyenne/g, 'T4 Armor Avg')
-            .replace(/Affinage Avancé/g, 'T4 Adv Honing')
-            .replace(/Transcendance Arme/g, 'Weapon Transcendence')
-            .replace(/Transcendance Armures/g, 'Armor Transcendence')
-            .replace(/Relique \(Stats \+ Circulaire\)/g, 'Relic (Stats + Circularity)')
-            .replace(/Relique \(Spécialisation \+ Circulaire\)/g, 'Relic (Spec + Circularity)')
-            .replace(/Mix Gemmes/g, 'Mix Gems')
-            .replace(/Full Gemmes/g, 'Full Gems')
-            .replace(/Stats de Combat/g, 'Combat Stats')
-            .replace(/Astrogemmes/g, 'Astrogems')
-            .replace(/Sous-stats Grille/g, 'Grid Substats')
-            .replace(/Gravures Reliques/g, 'Relic Engravings')
-            .replace(/Pierre & Relique/g, 'Stone & Relic')
-            .replace(/Évolution/g, 'Evolution')
-            .replace(/Illumination/g, 'Enlightenment')
-            .replace(/Saut/g, 'Leap');
+          v.label = formatLostArkEnglish(v.label);
         }
       }
     }
@@ -16608,8 +16863,8 @@
       let tLabel = t.label || '';
       let pLabel = p.label || '';
       if (isEn) {
-        tLabel = tLabel.replace(/Palier/g, 'Tier').replace(/Chaos Étoile/g, 'Chaos Star').replace(/Ordre Soleil/g, 'Order Sun').replace(/Ordre Lune/g, 'Order Moon');
-        pLabel = pLabel.replace(/Palier/g, 'Tier').replace(/Chaos Étoile/g, 'Chaos Star').replace(/Ordre Soleil/g, 'Order Sun').replace(/Ordre Lune/g, 'Order Moon');
+        tLabel = formatLostArkEnglish(tLabel);
+        pLabel = formatLostArkEnglish(pLabel);
       }
 
       if (delta > 0.05) {
@@ -16999,7 +17254,7 @@
               }
             }
 
-            s.pLines.push({ text: statText, isDead, rollTier, tierLabel });
+            s.pLines.push({ text: isEn ? formatLostArkEnglish(statText) : statText, isDead, rollTier, tierLabel });
           });
 
           while (s.pLines.length < 3) {
@@ -17121,7 +17376,7 @@
                 tierLabel = isEn ? 'Low Roll' : 'Roll Faible';
               }
             }
-            s.tLines.push({ text: statText, isDead, rollTier, tierLabel });
+            s.tLines.push({ text: isEn ? formatLostArkEnglish(statText) : statText, isDead, rollTier, tierLabel });
           });
         }
       });
@@ -17208,11 +17463,11 @@
 
         const deadStats = s.pLines.filter(l => l.isDead);
         const unrolledCount = s.pLines.filter(l => l.tierLabel.includes('Affiner') || l.tierLabel.includes('To Roll')).length;
-        const lowLines = s.pLines.filter(l => l.rollTier === 'low' && !l.isDead && !l.tierLabel.includes('Affiner') && !l.tierLabel.includes('To Roll')).map(l => l.text);
-        const midLines = s.pLines.filter(l => l.rollTier === 'mid' && !l.isDead).map(l => l.text);
+        const lowLines = s.pLines.filter(l => l.rollTier === 'low' && !l.isDead && !l.tierLabel.includes('Affiner') && !l.tierLabel.includes('To Roll')).map(l => isEn ? formatLostArkEnglish(l.text) : l.text);
+        const midLines = s.pLines.filter(l => l.rollTier === 'mid' && !l.isDead).map(l => isEn ? formatLostArkEnglish(l.text) : l.text);
 
         if (deadStats.length > 0) {
-          const deadName = deadStats.map(d => d.text).join(', ');
+          const deadName = deadStats.map(d => isEn ? formatLostArkEnglish(d.text) : d.text).join(', ');
           s.verdict = isEn
             ? `Replace dead line (${deadName}) with active High Roll (+${s.impactCp} CP).`
             : `Remplacement de la ligne morte (${deadName}) par un High Roll actif (+${s.impactCp} CP).`;
@@ -18319,22 +18574,36 @@
         const stoneMatch = (gi.label || '').match(/Pierre \+(\d+)|Stone \+(\d+)/i);
         const stonePoints = stoneMatch ? parseInt(stoneMatch[1] || stoneMatch[2], 10) : 0;
         let name = (gi.label || '').replace(/—.*$/, '').trim();
+        const cleanName = name.replace(/\s*\((?:Pierre|Stone)[^)]*\)/i, '').replace(/\s*\([^)]*\)/g, '').trim();
         let engId = null;
+        let matchedStr = null;
+
         if (typeof BIBLE_ENGRAVINGS !== 'undefined') {
           for (const [idKey, strName] of Object.entries(BIBLE_ENGRAVINGS)) {
-            if (strName.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(strName.toLowerCase())) {
+            const mEn = strName.match(/^([^(]+)/);
+            const mFr = strName.match(/\(([^)]+)\)/);
+            const en = mEn ? mEn[1].trim().toLowerCase() : strName.toLowerCase();
+            const fr = mFr ? mFr[1].trim().toLowerCase() : '';
+            if ((fr && fr === cleanName.toLowerCase()) || en === cleanName.toLowerCase()) {
               engId = Number(idKey);
+              matchedStr = strName;
               break;
             }
           }
         }
-        if (isEn) {
-          const m = name.match(/^([^(]+)/);
-          if (m) name = m[1].trim();
+
+        if (matchedStr) {
+          const mEn = matchedStr.match(/^([^(]+)/);
+          const mFr = matchedStr.match(/\(([^)]+)\)/);
+          if (isEn) {
+            name = mEn ? mEn[1].trim() : cleanName;
+          } else {
+            name = mFr ? mFr[1].trim() : (mEn ? mEn[1].trim() : cleanName);
+          }
         } else {
-          const mFr = name.match(/\(([^)]+)\)/);
-          if (mFr) name = mFr[1].trim();
+          name = isEn ? translateEngravingToEnglish(cleanName) : cleanName;
         }
+
         return {
           id: engId || name.toLowerCase(),
           name,
@@ -18359,6 +18628,7 @@
         if (isEn) {
           const m = rawName.match(/^([^(]+)/);
           if (m) name = m[1].trim();
+          else name = translateEngravingToEnglish(rawName);
         } else {
           const mFr = rawName.match(/\(([^)]+)\)/);
           if (mFr) name = mFr[1].trim();
@@ -18772,7 +19042,7 @@
           </div>
           <div class="acc-breakdown-subtitle">
             ${isEn
-              ? 'Detailed breakdown of your total combat stat points (' + formatNumber(p.totalPts) + ' vs ' + formatNumber(t.totalPts) + ' pts), explaining why there is an écart and how accessory qualities and bracelet rolls dictate performance.'
+              ? 'Detailed breakdown of your total combat stat points (' + formatNumber(p.totalPts) + ' vs ' + formatNumber(t.totalPts) + ' pts), explaining why there is a gap and how accessory qualities and bracelet rolls dictate performance.'
               : 'Décomposition détaillée de vos points de caractéristiques de combat (' + formatNumber(p.totalPts) + ' vs ' + formatNumber(t.totalPts) + ' pts), expliquant pourquoi il y a un écart et comment la qualité des bijoux et le bracelet gouvernent ces chiffres.'}
           </div>
         </div>
@@ -19077,9 +19347,19 @@
       }
     });
 
-    const explanationText = isEn
-      ? `<strong>Why +${cpImpact} CP?</strong> In Lost Ark's Combat Power formula, Engravings are a global multiplicative layer: CP &prop; &prod;(1 + E<sub>i</sub>). For your character (${formatNumber(player.cp || 5587)} CP), <strong>1% overall damage = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• Ebeneben gains <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> from running <em>Mass Increase</em> (+19.00%) over <em>Cursed Doll</em> (+17.00%) and <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> from an optimized Relic Stone node distribution.<br>💡 <strong>Theorycrafting Note (Lost Ark Nexus):</strong> Lost Ark Nexus explicitly recommends your setup (<em>Cursed Doll</em>). Although <em>Mass Increase</em> gives +2% raw AP on paper (+${Math.round(2.00 * cpPerPct)} CP on your profile), its -10% attack speed penalty slows down Demonic animations and rotations. Your setup is the optimal choice for real in-raid DPS and fluid gameplay.`
-      : `<strong>Pourquoi autant de CP (+${cpImpact} CP) ?</strong> Dans la formule officielle de Smilegate, les Gravures agissent comme un multiplicateur global multiplicatif : CP &prop; &prod;(1 + E<sub>i</sub>). Pour votre personnage (${formatNumber(player.cp || 5587)} CP), <strong>1% de dégâts bruts = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• Ebeneben obtient <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> en jouant <em>Augmentation de Masse</em> (+19.00%) au lieu de <em>Poupée Maudite</em> (+17.00%), plus <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> grâce à la répartition optimisée des nœuds de Pierre Relique.<br>💡 <strong>Note de Theorycrafting (Lost Ark Nexus) :</strong> Le guide officiel <em>Lost Ark Nexus</em> préconise précisément votre configuration (<em>Poupée Maudite</em>). Bien qu'<em>Augmentation de Masse</em> apporte +2% d'AP brute sur le papier (+${Math.round(2.00 * cpPerPct)} CP au score affiché), son malus de -10% de vitesse d'attaque ralentit les animations et le cycle de burst démoniaque. Votre build est le choix optimal en combat réel pour la fluidité et le DPS effectif en raid.`;
+    let explanationText = '';
+    const targetName = (target && target.name) || (isEn ? 'Benchmark' : 'La référence');
+    const hasNexusCase = (pOnly.some(p => (p.name || '').toLowerCase().includes('cursed doll') || (p.name || '').toLowerCase().includes('poupée')) && tOnly.some(t => (t.name || '').toLowerCase().includes('mass increase') || (t.name || '').toLowerCase().includes('masse')));
+
+    if (hasNexusCase) {
+      explanationText = isEn
+        ? `<strong>Why +${cpImpact} CP?</strong> In Lost Ark's Combat Power formula, Engravings are a global multiplicative layer: CP &prop; &prod;(1 + E<sub>i</sub>). For your character (${formatNumber(player.cp || 5587)} CP), <strong>1% overall damage = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• ${escapeHtml(targetName)} gains <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> from running <em>Mass Increase</em> (+19.00%) over <em>Cursed Doll</em> (+17.00%) and <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> from an optimized Relic Stone node distribution.<br>💡 <strong>Theorycrafting Note (Lost Ark Nexus):</strong> Lost Ark Nexus explicitly recommends your setup (<em>Cursed Doll</em>). Although <em>Mass Increase</em> gives +2% raw AP on paper (+${Math.round(2.00 * cpPerPct)} CP on your profile), its -10% attack speed penalty slows down Demonic animations and rotations. Your setup is the optimal choice for real in-raid DPS and fluid gameplay.`
+        : `<strong>Pourquoi autant de CP (+${cpImpact} CP) ?</strong> Dans la formule officielle de Smilegate, les Gravures agissent comme un multiplicateur global multiplicatif : CP &prop; &prod;(1 + E<sub>i</sub>). Pour votre personnage (${formatNumber(player.cp || 5587)} CP), <strong>1% de dégâts bruts = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• ${escapeHtml(targetName)} obtient <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> en jouant <em>Augmentation de Masse</em> (+19.00%) au lieu de <em>Poupée Maudite</em> (+17.00%), plus <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> grâce à la répartition optimisée des nœuds de Pierre Relique.<br>💡 <strong>Note de Theorycrafting (Lost Ark Nexus) :</strong> Le guide officiel <em>Lost Ark Nexus</em> préconise précisément votre configuration (<em>Poupée Maudite</em>). Bien qu'<em>Augmentation de Masse</em> apporte +2% d'AP brute sur le papier (+${Math.round(2.00 * cpPerPct)} CP au score affiché), son malus de -10% de vitesse d'attaque ralentit les animations et le cycle de burst démoniaque. Votre build est le choix optimal en combat réel pour la fluidité et le DPS effectif en raid.`;
+    } else {
+      explanationText = isEn
+        ? `<strong>Combat Power Impact (+${cpImpact} CP):</strong> In Lost Ark, engravings are strictly multiplicative. Each 1% engraving or ability stone gain contributes ~${cpPerPct.toFixed(1)} CP to your character. Aligning relic node breakpoints and high stone node rolls (+3/+4) bridges this gap.`
+        : `<strong>Impact sur le Combat Power (+${cpImpact} CP) :</strong> Dans Lost Ark, les gravures sont purement multiplicatives. Chaque 1% de gain de gravure ou de pierre apporte ~${cpPerPct.toFixed(1)} CP à votre profil. Aligner les paliers reliques et les nœuds de pierre (+3/+4) permet de rattraper cet écart.`;
+    }
 
     return `
       <div class="acc-breakdown-panel engravings-breakdown-panel">
@@ -19510,8 +19790,8 @@
           </div>
 
           <div class="bench-pills-row">
-            <span class="bench-pill">Gemmes : <strong>${escapeHtml(getCharacterGemSummary(player, isEn))}</strong></span>
-            <span class="bench-pill">Affinage Adv : <strong>+${player.advHoning || 40}</strong></span>
+            <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(getCharacterGemSummary(player, isEn))}</strong></span>
+            <span class="bench-pill">${isEn ? 'Adv. Honing' : 'Affinage Adv'} : <strong>+${player.advHoning || 40}</strong></span>
           </div>
         </div>
 
@@ -19521,7 +19801,7 @@
           <div class="bench-delta-badge">
             <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8;">${t('bench_delta_title')}</span>
             <span class="bench-delta-val">${isTargetAhead ? '+' : ''}${formatNumber(deltaCp)} CP</span>
-            <span class="bench-delta-pct">${isTargetAhead ? '+' : ''}${deltaPct}% de performance</span>
+            <span class="bench-delta-pct">${isTargetAhead ? '+' : ''}${deltaPct}% ${isEn ? 'performance gap' : 'de performance'}</span>
           </div>
           <div class="bench-delta-bar-container">
             <div class="bench-delta-bar-fill" style="width: ${Math.min(100, Math.max(10, Math.round((pCp / tCp) * 100)))}%;"></div>
@@ -19544,7 +19824,7 @@
                 <span class="bench-char-name">${escapeHtml(target.name)}</span>
                 <span class="bench-char-ilvl">${target.ilvl.toFixed(2)}</span>
               </div>
-              <div class="bench-char-meta">${escapeHtml(normalizeClassName(target.className))} • ${escapeHtml(target.server || 'Elpon (CE)')}${target.guild ? ` • Guilde : ${escapeHtml(target.guild)}` : ''}</div>
+              <div class="bench-char-meta">${escapeHtml(normalizeClassName(target.className))} • ${escapeHtml(target.server || 'Elpon (CE)')}${target.guild ? ` • ${isEn ? 'Guild' : 'Guilde'} : ${escapeHtml(target.guild)}` : ''}</div>
               <span class="bench-char-spec-badge">${escapeHtml(tSpec)}</span>
             </div>
           </div>
@@ -19558,7 +19838,7 @@
           </div>
 
           <div class="bench-pills-row">
-            <span class="bench-pill">Gemmes : <strong>${escapeHtml(target.gemDesc || 'Full Gemmes 8')}</strong></span>
+            <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
             <a href="${target.bibleUrl || `https://lostark.bible/character/CE/${encodeURIComponent(target.name)}`}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#38bdf8; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>
           </div>
         </div>
@@ -19603,7 +19883,7 @@
           let gainText = '+' + g.gainCp + ' CP';
           if (g.priority === 'player_lead') {
             rankBadge = isEn ? '★ ADVANTAGE' : '★ AVANTAGE';
-            gainText = '+' + g.gainCp + ' CP (Lead)';
+            gainText = '+' + g.gainCp + ' CP (' + (isEn ? 'Lead' : 'Avance') + ')';
           } else {
             impactIdx++;
           }
@@ -19669,8 +19949,8 @@
         let pLabel = pRaw.label || '';
         let tLabel = tRaw.label || '';
         if (isEn) {
-          pLabel = pLabel.replace(/Palier/g, 'Tier').replace(/Chaos Étoile/g, 'Chaos Star').replace(/Ordre Soleil/g, 'Order Sun').replace(/Ordre Lune/g, 'Order Moon');
-          tLabel = tLabel.replace(/Palier/g, 'Tier').replace(/Chaos Étoile/g, 'Chaos Star').replace(/Ordre Soleil/g, 'Order Sun').replace(/Ordre Lune/g, 'Order Moon');
+          pLabel = formatLostArkEnglish(pLabel);
+          tLabel = formatLostArkEnglish(tLabel);
         }
         const pItem = { label: pLabel, bonusPct: pRaw.bonusPct };
         const tItem = { label: tLabel, bonusPct: tRaw.bonusPct };
@@ -20190,7 +20470,7 @@
       isLive: true
     };
 
-    const isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
+    const isEn = isEnglishLang();
     const systems = extractPlayerSystems(liveChar, isEn);
 
     const fullBenchmark = {
@@ -20229,17 +20509,20 @@
     const statusEl = document.getElementById('benchLoadingStatus');
     const regionSelect = document.getElementById('benchSearchRegion');
     const reg = regionSelect ? regionSelect.value : (region || 'AUTO');
+    const isEn = isEnglishLang();
 
     if (statusEl) {
       statusEl.className = 'bench-status-msg info';
       statusEl.style.display = 'block';
-      statusEl.innerHTML = `⏳ Interrogation directe de <strong>${escapeHtml(cleanName)}</strong> sur lostark.bible (Live)...`;
+      statusEl.innerHTML = isEn
+        ? `⏳ Querying live data for <strong>${escapeHtml(cleanName)}</strong> from lostark.bible...`
+        : `⏳ Interrogation directe de <strong>${escapeHtml(cleanName)}</strong> sur lostark.bible (Live)...`;
     }
 
     try {
       const activePlayer = getCurrentActiveCharacter();
       const liveBench = await fetchLiveBibleBenchmark(cleanName, reg, (activePlayer && activePlayer.role) || 'support');
-      if (!liveBench) throw new Error("Profil introuvable");
+      if (!liveBench) throw new Error(isEn ? "Profile not found" : "Profil introuvable");
 
       if (!benchmarkState.searchedTargets) {
         benchmarkState.searchedTargets = [];
@@ -20253,7 +20536,9 @@
 
       if (statusEl) {
         statusEl.className = 'bench-status-msg success';
-        statusEl.innerHTML = `✅ Données récupérées en direct de lostark.bible pour <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>) !`;
+        statusEl.innerHTML = isEn
+          ? `✅ Live data retrieved from lostark.bible for <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>)!`
+          : `✅ Données récupérées en direct de lostark.bible pour <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>) !`;
         setTimeout(() => {
           if (statusEl) statusEl.style.display = 'none';
         }, 5000);
@@ -20267,7 +20552,9 @@
       if (statusEl) {
         statusEl.className = 'bench-status-msg error';
         statusEl.style.display = 'block';
-        statusEl.innerHTML = `⚠️ <strong>Impossible d'interroger lostark.bible pour « ${escapeHtml(cleanName)} » :</strong> vérifiez l'orthographe du pseudo ou essayez de coller le lien complet du profil (ex: <code>https://lostark.bible/character/CE/...</code>).`;
+        statusEl.innerHTML = isEn
+          ? `⚠️ <strong>Could not query lostark.bible for "${escapeHtml(cleanName)}":</strong> verify character name spelling or paste full profile URL (e.g. <code>https://lostark.bible/character/CE/...</code>).`
+          : `⚠️ <strong>Impossible d'interroger lostark.bible pour « ${escapeHtml(cleanName)} » :</strong> vérifiez l'orthographe du pseudo ou essayez de coller le lien complet du profil (ex: <code>https://lostark.bible/character/CE/...</code>).`;
       }
       renderBenchmarkTab();
     }
@@ -20380,6 +20667,7 @@
       updateGemSelectOptions();
       updateAstrogemGraderView();
       renderRaidTrackerView();
+      renderBenchmarkTab();
     });
 
     // Initialisation des modules
@@ -20427,6 +20715,13 @@
   window.__fetchLiveBibleBenchmark = fetchLiveBibleBenchmark;
   window.__benchmarkState = benchmarkState;
   window.__getAvailableBenchmarks = getAvailableBenchmarks;
+  window.__extractCharacterEngravings = extractCharacterEngravings;
+  window.__buildEngravingsBreakdownHtml = buildEngravingsBreakdownHtml;
+  window.__buildBaseAtkBreakdownHtml = buildBaseAtkBreakdownHtml;
+  window.__buildCombatStatsBreakdownHtml = buildCombatStatsBreakdownHtml;
+  window.__buildAccBreakdownHtml = buildAccBreakdownHtml;
+  window.__buildBraceletBreakdownHtml = buildBraceletBreakdownHtml;
+  window.__buildAstrogemsBreakdownHtml = buildAstrogemsBreakdownHtml;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
