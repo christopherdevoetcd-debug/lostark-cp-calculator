@@ -15085,6 +15085,10 @@
           if (b) {
             if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
             if (!benchmarkState.searchedTargets.some(s => s.id === b.id)) benchmarkState.searchedTargets.unshift(b);
+            if (!benchmarkState.customTarget || benchmarkState.customTarget.isDynamic) {
+              benchmarkState.customTarget = b;
+              benchmarkState.currentTargetId = b.id;
+            }
             const bp = document.getElementById('tab-benchmark');
             if (bp && bp.classList.contains('active')) renderBenchmarkTab();
           }
@@ -17462,22 +17466,22 @@
     const sameClass = avail.filter(b => normalizeClassName(b.className || b.characterClass || b.class || '').toLowerCase() === pClass);
     if (sameClass.length === 0) return null;
 
-    // 1. Cherche en priorité un profil LIVE réel de même spé avec CP >= pCp ET iLvl proche (écart <= 10 iLvl)
-    const closeSameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 10.0);
+    // 1. Cherche en priorité un profil LIVE réel de même spé avec CP >= pCp ET iLvl proche (écart <= 15 iLvl)
+    const closeSameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 15.0);
     if (closeSameSpecLive.length > 0) {
       closeSameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return closeSameSpecLive[0];
     }
 
-    // 2. Cherche un profil LIVE réel de même spé avec CP >= pCp (écart <= 20 iLvl)
-    const anySameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 20.0);
+    // 2. Cherche un profil LIVE réel de même spé avec CP >= pCp (écart <= 30 iLvl)
+    const anySameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 30.0);
     if (anySameSpecLive.length > 0) {
       anySameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return anySameSpecLive[0];
     }
 
-    // 3. Cherche un profil LIVE réel de la même classe avec CP >= pCp ET iLvl proche (écart <= 15 iLvl)
-    const closeClassLiveHigher = sameClass.filter(b => b.isLive && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 15.0);
+    // 3. Cherche un profil LIVE réel de la même classe avec CP >= pCp ET iLvl proche (écart <= 20 iLvl)
+    const closeClassLiveHigher = sameClass.filter(b => b.isLive && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 20.0);
     if (closeClassLiveHigher.length > 0) {
       closeClassLiveHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return closeClassLiveHigher[0];
@@ -17490,16 +17494,16 @@
       return anyClassLiveHigher[0];
     }
 
-    // 5. Si aucun profil LIVE avec CP supérieur, on prend le Benchmark Calibré (isDynamic)
-    const dyn = sameClass.find(b => b.isDynamic);
-    if (dyn) return dyn;
-
-    // 6. Profil LIVE même classe le plus proche en iLvl
+    // 5. PRIORITÉ ABSOLUE AUX VRAIS JOUEURS : tout profil LIVE réel même classe le plus proche en iLvl
     const anyLive = sameClass.filter(b => b.isLive);
     if (anyLive.length > 0) {
       anyLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return anyLive[0];
     }
+
+    // 6. DERNIER RECOURS : Benchmark Calibré synthétique (uniquement si aucun profil LIVE réel n'est chargé)
+    const dyn = sameClass.find(b => b.isDynamic);
+    if (dyn) return dyn;
 
     // 7. Profil même classe (jamais une autre classe)
     sameClass.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
@@ -20044,10 +20048,20 @@
     }
 
     // Priorité absolue aux profils LIVE de lostark.bible :
-    // Si aucun profil LIVE réel n'est encore chargé/sélectionné pour cette classe, on tente l'auto-fetch du pair réel vérifié
     const hasLivePeer = avail.some(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass) ||
                         (benchmarkState.searchedTargets || []).some(b => b && b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass);
-    if ((!target || !target.isLive) && !hasLivePeer && !benchmarkState.manualDynamicChosen) {
+
+    // Si la cible actuelle est dynamique ou absente, mais qu'un profil LIVE de cette classe est disponible en mémoire, on bascule dessus immédiatement
+    if ((!target || target.isDynamic) && hasLivePeer && !benchmarkState.manualDynamicChosen) {
+      const liveOpt = findOptimalBenchmark(player);
+      if (liveOpt && liveOpt.isLive) {
+        target = liveOpt;
+        benchmarkState.customTarget = liveOpt;
+        benchmarkState.currentTargetId = liveOpt.id;
+      }
+    }
+
+    if ((!target || target.isDynamic) && !hasLivePeer && !benchmarkState.manualDynamicChosen) {
       const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts);
       const peerKey = suggested ? `${suggested.name.toLowerCase()}_${(suggested.region || 'CE').toUpperCase()}` : null;
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
@@ -20989,7 +21003,7 @@
   async function searchAndCompareBibleProfile(cleanName, region = 'AUTO') {
     const statusEl = document.getElementById('benchLoadingStatus');
     const regionSelect = document.getElementById('benchSearchRegion');
-    const reg = regionSelect ? regionSelect.value : (region || 'AUTO');
+    const reg = (region && region !== 'AUTO') ? region : (regionSelect ? regionSelect.value : 'AUTO');
     const isEn = isEnglishLang();
 
     if (statusEl) {
@@ -21048,16 +21062,20 @@
         const player = getCurrentActiveCharacter();
         benchmarkState.customTarget = null;
         benchmarkState.currentTargetId = null;
+        benchmarkState.manualDynamicChosen = false;
         if (player) {
           const opt = findOptimalBenchmark(player);
-          if (opt) {
+          if (opt && opt.isLive) {
             benchmarkState.currentTargetId = opt.id;
             benchmarkState.customTarget = opt;
           } else {
-            const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0);
+            const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts);
             if (suggested) {
               searchAndCompareBibleProfile(suggested.name, suggested.region);
               return;
+            } else if (opt) {
+              benchmarkState.currentTargetId = opt.id;
+              benchmarkState.customTarget = opt;
             }
           }
         }
