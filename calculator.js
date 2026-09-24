@@ -16496,7 +16496,11 @@
       || [];
 
     // 2. Weapon & Gear
-    const gear = playerChar.gear || (canon && canon.gear) || { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 };
+    const gear = playerChar.gear 
+      || (playerChar.rawProfile && playerChar.rawProfile.gear)
+      || (playerChar.loadout && playerChar.loadout.gear)
+      || (canon && canon.gear) 
+      || { weapon: 17, head: 14, chest: 14, pants: 14, shoulder: 14, gloves: 14 };
     const wLvl = gear.weapon !== undefined ? gear.weapon : 17;
     const avgArmor = Math.round(((gear.head || 14) + (gear.chest || 14) + (gear.pants || 14) + (gear.shoulder || 14) + (gear.gloves || 14)) / 5);
 
@@ -16504,12 +16508,20 @@
     const qPart = allBpParts.find(p => p.type === 4 || p.quality !== undefined);
     const wQual = (qPart && qPart.quality !== undefined)
       ? qPart.quality
-      : (playerChar.weaponQuality !== undefined ? playerChar.weaponQuality : (canon && canon.weaponQuality !== undefined ? canon.weaponQuality : 90));
+      : (playerChar.weaponQuality !== undefined 
+          ? playerChar.weaponQuality 
+          : (playerChar.rawProfile && playerChar.rawProfile.weaponQuality !== undefined 
+              ? playerChar.rawProfile.weaponQuality 
+              : (canon && canon.weaponQuality !== undefined ? canon.weaponQuality : 90)));
 
     // Dégâts additionnels de qualité (ex: 29.21% pour Qualité 98)
     const wQualVal = (qPart && qPart.value !== undefined)
       ? (qPart.value / 100)
-      : (playerChar.weaponQualityValue !== undefined ? (playerChar.weaponQualityValue / 100) : (10 + (wQual * 0.196)));
+      : (playerChar.weaponQualityValue !== undefined 
+          ? (playerChar.weaponQualityValue / 100) 
+          : (playerChar.rawProfile && playerChar.rawProfile.weaponQualityValue !== undefined 
+              ? (playerChar.rawProfile.weaponQualityValue / 100) 
+              : (10 + (wQual * 0.196))));
 
     // Bonus d'Affinage Inven (+0.80% net CP par niveau jusqu'à +20, +1.05% au-delà)
     const wHoningBonus = wLvl <= 20 ? (wLvl - 19) * 0.80 : 0.80 + (wLvl - 20) * 1.05;
@@ -16521,7 +16533,11 @@
       : Number((8.00 + (avgArmor - 12) * 1.37).toFixed(2));
 
     // 3. Adv Honing
-    const adv = playerChar.advHoning !== undefined ? playerChar.advHoning : (canon && canon.advHoning !== undefined ? canon.advHoning : 40);
+    const adv = playerChar.advHoning !== undefined 
+      ? playerChar.advHoning 
+      : (playerChar.rawProfile && playerChar.rawProfile.advHoning !== undefined 
+          ? playerChar.rawProfile.advHoning 
+          : (canon && canon.advHoning !== undefined ? canon.advHoning : 40));
     const advBonusPct = adv >= 40 ? 8.80 : (adv >= 20 ? 5.50 : (adv >= 10 ? 3.00 : 0.00));
 
     // 4. Ark Passive Points (Données réelles de Raid)
@@ -16732,11 +16748,11 @@
     if (!target) return {};
     let sys = {};
 
-    // Si le target possède un profil complet (live ou canonique avec battlePoint / rawProfile / loadout), on extrait dynamiquement
-    if (target.battlePoint || target.rawProfile || target.loadout) {
+    // Si le target possède déjà des systems calculés fidèlement (live ou benchmark), on les préserve en priorité
+    if (target.systems && Object.keys(target.systems).length > 0) {
+      sys = JSON.parse(JSON.stringify(target.systems));
+    } else if (target.battlePoint || target.rawProfile || target.loadout || target.gear) {
       sys = extractPlayerSystems(target, isEn);
-    } else if (target.systems && Object.keys(target.systems).length > 0) {
-      sys = Object.assign({}, target.systems);
     } else {
       sys = extractPlayerSystems(target, isEn);
     }
@@ -20583,8 +20599,17 @@
     if (savedLiveCache) {
       liveBibleBenchmarkCache = JSON.parse(savedLiveCache) || {};
       Object.values(liveBibleBenchmarkCache).forEach(b => {
-        if (b && b.isLive && (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.id === b.id))) {
-          benchmarkState.searchedTargets.push(b);
+        if (b && b.isLive) {
+          if ((!b.gear || !b.systems || !b.systems.weapon || b.systems.weapon.label.includes('+17')) && b.rawProfile && b.rawProfile.gear) {
+            b.gear = b.rawProfile.gear;
+            b.weaponQuality = b.rawProfile.weaponQuality !== undefined ? b.rawProfile.weaponQuality : b.weaponQuality;
+            b.weaponQualityValue = b.rawProfile.weaponQualityValue !== undefined ? b.rawProfile.weaponQualityValue : b.weaponQualityValue;
+            b.advHoning = b.rawProfile.advHoning !== undefined ? b.rawProfile.advHoning : b.advHoning;
+            b.systems = extractPlayerSystems(b, isEnglishLang());
+          }
+          if (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.id === b.id)) {
+            benchmarkState.searchedTargets.push(b);
+          }
         }
       });
     }
@@ -20751,6 +20776,13 @@
       bibleUrl: liveChar.bibleUrl,
       isLive: true,
       systems: systems,
+      gear: liveChar.gear,
+      advHoning: liveChar.advHoning,
+      weaponQuality: liveChar.weaponQuality,
+      weaponQualityValue: liveChar.weaponQualityValue,
+      gemParts: liveChar.gemParts,
+      engravings: liveChar.engravings,
+      apPoints: liveChar.apPoints,
       accessories: liveChar.accessories || [],
       bracelet: liveChar.bracelet || null,
       rawProfile: parsed,
