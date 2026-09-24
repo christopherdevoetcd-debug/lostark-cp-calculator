@@ -13073,9 +13073,13 @@
         badge = 'gear';
 
         if (p.affectsBaseStats && val === 0) {
-          note = (isSupport && (sIndex === 74 || sIndex === 76 || sIndex === 50))
-            ? "💡 Stat solo perso : non transférée aux alliés en Support (exclue du Buff Power)."
-            : "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou les PV Max en tête de liste.";
+          if (sIndex === 151 || sIndex === 152) {
+            note = "💡 La Puissance d'Arme augmente directement votre Attaque de Base & Base Val en tête de liste. Elle est à +0.00% ici pour éviter un double comptage.";
+          } else {
+            note = (isSupport && (sIndex === 74 || sIndex === 76 || sIndex === 50))
+              ? "💡 Stat solo perso : non transférée aux alliés en Support (exclue du Buff Power)."
+              : "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou les PV Max en tête de liste.";
+          }
         }
       } else if (p.type === 22 || (p.id && p.id.toString().startsWith('650'))) {
         cat = 'Gemmes';
