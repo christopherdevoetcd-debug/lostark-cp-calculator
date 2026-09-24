@@ -15881,13 +15881,22 @@
 
     // 4. Ark Grid & Ark Passive
     res = res
-      .replace(/Ark Grid\s*:\s*Cœur Ordre Soleil/gi, 'Ark Grid: Order Sun Core')
-      .replace(/Ark Grid\s*:\s*Cœur Ordre Lune/gi, 'Ark Grid: Order Moon Core')
-      .replace(/Ark Grid\s*:\s*Cœur Chaos Étoile/gi, 'Ark Grid: Chaos Star Core')
+      .replace(/Ark Grid\s*:\s*Cœurs Soleil\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Sun Cores (Ancient/Relic)')
+      .replace(/Ark Grid\s*:\s*Cœurs Lune\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Moon Cores (Ancient/Relic)')
+      .replace(/Ark Grid\s*:\s*Cœurs Étoile\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Star Cores (Ancient/Relic)')
+      .replace(/Ark Grid\s*:\s*Cœur Ordre Soleil/gi, 'Ark Grid: Sun Cores (Ancient/Relic)')
+      .replace(/Ark Grid\s*:\s*Cœur Ordre Lune/gi, 'Ark Grid: Moon Cores (Ancient/Relic)')
+      .replace(/Ark Grid\s*:\s*Cœur Chaos Étoile/gi, 'Ark Grid: Star Cores (Ancient/Relic)')
+      .replace(/Cœurs Soleil/gi, 'Sun Cores')
+      .replace(/Cœurs Lune/gi, 'Moon Cores')
+      .replace(/Cœurs Étoile/gi, 'Star Cores')
       .replace(/Ark Grid\s*:\s*Astrogemmes\s*\(Sous-stats\)/gi, 'Ark Grid: Astrogems (Substats)')
       .replace(/Ordre Soleil/gi, 'Order Sun')
       .replace(/Ordre Lune/gi, 'Order Moon')
       .replace(/Chaos Étoile/gi, 'Chaos Star')
+      .replace(/Ancien\/Relique/gi, 'Ancient/Relic')
+      .replace(/Ancien/gi, 'Ancient')
+      .replace(/Relique/gi, 'Relic')
       .replace(/Palier\s*(\d+)P/gi, 'Tier $1P')
       .replace(/Palier de Gemmes T4/gi, 'T4 Gem Tier')
       .replace(/Palier/gi, 'Tier')
@@ -16669,26 +16678,64 @@
       ? `Combat Stats${totalPtsLabel} (+${combatStatsBonusPct.toFixed(2)}%)`
       : `Stats de Combat${totalPtsLabel} (+${combatStatsBonusPct.toFixed(2)}%)`;
 
-    // 8. Ark Grid Percentages & Labels
-    const sunBonusPct = hasSun17 ? (isSupport ? 1.13 : 2.24) : (isSupport ? 0.35 : 0.60);
-    const sunLabel = hasSun17
-      ? (isEn ? `Tier 17P (Order Sun: +${sunBonusPct.toFixed(2)}%)` : `Palier 17P (Ordre Soleil: +${sunBonusPct.toFixed(2)}%)`)
-      : (isEn ? `Tier 10P (Order Sun: +${sunBonusPct.toFixed(2)}%)` : `Palier 10P (Ordre Soleil: +${sunBonusPct.toFixed(2)}%)`);
+    // 8. Ark Grid Percentages & Labels (Calcul dynamique sur battlePoint.parts type 29 pour Soleil, Lune, Étoile)
+    const coreParts = (Array.isArray(allBpParts) && allBpParts.length > 0)
+      ? allBpParts.filter(p => p.type === 29)
+      : [];
 
-    const moonBonusPct = hasMoon17 ? (isSupport ? 1.11 : 2.22) : (isSupport ? 0.35 : 0.60);
-    const moonLabel = hasMoon17
-      ? (isEn ? `Tier 17P (Order Moon: +${moonBonusPct.toFixed(2)}%)` : `Palier 17P (Ordre Lune: +${moonBonusPct.toFixed(2)}%)`)
-      : (isEn ? `Tier 10P (Order Moon: +${moonBonusPct.toFixed(2)}%)` : `Palier 10P (Ordre Lune: +${moonBonusPct.toFixed(2)}%)`);
-
-    let starBonusPct = isSupport ? 0.20 : 0.35;
-    let starLabel = isEn ? `Tier 10P (Chaos Star: +${starBonusPct.toFixed(2)}%)` : `Palier 10P (Chaos Étoile: +${starBonusPct.toFixed(2)}%)`;
-    if (starTier >= 3) {
-      starBonusPct = isSupport ? 0.60 : 1.20;
-      starLabel = isEn ? `Tier 17P (Chaos Star: +${starBonusPct.toFixed(2)}%)` : `Palier 17P (Chaos Étoile: +${starBonusPct.toFixed(2)}%)`;
-    } else if (starTier >= 2) {
-      starBonusPct = isSupport ? 0.45 : 0.95;
-      starLabel = isEn ? `Tier 14P (Chaos Star: +${starBonusPct.toFixed(2)}%)` : `Palier 14P (Chaos Étoile: +${starBonusPct.toFixed(2)}%)`;
+    function evalCoreGroup(prefixes, nameFr, nameEn, fallbackBonus, fallbackTier) {
+      const matching = coreParts.filter(p => {
+        const s = (p.id || '').toString();
+        return prefixes.some(pr => s.startsWith(pr));
+      });
+      if (matching.length > 0) {
+        let mult = 1;
+        let maxPoints = 0;
+        let hasAncient = false;
+        let hasRelic = false;
+        matching.forEach(p => {
+          const val = ('value' in p ? p.value : p.min) || 0;
+          mult *= (1 + val / 10000);
+          if (p.points && p.points > maxPoints) maxPoints = p.points;
+          const gradeDigit = (p.id || 0) % 10;
+          if (gradeDigit === 6) hasAncient = true;
+          else if (gradeDigit === 5) hasRelic = true;
+        });
+        const bonusPct = Number(((mult - 1) * 100).toFixed(2));
+        const ptsStr = maxPoints > 0 ? (isEn ? `Tier ${maxPoints}P` : `Palier ${maxPoints}P`) : (isEn ? 'Tier 17P+' : 'Palier 17P+');
+        const gradeStr = (hasAncient && !hasRelic)
+          ? (isEn ? 'Ancient' : 'Ancien')
+          : (hasRelic && !hasAncient ? (isEn ? 'Relic' : 'Relique') : (hasAncient ? (isEn ? 'Ancient/Relic' : 'Ancien/Relique') : ''));
+        const label = isEn
+          ? `${gradeStr ? gradeStr + ' ' : ''}${ptsStr} (${nameEn}: +${bonusPct.toFixed(2)}%)`.trim()
+          : `${gradeStr ? gradeStr + ' ' : ''}${ptsStr} (${nameFr} : +${bonusPct.toFixed(2)}%)`.trim();
+        return { bonusPct, label };
+      }
+      // Fallback si battlePoint.parts type 29 absent
+      const bonusPct = fallbackBonus;
+      const label = isEn
+        ? `Tier ${fallbackTier}P (${nameEn}: +${bonusPct.toFixed(2)}%)`
+        : `Palier ${fallbackTier}P (${nameFr} : +${bonusPct.toFixed(2)}%)`;
+      return { bonusPct, label };
     }
+
+    const defaultSunBonus = hasSun17 ? (isSupport ? 7.00 : 10.50) : (isSupport ? 4.50 : 6.00);
+    const sunEval = evalCoreGroup(['67300', '67310'], 'Cœurs Soleil', 'Sun Cores', defaultSunBonus, hasSun17 ? 17 : 10);
+    const sunBonusPct = sunEval.bonusPct;
+    const sunLabel = sunEval.label;
+
+    const defaultMoonBonus = hasMoon17 ? (isSupport ? 7.00 : 10.50) : (isSupport ? 4.50 : 6.00);
+    const moonEval = evalCoreGroup(['67301', '67311'], 'Cœurs Lune', 'Moon Cores', defaultMoonBonus, hasMoon17 ? 17 : 10);
+    const moonBonusPct = moonEval.bonusPct;
+    const moonLabel = moonEval.label;
+
+    let defaultStarBonus = isSupport ? 4.00 : 6.00;
+    let defaultStarTier = 10;
+    if (starTier >= 3) { defaultStarBonus = isSupport ? 6.00 : 8.15; defaultStarTier = 17; }
+    else if (starTier >= 2) { defaultStarBonus = isSupport ? 5.00 : 7.20; defaultStarTier = 14; }
+    const starEval = evalCoreGroup(['67302', '67312'], 'Cœurs Étoile', 'Star Cores', defaultStarBonus, defaultStarTier);
+    const starBonusPct = starEval.bonusPct;
+    const starLabel = starEval.label;
 
     const weaponLabel = isEn
       ? `T4 Weapon +${wLvl} (Quality ${wQual})`
@@ -16960,9 +17007,9 @@
     const gaps = [];
 
     const systemMeta = [
-      { key: 'arkGridSun', title: isEn ? "Ark Grid: Order Sun Core" : "Ark Grid : Cœur Ordre Soleil", icon: '☀️', cost: 80898 },
-      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Order Moon Core" : "Ark Grid : Cœur Ordre Lune", icon: '🌙', cost: 80898 },
-      { key: 'arkGridStar', title: isEn ? "Ark Grid: Chaos Star Core" : "Ark Grid : Cœur Chaos Étoile", icon: '⭐', cost: 80898 },
+      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Ancient/Relic)" : "Ark Grid : Cœurs Soleil (Ancien/Relique)", icon: '☀️', cost: 80898 },
+      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Ancient/Relic)" : "Ark Grid : Cœurs Lune (Ancien/Relique)", icon: '🌙', cost: 80898 },
+      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Ancient/Relic)" : "Ark Grid : Cœurs Étoile (Ancien/Relique)", icon: '⭐', cost: 80898 },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: 60000 },
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: 45000 },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
@@ -17249,19 +17296,19 @@
 
     // 2g. Cœurs Ark Grid (Sun, Moon, Star)
     const pSun = (pSys.arkGridSun && pSys.arkGridSun.bonusPct) || 0;
-    const baseSun17 = isSupport ? 1.13 : 2.24;
-    const tSun = pSun < baseSun17 ? baseSun17 : Number((pSun + (isSupport ? 0.12 : 0.24)).toFixed(2));
-    const tSunLabel = isEn ? `Tier 18P (Order Sun: +${tSun.toFixed(2)}%)` : `Palier 18P (Ordre Soleil: +${tSun.toFixed(2)}%)`;
+    const baseSun = isSupport ? 7.00 : 10.50;
+    const tSun = pSun < baseSun ? baseSun : Number((pSun + (isSupport ? 0.80 : 1.20)).toFixed(2));
+    const tSunLabel = isEn ? `Relic Tier 18P (Sun Cores: +${tSun.toFixed(2)}%)` : `Relique Palier 18P (Cœurs Soleil : +${tSun.toFixed(2)}%)`;
 
     const pMoon = (pSys.arkGridMoon && pSys.arkGridMoon.bonusPct) || 0;
-    const baseMoon17 = isSupport ? 1.11 : 2.22;
-    const tMoon = pMoon < baseMoon17 ? baseMoon17 : Number((pMoon + (isSupport ? 0.12 : 0.24)).toFixed(2));
-    const tMoonLabel = isEn ? `Tier 18P (Order Moon: +${tMoon.toFixed(2)}%)` : `Palier 18P (Ordre Lune: +${tMoon.toFixed(2)}%)`;
+    const baseMoon = isSupport ? 7.00 : 10.50;
+    const tMoon = pMoon < baseMoon ? baseMoon : Number((pMoon + (isSupport ? 0.80 : 1.20)).toFixed(2));
+    const tMoonLabel = isEn ? `Relic Tier 18P (Moon Cores: +${tMoon.toFixed(2)}%)` : `Relique Palier 18P (Cœurs Lune : +${tMoon.toFixed(2)}%)`;
 
     const pStar = (pSys.arkGridStar && pSys.arkGridStar.bonusPct) || 0;
-    const baseStar17 = isSupport ? 0.60 : 1.20;
-    const tStar = pStar < baseStar17 ? baseStar17 : Number((pStar + (isSupport ? 0.10 : 0.18)).toFixed(2));
-    const tStarLabel = isEn ? `Tier 18P (Chaos Star: +${tStar.toFixed(2)}%)` : `Palier 18P (Chaos Étoile: +${tStar.toFixed(2)}%)`;
+    const baseStar = isSupport ? 5.00 : 8.15;
+    const tStar = pStar < baseStar ? baseStar : Number((pStar + (isSupport ? 0.60 : 0.90)).toFixed(2));
+    const tStarLabel = isEn ? `Relic Tier 18P (Star Cores: +${tStar.toFixed(2)}%)` : `Relique Palier 18P (Cœurs Étoile : +${tStar.toFixed(2)}%)`;
 
     // 2h. Systèmes à Parité / Endgame Standards
     const tEvo = Math.max(21.00, (pSys.arkEvolution && pSys.arkEvolution.bonusPct) || 21.00);
@@ -20296,9 +20343,9 @@
     const tableBody = document.getElementById('benchmarkTableBody');
     if (tableBody) {
       const rowsConfig = [
-        { key: 'arkGridSun', name: isEn ? 'Ark Grid: Order Sun Core' : 'Ark Grid : Cœur Ordre Soleil', icon: '☀️', prio: 'high' },
-        { key: 'arkGridMoon', name: isEn ? 'Ark Grid: Order Moon Core' : 'Ark Grid : Cœur Ordre Lune', icon: '🌙', prio: 'high' },
-        { key: 'arkGridStar', name: isEn ? 'Ark Grid: Chaos Star Core' : 'Ark Grid : Cœur Chaos Étoile', icon: '⭐', prio: 'med' },
+        { key: 'arkGridSun', name: isEn ? 'Ark Grid: Sun Cores (Ancient/Relic)' : 'Ark Grid : Cœurs Soleil (Ancien/Relique)', icon: '☀️', prio: 'high' },
+        { key: 'arkGridMoon', name: isEn ? 'Ark Grid: Moon Cores (Ancient/Relic)' : 'Ark Grid : Cœurs Lune (Ancien/Relique)', icon: '🌙', prio: 'high' },
+        { key: 'arkGridStar', name: isEn ? 'Ark Grid: Star Cores (Ancient/Relic)' : 'Ark Grid : Cœurs Étoile (Ancien/Relique)', icon: '⭐', prio: 'med' },
         { key: 'arkGridAstrogems', name: isEn ? 'Ark Grid: Astrogems (Substats)' : 'Ark Grid : Astrogemmes (Sous-stats)', icon: '✨', prio: 'med' },
         { key: 'accessories', name: isEn ? 'T4 Accessories (Rolls & Lines)' : 'Accessoires T4 (Rolls & Lignes)', icon: '💎', prio: 'high' },
         { key: 'weapon', name: isEn ? 'T4 Weapon (Honing & Quality)' : 'Arme T4 (Affinage & Qualité)', icon: '🗡️', prio: 'med' },
@@ -21110,6 +21157,7 @@
   window.__BENCHMARK_DATABASE = BENCHMARK_DATABASE;
   window.__fetchBibleProfile = fetchBibleProfile;
   window.__extractCharacterGemParts = extractCharacterGemParts;
+  window.__extractPlayerSystems = extractPlayerSystems;
   window.__loadCharacter = loadCharacter;
   window.__setAdvisorMode = setAdvisorMode;
   window.__renderAdvisorView = renderAdvisorView;
