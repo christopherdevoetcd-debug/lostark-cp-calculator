@@ -16702,7 +16702,6 @@
 
     const transWeaponLabel = isEn ? "Weapon Transcendence R3 (21 Pts)" : "Transcendance Arme R3 (21 Pts)";
     const transArmorLabel = isEn ? "Armor Transcendence R3 (105 Pts)" : "Transcendance Armures R3 (105 Pts)";
-    const braceletLabel = isEn ? "Relic (Main Stats + Perk)" : "Relique (Stats principales + Passif)";
     const karmaLabel = isEn ? "Karma Evolution Rank 6" : "Karma Évolution Rang 6";
 
     // 8b. Astrogemmes de la Grille d'Ark
@@ -16721,6 +16720,97 @@
       ? `Astrogems (+${astroBonusPct.toFixed(2)}% DPS/Buff Substats)`
       : `Astrogemmes (+${astroBonusPct.toFixed(2)}% Sous-stats Grille)`;
 
+    // 8c. Bracelet T4 / Relique (Calcul fidèle sur lostark.bible battlePoint & items)
+    let brBonusPct = isSupport ? 18.50 : 10.20;
+    let brPerkNames = [];
+    let hasRealBr = false;
+
+    // A. Calcul précis via battlePoint.parts (types 19 & 20 pour DPS, 19 & 21 pour Support)
+    if (Array.isArray(allBpParts) && allBpParts.length > 0) {
+      const brTypes = isSupport ? [19, 21] : [19, 20];
+      const brParts = allBpParts.filter(p => brTypes.includes(p.type));
+      if (brParts.length > 0) {
+        let t = 1;
+        for (const p of brParts) {
+          const val = ('value' in p ? p.value : p.min) || 0;
+          t *= (1 + val / 10000);
+        }
+        brBonusPct = Number(((t * 100) - 100).toFixed(2));
+        hasRealBr = true;
+      }
+    }
+
+    // B. Fallback via items (cat: 'Bracelet')
+    if (!hasRealBr) {
+      const brItems = (Array.isArray(playerChar.items) ? playerChar.items.filter(i => i.cat === 'Bracelet') : [])
+        || (playerChar.rawProfile && Array.isArray(playerChar.rawProfile.items) ? playerChar.rawProfile.items.filter(i => i.cat === 'Bracelet') : [])
+        || (canon && Array.isArray(canon.items) ? canon.items.filter(i => i.cat === 'Bracelet') : []);
+      if (brItems.length > 0) {
+        let t = 1;
+        let foundMult = false;
+        for (const it of brItems) {
+          if (it.mult && it.mult.includes('%')) {
+            const mVal = parseFloat(it.mult.replace('+', '').replace('%', '')) || 0;
+            if (mVal > 0) {
+              t *= (1 + mVal / 100);
+              foundMult = true;
+            }
+          }
+        }
+        if (foundMult) {
+          brBonusPct = Number(((t * 100) - 100).toFixed(2));
+          hasRealBr = true;
+        }
+      }
+    }
+
+    // C. Fallback par défaut selon iLvl
+    if (!hasRealBr) {
+      if (isSupport) {
+        brBonusPct = pIlvl >= 1770 ? 18.50 : (pIlvl >= 1750 ? 15.00 : 12.00);
+      } else {
+        brBonusPct = pIlvl >= 1770 ? 10.20 : (pIlvl >= 1750 ? 8.16 : 6.50);
+      }
+    }
+
+    // Extraction des noms de perks pour le label
+    const brItemObj = (playerChar.bracelet) 
+      || (playerChar.loadout && Array.isArray(playerChar.loadout.items) && playerChar.loadout.items.find(i => i.slot === 'bracelet'))
+      || (playerChar.rawProfile && playerChar.rawProfile.loadout && Array.isArray(playerChar.rawProfile.loadout.items) && playerChar.rawProfile.loadout.items.find(i => i.slot === 'bracelet'))
+      || (playerChar.rawProfile && playerChar.rawProfile.rawItems && playerChar.rawProfile.rawItems.find(i => i.slot === 'bracelet'))
+      || null;
+
+    if (brItemObj && brItemObj.data && Array.isArray(brItemObj.data.stats)) {
+      brItemObj.data.stats.forEach(st => {
+        if (st.type === 3 || st.type === 4 || st.index > 1000) {
+          const perk = (typeof BIBLE_BRACELET_PERKS !== 'undefined' && BIBLE_BRACELET_PERKS[st.index]);
+          const pName = perk ? (isEn ? (perk.nameEn || perk.name) : perk.name) : null;
+          if (pName && !brPerkNames.includes(pName)) brPerkNames.push(pName);
+        }
+      });
+    }
+
+    if (brPerkNames.length === 0) {
+      const brTextItems = (Array.isArray(playerChar.items) ? playerChar.items.filter(i => i.cat === 'Bracelet') : [])
+        || (playerChar.rawProfile && Array.isArray(playerChar.rawProfile.items) ? playerChar.rawProfile.items.filter(i => i.cat === 'Bracelet') : []);
+      brTextItems.forEach(it => {
+        const lbl = it.label || '';
+        if (typeof BIBLE_BRACELET_PERKS !== 'undefined') {
+          for (const [k, v] of Object.entries(BIBLE_BRACELET_PERKS)) {
+            if (lbl.includes(v.name) || (v.nameEn && lbl.includes(v.nameEn))) {
+              const pName = isEn ? (v.nameEn || v.name) : v.name;
+              if (!brPerkNames.includes(pName)) brPerkNames.push(pName);
+            }
+          }
+        }
+      });
+    }
+
+    let brSummaryPerks = brPerkNames.length > 0 ? brPerkNames.join(' + ') : (isEn ? "Main Stats + Perk" : "Stats principales + Passif");
+    const braceletLabel = isEn 
+      ? `Relic (${brSummaryPerks}: +${brBonusPct.toFixed(2)}%)` 
+      : `Relique (${brSummaryPerks} : +${brBonusPct.toFixed(2)}%)`;
+
     return {
       engravings: { label: engLabel, bonusPct: engBonusPct },
       baseAttackStat: { label: baseAtkLabel, bonusPct: baseAtkBonusPct },
@@ -16738,7 +16828,7 @@
       transWeapon: { label: transWeaponLabel, bonusPct: 14.50 },
       transArmor: { label: transArmorLabel, bonusPct: 18.20 },
       accessories: { label: accLabel, bonusPct: accBonusPct },
-      bracelet: { label: braceletLabel, bonusPct: 10.20 },
+      bracelet: { label: braceletLabel, bonusPct: brBonusPct },
       gems: { label: gemDesc, bonusPct: gemBonusPct },
       karma: { label: karmaLabel, bonusPct: 3.60 }
     };
@@ -16826,6 +16916,20 @@
       sys.arkGridAstrogems = {
         label: isEn ? `Astrogems (+${aPct.toFixed(2)}% DPS/Buff Substats)` : `Astrogemmes (+${aPct.toFixed(2)}% Sous-stats Grille)`,
         bonusPct: aPct
+      };
+    }
+
+    // Garde-fou 4b : Bracelet T4 / Relique
+    if (!sys.bracelet || !sys.bracelet.bonusPct || sys.bracelet.bonusPct <= 0) {
+      const defBrVal = isSupport
+        ? (ilvl >= 1770 ? 18.50 : 15.00)
+        : (ilvl >= 1770 ? 10.20 : 8.16);
+      const defPerks = isSupport
+        ? (isEn ? "Dagger + Cheers" : "Poignard + Ovation")
+        : (isEn ? "Fervor + Wedge" : "Ferveur + Coinçage");
+      sys.bracelet = {
+        label: isEn ? `Relic (${defPerks}: +${defBrVal.toFixed(2)}%)` : `Relique (${defPerks} : +${defBrVal.toFixed(2)}%)`,
+        bonusPct: defBrVal
       };
     }
 
@@ -17778,12 +17882,13 @@
     const sIndex = st.index;
     const sVal = st.value;
     const isFixed = st.fixed === true;
-    const isPerk = st.type === 3 || sIndex > 1000;
+    const isPerk = st.type === 3 || st.type === 4 || sIndex > 1000;
 
     if (isPerk) {
       const perk = (typeof BIBLE_BRACELET_PERKS !== 'undefined' && BIBLE_BRACELET_PERKS[sIndex]) || null;
-      let rawName = perk ? perk.name : `Roll Spécial (#${sIndex})`;
-      if (typeof formatBraceletLine === 'function') {
+      let baseName = perk ? (isEn ? (perk.nameEn || perk.name) : perk.name) : `Roll Spécial (#${sIndex})`;
+      let rawName = perk && perk.desc ? `${baseName} (${perk.desc})` : baseName;
+      if (!perk && typeof formatBraceletLine === 'function') {
         rawName = formatBraceletLine(rawName, isEn);
       }
       let rollTier = 'high';
@@ -17791,12 +17896,13 @@
       let isDead = false;
 
       if (isSupport) {
-        if (sIndex === 11061 || sIndex === 11091 || sIndex === 11071 || sIndex === 11081) {
+        if (sIndex === 11061 || sIndex === 11091 || sIndex === 11071 || sIndex === 11081 || sIndex === 77300001) {
           rollTier = 'passif';
           tierLabel = isEn ? 'BiS Raid Perk' : 'Proc BiS Raid';
         } else if (rawName.toLowerCase().includes('marteau') || rawName.toLowerCase().includes('hammer') ||
                    rawName.toLowerCase().includes('coinçage') || rawName.toLowerCase().includes('wedge') ||
-                   rawName.toLowerCase().includes('précision') || rawName.toLowerCase().includes('precision')) {
+                   rawName.toLowerCase().includes('précision') || rawName.toLowerCase().includes('precision') ||
+                   rawName.toLowerCase().includes('non-directionnel') || rawName.toLowerCase().includes('non-directional')) {
           isDead = true;
           rollTier = 'dead';
           tierLabel = isEn ? 'Dead Perk' : 'Perk Inutile';
@@ -17806,17 +17912,19 @@
             rawName.toLowerCase().includes('ferveur') || rawName.toLowerCase().includes('fervor') ||
             rawName.toLowerCase().includes('coinçage') || rawName.toLowerCase().includes('wedge') ||
             rawName.toLowerCase().includes('précision') || rawName.toLowerCase().includes('precision') ||
-            rawName.toLowerCase().includes('embuscade') || rawName.toLowerCase().includes('ambush')) {
-          rollTier = (sIndex % 10 <= 2) ? 'passif' : 'high';
+            rawName.toLowerCase().includes('embuscade') || rawName.toLowerCase().includes('ambush') ||
+            rawName.toLowerCase().includes('non-directionnel') || rawName.toLowerCase().includes('non-directional') ||
+            rawName.toLowerCase().includes('bagarreur') || rawName.toLowerCase().includes('brawler')) {
+          rollTier = (sIndex % 10 <= 2 || sIndex > 100000) ? 'passif' : 'high';
           tierLabel = isEn ? 'BiS Perk' : 'Proc BiS';
         } else if (rawName.toLowerCase().includes('protection') || rawName.toLowerCase().includes('soins') ||
-                   rawName.toLowerCase().includes('shield and healing')) {
+                   rawName.toLowerCase().includes('shield and healing') || rawName.toLowerCase().includes('bénédiction')) {
           isDead = true;
           rollTier = 'dead';
           tierLabel = isEn ? 'Dead Perk' : 'Perk Inutile';
         }
       }
-      return { text: rawName, rollTier, tierLabel, isDead, isFixed: false };
+      return { text: rawName, rollTier, tierLabel, isDead, isFixed: false, isPerk: true };
     }
 
     // Combat stats / Attributes
@@ -18048,8 +18156,8 @@
 
     const getPerkKey = (txt) => {
       const l = (txt || '').toLowerCase();
-      for (const k of ['marteau', 'hammer', 'ferveur', 'fervor', 'précision', 'precision', 'coinçage', 'wedge', 'embuscade', 'ambush', 'poignard', 'dagger', 'ovation', 'cheers', 'exposition', 'expose']) {
-        if (l.includes(k)) return k.replace('hammer', 'marteau').replace('fervor', 'ferveur').replace('precision', 'précision').replace('wedge', 'coinçage').replace('ambush', 'embuscade').replace('dagger', 'poignard').replace('cheers', 'ovation').replace('expose', 'exposition');
+      for (const k of ['marteau', 'hammer', 'ferveur', 'fervor', 'précision', 'precision', 'coinçage', 'wedge', 'embuscade', 'ambush', 'poignard', 'dagger', 'ovation', 'cheers', 'exposition', 'expose', 'non-directionnel', 'non-directional', 'bagarreur', 'brawler']) {
+        if (l.includes(k)) return k.replace('hammer', 'marteau').replace('fervor', 'ferveur').replace('precision', 'précision').replace('wedge', 'coinçage').replace('ambush', 'embuscade').replace('dagger', 'poignard').replace('cheers', 'ovation').replace('expose', 'exposition').replace('non-directional', 'non-directionnel').replace('brawler', 'bagarreur');
       }
       return 'other';
     };
@@ -18088,6 +18196,8 @@
       }
       if (txt.includes('coinçage') || txt.includes('wedge')) return 2.5;
       if (txt.includes('embuscade') || txt.includes('ambush')) return 3.2;
+      if (txt.includes('non-directionnel') || txt.includes('non-directional')) return 3.5;
+      if (txt.includes('bagarreur') || txt.includes('brawler')) return 3.5;
       if (txt.includes('poignard') || txt.includes('dagger')) return 6.0;
       if (txt.includes('ovation') || txt.includes('cheers')) return 6.0;
       if (txt.includes('exposition') || txt.includes('expose')) return 5.5;
@@ -20991,6 +21101,7 @@
   window.__findOptimalBenchmark = findOptimalBenchmark;
   window.__getCharacterSpecName = getCharacterSpecName;
   window.__extractPlayerSystems = extractPlayerSystems;
+  window.__parseBibleCharacter = parseBibleCharacter;
   window.__getArkGridStatus = getArkGridStatus;
   window.__DEFAULT_DEMO_ROSTER = DEFAULT_DEMO_ROSTER;
   window.__NEVERCRY_PRESET_ROSTER = NEVERCRY_PRESET_ROSTER;
