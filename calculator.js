@@ -15881,9 +15881,12 @@
 
     // 4. Ark Grid & Ark Passive
     res = res
-      .replace(/Ark Grid\s*:\s*Cœurs Soleil\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Sun Cores (Ancient/Relic)')
-      .replace(/Ark Grid\s*:\s*Cœurs Lune\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Moon Cores (Ancient/Relic)')
-      .replace(/Ark Grid\s*:\s*Cœurs Étoile\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Star Cores (Ancient/Relic)')
+      .replace(/Ark Grid\s*:\s*Cœurs Soleil\s*\(Ordre & Chaos\)/gi, 'Ark Grid: Sun Cores (Order & Chaos)')
+      .replace(/Ark Grid\s*:\s*Cœurs Lune\s*\(Ordre & Chaos\)/gi, 'Ark Grid: Moon Cores (Order & Chaos)')
+      .replace(/Ark Grid\s*:\s*Cœurs Étoile\s*\(Ordre & Chaos\)/gi, 'Ark Grid: Star Cores (Order & Chaos)')
+      .replace(/Ark Grid\s*:\s*Cœurs Soleil\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Sun Cores (Order & Chaos)')
+      .replace(/Ark Grid\s*:\s*Cœurs Lune\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Moon Cores (Order & Chaos)')
+      .replace(/Ark Grid\s*:\s*Cœurs Étoile\s*\(Ancien\/Relique\)/gi, 'Ark Grid: Star Cores (Order & Chaos)')
       .replace(/Ark Grid\s*:\s*Cœur Ordre Soleil/gi, 'Ark Grid: Sun Cores (Ancient/Relic)')
       .replace(/Ark Grid\s*:\s*Cœur Ordre Lune/gi, 'Ark Grid: Moon Cores (Ancient/Relic)')
       .replace(/Ark Grid\s*:\s*Cœur Chaos Étoile/gi, 'Ark Grid: Star Cores (Ancient/Relic)')
@@ -17007,9 +17010,9 @@
     const gaps = [];
 
     const systemMeta = [
-      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Ancient/Relic)" : "Ark Grid : Cœurs Soleil (Ancien/Relique)", icon: '☀️', cost: 80898 },
-      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Ancient/Relic)" : "Ark Grid : Cœurs Lune (Ancien/Relique)", icon: '🌙', cost: 80898 },
-      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Ancient/Relic)" : "Ark Grid : Cœurs Étoile (Ancien/Relique)", icon: '⭐', cost: 80898 },
+      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '☀️', cost: 80898 },
+      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '🌙', cost: 80898 },
+      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '⭐', cost: 80898 },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: 60000 },
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: 45000 },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
@@ -20343,9 +20346,9 @@
     const tableBody = document.getElementById('benchmarkTableBody');
     if (tableBody) {
       const rowsConfig = [
-        { key: 'arkGridSun', name: isEn ? 'Ark Grid: Sun Cores (Ancient/Relic)' : 'Ark Grid : Cœurs Soleil (Ancien/Relique)', icon: '☀️', prio: 'high' },
-        { key: 'arkGridMoon', name: isEn ? 'Ark Grid: Moon Cores (Ancient/Relic)' : 'Ark Grid : Cœurs Lune (Ancien/Relique)', icon: '🌙', prio: 'high' },
-        { key: 'arkGridStar', name: isEn ? 'Ark Grid: Star Cores (Ancient/Relic)' : 'Ark Grid : Cœurs Étoile (Ancien/Relique)', icon: '⭐', prio: 'med' },
+        { key: 'arkGridSun', name: isEn ? 'Ark Grid: Sun Cores (Order & Chaos)' : 'Ark Grid : Cœurs Soleil (Ordre & Chaos)', icon: '☀️', prio: 'high' },
+        { key: 'arkGridMoon', name: isEn ? 'Ark Grid: Moon Cores (Order & Chaos)' : 'Ark Grid : Cœurs Lune (Ordre & Chaos)', icon: '🌙', prio: 'high' },
+        { key: 'arkGridStar', name: isEn ? 'Ark Grid: Star Cores (Order & Chaos)' : 'Ark Grid : Cœurs Étoile (Ordre & Chaos)', icon: '⭐', prio: 'med' },
         { key: 'arkGridAstrogems', name: isEn ? 'Ark Grid: Astrogems (Substats)' : 'Ark Grid : Astrogemmes (Sous-stats)', icon: '✨', prio: 'med' },
         { key: 'accessories', name: isEn ? 'T4 Accessories (Rolls & Lines)' : 'Accessoires T4 (Rolls & Lignes)', icon: '💎', prio: 'high' },
         { key: 'weapon', name: isEn ? 'T4 Weapon (Honing & Quality)' : 'Arme T4 (Affinage & Qualité)', icon: '🗡️', prio: 'med' },
