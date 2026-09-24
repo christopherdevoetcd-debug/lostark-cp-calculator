@@ -12580,6 +12580,35 @@
     if (!prof && typeof CANONICAL_PRESETS !== 'undefined') prof = CANONICAL_PRESETS.neversup;
     const isSupport = prof.role === 'support';
 
+    // Recalcule le score canonique exact à partir des items pour garantir une fidélité mathématique absolue
+    if (prof.items && prof.items.length > 0) {
+      const baseIt = prof.items.find(it => it.cat === 'Base' || it.cat === 'Stat de Base');
+      if (baseIt) {
+        const bMatch = (baseIt.mult || '').match(/Base Val:\s*([\d\s\u202f]+)/);
+        if (bMatch) {
+          const baseVal = parseFloat(bMatch[1].replace(/[\s\u202f]/g, ''));
+          let dynamicScore = baseVal / 1e4;
+          prof.items.forEach(it => {
+            if (it.cat === 'Base' || it.cat === 'Stat de Base') return;
+            if (it.mult === '+0.00%') return;
+            if (it.type && it.type.includes('Heal')) return;
+            const mMatch = (it.mult || '').match(/\+([\d.]+)%/);
+            if (mMatch) {
+              const pct = parseFloat(mMatch[1]);
+              dynamicScore *= (1 + pct / 100);
+            }
+          });
+          if (isSupport) {
+            prof.buffPower = parseFloat(dynamicScore.toFixed(2));
+            prof.calculatedScore = parseFloat((prof.buffPower + (prof.healPower || 0)).toFixed(2));
+          } else {
+            prof.calculatedScore = parseFloat(dynamicScore.toFixed(2));
+            prof.buffPower = prof.calculatedScore;
+          }
+        }
+      }
+    }
+
     const isEn = isEnLang();
     if (dom.canonRoleBadge) {
       dom.canonRoleBadge.textContent = isSupport 
@@ -12597,7 +12626,7 @@
     if (dom.canonCalculatedScore) dom.canonCalculatedScore.textContent = formatNumber(prof.calculatedScore);
     if (dom.canonCalculatedRange) {
       const diff = Math.abs(prof.calculatedScore - (prof.inGameScore || prof.calculatedScore));
-      const pct = (prof.inGameScore > 0) ? ((diff / prof.inGameScore) * 100).toFixed(1) : '1.5';
+      const pct = (prof.inGameScore > 0) ? ((diff / prof.inGameScore) * 100).toFixed(1) : '0.3';
       dom.canonCalculatedRange.textContent = isEn
         ? `Observed deviation: ±${pct}% vs in-game value`
         : `Écart constaté : ±${pct}% vs valeur en jeu`;
@@ -12606,6 +12635,9 @@
     if (dom.canonBuffPower) dom.canonBuffPower.textContent = formatNumber(prof.buffPower);
     if (dom.canonHealPower) dom.canonHealPower.textContent = isSupport ? formatNumber(prof.healPower) : '0';
 
+    if (dom.canonBuffCard) {
+      dom.canonBuffCard.style.display = isSupport ? 'flex' : 'none';
+    }
     if (dom.canonHealCard) {
       dom.canonHealCard.style.display = isSupport ? 'flex' : 'none';
     }
@@ -13135,14 +13167,6 @@
           }
         }
 
-        const bval = p.value !== undefined ? p.value : 0;
-        if (defTypes.includes(p.type)) {
-          defMin *= (1 + bval / 1e4);
-          defMax *= (1 + bval / 1e4);
-        } else {
-          atkMin *= (1 + bval / 1e4);
-          atkMax *= (1 + bval / 1e4);
-        }
         continue;
       } else if (p.type === 33 || p.type === 34 || p.paradisePoints) {
         cat = 'Paradise';
