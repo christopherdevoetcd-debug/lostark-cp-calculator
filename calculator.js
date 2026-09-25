@@ -15929,9 +15929,9 @@
       .replace(/Ordre Soleil/gi, 'Order Sun')
       .replace(/Ordre Lune/gi, 'Order Moon')
       .replace(/Chaos Étoile/gi, 'Chaos Star')
-      .replace(/Ancien\/Relique/gi, 'Ancient/Relic')
-      .replace(/Ancien/gi, 'Ancient')
-      .replace(/Relique/gi, 'Relic')
+      .replace(/\bAncien\/Relique\b/gi, 'Ancient/Relic')
+      .replace(/\bAncienne?s?\b/gi, 'Ancient')
+      .replace(/\bReliques?\b/gi, 'Relic')
       .replace(/Palier\s*(\d+)P/gi, 'Tier $1P')
       .replace(/Palier de Gemmes T4/gi, 'T4 Gem Tier')
       .replace(/Palier/gi, 'Tier')
@@ -16082,6 +16082,30 @@
     isAutoFetching: false
   };
 
+  const BIBLE_ENLIGHTENMENT_SPECS = {
+    // Paladin
+    2360010: 'Blessed Aura',
+    2360020: 'Judgment',
+    // Bard
+    2370010: 'Desperate Salvation',
+    2370020: 'True Courage',
+    // Artist
+    2440010: 'Full Bloom',
+    2440020: 'Recurrence',
+    // Slayer
+    2450010: 'Predator',
+    2450020: 'Punisher',
+    // Shadowhunter
+    2400010: 'Demonic Impulse',
+    2400020: 'Perfect Suppression',
+    // Souleater
+    2460010: 'Full Moon Harvester',
+    2460020: "Night's Edge",
+    // Breaker
+    2470010: 'Brawl King Storm',
+    2470020: 'Asura Destruction'
+  };
+
   function getCharacterSpecName(ch) {
     if (!ch) return 'Standard T4';
     const cKey = (ch.id || ch.name || '').toLowerCase().trim();
@@ -16091,8 +16115,19 @@
       return ch.spec;
     }
 
-    // 3. Extraction depuis les gravures du personnage (Bible ou In-Game)
     const raw = ch.rawProfile || (ch.loadout ? ch : null) || (typeof CANONICAL_PRESETS !== 'undefined' ? CANONICAL_PRESETS[cKey] : null);
+
+    // 2. Détection via Ark Passive (Enlightenment nodes)
+    const arkPass = ch.arkPassive || (raw && (raw.arkPassive || (raw.loadout && raw.loadout.arkPassive)));
+    if (arkPass && Array.isArray(arkPass.enlightenment)) {
+      for (const node of arkPass.enlightenment) {
+        if (node && BIBLE_ENLIGHTENMENT_SPECS[node.id]) {
+          return BIBLE_ENLIGHTENMENT_SPECS[node.id];
+        }
+      }
+    }
+
+    // 3. Extraction depuis les gravures du personnage (Bible ou In-Game)
     const engs = (ch.engravings && ch.engravings.length > 0) ? ch.engravings : (raw && raw.engravings);
     if (Array.isArray(engs) && engs.length > 0) {
       for (const e of engs) {
@@ -16104,8 +16139,19 @@
       }
     }
 
-    // 4. Déduction via le nom de la classe
+    // 4. Déduction DPS pour les classes support si le profil est explicitement configuré en DPS
     const normClass = normalizeClassName(ch.className || '').toLowerCase();
+    const isExplicitDps = (ch.role === 'dps') || 
+      (ch.battlePoint && ch.battlePoint.isSupport === false) || 
+      (raw && raw.battlePoint && raw.battlePoint.isSupport === false);
+
+    if (isExplicitDps) {
+      if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Judgment';
+      if (normClass.includes('bard')) return 'True Courage';
+      if (normClass.includes('artist')) return 'Recurrence';
+    }
+
+    // 5. Déduction via le nom de la classe
     for (const [cls, info] of Object.entries(CLASS_DEFAULT_SPECS)) {
       if (normClass.includes(cls)) {
         return info.default;
@@ -16559,16 +16605,16 @@
               : (canon && canon.weaponQuality !== undefined ? canon.weaponQuality : 90)));
 
     // Dégâts additionnels de qualité (ex: 29.21% pour Qualité 98)
-    const wQualVal = (qPart && qPart.value !== undefined)
+    const wQualVal = (qPart && qPart.value !== undefined && qPart.value > 0)
       ? (qPart.value / 100)
-      : (playerChar.weaponQualityValue !== undefined 
+      : (playerChar.weaponQualityValue !== undefined && playerChar.weaponQualityValue > 0
           ? (playerChar.weaponQualityValue / 100) 
-          : (playerChar.rawProfile && playerChar.rawProfile.weaponQualityValue !== undefined 
+          : (playerChar.rawProfile && playerChar.rawProfile.weaponQualityValue !== undefined && playerChar.rawProfile.weaponQualityValue > 0
               ? (playerChar.rawProfile.weaponQualityValue / 100) 
               : (10 + (wQual * 0.196))));
 
-    // Bonus d'Affinage Inven (+0.80% net CP par niveau jusqu'à +20, +1.05% au-delà)
-    const wHoningBonus = wLvl <= 20 ? (wLvl - 19) * 0.80 : 0.80 + (wLvl - 20) * 1.05;
+    // Bonus d'Affinage Inven (+1.20% net CP par niveau au-dessus du palier +12)
+    const wHoningBonus = Math.max(0, (wLvl - 12) * 1.20);
     const weaponBonusPct = Number((wQualVal + wHoningBonus).toFixed(2));
 
     // Armures T4 : MainStat + Vitalité/HP des 5 pièces d'armure (+1.37% DPS / +1.50% Supp par niveau moyen)
@@ -16807,10 +16853,9 @@
     let brPerkNames = [];
     let hasRealBr = false;
 
-    // A. Calcul précis via battlePoint.parts (types 19 & 20 pour DPS, 19 & 21 pour Support)
+    // A. Calcul précis via battlePoint.parts (types 19, 20 & 21 pour DPS et Support)
     if (Array.isArray(allBpParts) && allBpParts.length > 0) {
-      const brTypes = isSupport ? [19, 21] : [19, 20];
-      const brParts = allBpParts.filter(p => brTypes.includes(p.type));
+      const brParts = allBpParts.filter(p => [19, 20, 21].includes(p.type) && (('value' in p ? p.value : p.min) || 0) > 0);
       if (brParts.length > 0) {
         let t = 1;
         for (const p of brParts) {
@@ -17158,8 +17203,9 @@
       { name: 'Lavieenrosee', region: 'CE', ilvl: 1760.00, cp: 4631 }
     ],
     'paladin': [
-      { name: 'Siwilpal', region: 'CE', ilvl: 1770.00, cp: 4699 },
-      { name: 'Inventum', region: 'CE', ilvl: 1759.17, cp: 4175 }
+      { name: 'Siwilpal', region: 'CE', ilvl: 1770.00, cp: 4751 },
+      { name: 'Deilras', region: 'CE', ilvl: 1770.00, cp: 4379 },
+      { name: 'Denji', region: 'CE', ilvl: 1800.00, cp: 8003 }
     ],
     'slayer': [
       { name: 'Cicilianay', region: 'CE', ilvl: 1780.83, cp: 6029 },
@@ -20923,8 +20969,10 @@
       } catch (e) {}
     }
 
-    const normClass = normalizeClassName(header.class || parsed.className || '');
-    const isSupport = ['paladin', 'bard', 'artist'].some(s => normClass.toLowerCase().includes(s));
+    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => normClass.toLowerCase().includes(s));
+    const isSupport = (parsed.battlePoint && parsed.battlePoint.isSupport !== undefined)
+      ? parsed.battlePoint.isSupport
+      : (preferredRole === 'support' && isSupportClass);
     const liveIlvl = header.ilvl ? Number(header.ilvl.toFixed(2)) : (parsed.ilvl || 1740);
     const liveCp = parseFloat((header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000).toFixed(2));
     const displayName = capitalize(header.name || cleanName);
