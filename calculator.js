@@ -20268,8 +20268,25 @@
     const pId = (char && (char.id || char.name || '')).toLowerCase();
     const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
 
+    function resolveCoreSpecificName(id, rawLabel) {
+      if (id && typeof BIBLE_CORES !== 'undefined' && BIBLE_CORES[id]) {
+        const full = BIBLE_CORES[id];
+        const m = full.match(/^([A-Za-z]+)\s+([A-Za-z]+)\s+Core:\s*(.+)$/i);
+        if (m && m[3]) return m[3].trim();
+        return full;
+      }
+      if (rawLabel) {
+        const m1 = rawLabel.match(/^([^(\n]+?)\s*\(\d+P\s*\|\s*(?:Order|Chaos)/i);
+        if (m1 && m1[1]) return m1[1].trim();
+        const m2 = rawLabel.match(/(?:Order|Chaos)\s*(?:Sun|Moon|Star)(?:\s*Core)?\s*:\s*([^(\n]+)/i);
+        if (m2 && m2[1]) return m2[1].trim();
+      }
+      return '';
+    }
+
     let order = {
       name: isEn ? `Order ${groupLabel}` : `Cœur d'Ordre ${groupLabel}`,
+      specificName: '',
       tier: 10,
       points: 10,
       bonusPct: 0,
@@ -20279,6 +20296,7 @@
 
     let chaos = {
       name: isEn ? `Chaos ${groupLabel}` : `Cœur de Chaos ${groupLabel}`,
+      specificName: '',
       tier: 10,
       points: 10,
       bonusPct: 0,
@@ -20300,21 +20318,65 @@
     if (parts29.length > 0) {
       const oPart = parts29.find(p => (p.id || '').toString().startsWith(prefixOrder));
       if (oPart) {
+        order.id = oPart.id;
         order.points = oPart.points || 17;
         order.tier = oPart.points || 17;
         order.bonusPct = Number(((oPart.value || 0) / 100).toFixed(2));
         order.grade = ((oPart.id || 0) % 10 === 6) ? 'Ancient' : 'Relic';
+        const sName = resolveCoreSpecificName(oPart.id);
+        if (sName) {
+          order.specificName = sName;
+          order.effectName = sName;
+        }
       }
       const cPart = parts29.find(p => (p.id || '').toString().startsWith(prefixChaos));
       if (cPart) {
+        chaos.id = cPart.id;
         chaos.points = cPart.points || 17;
         chaos.tier = cPart.points || 17;
         chaos.bonusPct = Number(((cPart.value || 0) / 100).toFixed(2));
         chaos.grade = ((cPart.id || 0) % 10 === 6) ? 'Ancient' : 'Relic';
+        const sName = resolveCoreSpecificName(cPart.id);
+        if (sName) {
+          chaos.specificName = sName;
+          chaos.effectName = sName;
+        }
       }
     }
 
-    // 2. Try items fallback (from CANONICAL_PRESETS or parsed items)
+    // 2. Try raw arkGridCores if specificName was not found
+    const rawCores = char.arkGridCores
+      || (char.rawProfile && (char.rawProfile.arkGridCores || (char.rawProfile.loadout && char.rawProfile.loadout.arkGridCores)))
+      || (char.loadout && char.loadout.arkGridCores)
+      || (canon && (canon.arkGridCores || (canon.rawProfile && canon.rawProfile.arkGridCores)))
+      || [];
+
+    if (Array.isArray(rawCores) && rawCores.length > 0) {
+      if (!order.specificName) {
+        const oCore = rawCores.find(c => (c.id || '').toString().startsWith(prefixOrder));
+        if (oCore) {
+          order.id = oCore.id;
+          const sName = resolveCoreSpecificName(oCore.id);
+          if (sName) {
+            order.specificName = sName;
+            order.effectName = sName;
+          }
+        }
+      }
+      if (!chaos.specificName) {
+        const cCore = rawCores.find(c => (c.id || '').toString().startsWith(prefixChaos));
+        if (cCore) {
+          chaos.id = cCore.id;
+          const sName = resolveCoreSpecificName(cCore.id);
+          if (sName) {
+            chaos.specificName = sName;
+            chaos.effectName = sName;
+          }
+        }
+      }
+    }
+
+    // 3. Try items fallback (from CANONICAL_PRESETS or parsed items)
     const items = (char.rawProfile && char.rawProfile.items)
       || char.items
       || (char.loadout && char.loadout.items)
@@ -20333,12 +20395,23 @@
         const isOrderMatch = (lbl.toLowerCase().includes('order ' + groupLabel.toLowerCase()) || lbl.toLowerCase().includes('ordre ' + groupLabel.toLowerCase()) || lbl.toLowerCase().includes('order ' + normGroup) || lbl.toLowerCase().includes('ordre ' + normGroup));
         const isChaosMatch = (lbl.toLowerCase().includes('chaos ' + groupLabel.toLowerCase()) || lbl.toLowerCase().includes('chaos ' + normGroup));
 
+        const extractedName = resolveCoreSpecificName(null, lbl);
+
         if (isOrderMatch) {
           if (!order.bonusPct || order.bonusPct === 0) {
             order.bonusPct = multVal;
             order.tier = pts;
             order.points = pts;
-            order.effectName = lbl.split('(')[0].trim() || order.effectName;
+          }
+          if (extractedName && !order.specificName) {
+            order.specificName = extractedName;
+            order.effectName = extractedName;
+          } else if (!order.specificName && lbl) {
+            const rawClean = lbl.split('(')[0].trim();
+            if (rawClean && !rawClean.toLowerCase().includes('cœur') && !rawClean.toLowerCase().includes('core')) {
+              order.specificName = rawClean;
+              order.effectName = rawClean;
+            }
           }
         }
         if (isChaosMatch) {
@@ -20346,13 +20419,57 @@
             chaos.bonusPct = multVal;
             chaos.tier = pts;
             chaos.points = pts;
-            chaos.effectName = lbl.split('(')[0].trim() || chaos.effectName;
+          }
+          if (extractedName && !chaos.specificName) {
+            chaos.specificName = extractedName;
+            chaos.effectName = extractedName;
+          } else if (!chaos.specificName && lbl) {
+            const rawClean = lbl.split('(')[0].trim();
+            if (rawClean && !rawClean.toLowerCase().includes('cœur') && !rawClean.toLowerCase().includes('core')) {
+              chaos.specificName = rawClean;
+              chaos.effectName = rawClean;
+            }
           }
         }
       });
     }
 
-    // 3. Fallback from extractPlayerSystems if individual cores were 0
+    // 4. Fallback defaults per class & role if specificName is still missing
+    const classNameNorm = (char.className || char.class || (char.loadout && char.loadout.classId) || '').toLowerCase();
+    const isSupportRole = char.role === 'support' || ['bard', 'paladin', 'artist', 'valkyrie'].some(s => classNameNorm.includes(s));
+
+    if (!order.specificName) {
+      if (classNameNorm.includes('bard')) {
+        order.specificName = normGroup === 'sun' ? 'Brave Accent' : (normGroup === 'moon' ? 'Brave Pulse' : 'Buckshot Acceleration');
+      } else if (classNameNorm.includes('paladin')) {
+        order.specificName = normGroup === 'sun' ? 'Sacred Strike' : (normGroup === 'moon' ? 'Hour of Punishment' : 'Punishing Sword');
+      } else if (classNameNorm.includes('artist')) {
+        order.specificName = normGroup === 'sun' ? "Sun's Embrace" : (normGroup === 'moon' ? "Moon's Veil" : 'Star Splendor');
+      } else if (classNameNorm.includes('breaker') || classNameNorm.includes('asura')) {
+        order.specificName = normGroup === 'sun' ? 'Shadow Fist' : (normGroup === 'moon' ? 'Asura War' : 'Asura');
+      } else if (classNameNorm.includes('slayer')) {
+        order.specificName = normGroup === 'sun' ? 'Guillotine' : (normGroup === 'moon' ? 'Blade of Judgment' : 'Execution');
+      } else if (isSupportRole) {
+        order.specificName = normGroup === 'sun' ? 'Brave Accent' : (normGroup === 'moon' ? 'Brave Pulse' : 'Buckshot Acceleration');
+      } else {
+        order.specificName = normGroup === 'sun' ? 'Singularity' : (normGroup === 'moon' ? 'Absolute Control' : 'Crushing Storm');
+      }
+      order.effectName = order.specificName;
+    }
+
+    if (!chaos.specificName) {
+      if (isSupportRole) {
+        chaos.specificName = normGroup === 'sun' ? 'Fortitude Enhancement' : (normGroup === 'moon' ? 'Echoing Brand' : 'Weapon');
+      } else {
+        chaos.specificName = normGroup === 'sun' ? 'Flashy Attack' : (normGroup === 'moon' ? 'Smoldering Strike' : 'Attack');
+      }
+      chaos.effectName = chaos.specificName;
+    }
+
+    order.name = order.specificName || (isEn ? `Order ${groupLabel}` : `Cœur d'Ordre ${groupLabel}`);
+    chaos.name = chaos.specificName || (isEn ? `Chaos ${groupLabel}` : `Cœur de Chaos ${groupLabel}`);
+
+    // 5. Fallback from extractPlayerSystems if individual cores were 0
     const sysKey = 'arkGrid' + capitalize(normGroup);
     const sys = extractPlayerSystems(char, isEn);
     const rawSys = sys[sysKey] || { bonusPct: 0, label: '' };
@@ -20455,13 +20572,13 @@
             </div>
             <div class="acc-lines-list">
               <div class="acc-line-badge high">
-                <span>☀️ <strong>${escapeHtml(p.order.name)}</strong> (${p.order.grade} ${p.order.points}P)</span>
+                <span>☀️ <strong>${escapeHtml(p.order.specificName || p.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + p.groupLabel : 'Ordre ' + p.groupLabel} • ${p.order.grade} ${p.order.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${p.order.bonusPct.toFixed(2)}%</span>
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span>🌀 <strong>${escapeHtml(p.chaos.name)}</strong> (${p.chaos.grade} ${p.chaos.points}P)</span>
+                <span>🌀 <strong>${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + p.groupLabel : 'Chaos ' + p.groupLabel} • ${p.chaos.grade} ${p.chaos.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${p.chaos.bonusPct.toFixed(2)}%</span>
                 </div>
@@ -20488,14 +20605,14 @@
             </div>
             <div class="acc-lines-list">
               <div class="acc-line-badge high">
-                <span>☀️ <strong>${escapeHtml(t.order.name)}</strong> (${t.order.grade} ${t.order.points}P)</span>
+                <span>☀️ <strong>${escapeHtml(t.order.specificName || t.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + t.groupLabel : 'Ordre ' + t.groupLabel} • ${t.order.grade} ${t.order.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${t.order.bonusPct.toFixed(2)}%</span>
                   ${deltaOrder > 0.05 ? `<span class="line-cp-pill">+${deltaOrder.toFixed(2)}%</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span>🌀 <strong>${escapeHtml(t.chaos.name)}</strong> (${t.chaos.grade} ${t.chaos.points}P)</span>
+                <span>🌀 <strong>${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + t.groupLabel : 'Chaos ' + t.groupLabel} • ${t.chaos.grade} ${t.chaos.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${t.chaos.bonusPct.toFixed(2)}%</span>
                   ${deltaChaos > 0.05 ? `<span class="line-cp-pill">+${deltaChaos.toFixed(2)}%</span>` : ''}
@@ -20529,15 +20646,15 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>☀️ ${escapeHtml(p.order.name)}</strong> (${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'})</td>
-                <td>${p.order.grade} Palier ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</td>
-                <td>${t.order.grade} Palier ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</td>
+                <td><strong>☀️ ${isEn ? `Order ${p.groupLabel} Core` : `Cœur d'Ordre ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'}</span></td>
+                <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.order.specificName || p.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.order.grade} ${isEn ? 'Tier' : 'Palier'} ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong style="color:#34d399; font-size:12.5px;">${escapeHtml(t.order.specificName || t.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.order.grade} ${isEn ? 'Tier' : 'Palier'} ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaOrder >= 0 ? `+${deltaOrder.toFixed(2)}%` : `${deltaOrder.toFixed(2)}%`}</td>
               </tr>
               <tr>
-                <td><strong>🌀 ${escapeHtml(p.chaos.name)}</strong> (${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'})</td>
-                <td>${p.chaos.grade} Palier ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</td>
-                <td>${t.chaos.grade} Palier ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</td>
+                <td><strong>🌀 ${isEn ? `Chaos ${p.groupLabel} Core` : `Cœur de Chaos ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'}</span></td>
+                <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong style="color:#34d399; font-size:12.5px;">${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaChaos >= 0 ? `+${deltaChaos.toFixed(2)}%` : `${deltaChaos.toFixed(2)}%`}</td>
               </tr>
               <tr>
@@ -20565,10 +20682,10 @@
               ${isEn
                 ? `1. <strong>Core Point Tiers (20P vs ${p.highestTier}P)</strong>: Reaching <strong>Tier 20P</strong> requires 4 socketed Astrogems with +5 resonance points each (4 &times; 5 = 20 pts). Each tier jump triggers a major milestone multiplier.<br>
                    2. <strong>Chaos Core Synergy</strong>: The Chaos Core serves as a direct cross-multiplier for your Order Core: <code>(1 + Order) &times; (1 + Chaos) &minus; 1</code>. Improving your Chaos Core from ${p.chaos.points}P to 20P yields a massive leap in effective CP.<br>
-                   3. <strong>Optimization Tip</strong>: Prioritize cutting and socketing 5-point Astrogems on your lowest core to bridge the <strong>+${cpImpact} CP</strong> gap at optimal gold efficiency.`
+                   3. <strong>Optimization Tip</strong>: Prioritize cutting and socketing 5-point Astrogems on your lowest core (${p.chaos.points < p.order.points ? (p.chaos.specificName ? `Chaos: ${p.chaos.specificName}` : 'Chaos') : (p.order.specificName ? `Order: ${p.order.specificName}` : 'Order')}) to bridge the <strong>+${cpImpact} CP</strong> gap at optimal gold efficiency.`
                 : `1. <strong>Paliers de Points de Cœur (20P vs ${p.highestTier}P)</strong> : Pour débloquer le <strong>Palier 20P</strong>, il est nécessaire de sertir 4 astrogemmes taillées apportant 5 points de résonance chacune (4 &times; 5 = 20 pts). Chaque palier franchi déclenche un multiplicateur de dégâts/buff accru.<br>
                    2. <strong>Multiplication Croisée Ordre &times; Chaos</strong> : Le Cœur de Chaos multiplie directement le bonus du Cœur d'Ordre : <code>(1 + Ordre) &times; (1 + Chaos) &minus; 1</code>. Faire monter le Cœur de Chaos de ${p.chaos.points}P à 20P génère un gain immédiat de puissance.<br>
-                   3. <strong>Conseil d'Optimisation</strong> : Priorisez le taillage d'astrogemmes à 5 points de résonance sur votre cœur le plus bas (${p.chaos.points < p.order.points ? 'Chaos' : 'Ordre'}) pour combler rapidement l'écart de <strong>+${cpImpact} CP</strong>.`
+                   3. <strong>Conseil d'Optimisation</strong> : Priorisez le taillage d'astrogemmes à 5 points de résonance sur votre cœur le plus bas (${p.chaos.points < p.order.points ? (p.chaos.specificName ? `Chaos : ${p.chaos.specificName}` : 'Chaos') : (p.order.specificName ? `Ordre : ${p.order.specificName}` : 'Ordre')}) pour combler rapidement l'écart de <strong>+${cpImpact} CP</strong>.`
               }
             </div>
           </div>
