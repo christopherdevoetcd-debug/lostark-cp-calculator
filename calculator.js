@@ -107,7 +107,10 @@
     aeromancer: 'Aeromancer',
     weather_artist: 'Aeromancer',
     weatherartist: 'Aeromancer',
-    valkyrie: 'Valkyrie'
+    valkyrie: 'Valkyrie',
+    holyknight_female: 'Valkyrie',
+    'holyknight female': 'Valkyrie',
+    holyknightfemale: 'Valkyrie'
   };
 
   function normalizeClassName(raw) {
@@ -116,6 +119,7 @@
     if (CLASS_NAME_MAP[clean]) return CLASS_NAME_MAP[clean];
     const stripped = clean.replace(/[\s\-_]/g, '');
     if (CLASS_NAME_MAP[stripped]) return CLASS_NAME_MAP[stripped];
+    if (stripped.includes('holyknightfemale') || stripped.includes('valkyrie')) return 'Valkyrie';
     if (stripped.includes('infightermale') || stripped.includes('breaker') || stripped.includes('heavyinfighter')) return 'Breaker';
     if (stripped.includes('infighterfemale') || stripped === 'infighter' || stripped.includes('scrapper')) return 'Scrapper';
     if (stripped.includes('holyknight') || stripped.includes('paladin')) return 'Paladin';
@@ -142,6 +146,7 @@
       holyknight: 'paladin.png',
       slayer: 'slayer.png',
       valkyrie: 'valkyrie.png',
+      holyknightfemale: 'valkyrie.png',
       warriormale: 'warrior_male.png',
       femalewarrior: 'female_warrior.png',
 
@@ -2622,6 +2627,7 @@
     if (raw.includes('reaper')) return 'reaper';
     if (raw.includes('bard') || raw.includes('jigokuushoujo')) return 'bard';
     if (raw.includes('artist')) return 'artist';
+    if (raw.includes('valkyrie') || raw.includes('holyknight_female') || raw.includes('holyknightfemale')) return 'valkyrie';
     if (raw.includes('paladin') || raw.includes('holyknight') || raw.includes('neversup')) return 'paladin';
     return 'shadowhunter';
   }
@@ -2662,6 +2668,18 @@
       baseCdWog: 24,
       baseCdBrand: 8,
       baseCdHp: 26
+    },
+    valkyrie: {
+      s1: { name: 'Bénédiction Lumineuse (Light Blessing)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 28s', tag: '⚠️ Bottleneck AP #1' },
+      s2: { name: 'Épée de Justice (Sword of Justice)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s', tag: 'Buff PA #2' },
+      s3: { name: 'Châtiment Sacré (Holy Smite)', sub: 'Brand Power (+10% dégâts subis) • Durée : 8.0s • Base CD : 8s', tag: 'Marque Alliés' },
+      s4: { name: 'Sanctuaire de Grâce (Grace Sanctuary)', sub: 'Bouclier Réactif & Génération de Foi', tag: 'Bouclier & Jauge de Foi' },
+      advisorTitle: '💡 Recommandation Gemmes Support Valkyrie (Knight of Light) :',
+      advisorText: 'Priorité absolue à <em>Bénédiction Lumineuse</em> Niv. 8/9 pour sécuriser le temps de recharge et garantir 100% d\'uptime de buff PA allié.',
+      baseCdHb: 28,
+      baseCdWog: 22,
+      baseCdBrand: 8,
+      baseCdHp: 28
     }
   };
 
@@ -2701,6 +2719,12 @@
       s2: { name: 'Moisson Lumineuse (Glowing Brand)', sub: 'Compétence d\'Ombre Majeure #2', tag: '⚡ Burst #2' },
       s3: { name: 'Vortex de Danse (Dance of Fury)', sub: 'Attaque Finale de Burst', tag: '⚔️ Burst #3' },
       s4: { name: 'Ombre de Cauchemar (Nightmare)', sub: 'Téléportation & Maintien de Synergie', tag: '🔄 Cooldown Pivot' }
+    },
+    valkyrie: {
+      s1: { name: 'Épée de Jugement (Judgment Sword)', sub: 'Top Dégâts Libératrice #1 • ~35% du DPS', tag: '🔥 Burst #1' },
+      s2: { name: 'Rayon Céleste (Celestial Beam)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: '⚡ Burst #2' },
+      s3: { name: 'Lame d\'Espoir (Blade of Hope)', sub: 'Finition de Burst • ~20% du DPS', tag: '⚔️ Burst #3' },
+      s4: { name: 'Élan Sacré (Holy Rush)', sub: 'Mobilité & Réduction CD de Rotation', tag: '🔄 Cooldown Pivot' }
     }
   };
   DPS_CLASS_SKILLS.demonic = DPS_CLASS_SKILLS.shadowhunter;
@@ -4398,7 +4422,7 @@
       }
       const l = (raw.loadouts && (raw.loadouts.find(x => x.classification === 'raid_merged') || raw.loadouts[0])) || raw;
       if (l && Array.isArray(l.gems) && l.gems.length > 0) {
-        const isSupport = charObj.role === 'support' || ['holyknight', 'bard', 'artist'].includes(l.classId);
+        const isSupport = charObj.role === 'support' || (charObj.role !== 'dps' && ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female'].includes(l.classId));
         return l.gems.map(g => {
           if (g.id) {
             const idStr = g.id.toString();
@@ -12827,7 +12851,7 @@
 
     const isSupport = bp.isSupport !== undefined
       ? bp.isSupport
-      : (preferredRole === 'support' || ['holyknight', 'bard', 'artist'].includes(loadout.classId));
+      : (preferredRole === 'support' || ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female'].includes(loadout.classId));
 
     const parts = bp.parts;
     const atkPart = parts.find(p => p.type === 1);
@@ -12877,7 +12901,7 @@
         if (!handledBracelet) {
           handledBracelet = true;
           if (brItem && brItem.data && brItem.data.stats && brItem.data.stats.length) {
-            const isWarrior = ['holyknight', 'berserker', 'destroyer', 'warlord', 'slayer'].includes(loadout.classId);
+            const isWarrior = ['holyknight', 'berserker', 'destroyer', 'warlord', 'slayer', 'valkyrie', 'holyknight_female'].includes(loadout.classId);
             const isHunter = ['devilhunter', 'blaster', 'hawkeye', 'gunslinger'].includes(loadout.classId);
             const isAssassin = ['blade', 'demonic', 'reaper', 'souleater', 'soul_eater'].includes(loadout.classId);
             const isMage = ['bard', 'arcana', 'summoner', 'sorceress'].includes(loadout.classId);
@@ -15080,7 +15104,7 @@
     // Pré-chargement en tâche de fond des pairs LIVE de la même classe pour ce personnage
     try {
       const normClass = normalizeClassName(c.className || '').toLowerCase();
-      const isSupportClass = ['paladin', 'bard', 'artist'].some(s => normClass.includes(s));
+      const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.includes(s));
       const pRole = c.role || (isSupportClass ? 'support' : 'dps');
       const peers = VERIFIED_LIVE_PEERS[normClass] || [];
       const peersToFetch = peers.filter(p => !p.role || p.role === pRole);
@@ -15790,7 +15814,8 @@
     glaivier: { default: "Pinnacle", alt: "Control", keys: ["pinnacle", "control", "glaivier", "lancemaster"] },
     striker: { default: "Deathblow", alt: "Esoteric Flurry", keys: ["deathblow", "flurry", "striker"] },
     soulfist: { default: "Energy Overflow", alt: "Robust Spirit", keys: ["energy overflow", "robust", "soulfist", "soulmaster"] },
-    deadeye: { default: "Enhanced Weapon", alt: "Pistoleer", keys: ["enhanced weapon", "pistoleer", "deadeye", "devilhunter"] }
+    deadeye: { default: "Enhanced Weapon", alt: "Pistoleer", keys: ["enhanced weapon", "pistoleer", "deadeye", "devilhunter"] },
+    valkyrie: { default: "Knight of Light", alt: "Liberator", keys: ["knight of light", "liberator", "valkyrie", "holyknight_female", "holyknightfemale"] }
   };
 
   function isEnglishLang() {
@@ -15873,7 +15898,11 @@
       'heure de la chasse': 'Time to Hunt',
       'dague précise': 'Precise Dagger',
       'pinacle': 'Pinnacle',
-      'contrôle': 'Control'
+      'contrôle': 'Control',
+      'chevalière de lumière': 'Knight of Light',
+      'chevalier de lumière': 'Knight of Light',
+      'libératrice': 'Liberator',
+      'libérateur': 'Liberator'
     };
     if (DIRECT_MAP[clean]) return DIRECT_MAP[clean];
     return name;
@@ -16082,7 +16111,9 @@
       .replace(/\bAura Bénie\b/g, 'Blessed Aura')
       .replace(/\bAura Sacrée\b/g, 'Blessed Aura')
       .replace(/\bSalut Désespéré\b/g, 'Desperate Salvation')
-      .replace(/\bPleine Floraison\b/g, 'Full Bloom');
+      .replace(/\bPleine Floraison\b/g, 'Full Bloom')
+      .replace(/\bChevalière de Lumière\b/gi, 'Knight of Light')
+      .replace(/\bLibératrice\b/gi, 'Liberator');
 
     return res;
   }
@@ -16116,7 +16147,10 @@
     2460020: "Night's Edge",
     // Breaker
     2470010: 'Brawl King Storm',
-    2470020: 'Asura Destruction'
+    2470020: 'Asura Destruction',
+    // Valkyrie
+    2480100: 'Knight of Light',
+    2480200: 'Liberator'
   };
 
   function getCharacterSpecName(ch) {
@@ -16162,6 +16196,7 @@
       if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Judgment';
       if (normClass.includes('bard')) return 'True Courage';
       if (normClass.includes('artist')) return 'Recurrence';
+      if (normClass.includes('valkyrie')) return 'Liberator';
     }
 
     // 5. Déduction via le nom de la classe
@@ -16184,7 +16219,7 @@
           ? playerChar.gemParts
           : null);
 
-    const isSupport = playerChar.role === 'support' || (playerChar.className && ['Paladin', 'Bard', 'Artist'].includes(playerChar.className));
+    const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && playerChar.className && ['Paladin', 'Bard', 'Artist', 'Valkyrie'].includes(playerChar.className));
 
     if (parts && parts.length > 0) {
       let c10 = 0, c9 = 0, c8 = 0, c7 = 0;
@@ -16578,7 +16613,7 @@
   function extractPlayerSystems(playerChar, isEn = false) {
     if (!playerChar) return {};
     const normClass = normalizeClassName(playerChar.className || '').toLowerCase();
-    const isSupport = playerChar.role === 'support' || ['paladin', 'bard', 'artist', 'holyknight'].some(s => normClass.includes(s));
+    const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && ['paladin', 'bard', 'artist', 'holyknight', 'valkyrie'].some(s => normClass.includes(s)));
     const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
     const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
 
@@ -16728,6 +16763,8 @@
         engLabel = (isEn ? "Desperate Salvation 3, 5 Full T4 Relic Engravings" : "Salut Désespéré 3, 5 Gravures Reliques T4") + stoneNotice;
       } else if (normClass.includes('artist')) {
         engLabel = (isEn ? "Full Bloom 3, 5 Full T4 Relic Engravings" : "Pleine Floraison 3, 5 Gravures Reliques T4") + stoneNotice;
+      } else if (normClass.includes('valkyrie')) {
+        engLabel = (isEn ? "Knight of Light 3, 5 Full T4 Relic Engravings" : "Chevalière de Lumière 3, 5 Gravures Reliques T4") + stoneNotice;
       } else {
         engLabel = (isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`) + stoneNotice;
       }
@@ -16988,7 +17025,7 @@
     }
 
     const ilvl = target.ilvl || 1750;
-    const isSupport = target.role === 'support' || ['paladin', 'bard', 'artist'].some(s => (target.className || '').toLowerCase().includes(s));
+    const isSupport = target.role === 'support' || (target.role !== 'dps' && ['paladin', 'bard', 'artist', 'valkyrie'].some(s => (target.className || '').toLowerCase().includes(s)));
 
     // Garde-fou 1 : Gravures Reliques T4 (Support: ~125-135%, DPS: ~101-105%)
     if (isSupport) {
@@ -17350,12 +17387,24 @@
       { name: 'Sozaî', region: 'CE', ilvl: 1758.33, cp: 4292, role: 'dps', spec: 'Lone Knight' },
       { name: 'Kanonenlanzer', region: 'CE', ilvl: 1758.33, cp: 4879, role: 'dps', spec: 'Combat Readiness' },
       { name: 'Kotkalancer', region: 'CE', ilvl: 1760.83, cp: 5601, role: 'dps', spec: 'Lone Knight' }
+    ],
+    'valkyrie': [
+      // Spécialisation Support (Knight of Light)
+      { name: 'Valkraide', region: 'CE', ilvl: 1770.00, cp: 4325, role: 'support', spec: 'Knight of Light' },
+      { name: 'Âzelia', region: 'CE', ilvl: 1766.67, cp: 4261, role: 'support', spec: 'Knight of Light' },
+      { name: 'Pallagina', region: 'CE', ilvl: 1770.00, cp: 4410, role: 'support', spec: 'Knight of Light' },
+      { name: 'Babynessi', region: 'CE', ilvl: 1771.67, cp: 5015, role: 'support', spec: 'Knight of Light' },
+      // Spécialisation DPS (Liberator)
+      { name: 'Trivalkyrie', region: 'CE', ilvl: 1770.83, cp: 4865, role: 'dps', spec: 'Liberator' },
+      { name: 'Dingeladina', region: 'CE', ilvl: 1771.67, cp: 5272, role: 'dps', spec: 'Liberator' },
+      { name: 'Nephílía', region: 'CE', ilvl: 1770.83, cp: 5369, role: 'dps', spec: 'Liberator' },
+      { name: 'Lynkyrie', region: 'CE', ilvl: 1787.50, cp: 6686, role: 'dps', spec: 'Liberator' }
     ]
   };
 
   function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '', playerCp = 0, failedAttempts = null, preferredRole = null) {
     const norm = normalizeClassName(className || '').toLowerCase();
-    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => norm.includes(s));
+    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => norm.includes(s));
     const targetRole = preferredRole || (isSupportClass ? 'support' : 'dps');
     const peers = VERIFIED_LIVE_PEERS[norm] || [];
     const validPeers = peers.filter(p => {
@@ -17389,7 +17438,7 @@
     if (!playerChar) return null;
     const charClassName = playerChar.className || playerChar.characterClass || playerChar.class || '';
     const normClass = normalizeClassName(charClassName) || 'Soulfist';
-    const isSupport = playerChar.role === 'support' || ['Paladin', 'Bard', 'Artist'].some(s => normClass.toLowerCase().includes(s.toLowerCase()));
+    const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && ['Paladin', 'Bard', 'Artist', 'Valkyrie'].some(s => normClass.toLowerCase().includes(s.toLowerCase())));
     const pCp = playerChar.cp || playerChar.combatPower || 3500;
     const pIlvl = playerChar.ilvl || 1740;
     const spec = getCharacterSpecName(playerChar);
@@ -17544,7 +17593,7 @@
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
-    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
     const pRole = playerChar.role || (isSupportClass ? 'support' : 'dps');
     const list = [];
 
@@ -17552,7 +17601,7 @@
     const searchedList = benchmarkState.searchedTargets || [];
     searchedList.forEach(s => {
       const sClass = normalizeClassName(s.className || s.characterClass || s.class || '').toLowerCase();
-      const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       if (s && s.isLive && sClass === pClass && sRole === pRole) {
         list.push(s);
       }
@@ -17586,14 +17635,14 @@
     const pCp = playerChar.cp || playerChar.combatPower || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
-    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
     const pRole = playerChar.role || (isSupportClass ? 'support' : 'dps');
 
     // Filtre strict : même classe et même rôle obligatoires (zéro comparaison Support vs DPS !)
     const sameClass = avail.filter(b => {
       const bClass = normalizeClassName(b.className || b.characterClass || b.class || '').toLowerCase();
       if (bClass !== pClass) return false;
-      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     });
     if (sameClass.length === 0) return null;
@@ -17645,7 +17694,7 @@
   function convertCharToBenchmarkFormat(c, isEn) {
     if (!c) return null;
     const normClass = normalizeClassName(c.className || '') || 'Breaker';
-    const isSupp = ['paladin', 'bard', 'artist'].some(s => normClass.toLowerCase().includes(s));
+    const isSupp = c.role === 'support' || (c.role !== 'dps' && ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.toLowerCase().includes(s)));
     const systems = extractPlayerSystems(c, isEn);
     return {
       id: `roster_${(c.id || c.name || 'char').toLowerCase()}`,
@@ -19257,7 +19306,7 @@
       || [];
 
     const t26 = allBpParts.find(p => p.type === 26 || p.total);
-    const role = c.role || (canon && canon.role) || (['paladin', 'bard', 'artist'].some(s => (c.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
+    const role = c.role || (canon && canon.role) || (['paladin', 'bard', 'artist', 'valkyrie'].some(s => (c.className || '').toLowerCase().includes(s)) ? 'support' : 'dps');
     const spec = (c.spec || (canon && canon.spec) || '').toLowerCase();
     const ilvl = c.ilvl || (canon && canon.ilvl) || 1750;
 
@@ -20155,7 +20204,7 @@
     }
 
     const pClass = normalizeClassName(player.className || '').toLowerCase();
-    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
     const pRole = player.role || (isSupportClass ? 'support' : 'dps');
     const avail = getAvailableBenchmarks(player);
 
@@ -20166,7 +20215,7 @@
     // Si la cible en cache ou sélectionnée n'est pas de la même classe ou du même rôle, on la rejette obligatoirement
     if (target) {
       const tClass = normalizeClassName(target.className || '').toLowerCase();
-      const tRole = target.role || (isSupportClass ? (target.spec === 'Blessed Aura' || target.spec === 'Desperate Salvation' || target.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      const tRole = target.role || (isSupportClass ? (target.spec === 'Blessed Aura' || target.spec === 'Desperate Salvation' || target.spec === 'Full Bloom' || target.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       if (tClass !== pClass || tRole !== pRole) {
         target = null;
         benchmarkState.customTarget = null;
@@ -20180,7 +20229,7 @@
         target = avail.find(b => {
           if (b.id !== benchmarkState.currentTargetId) return false;
           if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-          const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+          const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
           return bRole === pRole;
         });
         // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE et MÊME RÔLE
@@ -20188,7 +20237,7 @@
           target = (benchmarkState.searchedTargets || []).find(b => {
             if (b.id !== benchmarkState.currentTargetId) return false;
             if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-            const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+            const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
             return bRole === pRole;
           });
         }
@@ -20199,12 +20248,12 @@
     const hasLivePeer = avail.some(b => {
       if (!b.isLive) return false;
       if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     }) || (benchmarkState.searchedTargets || []).some(b => {
       if (!b || !b.isLive) return false;
       if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     });
 
@@ -20285,7 +20334,7 @@
         const searchedList = (benchmarkState.searchedTargets || []).filter(s => {
           if (!s || !s.isLive) return false;
           if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
-          const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+          const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
           return sRole === pRole;
         });
         if (searchedList.length > 0) {
@@ -20339,11 +20388,11 @@
       const searchedList = (benchmarkState.searchedTargets || []).filter(s => {
         if (!s || !s.isLive) return false;
         if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
-        const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+        const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
         return sRole === pRole;
       });
       if (benchmarkState.customTarget && normalizeClassName(benchmarkState.customTarget.className || '').toLowerCase() === pClass && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
-        const ctRole = benchmarkState.customTarget.role || (isSupportClass ? (benchmarkState.customTarget.spec === 'Blessed Aura' || benchmarkState.customTarget.spec === 'Desperate Salvation' || benchmarkState.customTarget.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+        const ctRole = benchmarkState.customTarget.role || (isSupportClass ? (benchmarkState.customTarget.spec === 'Blessed Aura' || benchmarkState.customTarget.spec === 'Desperate Salvation' || benchmarkState.customTarget.spec === 'Full Bloom' || benchmarkState.customTarget.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
         if (ctRole === pRole) {
           searchedList.unshift(benchmarkState.customTarget);
         }
@@ -21098,7 +21147,7 @@
       } catch (e) {}
     }
 
-    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => normClass.toLowerCase().includes(s));
+    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.toLowerCase().includes(s));
     const isSupport = (parsed.battlePoint && parsed.battlePoint.isSupport !== undefined)
       ? parsed.battlePoint.isSupport
       : (preferredRole === 'support' && isSupportClass);
@@ -21247,7 +21296,7 @@
             benchmarkState.customTarget = opt;
           } else {
             const pClass = normalizeClassName(player.className || '').toLowerCase();
-            const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+            const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
             const pRole = player.role || (isSupportClass ? 'support' : 'dps');
             const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts, pRole);
             if (suggested) {
