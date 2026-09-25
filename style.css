@@ -5059,9 +5059,16 @@ select optgroup {
   transform: translateY(-1px);
 }
 
-/* --- DÉPLIAGE DÉTAILLÉ DES ACCESSOIRES ET BRACELET T4 (BENCHMARK) --- */
+/* --- DÉPLIAGE DÉTAILLÉ DES ACCESSOIRES, BRACELET & ARK GRID CORES (BENCHMARK) --- */
 .benchmark-table tr.row-accessories-parent,
-.benchmark-table tr.row-bracelet-parent {
+.benchmark-table tr.row-bracelet-parent,
+.benchmark-table tr.row-astrogems-parent,
+.benchmark-table tr.row-engravings-parent,
+.benchmark-table tr.row-baseatk-parent,
+.benchmark-table tr.row-combatstats-parent,
+.benchmark-table tr.row-arkgridsun-parent,
+.benchmark-table tr.row-arkgridmoon-parent,
+.benchmark-table tr.row-arkgridstar-parent {
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
@@ -5071,6 +5078,15 @@ select optgroup {
 .benchmark-table tr.row-bracelet-parent:hover td {
   background: rgba(168, 85, 247, 0.06);
 }
+.benchmark-table tr.row-arkgridsun-parent:hover td {
+  background: rgba(245, 158, 11, 0.06);
+}
+.benchmark-table tr.row-arkgridmoon-parent:hover td {
+  background: rgba(129, 140, 248, 0.06);
+}
+.benchmark-table tr.row-arkgridstar-parent:hover td {
+  background: rgba(192, 132, 252, 0.06);
+}
 .benchmark-table tr.row-accessories-parent.expanded td {
   background: rgba(56, 189, 248, 0.1);
   border-bottom: 1px solid rgba(56, 189, 248, 0.2);
@@ -5078,6 +5094,18 @@ select optgroup {
 .benchmark-table tr.row-bracelet-parent.expanded td {
   background: rgba(168, 85, 247, 0.1);
   border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+.benchmark-table tr.row-arkgridsun-parent.expanded td {
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+}
+.benchmark-table tr.row-arkgridmoon-parent.expanded td {
+  background: rgba(129, 140, 248, 0.1);
+  border-bottom: 1px solid rgba(129, 140, 248, 0.2);
+}
+.benchmark-table tr.row-arkgridstar-parent.expanded td {
+  background: rgba(192, 132, 252, 0.1);
+  border-bottom: 1px solid rgba(192, 132, 252, 0.2);
 }
 
 .btn-acc-toggle {
@@ -5189,6 +5217,54 @@ select optgroup {
   border-color: #34d399;
 }
 
+.btn-arkgridsun-toggle {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+.btn-arkgridsun-toggle:hover {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #fbbf24;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-arkgridsun-parent.expanded .btn-arkgridsun-toggle {
+  background: #f59e0b;
+  color: #0b1120;
+  border-color: #fbbf24;
+}
+
+.btn-arkgridmoon-toggle {
+  background: rgba(129, 140, 248, 0.15);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  color: #a5b4fc;
+}
+.btn-arkgridmoon-toggle:hover {
+  background: rgba(129, 140, 248, 0.28);
+  border-color: #a5b4fc;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-arkgridmoon-parent.expanded .btn-arkgridmoon-toggle {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #818cf8;
+}
+
+.btn-arkgridstar-toggle {
+  background: rgba(192, 132, 252, 0.15);
+  border: 1px solid rgba(192, 132, 252, 0.35);
+  color: #d8b4fe;
+}
+.btn-arkgridstar-toggle:hover {
+  background: rgba(192, 132, 252, 0.28);
+  border-color: #d8b4fe;
+  transform: scale(1.08);
+}
+.benchmark-table tr.row-arkgridstar-parent.expanded .btn-arkgridstar-toggle {
+  background: #a855f7;
+  color: #ffffff;
+  border-color: #c084fc;
+}
+
 .row-acc-details td {
   padding: 0 !important;
   background: rgba(10, 15, 26, 0.85);
@@ -5225,12 +5301,72 @@ select optgroup {
   border-bottom: 1px solid rgba(16, 185, 129, 0.25);
 }
 
+.row-arkgridsun-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.row-arkgridmoon-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(129, 140, 248, 0.25);
+}
+
+.row-arkgridstar-details td {
+  padding: 0 !important;
+  background: rgba(10, 15, 26, 0.85);
+  border-bottom: 1px solid rgba(192, 132, 252, 0.25);
+}
+
 .baseatk-breakdown-panel {
   border-left: 3px solid #f97316 !important;
 }
 
 .combatstats-breakdown-panel {
   border-left: 3px solid #10b981 !important;
+}
+
+.arkgridsun-breakdown-panel {
+  border-left: 3px solid #f59e0b !important;
+}
+
+.arkgridmoon-breakdown-panel {
+  border-left: 3px solid #818cf8 !important;
+}
+
+.arkgridstar-breakdown-panel {
+  border-left: 3px solid #c084fc !important;
+}
+
+/* --- FOOTER DU GRAND TABLEAU COMPARATIF (BILAN MATHÉMATIQUE CP) --- */
+.benchmark-table tfoot {
+  border-top: 2px solid rgba(56, 189, 248, 0.4);
+}
+.benchmark-table tfoot tr {
+  transition: background-color 0.15s ease;
+}
+.benchmark-table tfoot tr.benchmark-table-total-row td {
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 2px solid rgba(56, 189, 248, 0.4);
+}
+.benchmark-table tfoot tr.benchmark-table-total-row:hover td {
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+.benchmark-table tfoot tr.benchmark-table-lead-row td {
+  background: rgba(15, 23, 42, 0.88);
+  border-top: 1px solid rgba(96, 165, 250, 0.25);
+}
+.benchmark-table tfoot tr.benchmark-table-lead-row:hover td {
+  background: rgba(96, 165, 250, 0.08) !important;
+}
+.benchmark-table tfoot tr.benchmark-table-net-row td {
+  background: rgba(15, 23, 42, 0.98);
+  border-top: 1px solid rgba(56, 189, 248, 0.35);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.4);
+}
+.benchmark-table tfoot tr.benchmark-table-net-row:hover td {
+  background: rgba(56, 189, 248, 0.12) !important;
 }
 
 .stats-educational-banner {

@@ -20034,7 +20034,326 @@
     `;
   }
 
-  function buildCpReconciliationHtml(player, target, gaps, isEn) {
+  function extractArkGridCoreDetail(char, coreGroup, isEn) {
+    if (!char) return null;
+    const normGroup = (coreGroup || 'sun').toLowerCase().replace('arkgrid', '');
+    const prefixOrder = normGroup === 'sun' ? '67300' : (normGroup === 'moon' ? '67301' : '67302');
+    const prefixChaos = normGroup === 'sun' ? '67310' : (normGroup === 'moon' ? '67311' : '67312');
+    const groupLabel = normGroup === 'sun' ? (isEn ? 'Sun' : 'Soleil') : (normGroup === 'moon' ? (isEn ? 'Moon' : 'Lune') : (isEn ? 'Star' : 'Étoile'));
+
+    const pId = (char && (char.id || char.name || '')).toLowerCase();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+
+    let order = {
+      name: isEn ? `Order ${groupLabel}` : `Cœur d'Ordre ${groupLabel}`,
+      tier: 10,
+      points: 10,
+      bonusPct: 0,
+      grade: 'Relic',
+      effectName: isEn ? 'Order Resonance' : 'Résonance d\'Ordre'
+    };
+
+    let chaos = {
+      name: isEn ? `Chaos ${groupLabel}` : `Cœur de Chaos ${groupLabel}`,
+      tier: 10,
+      points: 10,
+      bonusPct: 0,
+      grade: 'Relic',
+      effectName: isEn ? 'Chaos Resonance' : 'Résonance de Chaos'
+    };
+
+    // 1. Try from battlePoint.parts (type 29)
+    const allParts = (char.rawProfile && char.rawProfile.battlePoint && char.rawProfile.battlePoint.parts)
+      || (char.loadout && char.loadout.battlePoint && char.loadout.battlePoint.parts)
+      || (char.battlePoint && char.battlePoint.parts)
+      || (char.rawProfile && char.rawProfile.loadout && char.rawProfile.loadout.battlePoint && char.rawProfile.loadout.battlePoint.parts)
+      || (char.rawProfile && char.rawProfile.loadouts && char.rawProfile.loadouts[0] && char.rawProfile.loadouts[0].battlePoint && char.rawProfile.loadouts[0].battlePoint.parts)
+      || (canon && canon.rawProfile && canon.rawProfile.battlePoint && canon.rawProfile.battlePoint.parts)
+      || (canon && canon.battlePoint && canon.battlePoint.parts)
+      || [];
+
+    const parts29 = allParts.filter(p => p.type === 29);
+    if (parts29.length > 0) {
+      const oPart = parts29.find(p => (p.id || '').toString().startsWith(prefixOrder));
+      if (oPart) {
+        order.points = oPart.points || 17;
+        order.tier = oPart.points || 17;
+        order.bonusPct = Number(((oPart.value || 0) / 100).toFixed(2));
+        order.grade = ((oPart.id || 0) % 10 === 6) ? 'Ancient' : 'Relic';
+      }
+      const cPart = parts29.find(p => (p.id || '').toString().startsWith(prefixChaos));
+      if (cPart) {
+        chaos.points = cPart.points || 17;
+        chaos.tier = cPart.points || 17;
+        chaos.bonusPct = Number(((cPart.value || 0) / 100).toFixed(2));
+        chaos.grade = ((cPart.id || 0) % 10 === 6) ? 'Ancient' : 'Relic';
+      }
+    }
+
+    // 2. Try items fallback (from CANONICAL_PRESETS or parsed items)
+    const items = (char.rawProfile && char.rawProfile.items)
+      || char.items
+      || (char.loadout && char.loadout.items)
+      || (canon && canon.items)
+      || [];
+
+    if (Array.isArray(items)) {
+      items.forEach(it => {
+        const cat = it.cat || '';
+        if (!cat.includes('Grille') && !cat.includes('Ark')) return;
+        const lbl = it.label || '';
+        const multVal = parseFloat((it.mult || '').replace('+', '').replace('%', '')) || 0;
+        const valMatch = (it.val || '').match(/(\d+)P/i);
+        const pts = valMatch ? parseInt(valMatch[1], 10) : 17;
+
+        const isOrderMatch = (lbl.toLowerCase().includes('order ' + groupLabel.toLowerCase()) || lbl.toLowerCase().includes('ordre ' + groupLabel.toLowerCase()) || lbl.toLowerCase().includes('order ' + normGroup) || lbl.toLowerCase().includes('ordre ' + normGroup));
+        const isChaosMatch = (lbl.toLowerCase().includes('chaos ' + groupLabel.toLowerCase()) || lbl.toLowerCase().includes('chaos ' + normGroup));
+
+        if (isOrderMatch) {
+          if (!order.bonusPct || order.bonusPct === 0) {
+            order.bonusPct = multVal;
+            order.tier = pts;
+            order.points = pts;
+            order.effectName = lbl.split('(')[0].trim() || order.effectName;
+          }
+        }
+        if (isChaosMatch) {
+          if (!chaos.bonusPct || chaos.bonusPct === 0) {
+            chaos.bonusPct = multVal;
+            chaos.tier = pts;
+            chaos.points = pts;
+            chaos.effectName = lbl.split('(')[0].trim() || chaos.effectName;
+          }
+        }
+      });
+    }
+
+    // 3. Fallback from extractPlayerSystems if individual cores were 0
+    const sysKey = 'arkGrid' + capitalize(normGroup);
+    const sys = extractPlayerSystems(char, isEn);
+    const rawSys = sys[sysKey] || { bonusPct: 0, label: '' };
+
+    if (order.bonusPct === 0 && chaos.bonusPct === 0 && rawSys.bonusPct > 0) {
+      order.bonusPct = Number((rawSys.bonusPct * 0.70).toFixed(2));
+      chaos.bonusPct = Number((((1 + rawSys.bonusPct / 100) / (1 + order.bonusPct / 100) - 1) * 100).toFixed(2));
+      const labelMatch = (rawSys.label || '').match(/(\d+)P/i);
+      if (labelMatch) {
+        order.tier = parseInt(labelMatch[1], 10);
+        order.points = order.tier;
+        chaos.tier = Math.max(10, order.tier - 2);
+        chaos.points = chaos.tier;
+      }
+    }
+
+    const totalMult = ((1 + order.bonusPct / 100) * (1 + chaos.bonusPct / 100) - 1) * 100;
+    const highestTier = Math.max(order.tier, chaos.tier);
+
+    return {
+      order,
+      chaos,
+      totalMult: Number(totalMult.toFixed(2)),
+      highestTier,
+      groupLabel,
+      normGroup
+    };
+  }
+
+  function buildArkGridCoresBreakdownHtml(player, target, coreGroup = 'sun', cpImpact = 0, isEn = false) {
+    const normGroup = (coreGroup || 'sun').toLowerCase().replace('arkgrid', '');
+    const p = extractArkGridCoreDetail(player, normGroup, isEn);
+    const t = extractArkGridCoreDetail(target, normGroup, isEn);
+
+    const groupThemes = {
+      sun: {
+        icon: '☀️',
+        color: '#f59e0b',
+        nameFr: 'Cœurs Soleil (Ordre & Chaos)',
+        nameEn: 'Sun Cores (Order & Chaos)',
+        statFr: 'Buff Power (Dégâts Allié & Dégâts)',
+        statEn: 'Buff Power (Ally DMG & Base DMG)'
+      },
+      moon: {
+        icon: '🌙',
+        color: '#818cf8',
+        nameFr: 'Cœurs Lune (Ordre & Chaos)',
+        nameEn: 'Moon Cores (Order & Chaos)',
+        statFr: 'Buff Power (Boucliers & Soins)',
+        statEn: 'Buff Power (Shields & Heals)'
+      },
+      star: {
+        icon: '⭐',
+        color: '#c084fc',
+        nameFr: 'Cœurs Étoile (Ordre & Chaos)',
+        nameEn: 'Star Cores (Order & Chaos)',
+        statFr: 'DPS Net & CDR Compétences',
+        statEn: 'DPS Net & Skill CDR'
+      }
+    };
+
+    const theme = groupThemes[normGroup] || groupThemes.sun;
+    const titleGroup = isEn ? theme.nameEn : theme.nameFr;
+
+    const deltaMult = Number((t.totalMult - p.totalMult).toFixed(2));
+    const deltaOrder = Number((t.order.bonusPct - p.order.bonusPct).toFixed(2));
+    const deltaChaos = Number((t.chaos.bonusPct - p.chaos.bonusPct).toFixed(2));
+
+    return `
+      <div class="acc-breakdown-panel arkgrid${normGroup}-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>${theme.icon}</span>
+              <strong>${isEn ? `Ark Grid: ${titleGroup} Breakdown` : `Détail de la Grille d'Ark : ${titleGroup}`}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: ${theme.color};">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaMult.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (deltaMult < 0 ? `<span style="color:#60a5fa;">+${Math.abs(Math.round(deltaMult * (player.cp || 3200) / 100))} CP (${isEn ? 'Lead' : 'Avance'})</span>` : (isEn ? 'Parity' : 'Parité'))}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn
+              ? `Comparative inspection of <strong>Order Core</strong> and <strong>Chaos Core</strong> resonances. Ark Grid applies a multiplicative compounding formula: <code>(1 + Order%) &times; (1 + Chaos%) &minus; 1</code>.`
+              : `Comparaison détaillée des résonances du <strong>Cœur d'Ordre</strong> et du <strong>Cœur de Chaos</strong>. L'Ark Grid applique un multiplicateur croisé : <code>(1 + Ordre%) &times; (1 + Chaos%) &minus; 1</code>.`}
+          </div>
+        </div>
+
+        <!-- Cartes Face-à-Face : Mon Personnage vs Référence -->
+        <div class="acc-inspect-grid">
+          <!-- Mon Personnage -->
+          <div class="acc-inspect-card player">
+            <div class="acc-inspect-card-header">
+              <div class="acc-inspect-slot-info">
+                <span class="acc-inspect-slot-name">${isEn ? 'My Character' : 'Mon Personnage'}</span>
+                <span class="acc-inspect-item-name">${escapeHtml(player.name)}</span>
+              </div>
+              <span class="acc-inspect-ilvl" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                ${p.highestTier > 0 ? (isEn ? `Tier ${p.highestTier}P` : `Palier ${p.highestTier}P`) : 'Standard'}
+              </span>
+            </div>
+            <div class="acc-lines-list">
+              <div class="acc-line-badge high">
+                <span>☀️ <strong>${escapeHtml(p.order.name)}</strong> (${p.order.grade} ${p.order.points}P)</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">+${p.order.bonusPct.toFixed(2)}%</span>
+                </div>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🌀 <strong>${escapeHtml(p.chaos.name)}</strong> (${p.chaos.grade} ${p.chaos.points}P)</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">+${p.chaos.bonusPct.toFixed(2)}%</span>
+                </div>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>✨ <strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700; color:${theme.color};">+${p.totalMult.toFixed(2)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Référence Benchmark -->
+          <div class="acc-inspect-card target">
+            <div class="acc-inspect-card-header">
+              <div class="acc-inspect-slot-info">
+                <span class="acc-inspect-slot-name">${isEn ? 'Benchmark Target' : 'Profil Référence'}</span>
+                <span class="acc-inspect-item-name">${escapeHtml(target.name)}</span>
+              </div>
+              <span class="acc-inspect-ilvl" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                ${t.highestTier > 0 ? (isEn ? `Tier ${t.highestTier}P` : `Palier ${t.highestTier}P`) : 'Standard'}
+              </span>
+            </div>
+            <div class="acc-lines-list">
+              <div class="acc-line-badge high">
+                <span>☀️ <strong>${escapeHtml(t.order.name)}</strong> (${t.order.grade} ${t.order.points}P)</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">+${t.order.bonusPct.toFixed(2)}%</span>
+                  ${deltaOrder > 0.05 ? `<span class="line-cp-pill">+${deltaOrder.toFixed(2)}%</span>` : ''}
+                </div>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🌀 <strong>${escapeHtml(t.chaos.name)}</strong> (${t.chaos.grade} ${t.chaos.points}P)</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700;">+${t.chaos.bonusPct.toFixed(2)}%</span>
+                  ${deltaChaos > 0.05 ? `<span class="line-cp-pill">+${deltaChaos.toFixed(2)}%</span>` : ''}
+                </div>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>✨ <strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">+${t.totalMult.toFixed(2)}%</span>
+                  ${deltaMult > 0.05 ? `<span class="line-cp-pill">+${deltaMult.toFixed(2)}%</span>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé -->
+        <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
+          <div class="astrogems-compare-table-title">
+            <span>📊</span>
+            <strong>${isEn ? `Comparative Breakdown: ${titleGroup}` : `Décomposition Détaillée : ${titleGroup}`}</strong>
+          </div>
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Core Component' : 'Composant de Cœur'}</th>
+                <th>${isEn ? 'Your Character' : 'Votre Personnage'}</th>
+                <th>${isEn ? 'Benchmark Target' : 'Référence Cible'}</th>
+                <th style="text-align:right;">${isEn ? 'Delta' : 'Écart'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>☀️ ${escapeHtml(p.order.name)}</strong> (${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'})</td>
+                <td>${p.order.grade} Palier ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</td>
+                <td>${t.order.grade} Palier ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</td>
+                <td class="col-cp-gain">${deltaOrder >= 0 ? `+${deltaOrder.toFixed(2)}%` : `${deltaOrder.toFixed(2)}%`}</td>
+              </tr>
+              <tr>
+                <td><strong>🌀 ${escapeHtml(p.chaos.name)}</strong> (${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'})</td>
+                <td>${p.chaos.grade} Palier ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</td>
+                <td>${t.chaos.grade} Palier ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</td>
+                <td class="col-cp-gain">${deltaChaos >= 0 ? `+${deltaChaos.toFixed(2)}%` : `${deltaChaos.toFixed(2)}%`}</td>
+              </tr>
+              <tr>
+                <td><strong>✨ ${isEn ? 'Compounded Synergy Multiplier' : 'Synergie Multiplicative Croisée'}</strong></td>
+                <td><strong>+${p.totalMult.toFixed(2)}%</strong></td>
+                <td><strong style="color:#34d399;">+${t.totalMult.toFixed(2)}%</strong></td>
+                <td class="col-cp-gain"><strong>${deltaMult >= 0 ? `+${deltaMult.toFixed(2)}%` : `${deltaMult.toFixed(2)}%`}</strong></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Combat Power Impact (Direct Core Contribution)' : 'Gain de Combat Power (Impact de l\'Écart de Cœurs)'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : (deltaMult < 0 ? `<span style="color:#60a5fa;">-${Math.abs(Math.round(deltaMult * (player.cp || 3200) / 100))} CP (${isEn ? 'Lead' : 'Avance'})</span>` : '= 0 CP')}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Bannière Explicative & Conseils d'Optimisation -->
+        <div class="stats-educational-banner" style="border-left-color: ${theme.color}; margin-top: 14px;">
+          <span class="edu-icon">💡</span>
+          <div class="edu-content">
+            <strong>${isEn ? `Why does the reference profile have a +${deltaMult.toFixed(2)}% advantage in ${titleGroup}?` : `Pourquoi la référence a-t-elle une avance de +${deltaMult.toFixed(2)}% sur les ${titleGroup} ?`}</strong>
+            <div style="margin-top: 4px;">
+              ${isEn
+                ? `1. <strong>Core Point Tiers (20P vs ${p.highestTier}P)</strong>: Reaching <strong>Tier 20P</strong> requires 4 socketed Astrogems with +5 resonance points each (4 &times; 5 = 20 pts). Each tier jump triggers a major milestone multiplier.<br>
+                   2. <strong>Chaos Core Synergy</strong>: The Chaos Core serves as a direct cross-multiplier for your Order Core: <code>(1 + Order) &times; (1 + Chaos) &minus; 1</code>. Improving your Chaos Core from ${p.chaos.points}P to 20P yields a massive leap in effective CP.<br>
+                   3. <strong>Optimization Tip</strong>: Prioritize cutting and socketing 5-point Astrogems on your lowest core to bridge the <strong>+${cpImpact} CP</strong> gap at optimal gold efficiency.`
+                : `1. <strong>Paliers de Points de Cœur (20P vs ${p.highestTier}P)</strong> : Pour débloquer le <strong>Palier 20P</strong>, il est nécessaire de sertir 4 astrogemmes taillées apportant 5 points de résonance chacune (4 &times; 5 = 20 pts). Chaque palier franchi déclenche un multiplicateur de dégâts/buff accru.<br>
+                   2. <strong>Multiplication Croisée Ordre &times; Chaos</strong> : Le Cœur de Chaos multiplie directement le bonus du Cœur d'Ordre : <code>(1 + Ordre) &times; (1 + Chaos) &minus; 1</code>. Faire monter le Cœur de Chaos de ${p.chaos.points}P à 20P génère un gain immédiat de puissance.<br>
+                   3. <strong>Conseil d'Optimisation</strong> : Priorisez le taillage d'astrogemmes à 5 points de résonance sur votre cœur le plus bas (${p.chaos.points < p.order.points ? 'Chaos' : 'Ordre'}) pour combler rapidement l'écart de <strong>+${cpImpact} CP</strong>.`
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildCpReconciliationHtml(player, target, gaps, isEn, tableStats) {
     if (!player || !target) return '';
     const pCp = Number(player.cp || 0);
     const tCp = Number(target.cp || 0);
@@ -20043,17 +20362,23 @@
     const positiveGaps = (gaps || []).filter(g => g.gainCp > 0 && g.priority !== 'player_lead');
     const playerLeadGaps = (gaps || []).filter(g => g.priority === 'player_lead');
 
-    const totalPositiveCp = positiveGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
-    const totalPlayerLeadCp = playerLeadGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
-    const top3Sum = positiveGaps.slice(0, 3).reduce((s, g) => s + (g.gainCp || 0), 0);
+    // Priorité aux totaux calculés sur l'ensemble réel des lignes du tableau comparatif
+    const totalPositiveCp = (tableStats && tableStats.totalPositiveCp !== undefined)
+      ? tableStats.totalPositiveCp
+      : positiveGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
+
+    const totalPlayerLeadCp = (tableStats && tableStats.totalPlayerLeadCp !== undefined)
+      ? tableStats.totalPlayerLeadCp
+      : playerLeadGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
+
+    const topLeadTitle = (tableStats && tableStats.topLeadTitle)
+      ? tableStats.topLeadTitle
+      : (playerLeadGaps[0] ? playerLeadGaps[0].title.replace(/\(Player Advantage\)/i, '').replace(/\(Avantage Joueur\)/i, '').trim() : (isEn ? 'Equipment' : 'Équipement'));
 
     // Cas 1 : L'adversaire mène globalement (netGap > 0) et le joueur possède une avance sur l'arme ou un équipement
     if (totalPlayerLeadCp > 0 && netGap > 0) {
       const grossDeficit = Math.max(totalPositiveCp, netGap + totalPlayerLeadCp);
-      const topLead = playerLeadGaps[0];
-      const leadTitle = topLead
-        ? topLead.title.replace(/\(Player Advantage\)/i, '').replace(/\(Avantage Joueur\)/i, '').trim()
-        : (isEn ? 'Weapon' : 'Arme');
+      const leadTitle = topLeadTitle;
 
       return `
         <div class="cp-reconciliation-card">
@@ -20070,23 +20395,23 @@
           <div class="reconciliation-equation">
             <div class="eq-box gross-deficit">
               <div class="eq-box-label">${isEn ? 'Gross Equipment Deficit' : 'Retard Brut Équipements'}</div>
-              <div class="eq-box-val">+${grossDeficit} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Gems, Astrogems, Armors, Dex, Stone...' : 'Gemmes, Astrogemmes, Armures, Dex, Pierre...'}</div>
+              <div class="eq-box-val">+${formatNumber(totalPositiveCp)} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Sum of all lagging systems in table' : 'Somme des systèmes en retard dans le tableau'}</div>
             </div>
 
             <div class="eq-operator">−</div>
 
             <div class="eq-box player-lead">
               <div class="eq-box-label">${isEn ? 'Your Advantage (' + escapeHtml(leadTitle) + ')' : 'Votre Avance (' + escapeHtml(leadTitle) + ')'}</div>
-              <div class="eq-box-val">+${totalPlayerLeadCp} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Direct Compensation' : 'Compense ' + totalPlayerLeadCp + ' CP de retard'}</div>
+              <div class="eq-box-val">+${formatNumber(totalPlayerLeadCp)} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Direct Compensation' : 'Compense ' + formatNumber(totalPlayerLeadCp) + ' CP de retard'}</div>
             </div>
 
             <div class="eq-operator">=</div>
 
             <div class="eq-box net-gap">
               <div class="eq-box-label">${isEn ? 'Observed In-Game Gap' : 'Écart Réel Net In-Game'}</div>
-              <div class="eq-box-val">+${netGap} CP</div>
+              <div class="eq-box-val">+${formatNumber(netGap)} CP</div>
               <div class="eq-box-sub">${isEn ? 'Net Difference (lostark.bible)' : 'Score affiché en Raid'}</div>
             </div>
           </div>
@@ -20095,8 +20420,8 @@
             <span class="info-bulb">💡</span>
             <span>
               ${isEn
-                ? `<strong>Why doesn't the sum of improvement levers (+${totalPositiveCp} CP) equal the +${netGap} CP header?</strong> These cards rank your individual upgrade opportunities. In reality, your gross deficit of <strong>+${grossDeficit} CP</strong> across other equipment is heavily cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${totalPlayerLeadCp} CP lead)</strong>, bringing the exact net gap down to <strong>+${netGap} CP</strong>.`
-                : `<strong>Pourquoi la somme des leviers (+${totalPositiveCp} CP) ne fait pas +${netGap} CP ?</strong> Ces cartes classent vos opportunités individuelles d'amélioration. En réalité, votre retard cumulé de <strong>+${grossDeficit} CP</strong> sur ces équipements est massivement amorti par votre <strong>${escapeHtml(leadTitle)} surpuissante (+${totalPlayerLeadCp} CP d'avance)</strong>, ramenant l'écart net exact à <strong>+${netGap} CP</strong>.`
+                ? `<strong>Why doesn't the simple sum of levers (+${formatNumber(totalPositiveCp)} CP) equal the exact +${formatNumber(netGap)} CP header?</strong> Each table row calculates its isolated linear improvement lever. In reality, your gross deficit of <strong>+${formatNumber(totalPositiveCp)} CP</strong> across lagging equipment is directly cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP lead)</strong>, and Lost Ark\'s compound multiplicative formula (where systems multiply with each other) calibrates the final in-raid gap to exactly <strong>+${formatNumber(netGap)} CP</strong>.`
+                : `<strong>Pourquoi la simple somme des leviers (+${formatNumber(totalPositiveCp)} CP) ne fait pas exactement +${formatNumber(netGap)} CP ?</strong> Chaque ligne du tableau calcule son gain linéaire isolé. En réalité, votre retard brut de <strong>+${formatNumber(totalPositiveCp)} CP</strong> sur vos équipements en retard est directement amorti par votre <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP d'avance)</strong>, et la formule multiplicative croisée de Lost Ark (compounding) équilibre l'écart net exact relevé en raid à <strong>+${formatNumber(netGap)} CP</strong>.`
               }
             </span>
           </div>
@@ -20123,15 +20448,15 @@
           <div class="reconciliation-equation">
             <div class="eq-box gross-deficit">
               <div class="eq-box-label">${isEn ? 'Identified Equipment Gaps' : 'Écarts Équipements Identifiés'}</div>
-              <div class="eq-box-val">+${totalPositiveCp} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Gems, Astrogems, Armors...' : 'Gemmes, Astrogemmes, Armures...'}</div>
+              <div class="eq-box-val">+${formatNumber(totalPositiveCp)} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Sum of all lagging systems in table' : 'Somme des systèmes en retard dans le tableau'}</div>
             </div>
 
             <div class="eq-operator">+</div>
 
             <div class="eq-box player-lead" style="border-color: rgba(148, 163, 184, 0.3);">
               <div class="eq-box-label">${isEn ? 'Base Stats & Synergies' : 'Stats de Base & Synergies'}</div>
-              <div class="eq-box-val" style="color: #cbd5e1;">+${baseSynergies} CP</div>
+              <div class="eq-box-val" style="color: #cbd5e1;">+${formatNumber(baseSynergies)} CP</div>
               <div class="eq-box-sub">${isEn ? 'Main Stat & Compounding' : 'Stat Principale & Multiplicateurs'}</div>
             </div>
 
@@ -20139,7 +20464,7 @@
 
             <div class="eq-box net-gap">
               <div class="eq-box-label">${isEn ? 'Observed In-Game Gap' : 'Écart Réel Net In-Game'}</div>
-              <div class="eq-box-val">+${netGap} CP</div>
+              <div class="eq-box-val">+${formatNumber(netGap)} CP</div>
               <div class="eq-box-sub">${isEn ? 'Net Difference (lostark.bible)' : 'Score affiché en Raid'}</div>
             </div>
           </div>
@@ -20148,8 +20473,8 @@
             <span class="info-bulb">💡</span>
             <span>
               ${isEn
-                ? `<strong>Transparent breakdown:</strong> The identified equipment levers account for <strong>+${totalPositiveCp} CP</strong>. The remaining <strong>+${baseSynergies} CP</strong> comes from Base Main Stat differences (potions, roster level) and Lost Ark's multiplicative compounding formula.`
-                : `<strong>Décomposition transparente :</strong> Les leviers d'équipement identifiés représentent <strong>+${totalPositiveCp} CP</strong>. Le reliquat de <strong>+${baseSynergies} CP</strong> provient des écarts de Stat Principale brute (potions, niveau de roster) et des multiplicateurs croisés (compounding) de Lost Ark.`
+                ? `<strong>Transparent breakdown:</strong> The identified equipment levers account for <strong>+${formatNumber(totalPositiveCp)} CP</strong>. The remaining <strong>+${formatNumber(baseSynergies)} CP</strong> comes from Base Main Stat differences (potions, roster level) and Lost Ark's multiplicative compounding formula.`
+                : `<strong>Décomposition transparente :</strong> Les leviers d'équipement identifiés représentent <strong>+${formatNumber(totalPositiveCp)} CP</strong>. Le reliquat de <strong>+${formatNumber(baseSynergies)} CP</strong> provient des écarts de Stat Principale brute (potions, niveau de roster) et des multiplicateurs croisés (compounding) de Lost Ark.`
               }
             </span>
           </div>
@@ -20173,8 +20498,8 @@
           <span class="info-bulb">✨</span>
           <span>
             ${isEn
-              ? `Your character holds a solid net advantage of <strong>+${Math.abs(netGap)} CP</strong> over the benchmark target. Your overall systems outperform the reference profile.`
-              : `Votre personnage conserve une solide avance nette de <strong>+${Math.abs(netGap)} CP</strong> sur le profil de référence. Vos systèmes globaux surpassent la cible.`
+              ? `Your character holds a solid net advantage of <strong>+${formatNumber(Math.abs(netGap))} CP</strong> over the benchmark target. Your overall systems outperform the reference profile.`
+              : `Votre personnage conserve une solide avance nette de <strong>+${formatNumber(Math.abs(netGap))} CP</strong> sur le profil de référence. Vos systèmes globaux surpassent la cible.`
             }
           </span>
         </div>
@@ -20636,6 +20961,10 @@
       const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
       let equalRowsCount = 0;
       let rowsHtml = '';
+      let totalPositiveTableCp = 0;
+      let totalPlayerLeadTableCp = 0;
+      let maxLeadCp = 0;
+      let topLeadTitle = '';
 
       rowsConfig.forEach(cfg => {
         const pRaw = pSys[cfg.key] || { label: 'Standard', bonusPct: 0 };
@@ -20661,7 +20990,10 @@
         const isEngravings = cfg.key === 'engravings';
         const isBaseAtk = cfg.key === 'baseAttackStat';
         const isCombatStats = cfg.key === 'combatStats';
-        const hasInteractivePanel = isAcc || isBracelet || isAstrogems || isEngravings || isBaseAtk || isCombatStats;
+        const isArkGridSun = cfg.key === 'arkGridSun';
+        const isArkGridMoon = cfg.key === 'arkGridMoon';
+        const isArkGridStar = cfg.key === 'arkGridStar';
+        const hasInteractivePanel = isAcc || isBracelet || isAstrogems || isEngravings || isBaseAtk || isCombatStats || isArkGridSun || isArkGridMoon || isArkGridStar;
 
         const isHiddenInEqual = isEqual && !hasInteractivePanel;
         if (isHiddenInEqual) equalRowsCount++;
@@ -20675,6 +21007,16 @@
 
         const cpImpact = delta > 0.01 ? Math.round(delta * cpPerPct) : 0;
         const playerLeadCp = delta < -0.01 ? Math.round(Math.abs(delta) * cpPerPct) : 0;
+
+        if (cpImpact > 0) {
+          totalPositiveTableCp += cpImpact;
+        } else if (playerLeadCp > 0) {
+          totalPlayerLeadTableCp += playerLeadCp;
+          if (playerLeadCp > maxLeadCp) {
+            maxLeadCp = playerLeadCp;
+            topLeadTitle = cfg.name;
+          }
+        }
 
         let prioLabel = t('bench_prio_equal');
         let prioClass = 'equal';
@@ -20736,6 +21078,24 @@
               <span class="combatstats-toggle-icon">➕</span>
             </button>
           `;
+        } else if (isArkGridSun) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-arkgridsun-toggle" id="btnToggleArkGridSunDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Sun Cores (Order & Chaos) breakdown' : 'Cliquer pour déplier les Cœurs Soleil (Ordre & Chaos)'}">
+              <span class="arkgridsun-toggle-icon">➕</span>
+            </button>
+          `;
+        } else if (isArkGridMoon) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-arkgridmoon-toggle" id="btnToggleArkGridMoonDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Moon Cores (Order & Chaos) breakdown' : 'Cliquer pour déplier les Cœurs Lune (Ordre & Chaos)'}">
+              <span class="arkgridmoon-toggle-icon">➕</span>
+            </button>
+          `;
+        } else if (isArkGridStar) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-arkgridstar-toggle" id="btnToggleArkGridStarDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Star Cores (Order & Chaos) breakdown' : 'Cliquer pour déplier les Cœurs Étoile (Ordre & Chaos)'}">
+              <span class="arkgridstar-toggle-icon">➕</span>
+            </button>
+          `;
         }
 
         const trClass = [
@@ -20745,10 +21105,13 @@
           isAstrogems ? 'row-astrogems-parent' : '',
           isEngravings ? 'row-engravings-parent' : '',
           isBaseAtk ? 'row-baseatk-parent' : '',
-          isCombatStats ? 'row-combatstats-parent' : ''
+          isCombatStats ? 'row-combatstats-parent' : '',
+          isArkGridSun ? 'row-arkgridsun-parent' : '',
+          isArkGridMoon ? 'row-arkgridmoon-parent' : '',
+          isArkGridStar ? 'row-arkgridstar-parent' : ''
         ].filter(Boolean).join(' ');
 
-        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : (isBaseAtk ? 'id="rowSysBaseAtk"' : (isCombatStats ? 'id="rowSysCombatStats"' : '')))));
+        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : (isBaseAtk ? 'id="rowSysBaseAtk"' : (isCombatStats ? 'id="rowSysCombatStats"' : (isArkGridSun ? 'id="rowSysArkGridSun"' : (isArkGridMoon ? 'id="rowSysArkGridMoon"' : (isArkGridStar ? 'id="rowSysArkGridStar"' : ''))))))));
 
         rowsHtml += `
           <tr class="${trClass}" ${trId}>
@@ -20819,9 +21182,121 @@
               </td>
             </tr>
           `;
+        } else if (isArkGridSun) {
+          const sunDetailsHtml = buildArkGridCoresBreakdownHtml(player, target, 'sun', cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowArkGridSunDetails" class="row-arkgridsun-details" style="display: none;">
+              <td colspan="6">
+                ${sunDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isArkGridMoon) {
+          const moonDetailsHtml = buildArkGridCoresBreakdownHtml(player, target, 'moon', cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowArkGridMoonDetails" class="row-arkgridmoon-details" style="display: none;">
+              <td colspan="6">
+                ${moonDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isArkGridStar) {
+          const starDetailsHtml = buildArkGridCoresBreakdownHtml(player, target, 'star', cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowArkGridStarDetails" class="row-arkgridstar-details" style="display: none;">
+              <td colspan="6">
+                ${starDetailsHtml}
+              </td>
+            </tr>
+          `;
         }
       });
       tableBody.innerHTML = rowsHtml;
+
+      // Construction et injection du Bilan Mathématique tfoot du grand tableau comparatif
+      const compareTbl = document.getElementById('benchmarkCompareTable');
+      if (compareTbl) {
+        let tfoot = compareTbl.querySelector('tfoot');
+        if (!tfoot) {
+          tfoot = document.createElement('tfoot');
+          compareTbl.appendChild(tfoot);
+        }
+        tfoot.innerHTML = `
+          <tr class="benchmark-table-total-row">
+            <td colspan="4" style="padding: 12px 16px; font-weight: 700; color: #f8fafc;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:16px;">📈</span>
+                <div>
+                  <span>${isEn ? 'Sum of Improvement Levers (Gross Deficit)' : 'Total Brut des Leviers d\'Amélioration (Retards Stuff)'}</span>
+                  <div style="font-size:11px; font-weight:400; color:var(--text-muted); margin-top:2px;">
+                    ${isEn ? 'Arithmetic sum of all positive CP gains in the table above' : 'Somme arithmétique de tous les gains positifs individuels du tableau ci-dessus'}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:800; font-size:14px; color:#34d399; padding: 12px 16px;">
+              +${formatNumber(totalPositiveTableCp)} CP
+            </td>
+            <td style="padding: 12px 16px;">
+              <span class="prio-pill high">${isEn ? 'Gross Levers' : 'Leviers Cumulés'}</span>
+            </td>
+          </tr>
+          ${totalPlayerLeadTableCp > 0 ? `
+            <tr class="benchmark-table-lead-row">
+              <td colspan="4" style="padding: 10px 16px; font-weight: 600; color: #93c5fd;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:15px;">🛡️</span>
+                  <div>
+                    <span>${isEn ? 'Your Compensating Advantages (Equipments Ahead)' : 'Vos Avances Compensatoires (Équipements où vous surpassez la cible)'}</span>
+                    <div style="font-size:11px; font-weight:400; color:var(--text-muted); margin-top:2px;">
+                      ${isEn ? 'Directly cushions and offsets your equipment deficits' : 'Amortit et compense directement vos retards d\'équipements'}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; font-size:13px; color:#60a5fa; padding: 10px 16px;">
+                -${formatNumber(totalPlayerLeadTableCp)} CP (${isEn ? 'Lead' : 'Avance'})
+              </td>
+              <td style="padding: 10px 16px;">
+                <span class="prio-pill opt">${isEn ? 'Cushioning' : 'Amortissement'}</span>
+              </td>
+            </tr>
+          ` : ''}
+          <tr class="benchmark-table-net-row">
+            <td colspan="4" style="padding: 14px 16px; font-weight: 800; color: #38bdf8;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">⚖️</span>
+                <div>
+                  <span>${isEn ? 'Observed In-Game Net Gap (lostark.bible Score in Raid)' : 'Écart Réel Net In-Game (Score relevé en Raid sur lostark.bible)'}</span>
+                  <div style="font-size:11.5px; font-weight:400; color:var(--text-muted); margin-top:3px; line-height:1.4;">
+                    ${isEn
+                      ? `Formula: <strong>Target CP (${formatNumber(Math.round(target.cp || 0))}) &minus; Your CP (${formatNumber(Math.round(player.cp || 0))}) = ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP</strong>. Reflects Lost Ark\'s compound multiplicative formula (each individual line shows its isolated linear gain).`
+                      : `Formule : <strong>Cible (${formatNumber(Math.round(target.cp || 0))} CP) &minus; Vous (${formatNumber(Math.round(player.cp || 0))} CP) = ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP</strong>. Intègre la formule multiplicative croisée du jeu (chaque ligne isole son gain linéaire individuel).`
+                    }
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:900; font-size:16px; color:#38bdf8; padding: 14px 16px;">
+              ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP
+            </td>
+            <td style="padding: 14px 16px;">
+              <span class="prio-pill equal" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); font-weight:700;">
+                ${isEn ? 'Official Raid Delta' : 'Écart Raid Réel'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }
+
+      // Synchronisation mathématique de la carte de réconciliation supérieure avec les totaux réels du tableau
+      if (reconEl) {
+        reconEl.innerHTML = buildCpReconciliationHtml(player, target, gaps, isEn, {
+          totalPositiveCp: totalPositiveTableCp,
+          totalPlayerLeadCp: totalPlayerLeadTableCp,
+          topLeadTitle: topLeadTitle || (isEn ? 'Equipment' : 'Équipement')
+        });
+      }
 
       // Gestion du dépliage interactif des 5 bijoux T4
       const btnAcc = document.getElementById('btnToggleAccDetails');
@@ -20951,6 +21426,72 @@
         if (rowCombatStatsParent) {
           rowCombatStatsParent.addEventListener('click', (e) => {
             if (!e.target.closest('a') && !e.target.closest('button')) doToggleCombatStats(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Cœurs Soleil Ark Grid (Ordre & Chaos)
+      const btnArkGridSun = document.getElementById('btnToggleArkGridSunDetails');
+      const rowArkGridSunParent = document.getElementById('rowSysArkGridSun');
+      const rowArkGridSunDet = document.getElementById('rowArkGridSunDetails');
+      if (btnArkGridSun && rowArkGridSunDet) {
+        const doToggleArkGridSun = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowArkGridSunDet.style.display === 'none';
+          rowArkGridSunDet.style.display = isHidden ? 'table-row' : 'none';
+          btnArkGridSun.setAttribute('aria-expanded', isHidden);
+          const icon = btnArkGridSun.querySelector('.arkgridsun-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowArkGridSunParent) rowArkGridSunParent.classList.toggle('expanded', isHidden);
+        };
+        btnArkGridSun.addEventListener('click', doToggleArkGridSun);
+        if (rowArkGridSunParent) {
+          rowArkGridSunParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleArkGridSun(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Cœurs Lune Ark Grid (Ordre & Chaos)
+      const btnArkGridMoon = document.getElementById('btnToggleArkGridMoonDetails');
+      const rowArkGridMoonParent = document.getElementById('rowSysArkGridMoon');
+      const rowArkGridMoonDet = document.getElementById('rowArkGridMoonDetails');
+      if (btnArkGridMoon && rowArkGridMoonDet) {
+        const doToggleArkGridMoon = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowArkGridMoonDet.style.display === 'none';
+          rowArkGridMoonDet.style.display = isHidden ? 'table-row' : 'none';
+          btnArkGridMoon.setAttribute('aria-expanded', isHidden);
+          const icon = btnArkGridMoon.querySelector('.arkgridmoon-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowArkGridMoonParent) rowArkGridMoonParent.classList.toggle('expanded', isHidden);
+        };
+        btnArkGridMoon.addEventListener('click', doToggleArkGridMoon);
+        if (rowArkGridMoonParent) {
+          rowArkGridMoonParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleArkGridMoon(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Cœurs Étoile Ark Grid (Ordre & Chaos)
+      const btnArkGridStar = document.getElementById('btnToggleArkGridStarDetails');
+      const rowArkGridStarParent = document.getElementById('rowSysArkGridStar');
+      const rowArkGridStarDet = document.getElementById('rowArkGridStarDetails');
+      if (btnArkGridStar && rowArkGridStarDet) {
+        const doToggleArkGridStar = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowArkGridStarDet.style.display === 'none';
+          rowArkGridStarDet.style.display = isHidden ? 'table-row' : 'none';
+          btnArkGridStar.setAttribute('aria-expanded', isHidden);
+          const icon = btnArkGridStar.querySelector('.arkgridstar-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowArkGridStarParent) rowArkGridStarParent.classList.toggle('expanded', isHidden);
+        };
+        btnArkGridStar.addEventListener('click', doToggleArkGridStar);
+        if (rowArkGridStarParent) {
+          rowArkGridStarParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleArkGridStar(e);
           });
         }
       }
@@ -21457,6 +21998,8 @@
   window.__buildAccBreakdownHtml = buildAccBreakdownHtml;
   window.__buildBraceletBreakdownHtml = buildBraceletBreakdownHtml;
   window.__buildAstrogemsBreakdownHtml = buildAstrogemsBreakdownHtml;
+  window.__buildArkGridCoresBreakdownHtml = buildArkGridCoresBreakdownHtml;
+  window.__extractArkGridCoreDetail = extractArkGridCoreDetail;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
