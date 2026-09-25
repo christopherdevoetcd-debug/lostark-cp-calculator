@@ -17196,23 +17196,26 @@
   // 100% profils réels en direct de lostark.bible, zéro preset statique, zéro profil générique ou synthétique
   const VERIFIED_LIVE_PEERS = {
     'shadowhunter': [
-      { name: 'Ebeneben', region: 'CE', ilvl: 1775.83, cp: 6151 },
-      { name: 'Bascojin', region: 'CE', ilvl: 1785.00, cp: 6557 },
-      { name: 'Câsy', region: 'CE', ilvl: 1789.17, cp: 6586 }
+      { name: 'Brookop', region: 'CE', ilvl: 1760.00, cp: 4951, role: 'dps', spec: 'Demonic Impulse' },
+      { name: 'Æzoryn', region: 'CE', ilvl: 1760.00, cp: 4949, role: 'dps', spec: 'Demonic Impulse' },
+      { name: 'Alcatrazzyy', region: 'CE', ilvl: 1760.83, cp: 4571, role: 'dps', spec: 'Demonic Impulse' },
+      { name: 'Ebeneben', region: 'CE', ilvl: 1775.83, cp: 6151, role: 'dps', spec: 'Demonic Impulse' }
     ],
     'soulfist': [
-      { name: 'Leezek', region: 'CE', ilvl: 1774.17, cp: 4925 },
-      { name: 'Elthasaiyan', region: 'CE', ilvl: 1770.00, cp: 5837 },
-      { name: 'Jibril', region: 'NA', ilvl: 1800.00, cp: 8672 },
-      { name: 'Àlphâ', region: 'CE', ilvl: 1770.00, cp: 4832 }
+      { name: 'Namichichi', region: 'CE', ilvl: 1761.67, cp: 4725, role: 'dps', spec: 'Energy Overflow' },
+      { name: 'Chuohunter', region: 'CE', ilvl: 1758.33, cp: 4182, role: 'dps', spec: 'Robust Spirit' },
+      { name: 'Valaken', region: 'CE', ilvl: 1757.50, cp: 3820, role: 'dps', spec: 'Energy Overflow' },
+      { name: 'Leezek', region: 'CE', ilvl: 1774.17, cp: 4925, role: 'dps', spec: 'Energy Overflow' }
     ],
     'breaker': [
-      { name: 'Lethimsmashh', region: 'CE', ilvl: 1750.00, cp: 5005 },
-      { name: 'Cyanora', region: 'CE', ilvl: 1739.17, cp: 3990 },
-      { name: 'Bubuszolot', region: 'CE', ilvl: 1745.00, cp: 4200 }
+      { name: 'Dèxxos', region: 'CE', ilvl: 1751.67, cp: 4895, role: 'dps', spec: 'Brawl King Storm' },
+      { name: 'Îzanagî', region: 'CE', ilvl: 1750.83, cp: 4434, role: 'dps', spec: 'Asura Destruction' },
+      { name: 'Yokotami', region: 'CE', ilvl: 1750.00, cp: 3820, role: 'dps', spec: 'Brawl King Storm' },
+      { name: 'Lethimsmashh', region: 'CE', ilvl: 1750.00, cp: 5005, role: 'dps', spec: 'Asura Destruction' }
     ],
     'bard': [
       { name: 'Ultrabuff', region: 'CE', ilvl: 1741.67, cp: 4315, role: 'support', spec: 'Desperate Salvation' },
+      { name: 'Bardolyn', region: 'CE', ilvl: 1757.50, cp: 4411, role: 'support', spec: 'Desperate Salvation' },
       { name: 'Lavieenrosee', region: 'CE', ilvl: 1760.00, cp: 4631, role: 'support', spec: 'Desperate Salvation' },
       { name: 'Kimaziel', region: 'CE', ilvl: 1765.00, cp: 4705, role: 'support', spec: 'Desperate Salvation' }
     ],
@@ -17225,76 +17228,128 @@
     'slayer': [
       { name: 'Trustslays', region: 'CE', ilvl: 1750.00, cp: 4230, role: 'dps', spec: 'Predator' },
       { name: 'Allîssa', region: 'CE', ilvl: 1742.50, cp: 4371, role: 'dps', spec: 'Predator' },
-      { name: 'Siwilayer', region: 'CE', ilvl: 1769.17, cp: 5684, role: 'dps', spec: 'Predator' },
-      { name: 'Cicilianay', region: 'CE', ilvl: 1780.83, cp: 6029, role: 'dps', spec: 'Punisher' }
+      { name: 'Ildsang', region: 'CE', ilvl: 1760.00, cp: 4428, role: 'dps', spec: 'Predator' },
+      { name: 'Siwilayer', region: 'CE', ilvl: 1769.17, cp: 5684, role: 'dps', spec: 'Predator' }
     ],
     'souleater': [
-      { name: 'Hanekâwâ', region: 'CE', ilvl: 1770.83, cp: 5383 },
-      { name: 'Cheffys', region: 'CE', ilvl: 1743.33, cp: 3793 }
+      { name: 'Alcareapy', region: 'CE', ilvl: 1760.00, cp: 4262, role: 'dps', spec: "Night's Edge" },
+      { name: 'Soulkotka', region: 'CE', ilvl: 1760.00, cp: 4569, role: 'dps', spec: 'Full Moon Harvester' },
+      { name: 'Saîzu', region: 'CE', ilvl: 1760.83, cp: 4422, role: 'dps', spec: "Night's Edge" },
+      { name: 'Hanekâwâ', region: 'CE', ilvl: 1770.83, cp: 5383, role: 'dps', spec: 'Full Moon Harvester' }
     ],
     'artist': [
-      { name: 'Yukinosere', region: 'CE', ilvl: 1787.50, cp: 6814 },
-      { name: 'Minëko', region: 'CE', ilvl: 1780.83, cp: 6014 },
-      { name: 'Léonie', region: 'CE', ilvl: 1760.00, cp: 4400 }
+      { name: 'Enanía', region: 'CE', ilvl: 1760.00, cp: 4087, role: 'support', spec: 'Full Bloom' },
+      { name: 'Rüfûs', region: 'CE', ilvl: 1750.00, cp: 3570, role: 'support', spec: 'Full Bloom' },
+      { name: 'Minëko', region: 'CE', ilvl: 1780.83, cp: 6014, role: 'support', spec: 'Full Bloom' },
+      { name: 'Yukinosere', region: 'CE', ilvl: 1787.50, cp: 6814, role: 'support', spec: 'Full Bloom' }
     ],
     'scrapper': [
-      { name: 'Arbore', region: 'CE', ilvl: 1785.83, cp: 6895 },
-      { name: 'Frieedhof', region: 'CE', ilvl: 1770.83, cp: 5036 }
+      { name: 'Immensa', region: 'CE', ilvl: 1760.00, cp: 4300, role: 'dps', spec: 'Taijutsu' },
+      { name: 'Skeja', region: 'CE', ilvl: 1763.33, cp: 5359, role: 'dps', spec: 'Shock Training' },
+      { name: 'Seyscrap', region: 'CE', ilvl: 1750.83, cp: 3842, role: 'dps', spec: 'Taijutsu' },
+      { name: 'Arbore', region: 'CE', ilvl: 1785.83, cp: 6895, role: 'dps', spec: 'Shock Training' }
     ],
     'wardancer': [
-      { name: 'Granchey', region: 'CE', ilvl: 1785.83, cp: 6386 }
+      { name: 'Jinkowar', region: 'CE', ilvl: 1760.83, cp: 5824, role: 'dps', spec: 'First Intention' },
+      { name: 'Zhanxy', region: 'CE', ilvl: 1758.33, cp: 5235, role: 'dps', spec: 'Esoteric Skill Enhancement' },
+      { name: 'Hypnodanca', region: 'CE', ilvl: 1753.33, cp: 4520, role: 'dps', spec: 'First Intention' },
+      { name: 'Granchey', region: 'CE', ilvl: 1785.83, cp: 6386, role: 'dps', spec: 'First Intention' }
     ],
     'berserker': [
-      { name: 'Mayhem', region: 'CE', ilvl: 1780.00, cp: 5493 }
+      { name: 'Trustbigswird', region: 'CE', ilvl: 1753.33, cp: 4857, role: 'dps', spec: 'Mayhem' },
+      { name: 'Neoconmachinx', region: 'CE', ilvl: 1765.00, cp: 5380, role: 'dps', spec: "Berserker's Technique" },
+      { name: 'Woopzahr', region: 'CE', ilvl: 1765.83, cp: 5454, role: 'dps', spec: 'Mayhem' },
+      { name: 'Camerilla', region: 'CE', ilvl: 1791.67, cp: 7487, role: 'dps', spec: 'Mayhem' }
     ],
     'destroyer': [
-      { name: 'Bonk', region: 'CE', ilvl: 1770.00, cp: 4976 }
+      { name: 'Baembam', region: 'CE', ilvl: 1760.00, cp: 4908, role: 'dps', spec: 'Rage Hammer' },
+      { name: 'Baltino', region: 'CE', ilvl: 1754.17, cp: 4962, role: 'dps', spec: 'Gravity Training' },
+      { name: 'Sestino', region: 'CE', ilvl: 1753.33, cp: 4578, role: 'dps', spec: 'Rage Hammer' },
+      { name: 'Smashmi', region: 'CE', ilvl: 1765.83, cp: 4971, role: 'dps', spec: 'Rage Hammer' }
     ],
     'gunslinger': [
-      { name: 'Timetohunt', region: 'CE', ilvl: 1765.00, cp: 4627 },
-      { name: 'Peacemaker', region: 'CE', ilvl: 1745.00, cp: 4100 }
+      { name: 'Xyrillachan', region: 'CE', ilvl: 1761.67, cp: 4283, role: 'dps', spec: 'Peacemaker' },
+      { name: 'Demoguns', region: 'CE', ilvl: 1753.33, cp: 4253, role: 'dps', spec: 'Time to Hunt' },
+      { name: 'Fency', region: 'CE', ilvl: 1751.67, cp: 4251, role: 'dps', spec: 'Peacemaker' },
+      { name: 'Mirisama', region: 'CE', ilvl: 1771.67, cp: 6220, role: 'dps', spec: 'Peacemaker' }
     ],
     'artillerist': [
-      { name: 'Artillery', region: 'CE', ilvl: 1770.00, cp: 4839 },
-      { name: 'Barrage', region: 'CE', ilvl: 1750.00, cp: 4300 }
+      { name: 'Grunwalt', region: 'CE', ilvl: 1760.00, cp: 4127, role: 'dps', spec: 'Barrage Enhancement' },
+      { name: 'Roaringcannon', region: 'CE', ilvl: 1760.00, cp: 4455, role: 'dps', spec: 'Firepower Enhancement' },
+      { name: 'Fraenkky', region: 'CE', ilvl: 1757.50, cp: 4803, role: 'dps', spec: 'Barrage Enhancement' },
+      { name: 'Sedirst', region: 'CE', ilvl: 1763.33, cp: 5002, role: 'dps', spec: 'Barrage Enhancement' }
     ],
     'sorceress': [
-      { name: 'Reflux', region: 'CE', ilvl: 1780.00, cp: 5637 },
-      { name: 'Igniter', region: 'CE', ilvl: 1750.00, cp: 4500 }
+      { name: 'Iphelina', region: 'CE', ilvl: 1760.00, cp: 4177, role: 'dps', spec: 'Igniter' },
+      { name: 'Fenxy', region: 'CE', ilvl: 1758.33, cp: 4493, role: 'dps', spec: 'Reflux' },
+      { name: 'Lowdmgceo', region: 'CE', ilvl: 1760.83, cp: 4831, role: 'dps', spec: 'Igniter' },
+      { name: 'Arithea', region: 'CE', ilvl: 1761.67, cp: 4873, role: 'dps', spec: 'Igniter' }
     ],
     'deathblade': [
-      { name: 'Remainingenergy', region: 'CE', ilvl: 1780.00, cp: 5743 },
-      { name: 'Surgeblade', region: 'CE', ilvl: 1775.00, cp: 5496 }
+      { name: 'Scarletnichirin', region: 'CE', ilvl: 1760.00, cp: 4177, role: 'dps', spec: 'Surge' },
+      { name: 'Bêrserkbeast', region: 'CE', ilvl: 1760.00, cp: 5236, role: 'dps', spec: 'Remaining Energy' },
+      { name: 'Surgéz', region: 'CE', ilvl: 1760.00, cp: 4198, role: 'dps', spec: 'Surge' },
+      { name: 'Ârcanis', region: 'CE', ilvl: 1759.17, cp: 4497, role: 'dps', spec: 'Remaining Energy' }
     ],
     'glaivier': [
-      { name: 'Pinnacle', region: 'CE', ilvl: 1770.00, cp: 4983 }
+      { name: 'Mingtzu', region: 'CE', ilvl: 1760.00, cp: 3827, role: 'dps', spec: 'Pinnacle' },
+      { name: 'Doryphora', region: 'CE', ilvl: 1759.17, cp: 4041, role: 'dps', spec: 'Control' },
+      { name: 'Mínille', region: 'CE', ilvl: 1759.17, cp: 4620, role: 'dps', spec: 'Pinnacle' },
+      { name: 'Disglaívsting', region: 'CE', ilvl: 1760.83, cp: 5561, role: 'dps', spec: 'Pinnacle' }
     ],
     'striker': [
-      { name: 'Vinsmoke', region: 'CE', ilvl: 1765.00, cp: 4684 }
+      { name: 'Parallelos', region: 'CE', ilvl: 1760.00, cp: 5190, role: 'dps', spec: 'Deathblow' },
+      { name: 'Demosage', region: 'CE', ilvl: 1750.00, cp: 3910, role: 'dps', spec: 'Esoteric Flurry' },
+      { name: 'Strikinshii', region: 'CE', ilvl: 1770.00, cp: 4809, role: 'dps', spec: 'Deathblow' },
+      { name: 'Sendoru', region: 'CE', ilvl: 1770.00, cp: 5577, role: 'dps', spec: 'Deathblow' }
     ],
     'deadeye': [
-      { name: 'Pistoleer', region: 'CE', ilvl: 1760.00, cp: 4426 }
+      { name: 'Pistall', region: 'CE', ilvl: 1760.83, cp: 4696, role: 'dps', spec: 'Pistoleer' },
+      { name: 'Jáckeylove', region: 'CE', ilvl: 1758.33, cp: 4598, role: 'dps', spec: 'Enhanced Weapon' },
+      { name: 'Gwaiku', region: 'CE', ilvl: 1770.00, cp: 4958, role: 'dps', spec: 'Pistoleer' },
+      { name: 'Gwaide', region: 'CE', ilvl: 1770.00, cp: 4853, role: 'dps', spec: 'Enhanced Weapon' }
     ],
     'sharpshooter': [
-      { name: 'Hawkeye', region: 'CE', ilvl: 1780.00, cp: 5584 }
+      { name: 'Scharfschiesi', region: 'CE', ilvl: 1762.50, cp: 5009, role: 'dps', spec: 'Death Strike' },
+      { name: 'Kemancash', region: 'CE', ilvl: 1763.33, cp: 4278, role: 'dps', spec: 'Loyal Companion' },
+      { name: 'Schiesii', region: 'CE', ilvl: 1765.00, cp: 4864, role: 'dps', spec: 'Death Strike' },
+      { name: 'Artemo', region: 'CE', ilvl: 1765.00, cp: 4628, role: 'dps', spec: 'Loyal Companion' }
     ],
     'machinist': [
-      { name: 'Ironman', region: 'CE', ilvl: 1760.00, cp: 4393 }
+      { name: 'Prophyprime', region: 'CE', ilvl: 1753.33, cp: 4181, role: 'dps', spec: 'Evolutionary Legacy' },
+      { name: 'Erkundi', region: 'CE', ilvl: 1758.33, cp: 4133, role: 'dps', spec: 'Arthetinean Skill' },
+      { name: 'Luckiin', region: 'CE', ilvl: 1760.00, cp: 5075, role: 'dps', spec: 'Evolutionary Legacy' },
+      { name: 'Eísenmann', region: 'CE', ilvl: 1765.83, cp: 4389, role: 'dps', spec: 'Evolutionary Legacy' }
     ],
     'arcanist': [
-      { name: 'Empressgrace', region: 'CE', ilvl: 1775.00, cp: 5184 }
+      { name: 'Glaivecant', region: 'CE', ilvl: 1759.17, cp: 4702, role: 'dps', spec: "Empress's Grace" },
+      { name: 'Cardmagus', region: 'CE', ilvl: 1756.67, cp: 4675, role: 'dps', spec: 'Order of the Emperor' },
+      { name: 'Mirisensei', region: 'CE', ilvl: 1755.83, cp: 4382, role: 'dps', spec: "Empress's Grace" },
+      { name: 'Æacemaster', region: 'CE', ilvl: 1761.67, cp: 5688, role: 'dps', spec: 'Order of the Emperor' }
     ],
     'summoner': [
-      { name: 'Familiar', region: 'CE', ilvl: 1770.00, cp: 4783 }
+      { name: 'Pikasumchan', region: 'CE', ilvl: 1760.00, cp: 4244, role: 'dps', spec: 'Master Summoner' },
+      { name: 'Evapora', region: 'CE', ilvl: 1760.00, cp: 4126, role: 'dps', spec: 'Communication Overflow' },
+      { name: 'Artémiswift', region: 'CE', ilvl: 1760.83, cp: 5101, role: 'dps', spec: 'Master Summoner' },
+      { name: 'Arthémissing', region: 'CE', ilvl: 1760.83, cp: 4926, role: 'dps', spec: 'Communication Overflow' }
     ],
     'reaper': [
-      { name: 'Lunarsound', region: 'CE', ilvl: 1765.00, cp: 4618 }
+      { name: 'Nunape', region: 'CE', ilvl: 1760.00, cp: 4694, role: 'dps', spec: 'Lunar Voice' },
+      { name: 'Nemirea', region: 'CE', ilvl: 1751.67, cp: 4368, role: 'dps', spec: 'Hunger' },
+      { name: 'Píffíí', region: 'CE', ilvl: 1771.67, cp: 5015, role: 'dps', spec: 'Lunar Voice' },
+      { name: 'Rhialyn', region: 'CE', ilvl: 1771.67, cp: 5634, role: 'dps', spec: 'Hunger' }
     ],
     'aeromancer': [
-      { name: 'Windfury', region: 'CE', ilvl: 1770.00, cp: 4873 }
+      { name: 'Tsukiniji', region: 'CE', ilvl: 1760.00, cp: 4246, role: 'dps', spec: 'Drizzle' },
+      { name: 'Arasue', region: 'CE', ilvl: 1760.00, cp: 4016, role: 'dps', spec: 'Wind Fury' },
+      { name: 'Qileew', region: 'CE', ilvl: 1760.00, cp: 5129, role: 'dps', spec: 'Wind Fury' },
+      { name: 'Lînfea', region: 'CE', ilvl: 1760.83, cp: 4831, role: 'dps', spec: 'Drizzle' }
     ],
     'gunlancer': [
-      { name: 'Chadlancer', region: 'CE', ilvl: 1775.00, cp: 5133 }
+      { name: 'Yasinyoo', region: 'CE', ilvl: 1760.00, cp: 4819, role: 'dps', spec: 'Combat Readiness' },
+      { name: 'Sozaî', region: 'CE', ilvl: 1758.33, cp: 4292, role: 'dps', spec: 'Lone Knight' },
+      { name: 'Kanonenlanzer', region: 'CE', ilvl: 1758.33, cp: 4879, role: 'dps', spec: 'Combat Readiness' },
+      { name: 'Kotkalancer', region: 'CE', ilvl: 1760.83, cp: 5601, role: 'dps', spec: 'Lone Knight' }
     ]
   };
 
