@@ -15077,23 +15077,36 @@
     benchmarkState.customTarget = null;
     benchmarkState.currentTargetId = null;
 
-    // Pré-chargement en tâche de fond du pair LIVE de la même classe pour ce personnage
+    // Pré-chargement en tâche de fond des pairs LIVE de la même classe pour ce personnage
     try {
-      const suggestedPeer = getSuggestedLivePeerForClass(c.className, c.ilvl, c.name, c.cp || 0);
-      if (suggestedPeer && (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.name.toLowerCase() === suggestedPeer.name.toLowerCase()))) {
-        fetchLiveBibleBenchmark(suggestedPeer.name, suggestedPeer.region, c.role || 'support').then(b => {
-          if (b) {
-            if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
-            if (!benchmarkState.searchedTargets.some(s => s.id === b.id)) benchmarkState.searchedTargets.unshift(b);
-            if (!benchmarkState.customTarget || benchmarkState.customTarget.isDynamic) {
-              benchmarkState.customTarget = b;
-              benchmarkState.currentTargetId = b.id;
+      const normClass = normalizeClassName(c.className || '').toLowerCase();
+      const isSupportClass = ['paladin', 'bard', 'artist'].some(s => normClass.includes(s));
+      const pRole = c.role || (isSupportClass ? 'support' : 'dps');
+      const peers = VERIFIED_LIVE_PEERS[normClass] || [];
+      const peersToFetch = peers.filter(p => !p.role || p.role === pRole);
+
+      // On pré-charge en tâche de fond jusqu'à 4 pairs vérifiés de même rôle
+      peersToFetch.slice(0, 4).forEach(peer => {
+        if (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.name.toLowerCase() === peer.name.toLowerCase())) {
+          fetchLiveBibleBenchmark(peer.name, peer.region, pRole).then(b => {
+            if (b && (!b.role || b.role === pRole)) {
+              if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
+              if (!benchmarkState.searchedTargets.some(s => s.id === b.id)) {
+                benchmarkState.searchedTargets.push(b);
+              }
+              if (!benchmarkState.customTarget || benchmarkState.customTarget.isDynamic || (benchmarkState.customTarget.role && benchmarkState.customTarget.role !== pRole)) {
+                const opt = findOptimalBenchmark(c);
+                if (opt && opt.isLive) {
+                  benchmarkState.customTarget = opt;
+                  benchmarkState.currentTargetId = opt.id;
+                }
+              }
+              const bp = document.getElementById('tab-benchmark');
+              if (bp && bp.classList.contains('active')) renderBenchmarkTab();
             }
-            const bp = document.getElementById('tab-benchmark');
-            if (bp && bp.classList.contains('active')) renderBenchmarkTab();
-          }
-        }).catch(() => {});
-      }
+          }).catch(() => {});
+        }
+      });
     } catch (e) {}
 
     const benchPane = document.getElementById('tab-benchmark');
@@ -17199,17 +17212,21 @@
       { name: 'Bubuszolot', region: 'CE', ilvl: 1745.00, cp: 4200 }
     ],
     'bard': [
-      { name: 'Kimaziel', region: 'CE', ilvl: 1765.00, cp: 4705 },
-      { name: 'Lavieenrosee', region: 'CE', ilvl: 1760.00, cp: 4631 }
+      { name: 'Ultrabuff', region: 'CE', ilvl: 1741.67, cp: 4315, role: 'support', spec: 'Desperate Salvation' },
+      { name: 'Lavieenrosee', region: 'CE', ilvl: 1760.00, cp: 4631, role: 'support', spec: 'Desperate Salvation' },
+      { name: 'Kimaziel', region: 'CE', ilvl: 1765.00, cp: 4705, role: 'support', spec: 'Desperate Salvation' }
     ],
     'paladin': [
-      { name: 'Siwilpal', region: 'CE', ilvl: 1770.00, cp: 4751 },
-      { name: 'Deilras', region: 'CE', ilvl: 1770.00, cp: 4379 },
-      { name: 'Denji', region: 'CE', ilvl: 1800.00, cp: 8003 }
+      { name: 'Leomdri', region: 'CE', ilvl: 1760.00, cp: 3504, role: 'support', spec: 'Blessed Aura' },
+      { name: 'Marbás', region: 'CE', ilvl: 1758.33, cp: 4107, role: 'support', spec: 'Blessed Aura' },
+      { name: 'Pontiknight', region: 'CE', ilvl: 1756.67, cp: 4181, role: 'support', spec: 'Blessed Aura' },
+      { name: 'Siwilpal', region: 'CE', ilvl: 1770.00, cp: 4751, role: 'support', spec: 'Blessed Aura' }
     ],
     'slayer': [
-      { name: 'Cicilianay', region: 'CE', ilvl: 1780.83, cp: 6029 },
-      { name: 'Allîssa', region: 'CE', ilvl: 1742.50, cp: 4371 }
+      { name: 'Trustslays', region: 'CE', ilvl: 1750.00, cp: 4230, role: 'dps', spec: 'Predator' },
+      { name: 'Allîssa', region: 'CE', ilvl: 1742.50, cp: 4371, role: 'dps', spec: 'Predator' },
+      { name: 'Siwilayer', region: 'CE', ilvl: 1769.17, cp: 5684, role: 'dps', spec: 'Predator' },
+      { name: 'Cicilianay', region: 'CE', ilvl: 1780.83, cp: 6029, role: 'dps', spec: 'Punisher' }
     ],
     'souleater': [
       { name: 'Hanekâwâ', region: 'CE', ilvl: 1770.83, cp: 5383 },
@@ -17281,11 +17298,14 @@
     ]
   };
 
-  function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '', playerCp = 0, failedAttempts = null) {
+  function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '', playerCp = 0, failedAttempts = null, preferredRole = null) {
     const norm = normalizeClassName(className || '').toLowerCase();
+    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => norm.includes(s));
+    const targetRole = preferredRole || (isSupportClass ? 'support' : 'dps');
     const peers = VERIFIED_LIVE_PEERS[norm] || [];
     const validPeers = peers.filter(p => {
       if (p.name.toLowerCase() === (excludeName || '').toLowerCase()) return false;
+      if (p.role && p.role !== targetRole) return false;
       const reg = (p.region || 'CE').toUpperCase();
       const pKey = `${p.name.toLowerCase()}_${reg}`;
       const pKeyAuto = `${p.name.toLowerCase()}_auto`;
@@ -17296,7 +17316,7 @@
     });
     if (validPeers.length === 0) return null;
 
-    // Priorité 1 : un pair de même classe dont le CP est >= au CP du joueur (palier d'amélioration)
+    // Priorité 1 : un pair de même classe et même rôle dont le CP est >= au CP du joueur (palier d'amélioration)
     if (playerCp > 0) {
       const higherPeers = validPeers.filter(p => (p.cp || 0) >= playerCp);
       if (higherPeers.length > 0) {
@@ -17469,22 +17489,26 @@
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
+    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+    const pRole = playerChar.role || (isSupportClass ? 'support' : 'dps');
     const list = [];
 
-    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (MÊME CLASSE STRICTEMENT)
+    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (MÊME CLASSE ET MÊME RÔLE STRICTEMENT)
     const searchedList = benchmarkState.searchedTargets || [];
     searchedList.forEach(s => {
       const sClass = normalizeClassName(s.className || s.characterClass || s.class || '').toLowerCase();
-      if (s && s.isLive && sClass === pClass) {
+      const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      if (s && s.isLive && sClass === pClass && sRole === pRole) {
         list.push(s);
       }
     });
 
-    // 2. Personnages du Roster actif DE LA MÊME CLASSE UNIQUEMENT
+    // 2. Personnages du Roster actif DE LA MÊME CLASSE ET MÊME RÔLE UNIQUEMENT
     const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
     currentRoster.forEach(c => {
       const cClass = normalizeClassName(c.className || c.characterClass || c.class || '').toLowerCase();
-      if ((c.name || c.id) !== (playerChar.name || playerChar.id) && cClass === pClass) {
+      const cRole = c.role || (isSupportClass ? 'support' : 'dps');
+      if ((c.name || c.id) !== (playerChar.name || playerChar.id) && cClass === pClass && cRole === pRole) {
         list.push(convertCharToBenchmarkFormat(c, isEnLang()));
       }
     });
@@ -17507,9 +17531,16 @@
     const pCp = playerChar.cp || playerChar.combatPower || 3500;
     const pSpec = getCharacterSpecName(playerChar).toLowerCase();
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
+    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+    const pRole = playerChar.role || (isSupportClass ? 'support' : 'dps');
 
-    // Filtre strict : même classe obligatoire (zéro classe différente)
-    const sameClass = avail.filter(b => normalizeClassName(b.className || b.characterClass || b.class || '').toLowerCase() === pClass);
+    // Filtre strict : même classe et même rôle obligatoires (zéro comparaison Support vs DPS !)
+    const sameClass = avail.filter(b => {
+      const bClass = normalizeClassName(b.className || b.characterClass || b.class || '').toLowerCase();
+      if (bClass !== pClass) return false;
+      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      return bRole === pRole;
+    });
     if (sameClass.length === 0) return null;
 
     // 1. Cherche en priorité un profil LIVE réel de même spé avec CP >= pCp ET iLvl proche (écart <= 15 iLvl)
@@ -17526,21 +17557,21 @@
       return anySameSpecLive[0];
     }
 
-    // 3. Cherche un profil LIVE réel de la même classe avec CP >= pCp ET iLvl proche (écart <= 20 iLvl)
+    // 3. Cherche un profil LIVE réel de la même classe et rôle avec CP >= pCp ET iLvl proche (écart <= 20 iLvl)
     const closeClassLiveHigher = sameClass.filter(b => b.isLive && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 20.0);
     if (closeClassLiveHigher.length > 0) {
       closeClassLiveHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return closeClassLiveHigher[0];
     }
 
-    // 4. Cherche un profil LIVE de même classe avec CP >= pCp
+    // 4. Cherche un profil LIVE de même classe et rôle avec CP >= pCp
     const anyClassLiveHigher = sameClass.filter(b => b.isLive && b.cp >= pCp);
     if (anyClassLiveHigher.length > 0) {
       anyClassLiveHigher.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return anyClassLiveHigher[0];
     }
 
-    // 5. PRIORITÉ ABSOLUE AUX VRAIS JOUEURS : tout profil LIVE réel même classe le plus proche en iLvl
+    // 5. PRIORITÉ ABSOLUE AUX VRAIS JOUEURS : tout profil LIVE réel même classe et rôle le plus proche en iLvl
     const anyLive = sameClass.filter(b => b.isLive);
     if (anyLive.length > 0) {
       anyLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
@@ -17551,7 +17582,7 @@
     const dyn = sameClass.find(b => b.isDynamic);
     if (dyn) return dyn;
 
-    // 7. Profil même classe (jamais une autre classe)
+    // 7. Profil même classe et rôle
     sameClass.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
     return sameClass[0] || null;
   }
@@ -20069,35 +20100,60 @@
     }
 
     const pClass = normalizeClassName(player.className || '').toLowerCase();
+    const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+    const pRole = player.role || (isSupportClass ? 'support' : 'dps');
     const avail = getAvailableBenchmarks(player);
 
     // Résolution du profil cible (100% profils LIVE ou Roster réel, zéro preset statique, zéro profil synthétique)
     let target = benchmarkState.customTarget;
 
-    // VALIDATION STRICTE DE LA CLASSE :
-    // Si la cible en cache ou sélectionnée n'est pas de la même classe que le joueur actif, on la rejette obligatoirement
-    if (target && normalizeClassName(target.className || '').toLowerCase() !== pClass) {
-      target = null;
-      benchmarkState.customTarget = null;
-      benchmarkState.currentTargetId = null;
+    // VALIDATION STRICTE DE LA CLASSE ET DU RÔLE :
+    // Si la cible en cache ou sélectionnée n'est pas de la même classe ou du même rôle, on la rejette obligatoirement
+    if (target) {
+      const tClass = normalizeClassName(target.className || '').toLowerCase();
+      const tRole = target.role || (isSupportClass ? (target.spec === 'Blessed Aura' || target.spec === 'Desperate Salvation' || target.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      if (tClass !== pClass || tRole !== pRole) {
+        target = null;
+        benchmarkState.customTarget = null;
+        benchmarkState.currentTargetId = null;
+      }
     }
 
     if (!target) {
       if (benchmarkState.currentTargetId) {
-        // 1. Cherche dans les profils disponibles de CETTE CLASSE
-        target = avail.find(b => b.id === benchmarkState.currentTargetId && normalizeClassName(b.className || '').toLowerCase() === pClass);
-        // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE
+        // 1. Cherche dans les profils disponibles de CETTE CLASSE et MÊME RÔLE
+        target = avail.find(b => {
+          if (b.id !== benchmarkState.currentTargetId) return false;
+          if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
+          const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+          return bRole === pRole;
+        });
+        // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE et MÊME RÔLE
         if (!target) {
-          target = (benchmarkState.searchedTargets || []).find(b => b.id === benchmarkState.currentTargetId && normalizeClassName(b.className || '').toLowerCase() === pClass);
+          target = (benchmarkState.searchedTargets || []).find(b => {
+            if (b.id !== benchmarkState.currentTargetId) return false;
+            if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
+            const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+            return bRole === pRole;
+          });
         }
       }
     }
 
-    // Priorité absolue aux profils LIVE de lostark.bible :
-    const hasLivePeer = avail.some(b => b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass) ||
-                        (benchmarkState.searchedTargets || []).some(b => b && b.isLive && normalizeClassName(b.className || '').toLowerCase() === pClass);
+    // Priorité absolue aux profils LIVE de lostark.bible (MÊME CLASSE ET MÊME RÔLE) :
+    const hasLivePeer = avail.some(b => {
+      if (!b.isLive) return false;
+      if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
+      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      return bRole === pRole;
+    }) || (benchmarkState.searchedTargets || []).some(b => {
+      if (!b || !b.isLive) return false;
+      if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
+      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+      return bRole === pRole;
+    });
 
-    // Si la cible actuelle est dynamique ou absente, mais qu'un profil LIVE de cette classe est disponible en mémoire, on bascule dessus immédiatement
+    // Si la cible actuelle est dynamique ou absente, mais qu'un profil LIVE de cette classe et rôle est disponible en mémoire, on bascule dessus immédiatement
     if ((!target || target.isDynamic) && hasLivePeer && !benchmarkState.manualDynamicChosen) {
       const liveOpt = findOptimalBenchmark(player);
       if (liveOpt && liveOpt.isLive) {
@@ -20108,7 +20164,7 @@
     }
 
     if ((!target || target.isDynamic) && !hasLivePeer && !benchmarkState.manualDynamicChosen) {
-      const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts);
+      const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts, pRole);
       const peerKey = suggested ? `${suggested.name.toLowerCase()}_${(suggested.region || 'CE').toUpperCase()}` : null;
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
         benchmarkState.isAutoFetching = true;
@@ -20122,7 +20178,7 @@
               ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
             </div>
             <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-              <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class required' : 'Même classe obligatoire'}</span>
+              <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
             </div>
           </div>
         `;
@@ -20166,12 +20222,17 @@
         </div>
       `;
 
-      // Remplissage du sélecteur avec les profils recherchés disponibles de cette classe ou alts du roster
+      // Remplissage du sélecteur avec les profils recherchés disponibles de cette classe et rôle
       const select = document.getElementById('benchmarkPresetSelect');
       if (select) {
         let optionsHtml = `<option value="">${isEn ? 'Select or search a benchmark profile...' : 'Sélectionnez ou recherchez un profil...'} </option>`;
         
-        const searchedList = (benchmarkState.searchedTargets || []).filter(s => s && s.isLive && normalizeClassName(s.className || '').toLowerCase() === pClass);
+        const searchedList = (benchmarkState.searchedTargets || []).filter(s => {
+          if (!s || !s.isLive) return false;
+          if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
+          const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+          return sRole === pRole;
+        });
         if (searchedList.length > 0) {
           optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
           searchedList.forEach(s => {
@@ -20183,7 +20244,12 @@
         }
 
         const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
-        const sameClassRoster = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id) && normalizeClassName(c.className || '').toLowerCase() === pClass);
+        const sameClassRoster = currentRoster.filter(c => {
+          if ((c.name || c.id) === (player.name || player.id)) return false;
+          if (normalizeClassName(c.className || '').toLowerCase() !== pClass) return false;
+          const cRole = c.role || (isSupportClass ? 'support' : 'dps');
+          return cRole === pRole;
+        });
         if (sameClassRoster.length > 0) {
           optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
           sameClassRoster.forEach(c => {
@@ -20209,15 +20275,23 @@
       return;
     }
 
-    // 1. Mise à jour du Sélecteur de Presets & Choix Libre (MÊME CLASSE UNIQUEMENT)
+    // 1. Mise à jour du Sélecteur de Presets & Choix Libre (MÊME CLASSE ET MÊME RÔLE UNIQUEMENT)
     const select = document.getElementById('benchmarkPresetSelect');
     if (select) {
       let optionsHtml = '';
 
-      // 1. Profils LIVE de CETTE CLASSE recherchés & synchronisés en direct sur lostark.bible
-      const searchedList = (benchmarkState.searchedTargets || []).filter(s => s && s.isLive && normalizeClassName(s.className || '').toLowerCase() === pClass);
+      // 1. Profils LIVE de CETTE CLASSE et MÊME RÔLE recherchés & synchronisés en direct sur lostark.bible
+      const searchedList = (benchmarkState.searchedTargets || []).filter(s => {
+        if (!s || !s.isLive) return false;
+        if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
+        const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+        return sRole === pRole;
+      });
       if (benchmarkState.customTarget && normalizeClassName(benchmarkState.customTarget.className || '').toLowerCase() === pClass && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
-        searchedList.unshift(benchmarkState.customTarget);
+        const ctRole = benchmarkState.customTarget.role || (isSupportClass ? (benchmarkState.customTarget.spec === 'Blessed Aura' || benchmarkState.customTarget.spec === 'Desperate Salvation' || benchmarkState.customTarget.spec === 'Full Bloom' ? 'support' : 'dps') : 'dps');
+        if (ctRole === pRole) {
+          searchedList.unshift(benchmarkState.customTarget);
+        }
       }
       if (searchedList.length > 0) {
         optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
@@ -21117,7 +21191,10 @@
             benchmarkState.currentTargetId = opt.id;
             benchmarkState.customTarget = opt;
           } else {
-            const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts);
+            const pClass = normalizeClassName(player.className || '').toLowerCase();
+            const isSupportClass = ['paladin', 'bard', 'artist'].some(s => pClass.includes(s));
+            const pRole = player.role || (isSupportClass ? 'support' : 'dps');
+            const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts, pRole);
             if (suggested) {
               searchAndCompareBibleProfile(suggested.name, suggested.region);
               return;
