@@ -21147,6 +21147,7 @@
       } catch (e) {}
     }
 
+    const normClass = normalizeClassName(header.class || (parsed.loadout && parsed.loadout.classId) || parsed.className || '');
     const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.toLowerCase().includes(s));
     const isSupport = (parsed.battlePoint && parsed.battlePoint.isSupport !== undefined)
       ? parsed.battlePoint.isSupport
