@@ -18187,7 +18187,20 @@
           tierLabel = isEn ? 'Dead Perk' : 'Perk Inutile';
         }
       }
-      return { text: rawName, rollTier, tierLabel, isDead, isFixed: false, isPerk: true };
+      return { 
+        text: rawName, 
+        rollTier, 
+        tierLabel, 
+        isDead, 
+        isFixed: false, 
+        isPerk: true, 
+        sIndex, 
+        sVal, 
+        baseName,
+        isMainStat: false,
+        isCombatStat: false,
+        isDefensive: false
+      };
     }
 
     // Combat stats / Attributes
@@ -18216,6 +18229,11 @@
       ? (sIndex === 17 || sIndex === 20 || sIndex === 55 || sIndex === 56) 
       : (sIndex === 6 || sIndex === 17 || sIndex === 19 || sIndex === 20 || sIndex === 27 || sIndex === 55 || sIndex === 56);
 
+    const lStatName = (statName || '').toLowerCase();
+    const isMainStat = (sIndex === 9 || sIndex === 7 || sIndex === 8 || ['intelligence', 'strength', 'dexterity', 'force', 'dextérité'].some(k => lStatName.includes(k)));
+    const isCombatStat = (sIndex === 15 || sIndex === 16 || sIndex === 14 || ['crit', 'spéc', 'spec', 'rapid', 'swift'].some(k => lStatName.includes(k)));
+    const isDefensive = (sIndex === 17 || sIndex === 20 || sIndex === 55 || sIndex === 56 || ['vitalit', 'vie', 'hp', 'mana', 'défense', 'defense'].some(k => lStatName.includes(k)));
+
     const formattedVal = typeof formatNumber === 'function' ? formatNumber(sVal) : sVal.toLocaleString('fr-FR');
     const text = `${statName} (+${formattedVal})`;
     let rollTier = 'mid';
@@ -18232,7 +18250,20 @@
       rollTier = 'fixed';
     }
 
-    return { text, rollTier, tierLabel, isDead, isFixed };
+    return { 
+      text, 
+      rollTier, 
+      tierLabel, 
+      isDead, 
+      isFixed, 
+      isPerk: false, 
+      sIndex, 
+      sVal, 
+      statName,
+      isMainStat, 
+      isCombatStat, 
+      isDefensive 
+    };
   }
 
   function extractBraceletItem(charObj) {
@@ -18274,35 +18305,65 @@
         rollTier: 'fixed',
         tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
         isDead: false,
-        isFixed: true
+        isFixed: true,
+        isPerk: false,
+        isCombatStat: true,
+        isMainStat: false,
+        isDefensive: false,
+        sIndex: 15,
+        sVal: 100
       });
       fixedLines.push({
         text: isEn ? "Specialization (+95)" : "Spécialisation (+95)",
         rollTier: 'fixed',
         tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
         isDead: false,
-        isFixed: true
+        isFixed: true,
+        isPerk: false,
+        isCombatStat: true,
+        isMainStat: false,
+        isDefensive: false,
+        sIndex: 16,
+        sVal: 95
       });
       rolledLines.push({
         text: `${mainStat} (+13 200)`,
         rollTier: 'high',
         tierLabel: isEn ? 'High Roll' : 'Roll Élevé',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: false,
+        isCombatStat: false,
+        isMainStat: true,
+        isDefensive: false,
+        sIndex: 9,
+        sVal: 13200
       });
       rolledLines.push({
         text: isEn ? "Dagger / Weakness (Defense -2.5% & Ally AP +3%)" : "Poignard / Faiblesse (Défense -2.5% & AP Allié +3%)",
         rollTier: 'passif',
         tierLabel: isEn ? 'BiS Raid Perk' : 'Proc BiS Raid',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: true,
+        isCombatStat: false,
+        isMainStat: false,
+        isDefensive: false,
+        sIndex: 11061,
+        sVal: 0
       });
       rolledLines.push({
         text: isEn ? "Cheers / Crit Vulnerability (Crit Dmg -4.8% & Ally AP +3%)" : "Ovation / Vulnérabilité Crit (Dégâts Crit -4.8% & AP Allié +3%)",
         rollTier: 'passif',
         tierLabel: isEn ? 'BiS Raid Perk' : 'Proc BiS Raid',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: true,
+        isCombatStat: false,
+        isMainStat: false,
+        isDefensive: false,
+        sIndex: 11091,
+        sVal: 0
       });
     } else {
       // DPS
@@ -18325,14 +18386,24 @@
         rollTier: 'fixed',
         tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
         isDead: false,
-        isFixed: true
+        isFixed: true,
+        isPerk: false,
+        isCombatStat: true,
+        isMainStat: false,
+        isDefensive: false,
+        sVal: 100
       });
       fixedLines.push({
         text: stat2,
         rollTier: 'fixed',
         tierLabel: isEn ? 'Fixed Stat' : 'Stat Fixe',
         isDead: false,
-        isFixed: true
+        isFixed: true,
+        isPerk: false,
+        isCombatStat: true,
+        isMainStat: false,
+        isDefensive: false,
+        sVal: 95
       });
 
       rolledLines.push({
@@ -18340,7 +18411,12 @@
         rollTier: 'high',
         tierLabel: isEn ? 'High Roll' : 'Roll Élevé',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: false,
+        isCombatStat: false,
+        isMainStat: true,
+        isDefensive: false,
+        sVal: 13100
       });
 
       let perk1 = isEn ? "Hammer (Crit Damage +10% & Crit Hit Dmg +1.5%)" : "Marteau (Dégâts Critiques +10% & Dégâts Coup Crit +1.5%)";
@@ -18359,146 +18435,247 @@
         rollTier: 'passif',
         tierLabel: isEn ? 'BiS Perk' : 'Proc BiS',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: true,
+        isCombatStat: false,
+        isMainStat: false,
+        isDefensive: false
       });
       rolledLines.push({
         text: perk2,
         rollTier: 'passif',
         tierLabel: isEn ? 'BiS Perk' : 'Proc BiS',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: true,
+        isCombatStat: false,
+        isMainStat: false,
+        isDefensive: false
       });
     }
 
     return { fixedLines, rolledLines };
   }
 
-  function computeBraceletLineCps(pFixed, pRolled, tFixed, tRolled, cpImpact, isSupport) {
-    if (cpImpact <= 0) {
-      return {
-        combatCp: 0,
-        mainStatCp: 0,
-        perk1Cp: 0,
-        perk2Cp: 0,
-        pairedP1: pRolled.filter(l => l.isPerk)[0] || null,
-        pairedT1: tRolled.filter(l => l.isPerk)[0] || null,
-        pairedP2: pRolled.filter(l => l.isPerk)[1] || null,
-        pairedT2: tRolled.filter(l => l.isPerk)[1] || null,
-        pMainObj: pRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int'))),
-        tMainObj: tRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')))
-      };
-    }
-
-    const isCombatStatLine = (txt) => {
-      const l = (txt || '').toLowerCase();
-      return l.includes('spé') || l.includes('spec') || l.includes('crit') || l.includes('rapid') || l.includes('swift') || l.includes('dom') || l.includes('endur') || l.includes('expert');
-    };
-
+  function computeBraceletLineCps(pFixed, pRolled, tFixed, tRolled, cpImpact, isSupport, pClassName, tClassName, isEn) {
     const extractStatNum = (txt) => {
       const m = (txt || '').match(/\+([0-9\s ,]+)/);
       if (!m) return 0;
       return parseInt(m[1].replace(/[\s ,]/g, ''), 10) || 0;
     };
 
-    const pCombatList = pFixed.filter(l => isCombatStatLine(l.text) && !l.isDead);
-    const tCombatList = tFixed.filter(l => isCombatStatLine(l.text) && !l.isDead);
-    const pCombatSum = pCombatList.reduce((sum, l) => sum + extractStatNum(l.text), 0);
-    const tCombatSum = tCombatList.reduce((sum, l) => sum + extractStatNum(l.text), 0);
-    const combatDiff = Math.max(0, tCombatSum - pCombatSum);
-    const wCombat = combatDiff > 0 ? combatDiff * 0.7 : 0.1;
-
-    const pMainObj = pRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')));
-    const tMainObj = tRolled.find(l => !l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')));
-    const pMainVal = pMainObj ? extractStatNum(pMainObj.text) : 11904;
-    const tMainVal = tMainObj ? extractStatNum(tMainObj.text) : 13100;
-    const mainDiff = Math.max(0, tMainVal - pMainVal);
-    const wMain = mainDiff > 0 ? (mainDiff / 1000) * 15 : 0.1;
-
-    const pPerks = pRolled.filter(l => l.isPerk || (!l.text.includes('Force') && !l.text.includes('Strength') && !l.text.includes('Dext') && !l.text.includes('Int') && !l.isFixed));
-    const tPerks = tRolled.filter(l => l.isPerk || (!l.text.includes('Force') && !l.text.includes('Strength') && !l.text.includes('Dext') && !l.text.includes('Int') && !l.isFixed));
-
-    const getPerkKey = (txt) => {
+    const getPerkFamily = (txt) => {
       const l = (txt || '').toLowerCase();
-      for (const k of ['marteau', 'hammer', 'ferveur', 'fervor', 'précision', 'precision', 'coinçage', 'wedge', 'embuscade', 'ambush', 'poignard', 'dagger', 'ovation', 'cheers', 'exposition', 'expose', 'non-directionnel', 'non-directional', 'bagarreur', 'brawler']) {
-        if (l.includes(k)) return k.replace('hammer', 'marteau').replace('fervor', 'ferveur').replace('precision', 'précision').replace('wedge', 'coinçage').replace('ambush', 'embuscade').replace('dagger', 'poignard').replace('cheers', 'ovation').replace('expose', 'exposition').replace('non-directional', 'non-directionnel').replace('brawler', 'bagarreur');
+      for (const f of ['poignard', 'dagger', 'exposition', 'expose', 'ferveur', 'fervor', 'ovation', 'cheers', 'protection', 'soins', 'marteau', 'hammer', 'précision', 'precision', 'coinçage', 'wedge', 'embuscade', 'ambush', 'non-directionnel', 'non-directional', 'bagarreur', 'brawler']) {
+        if (l.includes(f)) {
+          return f.replace('dagger', 'poignard')
+                  .replace('expose', 'exposition')
+                  .replace('fervor', 'ferveur')
+                  .replace('cheers', 'ovation')
+                  .replace('soins', 'protection')
+                  .replace('hammer', 'marteau')
+                  .replace('precision', 'précision')
+                  .replace('wedge', 'coinçage')
+                  .replace('ambush', 'embuscade')
+                  .replace('non-directional', 'non-directionnel')
+                  .replace('brawler', 'bagarreur');
+        }
       }
       return 'other';
     };
 
-    let pairedP1 = pPerks[0] || null, pairedT1 = tPerks[0] || null;
-    let pairedP2 = pPerks[1] || null, pairedT2 = tPerks[1] || null;
-
-    if (pPerks.length > 0 && tPerks.length > 0) {
-      const p0Key = getPerkKey(pPerks[0].text);
-      const p1Key = pPerks[1] ? getPerkKey(pPerks[1].text) : null;
-      const t0Key = getPerkKey(tPerks[0].text);
-      const t1Key = tPerks[1] ? getPerkKey(tPerks[1].text) : null;
-
-      if (p1Key && p1Key === t0Key) {
-        pairedP1 = pPerks[1];
-        pairedT1 = tPerks[0];
-        pairedP2 = pPerks[0];
-        pairedT2 = tPerks[1] || null;
-      } else if (p0Key && p0Key === t1Key) {
-        pairedP1 = pPerks[0];
-        pairedT1 = tPerks[1];
-        pairedP2 = pPerks[1] || null;
-        pairedT2 = tPerks[0];
-      }
-    }
-
-    const estimatePerkPower = (line) => {
-      if (!line || line.isDead) return 0;
+    const getLinePerkMultiplier = (line) => {
+      if (!line || line.isDead || !line.isPerk) return 0;
+      const sIdx = line.sIndex || 0;
       const txt = (line.text || '').toLowerCase();
-      if (txt.includes('ferveur') || txt.includes('fervor')) return 5.5;
-      if (txt.includes('marteau') || txt.includes('hammer')) {
-        return txt.includes('10%') ? 4.8 : (txt.includes('8.4%') ? 3.8 : 3.0);
+
+      const idMap = {
+        11061: 12.75, 11062: 10.90, 11063: 9.06, 11064: 7.21,
+        11071: 12.75, 11072: 10.90, 11073: 9.06, 11074: 7.21,
+        11081: 12.75, 11082: 10.90, 11083: 9.06, 11084: 7.21,
+        11091: 12.75, 11092: 10.90, 11093: 9.06, 11094: 7.21,
+        11181: 4.90, 11182: 4.20, 11183: 3.50, 11184: 2.80,
+        77300001: 6.00,
+        11021: 5.00, 11022: 4.20, 11023: 3.40, 11024: 2.60,
+        11051: 5.50, 11052: 5.00, 11053: 4.50, 11054: 4.00,
+        11011: 4.50, 11012: 3.70, 11013: 3.00, 11014: 2.20,
+        11041: 3.50, 11042: 3.00, 11043: 2.50, 11044: 2.00,
+        605100031: 3.00, 605100032: 2.50, 605100033: 2.00,
+        605100131: 3.00, 605100132: 2.50, 605100133: 2.00,
+        605100171: 3.50, 605100172: 3.00, 605100173: 2.50
+      };
+      if (sIdx && idMap[sIdx]) return idMap[sIdx];
+
+      if (isSupport) {
+        if (txt.includes('poignard') || txt.includes('dagger')) {
+          if (txt.includes('2.5%') || txt.includes('+3%')) return 12.75;
+          if (txt.includes('2.1%') || txt.includes('+2.5%')) return 10.90;
+          if (txt.includes('1.8%') || txt.includes('+2%')) return 9.06;
+          return 7.21;
+        }
+        if (txt.includes('exposition') || txt.includes('expose')) {
+          if (txt.includes('2.5%') || txt.includes('+3%')) return 12.75;
+          if (txt.includes('2.1%') || txt.includes('+2.5%')) return 10.90;
+          if (txt.includes('1.8%') || txt.includes('+2%')) return 9.06;
+          return 7.21;
+        }
+        if (txt.includes('ferveur') || txt.includes('fervor')) {
+          if (txt.includes('1.3%') || txt.includes('+3%')) return 12.75;
+          if (txt.includes('1.1%') || txt.includes('+2.5%')) return 10.90;
+          if (txt.includes('0.9%') || txt.includes('+2%')) return 9.06;
+          return 7.21;
+        }
+        if (txt.includes('ovation') || txt.includes('cheers')) {
+          if (txt.includes('4.8%') || txt.includes('+3%')) return 12.75;
+          if (txt.includes('4.2%') || txt.includes('+2.5%')) return 10.90;
+          if (txt.includes('3.6%') || txt.includes('+2%')) return 9.06;
+          return 7.21;
+        }
+        if (txt.includes('protection') || txt.includes('soins') || txt.includes('recovery')) {
+          if (txt.includes('3.5%')) return 4.90;
+          if (txt.includes('3%')) return 4.20;
+          if (txt.includes('2.5%')) return 3.50;
+          return 2.80;
+        }
+      } else {
+        if (txt.includes('marteau') || txt.includes('hammer')) {
+          if (txt.includes('10%')) return 5.00;
+          if (txt.includes('8.4%')) return 4.20;
+          if (txt.includes('6.8%')) return 3.40;
+          return 2.60;
+        }
+        if (txt.includes('ferveur') || txt.includes('fervor')) {
+          if (txt.includes('5.5%')) return 5.50;
+          if (txt.includes('5%')) return 5.00;
+          if (txt.includes('4.5%')) return 4.50;
+          return 4.00;
+        }
+        if (txt.includes('précision') || txt.includes('precision')) {
+          if (txt.includes('5%')) return 4.50;
+          if (txt.includes('4.2%')) return 3.70;
+          if (txt.includes('3.4%')) return 3.00;
+          return 2.20;
+        }
+        if (txt.includes('coinçage') || txt.includes('wedge')) {
+          if (txt.includes('3.5%')) return 3.50;
+          if (txt.includes('3%')) return 3.00;
+          if (txt.includes('2.5%')) return 2.50;
+          return 2.00;
+        }
+        if (txt.includes('embuscade') || txt.includes('ambush')) return 3.00;
+        if (txt.includes('non-directionnel') || txt.includes('non-directional')) return 3.50;
+        if (txt.includes('bagarreur') || txt.includes('brawler')) return 3.50;
+        if (txt.includes('dégâts sortants') || txt.includes('outgoing damage')) return 3.00;
       }
-      if (txt.includes('précision') || txt.includes('precision')) {
-        return txt.includes('5%') ? 5.0 : 3.8;
-      }
-      if (txt.includes('coinçage') || txt.includes('wedge')) return 2.5;
-      if (txt.includes('embuscade') || txt.includes('ambush')) return 3.2;
-      if (txt.includes('non-directionnel') || txt.includes('non-directional')) return 3.5;
-      if (txt.includes('bagarreur') || txt.includes('brawler')) return 3.5;
-      if (txt.includes('poignard') || txt.includes('dagger')) return 6.0;
-      if (txt.includes('ovation') || txt.includes('cheers')) return 6.0;
-      if (txt.includes('exposition') || txt.includes('expose')) return 5.5;
-      if (line.rollTier === 'passif') return 4.5;
-      if (line.rollTier === 'high') return 3.5;
-      return 2.0;
+      return 0;
     };
 
-    const pP1Eff = estimatePerkPower(pairedP1);
-    const pP2Eff = estimatePerkPower(pairedP2);
-    const tP1Eff = estimatePerkPower(pairedT1);
-    const tP2Eff = estimatePerkPower(pairedT2);
+    const pAll = [...pFixed, ...pRolled];
+    const tAll = [...tFixed, ...tRolled];
 
-    const diffP1 = Math.max(0.1, tP1Eff - pP1Eff);
-    const diffP2 = Math.max(0.1, tP2Eff - pP2Eff);
-    const wPerk1 = diffP1 * 18;
-    const wPerk2 = diffP2 * 18;
+    // Main Stat
+    const isMainStatLine = (l) => l.isMainStat || (!l.isPerk && (l.text.includes('Force') || l.text.includes('Strength') || l.text.includes('Dext') || l.text.includes('Int')));
+    const pMainLine = pAll.find(isMainStatLine) || null;
+    const tMainLine = tAll.find(isMainStatLine) || null;
+    const pMainVal = pMainLine ? (pMainLine.sVal || extractStatNum(pMainLine.text)) : 0;
+    const tMainVal = tMainLine ? (tMainLine.sVal || extractStatNum(tMainLine.text)) : 0;
+    const mainDiff = tMainVal - pMainVal;
 
-    const totalW = wCombat + wMain + wPerk1 + wPerk2;
+    // Combat Stats
+    const isCombatStatLine = (l) => l.isCombatStat || (!l.isPerk && !l.isMainStat && !l.isDefensive && (l.text.includes('Rapid') || l.text.includes('Swift') || l.text.includes('Spé') || l.text.includes('Spec') || l.text.includes('Crit') || l.text.includes('Dom') || l.text.includes('Endur') || l.text.includes('Expert')));
+    const pCombatLines = pAll.filter(isCombatStatLine);
+    const tCombatLines = tAll.filter(isCombatStatLine);
+    const pCombatSum = pCombatLines.reduce((s, l) => s + (l.sVal || extractStatNum(l.text)), 0);
+    const tCombatSum = tCombatLines.reduce((s, l) => s + (l.sVal || extractStatNum(l.text)), 0);
+    const combatDiff = tCombatSum - pCombatSum;
 
-    const combatCp = Math.round((wCombat / totalW) * cpImpact);
-    const mainStatCp = Math.round((wMain / totalW) * cpImpact);
-    const perk1Cp = Math.round((wPerk1 / totalW) * cpImpact);
-    const perk2Cp = Math.max(0, cpImpact - (combatCp + mainStatCp + perk1Cp));
+    // Defensive lines
+    const isDefensiveLine = (l) => l.isDefensive || (!l.isPerk && (l.text.includes('Vitalit') || l.text.includes('Points de Vie') || l.text.includes('Max HP') || l.text.includes('Mana') || l.text.includes('Défense')));
+    const pDefensiveLines = pAll.filter(isDefensiveLine);
+    const pRolledDef = pRolled.filter(isDefensiveLine);
+
+    // Perks
+    const pPerks = pAll.filter(l => l.isPerk).map(l => ({ ...l, mult: getLinePerkMultiplier(l), family: getPerkFamily(l.text) }));
+    const tPerks = tAll.filter(l => l.isPerk).map(l => ({ ...l, mult: getLinePerkMultiplier(l), family: getPerkFamily(l.text) }));
+
+    const usedP = new Set();
+    const pairs = [];
+
+    // Step 1: Match exact families first
+    tPerks.forEach((tP) => {
+      const matchIdx = pPerks.findIndex((pP, pIdx) => !usedP.has(pIdx) && pP.family !== 'other' && pP.family === tP.family);
+      if (matchIdx !== -1) {
+        usedP.add(matchIdx);
+        pairs.push({ tP, pP: pPerks[matchIdx], family: tP.family });
+      }
+    });
+
+    // Step 2: Match remaining target perks with available player perks by minimal difference
+    const unmatchedT = tPerks.filter(tP => !pairs.some(pair => pair.tP === tP));
+    unmatchedT.sort((a, b) => b.mult - a.mult); // highest first
+
+    unmatchedT.forEach(tP => {
+      let bestIdx = -1, minDiff = Infinity;
+      pPerks.forEach((pP, pIdx) => {
+        if (usedP.has(pIdx)) return;
+        const diff = Math.abs(tP.mult - pP.mult);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestIdx = pIdx;
+        }
+      });
+
+      if (bestIdx !== -1) {
+        usedP.add(bestIdx);
+        pairs.push({ tP, pP: pPerks[bestIdx], family: tP.family });
+      } else {
+        // Paired with a rolled defensive line if available, or fixed defensive line, or null
+        const defLine = pRolledDef[pairs.filter(p => !p.pP).length] || pDefensiveLines[pairs.filter(p => !p.pP).length] || null;
+        pairs.push({ tP, pP: null, defLine, family: tP.family });
+      }
+    });
+
+    // Compute raw gains
+    let totalRawGain = 0;
+    pairs.forEach(pair => {
+      const pMult = pair.pP ? pair.pP.mult : 0;
+      pair.gain = Math.max(0, Number((pair.tP.mult - pMult).toFixed(2)));
+      totalRawGain += pair.gain;
+    });
+
+    // Distribute cpImpact across pairs with gain > 0
+    let distributedCp = 0;
+    pairs.forEach(pair => {
+      if (cpImpact > 0 && totalRawGain > 0 && pair.gain > 0) {
+        pair.cp = Math.round((pair.gain / totalRawGain) * cpImpact);
+        distributedCp += pair.cp;
+      } else {
+        pair.cp = 0;
+      }
+    });
+
+    // Reconcile rounding to match cpImpact exactly
+    if (cpImpact > 0 && distributedCp !== cpImpact && totalRawGain > 0) {
+      const diff = cpImpact - distributedCp;
+      const maxPair = pairs.reduce((best, cur) => cur.cp > (best ? best.cp : 0) ? cur : best, null);
+      if (maxPair) maxPair.cp += diff;
+    }
 
     return {
-      combatCp,
-      mainStatCp,
-      perk1Cp,
-      perk2Cp,
-      combatDiff,
+      pairs,
+      pMainLine,
+      tMainLine,
+      pMainVal,
+      tMainVal,
       mainDiff,
-      pairedP1,
-      pairedT1,
-      pairedP2,
-      pairedT2,
-      pMainObj,
-      tMainObj
+      pCombatLines,
+      tCombatLines,
+      pCombatSum,
+      tCombatSum,
+      combatDiff,
+      pDefensiveLines,
+      pRolledDef,
+      totalRawGain
     };
   }
 
@@ -18530,7 +18707,11 @@
         rollTier: 'low',
         tierLabel: isEn ? 'To Roll' : 'À Reroller',
         isDead: false,
-        isFixed: false
+        isFixed: false,
+        isPerk: false,
+        isMainStat: false,
+        isCombatStat: false,
+        isDefensive: false
       });
     }
 
@@ -18556,86 +18737,152 @@
     }
 
     // 3. Calcul de la distribution exacte du CP par composante / perk
-    const lineCps = computeBraceletLineCps(pFixed, pRolled, tFixed, tRolled, cpImpact, isSupport);
+    const lineCps = computeBraceletLineCps(pFixed, pRolled, tFixed, tRolled, cpImpact, isSupport, pClassName, tClassName, isEn);
+
+    // Helpers de rendu par ligne
+    const renderTargetLine = (l) => {
+      let pillHtml = '';
+      if (l.isPerk) {
+        const pair = lineCps.pairs.find(p => p.tP === l || p.tP.text === l.text);
+        if (pair && pair.cp > 0) {
+          pillHtml = `<span class="line-cp-pill">+${pair.cp} CP</span>`;
+        } else if (pair && pair.pP && Math.abs(pair.tP.mult - pair.pP.mult) < 0.1) {
+          pillHtml = `<span class="line-parity-pill">${isEn ? 'BiS Parity' : 'Parité BiS'}</span>`;
+        }
+      } else if (l === lineCps.tMainLine || l.isMainStat) {
+        if (lineCps.mainDiff < 0) {
+          const lead = Math.abs(lineCps.mainDiff).toLocaleString('fr-FR');
+          pillHtml = `<span class="line-parity-pill" style="color:#60a5fa;" title="${isEn ? 'Counted in Main Stat & Base AP row' : 'Comptabilisé dans la ligne Stat Principale & Attaque Base'}">-${lead} ${isEn ? 'vs Player' : 'vs Joueur'}</span>`;
+        } else if (lineCps.mainDiff > 0) {
+          const lead = lineCps.mainDiff.toLocaleString('fr-FR');
+          pillHtml = `<span class="line-parity-pill" title="${isEn ? 'Counted in Base AP row' : 'Comptabilisé dans Attaque Base'}">+${lead} ${isEn ? '(Base AP)' : '(Attaque Base)'}</span>`;
+        }
+      } else if (l.isCombatStat || lineCps.tCombatLines.includes(l)) {
+        pillHtml = `<span class="line-parity-pill" title="${isEn ? 'Counted in Combat Stats row' : 'Comptabilisé dans Stats de Combat'}">${isEn ? 'Combat Stats' : 'Stats de Combat'}</span>`;
+      } else if (l.isDefensive) {
+        pillHtml = `<span class="line-parity-pill" style="color:var(--text-muted);">${isEn ? 'Survival' : 'Survie'}</span>`;
+      }
+
+      return `
+        <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
+          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          ${pillHtml}
+          <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
+        </div>
+      `;
+    };
+
+    const renderPlayerLine = (l) => {
+      let pillHtml = '';
+      if (l === lineCps.pMainLine || l.isMainStat) {
+        if (lineCps.mainDiff < 0) {
+          const lead = Math.abs(lineCps.mainDiff).toLocaleString('fr-FR');
+          pillHtml = `<span class="line-lead-pill">+${lead} ${getMainStatName(pClassName, isEn)} (${isEn ? 'Player Lead' : 'Avance Joueur'})</span>`;
+        }
+      } else if (l.isPerk) {
+        const pair = lineCps.pairs.find(p => p.pP === l || (p.pP && p.pP.text === l.text));
+        if (pair && pair.pP && Math.abs(pair.tP.mult - pair.pP.mult) < 0.1) {
+          pillHtml = `<span class="line-parity-pill">${isEn ? 'BiS (Parity)' : 'Parité BiS'}</span>`;
+        } else if (pair && pair.cp > 0) {
+          pillHtml = `<span class="line-parity-pill" style="color:#f59e0b;" title="${isEn ? 'Target has higher perk tier' : 'Cible possède un palier supérieur'}">${isEn ? 'Tier Upgrade Avail.' : 'Palier Supérieur Dispo'}</span>`;
+        }
+      } else if (l.isDefensive) {
+        pillHtml = `<span class="line-parity-pill" style="color:var(--text-muted);">${isEn ? 'Survival (0% Buff CP)' : 'Survie (0% Buff CP)'}</span>`;
+      }
+
+      return `
+        <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
+          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          ${pillHtml}
+          <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
+        </div>
+      `;
+    };
 
     // 4. Rendu des badges du Joueur
-    const pFixedHtml = pFixed.map(l => `
-      <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-        <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
-        <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
-      </div>
-    `).join('');
+    const pFixedHtml = pFixed.map(renderPlayerLine).join('');
+    const pRolledHtml = pRolled.map(renderPlayerLine).join('');
 
-    const pRolledHtml = pRolled.map(l => `
-      <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-        <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
-        <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
-      </div>
-    `).join('');
+    // 5. Rendu des badges de la Cible
+    const tFixedHtml = tFixed.map(renderTargetLine).join('');
+    const tRolledHtml = tRolled.map(renderTargetLine).join('');
 
-    // 5. Rendu des badges de la Cible avec pillule de gain individuel de CP
-    const tFixedHtml = tFixed.map((l, idx) => {
-      let lineCp = 0;
-      if (lineCps.combatCp > 0) {
-        if (tFixed.length >= 2) {
-          lineCp = idx === 0 ? Math.round(lineCps.combatCp * 0.55) : (lineCps.combatCp - Math.round(lineCps.combatCp * 0.55));
-        } else {
-          lineCp = lineCps.combatCp;
-        }
-      }
-      const cpBadge = lineCp > 0 ? `<span class="line-cp-pill">+${lineCp} CP</span>` : '';
-      return `
-        <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
-          ${cpBadge}
-          <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
-        </div>
+    // 6. Tableau dynamique des lignes
+    let tableRowsHtml = `
+      <tr>
+        <td><strong>${isEn ? 'Combat Stats (Crit/Spec/Swift)' : 'Stats de Combat (Crit / Spé / Rap)'}</strong></td>
+        <td>${lineCps.pCombatLines.length > 0 ? lineCps.pCombatLines.map(l => escapeHtml(l.text)).join(' & ') : (isEn ? 'None (0 pt)' : 'Aucune (0 pt)')}</td>
+        <td>${lineCps.tCombatLines.length > 0 ? lineCps.tCombatLines.map(l => escapeHtml(l.text)).join(' & ') : (isEn ? 'None (0 pt)' : 'Aucune (0 pt)')}</td>
+        <td class="col-cp-gain" style="color:var(--text-muted);">= 0 CP <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Combat Stats row' : 'Comptabilisé dans Stats de Combat'})</em></td>
+      </tr>
+      <tr>
+        <td><strong>${isEn ? 'Main Stat' : 'Statistique Principale'} (${getMainStatName(pClassName, isEn)})</strong></td>
+        <td>${lineCps.pMainLine ? escapeHtml(lineCps.pMainLine.text) : '—'}</td>
+        <td>${lineCps.tMainLine ? escapeHtml(lineCps.tMainLine.text) : '—'}</td>
+        <td class="col-cp-gain" style="${lineCps.mainDiff < 0 ? 'color:#60a5fa;' : 'color:var(--text-muted);'}">
+          ${lineCps.mainDiff < 0 
+            ? `+${Math.abs(lineCps.mainDiff).toLocaleString('fr-FR')} ${isEn ? 'Player Lead' : 'Avance Joueur'} <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>` 
+            : `= 0 CP <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>`}
+        </td>
+      </tr>
+    `;
+
+    lineCps.pairs.forEach((pair) => {
+      const familyName = pair.family.charAt(0).toUpperCase() + pair.family.slice(1);
+      const icon = pair.tP.rollTier === 'passif' ? '👑' : '✨';
+      const playerDesc = pair.pP 
+        ? escapeHtml(pair.pP.text) 
+        : (pair.defLine ? `${escapeHtml(pair.defLine.text)} <em style="font-size:10.5px; color:var(--text-muted);">(${isEn ? 'Survival 0% Buff CP' : 'Survie 0% Buff CP'})</em>` : (isEn ? 'Empty Slot' : 'Emplacement Libre'));
+      const targetDesc = escapeHtml(pair.tP.text);
+      const cpText = pair.cp > 0 
+        ? `<strong style="color:#34d399;">+${pair.cp} CP</strong> <em style="font-size:10.5px; font-weight:normal; display:block; color:#34d399;">(+${pair.gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'})</em>` 
+        : `<span style="color:var(--text-muted);">= 0 CP (${isEn ? 'BiS Parity' : 'Parité BiS'})</span>`;
+
+      tableRowsHtml += `
+        <tr>
+          <td><strong>${icon} ${isEn ? 'Raid Perk' : 'Passif Raid'} : ${escapeHtml(familyName)}</strong></td>
+          <td>${playerDesc}</td>
+          <td>${targetDesc}</td>
+          <td class="col-cp-gain">${cpText}</td>
+        </tr>
       `;
-    }).join('');
+    });
 
-    const tRolledHtml = tRolled.map(l => {
-      let lineCp = 0;
-      if (lineCps.mainStatCp > 0 && lineCps.tMainObj && l.text === lineCps.tMainObj.text) {
-        lineCp = lineCps.mainStatCp;
-      } else if (lineCps.perk1Cp > 0 && lineCps.pairedT1 && l.text === lineCps.pairedT1.text) {
-        lineCp = lineCps.perk1Cp;
-      } else if (lineCps.perk2Cp > 0 && lineCps.pairedT2 && l.text === lineCps.pairedT2.text) {
-        lineCp = lineCps.perk2Cp;
-      }
-      const cpBadge = lineCp > 0 ? `<span class="line-cp-pill">+${lineCp} CP</span>` : '';
-      return `
-        <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
-          ${cpBadge}
-          <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
-        </div>
-      `;
-    }).join('');
-
-    // 6. Formulation du verdict personnalisé
-    const pDeadStats = pRolled.filter(l => l.isDead).concat(pFixed.filter(l => l.isDead));
-    const pHasDead = pDeadStats.length > 0;
+    // 7. Formulation du diagnostic personnalisé
     let verdictText = '';
-
     if (cpImpact <= 0) {
       verdictText = isEn
         ? "Optimal rolls and equivalent high-tier performance to benchmark reference."
         : "Rolls de haute qualité et parité optimale avec la référence ciblée.";
-    } else if (pHasDead) {
-      const deadName = pDeadStats.map(d => d.text).join(', ');
-      verdictText = isEn
-        ? `Replace dead line (${deadName}) with an active BiS perk (Hammer / Fervor / Dagger) to bridge +${cpImpact} CP.`
-        : `Remplacer la ligne morte (${deadName}) par un passif BiS actif (Marteau / Ferveur / Poignard) pour combler les +${cpImpact} CP.`;
-    } else if (pRolled.some(l => l.rollTier === 'mid' || l.rollTier === 'low')) {
-      const pMainStat = getMainStatName(pClassName, isEn);
-      verdictText = isEn
-        ? `Great active perks! Push ${pMainStat} roll to high cap (+13k) and maximize combat stats to bridge the +${cpImpact} CP gap.`
-        : `Excellents passifs actifs ! Pousser le roll de ${pMainStat} vers le palier max (+13k) et optimiser les stats de combat pour combler les +${cpImpact} CP.`;
     } else {
-      verdictText = isEn
-        ? `Fine-tune combat stats and perfection values to bridge the +${cpImpact} CP delta.`
-        : `Optimisation fine des stats de combat pour combler l'écart résiduel de +${cpImpact} CP.`;
+      const hasDef = lineCps.pDefensiveLines.length > 0;
+      if (isSupport) {
+        if (hasDef && lineCps.mainDiff < 0) {
+          const lead = Math.abs(lineCps.mainDiff).toLocaleString('fr-FR');
+          verdictText = isEn
+            ? `The +${cpImpact} CP gap stems entirely from raid support perks (+${lineCps.totalRawGain.toFixed(2)}% Buff Power). Target has higher-tier perks and an active party buff replacing your survival roll (${lineCps.pDefensiveLines.map(d=>d.text).join(', ')}). Your ${getMainStatName(pClassName, isEn)} is higher (+${lead} lead) and is already credited in the Main Stat & Base AP row.`
+            : `L'écart de +${cpImpact} CP provient intégralement des passifs de soutien de raid (+${lineCps.totalRawGain.toFixed(2)}% de Buff Power) : la cible possède des passifs de palier supérieur et un passif de groupe actif remplaçant votre ligne de confort (${lineCps.pDefensiveLines.map(d=>d.text).join(', ')}). Votre ${getMainStatName(pClassName, isEn)} est supérieure (+${lead} d'avance) et est déjà créditée dans la ligne Stat Principale & Attaque Base.`;
+        } else {
+          verdictText = isEn
+            ? `Bridge the +${cpImpact} CP gap by upgrading your raid perks (Dagger / Expose Weakness / Cheers) to higher tiers and replacing defensive lines with active party perks.`
+            : `Combler les +${cpImpact} CP en faisant monter le palier de vos passifs de raid (Poignard / Exposition / Ferveur) et en remplaçant les stats défensives par des passifs de groupe actifs.`;
+        }
+      } else {
+        if (lineCps.mainDiff < 0) {
+          const lead = Math.abs(lineCps.mainDiff).toLocaleString('fr-FR');
+          verdictText = isEn
+            ? `The +${cpImpact} CP delta is driven by higher raid perk tiers (Hammer / Fervor / Wedge). Your ${getMainStatName(pClassName, isEn)} has a +${lead} advantage credited in Base AP.`
+            : `L'écart de +${cpImpact} CP provient des paliers supérieurs de passifs de raid (Marteau / Ferveur / Coinçage). Votre ${getMainStatName(pClassName, isEn)} possède une avance de +${lead} créditée dans l'Attaque de Base.`;
+        } else {
+          verdictText = isEn
+            ? `Optimize raid perks (Hammer / Fervor / Precision) to bridge the +${cpImpact} CP gap.`
+            : `Optimiser les passifs de raid (Marteau / Ferveur / Précision) pour combler les +${cpImpact} CP d'écart.`;
+        }
+      }
     }
+
+    const pDeadStats = pRolled.filter(l => l.isDead).concat(pFixed.filter(l => l.isDead));
+    const pHasDead = pDeadStats.length > 0;
 
     return `
       <div class="acc-breakdown-panel bracelet-breakdown-panel">
@@ -18726,30 +18973,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><strong>${isEn ? 'Fixed Combat Stats' : 'Stats de Combat Fixes'}</strong></td>
-                <td>${pFixed.map(l => l.text).join(' & ') || '—'}</td>
-                <td>${tFixed.map(l => l.text).join(' & ') || '—'}</td>
-                <td class="col-cp-gain">${lineCps.combatCp > 0 ? `+${lineCps.combatCp} CP` : '= 0 CP'}</td>
-              </tr>
-              <tr>
-                <td><strong>${isEn ? 'Main Stat Roll' : 'Statistique Principale'}</strong></td>
-                <td>${lineCps.pMainObj ? lineCps.pMainObj.text : '—'}</td>
-                <td>${lineCps.tMainObj ? lineCps.tMainObj.text : '—'}</td>
-                <td class="col-cp-gain">${lineCps.mainStatCp > 0 ? `+${lineCps.mainStatCp} CP` : '= 0 CP'}</td>
-              </tr>
-              <tr>
-                <td><strong>${isEn ? 'Special Passive #1' : 'Passif Spécial #1'}</strong></td>
-                <td>${lineCps.pairedP1 ? lineCps.pairedP1.text : (isEn ? 'Empty Slot' : 'Emplacement Libre')}</td>
-                <td>${lineCps.pairedT1 ? lineCps.pairedT1.text : (isEn ? 'Passive Perk #1' : 'Passif #1')}</td>
-                <td class="col-cp-gain">${lineCps.perk1Cp > 0 ? `+${lineCps.perk1Cp} CP` : '= 0 CP'}</td>
-              </tr>
-              <tr>
-                <td><strong>${isEn ? 'Special Passive #2' : 'Passif Spécial #2'}</strong></td>
-                <td>${lineCps.pairedP2 ? lineCps.pairedP2.text : (isEn ? 'Empty Slot' : 'Emplacement Libre')}</td>
-                <td>${lineCps.pairedT2 ? lineCps.pairedT2.text : (isEn ? 'Passive Perk #2' : 'Passif #2')}</td>
-                <td class="col-cp-gain">${lineCps.perk2Cp > 0 ? `+${lineCps.perk2Cp} CP` : '= 0 CP'}</td>
-              </tr>
+              ${tableRowsHtml}
             </tbody>
             <tfoot>
               <tr class="row-total">
@@ -18763,8 +18987,8 @@
         <div class="bracelet-verdict-banner">
           <span class="verdict-icon">🎯</span>
           <div class="verdict-content">
-            <strong>${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
-            <span>${escapeHtml(verdictText)}</span>
+            <strong>${isEn ? 'Bracelet Diagnostic & Recommendations:' : 'Diagnostic & Recommandations du Bracelet :'}</strong>
+            <span>${verdictText}</span>
           </div>
         </div>
       </div>
