@@ -3861,6 +3861,58 @@
     lastResult: null
   };
 
+  function getArkGridCoreBonus(prefix, points, isSupport, isAncient) {
+    const p = Math.max(10, Math.min(20, points || 10));
+    const pr = (prefix || '').toString();
+    const isOrder = pr.startsWith('6730');
+    const isSun = pr.startsWith('67300') || pr.startsWith('67310');
+    const isMoon = pr.startsWith('67301') || pr.startsWith('67311');
+    const isStar = pr.startsWith('67302') || pr.startsWith('67312');
+
+    if (isOrder) {
+      if (isSun || isMoon) {
+        if (p >= 20) return isAncient ? 9.42 : 8.80;
+        if (p >= 19) return isAncient ? 8.70 : 8.10;
+        if (p >= 18) return isAncient ? 8.67 : 7.98;
+        if (p >= 17) return 7.80;
+        if (p >= 14) return 6.00;
+        return 4.50;
+      } else { // Order Star
+        if (isSupport) {
+          if (p >= 20) return isAncient ? 2.50 : 2.40;
+          if (p >= 19) return 2.30;
+          if (p >= 18) return 2.20;
+          if (p >= 17) return 2.10;
+          if (p >= 14) return 1.60;
+          return 1.20;
+        } else {
+          if (p >= 20) return isAncient ? 6.50 : 6.00;
+          if (p >= 19) return isAncient ? 6.00 : 5.80;
+          if (p >= 18) return isAncient ? 5.67 : 5.00;
+          if (p >= 17) return 4.50;
+          if (p >= 14) return 3.50;
+          return 2.50;
+        }
+      }
+    } else { // Chaos
+      if (isSupport) {
+        if (p >= 20) return isAncient ? 4.40 : 4.20;
+        if (p >= 19) return isAncient ? 4.10 : 3.95;
+        if (p >= 18) return isAncient ? 3.95 : 3.78;
+        if (p >= 17) return 3.60;
+        if (p >= 14) return 2.80;
+        return 2.00;
+      } else {
+        if (p >= 20) return isAncient ? 3.00 : 2.85;
+        if (p >= 19) return isAncient ? 2.85 : 2.75;
+        if (p >= 18) return isAncient ? 2.67 : 2.67;
+        if (p >= 17) return 2.50;
+        if (p >= 14) return 2.00;
+        return 1.50;
+      }
+    }
+  }
+
   function getArkGridStatus(charObj) {
     if (!charObj) return { hasSun17: false, hasMoon17: false, hasStar17: false, starTier: 1, slots: {} };
     const cId = (charObj.id || charObj.name || '').toLowerCase().trim();
@@ -7413,6 +7465,15 @@
                 "label": "Prayer of Light (17P | Order Star)",
                 "val": "17P",
                 "mult": "+2.10%",
+                "type": "Buff Power",
+                "badge": "passive",
+                "note": null
+            },
+            {
+                "cat": "Grille d'Ark",
+                "label": "Attack (17P | Chaos Star)",
+                "val": "17P",
+                "mult": "+3.60%",
                 "type": "Buff Power",
                 "badge": "passive",
                 "note": null
@@ -13219,6 +13280,63 @@
       });
     }
 
+    // Compléter les cœurs d'Ark Grid absents de battlePoint.parts (ex: Chaos Star en Support, ou profils sans type 29)
+    if (Array.isArray(loadout.arkGridCores)) {
+      loadout.arkGridCores.forEach(c => {
+        const idStr = (c.id || '').toString();
+        const alreadyInItems = items.some(it => {
+          if (it.cat !== "Grille d'Ark") return false;
+          const lbl = (it.label || '').toLowerCase();
+          if (idStr.startsWith('67300') && (lbl.includes('order sun') || lbl.includes('ordre soleil'))) return true;
+          if (idStr.startsWith('67301') && (lbl.includes('order moon') || lbl.includes('ordre lune'))) return true;
+          if (idStr.startsWith('67302') && (lbl.includes('order star') || lbl.includes('ordre étoile') || lbl.includes('ordre etoile'))) return true;
+          if (idStr.startsWith('67310') && (lbl.includes('chaos sun') || lbl.includes('chaos soleil'))) return true;
+          if (idStr.startsWith('67311') && (lbl.includes('chaos moon') || lbl.includes('chaos lune'))) return true;
+          if (idStr.startsWith('67312') && (lbl.includes('chaos star') || lbl.includes('chaos étoile') || lbl.includes('chaos etoile'))) return true;
+          return false;
+        });
+
+        if (!alreadyInItems) {
+          const pts = Array.isArray(c.gems)
+            ? c.gems.reduce((sum, g) => sum + (g.corePoints || 0), 0)
+            : (c.points || 17);
+          const isAnc = ((c.id || 0) % 10 === 6);
+          const multVal = getArkGridCoreBonus(idStr, pts, isSupport, isAnc);
+
+          let coreName = (typeof BIBLE_CORES !== 'undefined' && BIBLE_CORES[c.id]) || '';
+          let name = '';
+          if (coreName) {
+            const m = coreName.match(/^([A-Za-z]+)\s+([A-Za-z]+)\s+Core:\s*(.+)$/i);
+            if (m && m[3]) name = m[3].trim();
+          }
+          if (!name) {
+            if (idStr.startsWith('67300')) name = isSupport ? 'Heavenly Agent' : 'Shadow Fist';
+            else if (idStr.startsWith('67301')) name = isSupport ? 'Heavenly Resolve' : 'Asura War';
+            else if (idStr.startsWith('67302')) name = isSupport ? 'Prayer of Light' : 'Asura';
+            else if (idStr.startsWith('67310')) name = isSupport ? 'Fortitude Enhancement' : 'Flashy Attack';
+            else if (idStr.startsWith('67311')) name = isSupport ? 'Echoing Brand' : 'Smoldering Strike';
+            else if (idStr.startsWith('67312')) name = 'Attack';
+          }
+
+          const groupLabel = idStr.startsWith('67300') ? 'Order Sun' :
+            (idStr.startsWith('67301') ? 'Order Moon' :
+            (idStr.startsWith('67302') ? 'Order Star' :
+            (idStr.startsWith('67310') ? 'Chaos Sun' :
+            (idStr.startsWith('67311') ? 'Chaos Moon' : 'Chaos Star'))));
+
+          items.push({
+            cat: "Grille d'Ark",
+            label: `${name} (${pts}P | ${groupLabel})`,
+            val: `${pts}P`,
+            mult: `+${multVal.toFixed(2)}%`,
+            type: isSupport ? 'Buff Power' : 'DPS Net',
+            badge: 'passive',
+            note: null
+          });
+        }
+      });
+    }
+
     const calculatedTotal = isSupport ? (atkMin + defMin) : atkMin;
     const inGameScore = loadout.combatPower?.score || calculatedTotal;
 
@@ -16814,11 +16932,42 @@
       ? allBpParts.filter(p => p.type === 29)
       : [];
 
+    const rawCores = (playerChar && (playerChar.arkGridCores || (playerChar.loadout && playerChar.loadout.arkGridCores) || (playerChar.rawProfile && (playerChar.rawProfile.arkGridCores || (playerChar.rawProfile.loadout && playerChar.rawProfile.loadout.arkGridCores)))))
+      || (canon && (canon.arkGridCores || (canon.rawProfile && canon.rawProfile.arkGridCores)))
+      || [];
+
     function evalCoreGroup(prefixes, nameFr, nameEn, fallbackBonus, fallbackTier) {
       const matching = coreParts.filter(p => {
         const s = (p.id || '').toString();
         return prefixes.some(pr => s.startsWith(pr));
       });
+
+      // Compléter tout cœur manquant (ex: 67312 Chaos Star Support exclu de Bible parts29, ou profil entier sans parts29)
+      if (Array.isArray(rawCores) && rawCores.length > 0) {
+        prefixes.forEach(pr => {
+          const alreadyMatched = matching.some(p => (p.id || '').toString().startsWith(pr));
+          if (!alreadyMatched) {
+            const raw = rawCores.find(c => {
+              const idStr = (c.id || '').toString();
+              return idStr.startsWith(pr);
+            });
+            if (raw) {
+              const pts = Array.isArray(raw.gems)
+                ? raw.gems.reduce((s, g) => s + (g.corePoints || 0), 0)
+                : (raw.points || 17);
+              const isAncient = ((raw.id || 0) % 10 === 6) || raw.grade === 'ancient';
+              const bonusValPct = getArkGridCoreBonus(pr, pts, isSupport, isAncient);
+              matching.push({
+                id: raw.id,
+                points: pts,
+                value: Math.round(bonusValPct * 100),
+                fromRaw: true
+              });
+            }
+          }
+        });
+      }
+
       if (matching.length > 0) {
         let mult = 1;
         let maxPoints = 0;
@@ -20269,19 +20418,27 @@
     const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
 
     function resolveCoreSpecificName(id, rawLabel) {
+      let name = '';
       if (id && typeof BIBLE_CORES !== 'undefined' && BIBLE_CORES[id]) {
         const full = BIBLE_CORES[id];
         const m = full.match(/^([A-Za-z]+)\s+([A-Za-z]+)\s+Core:\s*(.+)$/i);
-        if (m && m[3]) return m[3].trim();
-        return full;
-      }
-      if (rawLabel) {
+        if (m && m[3]) name = m[3].trim();
+        else name = full;
+      } else if (rawLabel) {
         const m1 = rawLabel.match(/^([^(\n]+?)\s*\(\d+P\s*\|\s*(?:Order|Chaos)/i);
-        if (m1 && m1[1]) return m1[1].trim();
-        const m2 = rawLabel.match(/(?:Order|Chaos)\s*(?:Sun|Moon|Star)(?:\s*Core)?\s*:\s*([^(\n]+)/i);
-        if (m2 && m2[1]) return m2[1].trim();
+        if (m1 && m1[1]) name = m1[1].trim();
+        else {
+          const m2 = rawLabel.match(/(?:Order|Chaos)\s*(?:Sun|Moon|Star)(?:\s*Core)?\s*:\s*([^(\n]+)/i);
+          if (m2 && m2[1]) name = m2[1].trim();
+        }
       }
-      return '';
+      if (!name) return '';
+      // Traduction et clarification des termes génériques pour éviter la confusion avec l'équipement
+      if (/^weapon$/i.test(name)) return isEn ? 'Weapon Power' : "Puissance d'Arme";
+      if (/^attack$/i.test(name)) return isEn ? 'Attack Power' : "Puissance d'Attaque";
+      if (/^echoing brand$/i.test(name)) return isEn ? 'Echoing Brand' : "Marque d'Écho";
+      if (/^fortitude enhancement$/i.test(name)) return isEn ? 'Fortitude Enhancement' : "Renforcement de Ténacité";
+      return name;
     }
 
     let order = {
@@ -20314,6 +20471,9 @@
       || (canon && canon.battlePoint && canon.battlePoint.parts)
       || [];
 
+    const classNameNorm = (char.className || char.class || (char.loadout && char.loadout.classId) || '').toLowerCase();
+    const isSupportRole = char.role === 'support' || ['bard', 'paladin', 'artist', 'valkyrie'].some(s => classNameNorm.includes(s));
+
     const parts29 = allParts.filter(p => p.type === 29);
     if (parts29.length > 0) {
       const oPart = parts29.find(p => (p.id || '').toString().startsWith(prefixOrder));
@@ -20322,7 +20482,7 @@
         order.points = oPart.points || 17;
         order.tier = oPart.points || 17;
         order.bonusPct = Number(((oPart.value || 0) / 100).toFixed(2));
-        order.grade = ((oPart.id || 0) % 10 === 6) ? 'Ancient' : 'Relic';
+        order.grade = ((oPart.id || 0) % 10 === 6) ? (isEn ? 'Ancient' : 'Ancien') : (isEn ? 'Relic' : 'Relique');
         const sName = resolveCoreSpecificName(oPart.id);
         if (sName) {
           order.specificName = sName;
@@ -20335,7 +20495,7 @@
         chaos.points = cPart.points || 17;
         chaos.tier = cPart.points || 17;
         chaos.bonusPct = Number(((cPart.value || 0) / 100).toFixed(2));
-        chaos.grade = ((cPart.id || 0) % 10 === 6) ? 'Ancient' : 'Relic';
+        chaos.grade = ((cPart.id || 0) % 10 === 6) ? (isEn ? 'Ancient' : 'Ancien') : (isEn ? 'Relic' : 'Relique');
         const sName = resolveCoreSpecificName(cPart.id);
         if (sName) {
           chaos.specificName = sName;
@@ -20344,7 +20504,7 @@
       }
     }
 
-    // 2. Try raw arkGridCores if specificName was not found
+    // 2. Try raw arkGridCores if specificName, points or bonus were not found (ex: Chaos Star exclu sur support ou pas de type 29)
     const rawCores = char.arkGridCores
       || (char.rawProfile && (char.rawProfile.arkGridCores || (char.rawProfile.loadout && char.rawProfile.loadout.arkGridCores)))
       || (char.loadout && char.loadout.arkGridCores)
@@ -20352,26 +20512,43 @@
       || [];
 
     if (Array.isArray(rawCores) && rawCores.length > 0) {
-      if (!order.specificName) {
-        const oCore = rawCores.find(c => (c.id || '').toString().startsWith(prefixOrder));
-        if (oCore) {
-          order.id = oCore.id;
-          const sName = resolveCoreSpecificName(oCore.id);
-          if (sName) {
-            order.specificName = sName;
-            order.effectName = sName;
-          }
+      const oCore = rawCores.find(c => (c.id || '').toString().startsWith(prefixOrder));
+      if (oCore) {
+        order.id = oCore.id;
+        const pts = Array.isArray(oCore.gems)
+          ? oCore.gems.reduce((s, g) => s + (g.corePoints || 0), 0)
+          : (oCore.points || 17);
+        const isAnc = ((oCore.id || 0) % 10 === 6) || oCore.grade === 'ancient';
+        order.grade = isAnc ? (isEn ? 'Ancient' : 'Ancien') : (isEn ? 'Relic' : 'Relique');
+        if (!order.points || order.points <= 10) order.points = pts;
+        if (!order.tier || order.tier <= 10) order.tier = pts;
+        if (!order.bonusPct || order.bonusPct === 0) {
+          order.bonusPct = getArkGridCoreBonus(prefixOrder, pts, isSupportRole, isAnc);
+        }
+        const sName = resolveCoreSpecificName(oCore.id);
+        if (sName) {
+          order.specificName = sName;
+          order.effectName = sName;
         }
       }
-      if (!chaos.specificName) {
-        const cCore = rawCores.find(c => (c.id || '').toString().startsWith(prefixChaos));
-        if (cCore) {
-          chaos.id = cCore.id;
-          const sName = resolveCoreSpecificName(cCore.id);
-          if (sName) {
-            chaos.specificName = sName;
-            chaos.effectName = sName;
-          }
+
+      const cCore = rawCores.find(c => (c.id || '').toString().startsWith(prefixChaos));
+      if (cCore) {
+        chaos.id = cCore.id;
+        const pts = Array.isArray(cCore.gems)
+          ? cCore.gems.reduce((s, g) => s + (g.corePoints || 0), 0)
+          : (cCore.points || 17);
+        const isAnc = ((cCore.id || 0) % 10 === 6) || cCore.grade === 'ancient';
+        chaos.grade = isAnc ? (isEn ? 'Ancient' : 'Ancien') : (isEn ? 'Relic' : 'Relique');
+        if (!chaos.points || chaos.points <= 10) chaos.points = pts;
+        if (!chaos.tier || chaos.tier <= 10) chaos.tier = pts;
+        if (!chaos.bonusPct || chaos.bonusPct === 0) {
+          chaos.bonusPct = getArkGridCoreBonus(prefixChaos, pts, isSupportRole, isAnc);
+        }
+        const sName = resolveCoreSpecificName(cCore.id);
+        if (sName) {
+          chaos.specificName = sName;
+          chaos.effectName = sName;
         }
       }
     }
@@ -20435,9 +20612,6 @@
     }
 
     // 4. Fallback defaults per class & role if specificName is still missing
-    const classNameNorm = (char.className || char.class || (char.loadout && char.loadout.classId) || '').toLowerCase();
-    const isSupportRole = char.role === 'support' || ['bard', 'paladin', 'artist', 'valkyrie'].some(s => classNameNorm.includes(s));
-
     if (!order.specificName) {
       if (classNameNorm.includes('bard')) {
         order.specificName = normGroup === 'sun' ? 'Brave Accent' : (normGroup === 'moon' ? 'Brave Pulse' : 'Buckshot Acceleration');
@@ -20459,9 +20633,9 @@
 
     if (!chaos.specificName) {
       if (isSupportRole) {
-        chaos.specificName = normGroup === 'sun' ? 'Fortitude Enhancement' : (normGroup === 'moon' ? 'Echoing Brand' : 'Weapon');
+        chaos.specificName = normGroup === 'sun' ? (isEn ? 'Fortitude Enhancement' : 'Renforcement de Ténacité') : (normGroup === 'moon' ? (isEn ? 'Echoing Brand' : "Marque d'Écho") : (isEn ? 'Weapon Power' : "Puissance d'Arme"));
       } else {
-        chaos.specificName = normGroup === 'sun' ? 'Flashy Attack' : (normGroup === 'moon' ? 'Smoldering Strike' : 'Attack');
+        chaos.specificName = normGroup === 'sun' ? (isEn ? 'Flashy Attack' : 'Attaque Éclatante') : (normGroup === 'moon' ? (isEn ? 'Smoldering Strike' : 'Frappe Ardente') : (isEn ? 'Attack Power' : "Puissance d'Attaque"));
       }
       chaos.effectName = chaos.specificName;
     }
@@ -20712,9 +20886,10 @@
       ? tableStats.totalPlayerLeadCp
       : playerLeadGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
 
+    const sortedLeads = [...playerLeadGaps].sort((a, b) => (b.gainCp || 0) - (a.gainCp || 0));
     const topLeadTitle = (tableStats && tableStats.topLeadTitle)
       ? tableStats.topLeadTitle
-      : (playerLeadGaps[0] ? playerLeadGaps[0].title.replace(/\(Player Advantage\)/i, '').replace(/\(Avantage Joueur\)/i, '').trim() : (isEn ? 'Equipment' : 'Équipement'));
+      : (sortedLeads[0] ? sortedLeads[0].title.replace(/\(Player Advantage\)/i, '').replace(/\(Avantage Joueur\)/i, '').trim() : (isEn ? 'Equipment' : 'Équipement'));
 
     // Cas 1 : L'adversaire mène globalement (netGap > 0) et le joueur possède une avance sur l'arme ou un équipement
     if (totalPlayerLeadCp > 0 && netGap > 0) {
@@ -20736,8 +20911,8 @@
           <div class="reconciliation-equation">
             <div class="eq-box gross-deficit">
               <div class="eq-box-label">${isEn ? 'Gross Equipment Deficit' : 'Retard Brut Équipements'}</div>
-              <div class="eq-box-val">+${formatNumber(totalPositiveCp)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Sum of all lagging systems in table' : 'Somme des systèmes en retard dans le tableau'}</div>
+              <div class="eq-box-val">+${formatNumber(grossDeficit)} CP</div>
+              <div class="eq-box-sub">${isEn ? 'Compounded Equipment Deficit' : 'Retard brut cumulé des systèmes'}</div>
             </div>
 
             <div class="eq-operator">−</div>
@@ -20761,8 +20936,8 @@
             <span class="info-bulb">💡</span>
             <span>
               ${isEn
-                ? `<strong>Why doesn't the simple sum of levers (+${formatNumber(totalPositiveCp)} CP) equal the exact +${formatNumber(netGap)} CP header?</strong> Each table row calculates its isolated linear improvement lever. In reality, your gross deficit of <strong>+${formatNumber(totalPositiveCp)} CP</strong> across lagging equipment is directly cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP lead)</strong>, and Lost Ark\'s compound multiplicative formula (where systems multiply with each other) calibrates the final in-raid gap to exactly <strong>+${formatNumber(netGap)} CP</strong>.`
-                : `<strong>Pourquoi la simple somme des leviers (+${formatNumber(totalPositiveCp)} CP) ne fait pas exactement +${formatNumber(netGap)} CP ?</strong> Chaque ligne du tableau calcule son gain linéaire isolé. En réalité, votre retard brut de <strong>+${formatNumber(totalPositiveCp)} CP</strong> sur vos équipements en retard est directement amorti par votre <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP d'avance)</strong>, et la formule multiplicative croisée de Lost Ark (compounding) équilibre l'écart net exact relevé en raid à <strong>+${formatNumber(netGap)} CP</strong>.`
+                ? `<strong>Why doesn't the simple sum of levers (+${formatNumber(totalPositiveCp)} CP) equal the exact +${formatNumber(netGap)} CP header?</strong> Each table row calculates its isolated linear improvement lever. In reality, your gross compounded deficit of <strong>+${formatNumber(grossDeficit)} CP</strong> across lagging equipment is directly cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP lead)</strong>: <code>+${formatNumber(grossDeficit)} CP &minus; ${formatNumber(totalPlayerLeadCp)} CP = +${formatNumber(netGap)} CP</code>. Lost Ark\'s compound multiplicative formula (where systems multiply with each other) calibrates the final in-raid gap to exactly <strong>+${formatNumber(netGap)} CP</strong>.`
+                : `<strong>Pourquoi la simple somme des leviers (+${formatNumber(totalPositiveCp)} CP) ne fait pas exactement +${formatNumber(netGap)} CP ?</strong> Chaque ligne du tableau calcule son gain linéaire isolé. En réalité, votre retard brut combiné de <strong>+${formatNumber(grossDeficit)} CP</strong> sur vos équipements en retard est directement amorti par votre <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP d'avance)</strong> : <code>+${formatNumber(grossDeficit)} CP &minus; ${formatNumber(totalPlayerLeadCp)} CP = +${formatNumber(netGap)} CP</code>. La formule multiplicative croisée de Lost Ark (compounding) équilibre l'écart net exact relevé en raid à <strong>+${formatNumber(netGap)} CP</strong>.`
               }
             </span>
           </div>
