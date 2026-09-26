@@ -48,82 +48,137 @@
     ]
   };
 
-  // Dictionnaire de normalisation des classes Lost Ark
+  // Dictionnaire de normalisation universel des 27 classes Lost Ark (FR / EN / IDs internes)
   const CLASS_NAME_MAP = {
+    // Warriors
     holyknight: 'Paladin',
     holy_knight: 'Paladin',
     paladin: 'Paladin',
-    bard: 'Bard',
-    artist: 'Artist',
     warlord: 'Gunlancer',
     gunlancer: 'Gunlancer',
+    pistolancier: 'Gunlancer',
     berserker: 'Berserker',
+    berserker_male: 'Berserker',
+    berserkermale: 'Berserker',
     berserker_female: 'Slayer',
     berserkerfemale: 'Slayer',
     slayer: 'Slayer',
+    salveuse: 'Slayer',
     destroyer: 'Destroyer',
+    valkyrie: 'Valkyrie',
+    holyknight_female: 'Valkyrie',
+    'holyknight female': 'Valkyrie',
+    holyknightfemale: 'Valkyrie',
+    guardianknight: 'Valkyrie',
+
+    // Martial Artists
     battlemaster: 'Wardancer',
     battle_master: 'Wardancer',
     wardancer: 'Wardancer',
+    elementiste: 'Wardancer',
     infighter: 'Scrapper',
     infighter_female: 'Scrapper',
     'infighter female': 'Scrapper',
     infighterfemale: 'Scrapper',
     scrapper: 'Scrapper',
+    pugiliste: 'Scrapper',
     force_master: 'Soulfist',
     forcemaster: 'Soulfist',
     soul_master: 'Soulfist',
     soulmaster: 'Soulfist',
     soulfist: 'Soulfist',
+    spiritiste: 'Soulfist',
     lance_master: 'Glaivier',
     lancemaster: 'Glaivier',
     glaivier: 'Glaivier',
+    lanciere: 'Glaivier',
     striker: 'Striker',
+    essentialiste: 'Striker',
     heavy_infighter: 'Breaker',
     heavyinfighter: 'Breaker',
     infighter_male: 'Breaker',
     'infighter male': 'Breaker',
     infightermale: 'Breaker',
     breaker: 'Breaker',
-    blade: 'Deathblade',
-    deathblade: 'Deathblade',
-    demonic: 'Shadowhunter',
-    shadowhunter: 'Shadowhunter',
-    reaper: 'Reaper',
-    soul_eater: 'Souleater',
-    souleater: 'Souleater',
+    sangha: 'Breaker',
+
+    // Gunners
     devil_hunter: 'Deadeye',
     devilhunter: 'Deadeye',
     deadeye: 'Deadeye',
+    franctireur: 'Deadeye',
+    gunslinger: 'Gunslinger',
+    devil_hunter_female: 'Gunslinger',
+    devilhunterfemale: 'Gunslinger',
+    fusiliere: 'Gunslinger',
     blaster: 'Artillerist',
     artillerist: 'Artillerist',
+    artilleur: 'Artillerist',
     hawkeye: 'Sharpshooter',
     sharpshooter: 'Sharpshooter',
-    gunslinger: 'Gunslinger',
+    sagittaire: 'Sharpshooter',
+    machinist: 'Machinist',
+    scouter: 'Machinist',
+    machiniste: 'Machinist',
+
+    // Mages
+    bard: 'Bard',
+    barde: 'Bard',
     arcana: 'Arcanist',
     arcanist: 'Arcanist',
     summoner: 'Summoner',
+    invocatrice: 'Summoner',
     sorceress: 'Sorceress',
+    sorciere: 'Sorceress',
+    elemental_master: 'Sorceress',
+    elementalmaster: 'Sorceress',
+
+    // Assassins
+    blade: 'Deathblade',
+    deathblade: 'Deathblade',
+    sanglante: 'Deathblade',
+    demonic: 'Shadowhunter',
+    shadowhunter: 'Shadowhunter',
+    demoniste: 'Shadowhunter',
+    reaper: 'Reaper',
+    faucheuse: 'Reaper',
+    soul_eater: 'Souleater',
+    souleater: 'Souleater',
+    devoreuse: 'Souleater',
+    devoreusedames: 'Souleater',
+
+    // Specialists
+    artist: 'Artist',
+    artiste: 'Artist',
+    yinyangshi: 'Artist',
+    yin_yang_shi: 'Artist',
+    painter: 'Artist',
+    illusionist: 'Artist',
     aeromancer: 'Aeromancer',
     weather_artist: 'Aeromancer',
     weatherartist: 'Aeromancer',
-    valkyrie: 'Valkyrie',
-    holyknight_female: 'Valkyrie',
-    'holyknight female': 'Valkyrie',
-    holyknightfemale: 'Valkyrie'
+    aeromancienne: 'Aeromancer',
+    meteorologist: 'Aeromancer',
+    wildsoul: 'Wildsoul',
+    wild_soul: 'Wildsoul',
+    alchemist: 'Wildsoul'
   };
 
   function normalizeClassName(raw) {
-    if (!raw) return 'Breaker';
+    if (!raw) return 'Paladin';
     const clean = raw.toLowerCase().trim();
     if (CLASS_NAME_MAP[clean]) return CLASS_NAME_MAP[clean];
-    const stripped = clean.replace(/[\s\-_]/g, '');
+    const stripped = clean.replace(/[\s\-_'’]/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     if (CLASS_NAME_MAP[stripped]) return CLASS_NAME_MAP[stripped];
     if (stripped.includes('holyknightfemale') || stripped.includes('valkyrie')) return 'Valkyrie';
     if (stripped.includes('infightermale') || stripped.includes('breaker') || stripped.includes('heavyinfighter')) return 'Breaker';
     if (stripped.includes('infighterfemale') || stripped === 'infighter' || stripped.includes('scrapper')) return 'Scrapper';
     if (stripped.includes('holyknight') || stripped.includes('paladin')) return 'Paladin';
     if (stripped.includes('berserkerfemale') || stripped.includes('slayer')) return 'Slayer';
+    if (stripped.includes('scouter') || stripped.includes('machinist')) return 'Machinist';
+    if (stripped.includes('souleater') || stripped.includes('soul_eater')) return 'Souleater';
+    if (stripped.includes('yinyangshi') || stripped.includes('artist') || stripped.includes('artiste') || stripped.includes('painter')) return 'Artist';
+    if (stripped.includes('aeromancer') || stripped.includes('weatherartist')) return 'Aeromancer';
     return clean.charAt(0).toUpperCase() + clean.slice(1).replace(/_/g, ' ');
   }
 
@@ -200,8 +255,11 @@
       // Specialists
       specialist: 'specialist.png',
       artist: 'artist.png',
+      yinyangshi: 'artist.png',
+      painter: 'artist.png',
       aeromancer: 'aeromancer.png',
       weatherartist: 'aeromancer.png',
+      meteorologist: 'aeromancer.png',
       wildsoul: 'wildsoul.png',
       guardianknight: 'guardianknight.png'
     };
@@ -2489,17 +2547,12 @@
 
     const classKeyHone = getCharacterClassKey(getCurrentActiveCharacter());
     const isEnHone = isEnLang();
-    let statName = 'Force (STR)';
-    if (['shadowhunter', 'reaper', 'gunslinger', 'deadeye', 'sharpshooter', 'machinist', 'scrapper', 'soulfist', 'striker', 'wardancer'].includes(classKeyHone)) {
-      statName = isEnHone ? 'Dexterity (DEX)' : 'Dextérité (DEX)';
-    } else if (['bard', 'artist', 'sorceress', 'arcanist', 'summoner'].includes(classKeyHone)) {
-      statName = isEnHone ? 'Intelligence (INT)' : 'Intelligence (INT)';
-    } else {
-      statName = isEnHone ? 'Strength (STR)' : 'Force (STR)';
-    }
+    const statName = getMainStatName(classKeyHone, isEnHone);
+    const statShort = statName.startsWith('D') ? 'DEX' : (statName.startsWith('I') ? 'INT' : 'STR');
+    const statDisplay = `${statName} (${statShort})`;
     const lblMainStat = document.getElementById('lblMainStatEst');
     if (lblMainStat) {
-      lblMainStat.textContent = isEnHone ? `Estimated ${statName}` : `${statName} estimée`;
+      lblMainStat.textContent = isEnHone ? `Estimated ${statDisplay}` : `${statDisplay} estimée`;
     }
 
     dom.simEstimatedStr.textContent = `~${formatNumber(Math.max(0, baseStr + totalAddedStr))}`;
@@ -2626,7 +2679,7 @@
     if (raw.includes('destroyer')) return 'destroyer';
     if (raw.includes('reaper')) return 'reaper';
     if (raw.includes('bard') || raw.includes('jigokuushoujo')) return 'bard';
-    if (raw.includes('artist')) return 'artist';
+    if (raw.includes('artist') || raw.includes('yinyangshi')) return 'artist';
     if (raw.includes('valkyrie') || raw.includes('holyknight_female') || raw.includes('holyknightfemale')) return 'valkyrie';
     if (raw.includes('paladin') || raw.includes('holyknight') || raw.includes('neversup')) return 'paladin';
     return 'shadowhunter';
@@ -4357,9 +4410,7 @@
           gain: '+3.5% Dmg'
         });
       }
-      const isHunterOrAssassin = ['devilhunter', 'blaster', 'hawkeye', 'gunslinger', 'blade', 'demonic', 'reaper', 'souleater', 'shadowhunter'].some(k => cName.toLowerCase().includes(k));
-      const isMage = ['bard', 'arcana', 'summoner', 'sorceress', 'artist', 'aeromancer'].some(k => cName.toLowerCase().includes(k));
-      const mainStatLabel = isHunterOrAssassin ? (isEn ? 'Dexterity' : 'Dextérité') : (isMage ? (isEn ? 'Intelligence' : 'Intelligence') : (isEn ? 'Strength' : 'Force'));
+      const mainStatLabel = getMainStatName(cName, isEn);
       targets.push({
         name: isEn ? `Specialization / Crit (>80) + ${mainStatLabel} (>10,000)` : `Spécialisation / Critique (>80) + ${mainStatLabel} (>10 000)`,
         badge: 'Stats BiS',
@@ -4474,7 +4525,7 @@
       }
       const l = (raw.loadouts && (raw.loadouts.find(x => x.classification === 'raid_merged') || raw.loadouts[0])) || raw;
       if (l && Array.isArray(l.gems) && l.gems.length > 0) {
-        const isSupport = charObj.role === 'support' || (charObj.role !== 'dps' && ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female'].includes(l.classId));
+        const isSupport = charObj.role === 'support' || (charObj.role !== 'dps' && ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female', 'yinyangshi'].includes(l.classId));
         return l.gems.map(g => {
           if (g.id) {
             const idStr = g.id.toString();
@@ -12912,7 +12963,7 @@
 
     const isSupport = bp.isSupport !== undefined
       ? bp.isSupport
-      : (preferredRole === 'support' || ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female'].includes(loadout.classId));
+      : (preferredRole === 'support' || ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female', 'yinyangshi'].includes(loadout.classId));
 
     const parts = bp.parts;
     const atkPart = parts.find(p => p.type === 1);
@@ -12962,15 +13013,7 @@
         if (!handledBracelet) {
           handledBracelet = true;
           if (brItem && brItem.data && brItem.data.stats && brItem.data.stats.length) {
-            const isWarrior = ['holyknight', 'berserker', 'destroyer', 'warlord', 'slayer', 'valkyrie', 'holyknight_female'].includes(loadout.classId);
-            const isHunter = ['devilhunter', 'blaster', 'hawkeye', 'gunslinger'].includes(loadout.classId);
-            const isAssassin = ['blade', 'demonic', 'reaper', 'souleater', 'soul_eater'].includes(loadout.classId);
-            const isMage = ['bard', 'arcana', 'summoner', 'sorceress'].includes(loadout.classId);
-            const isSpecialist = ['artist', 'aeromancer', 'alchemist'].includes(loadout.classId);
-
-            let mainStatName = 'Force';
-            if (isHunter || isAssassin) mainStatName = 'Dextérité';
-            else if (isMage || isSpecialist) mainStatName = 'Intelligence';
+            const mainStatName = getMainStatName(loadout.classId, false);
 
             brItem.data.stats.forEach(st => {
               const sIndex = st.index;
@@ -13369,9 +13412,24 @@
       });
     }
 
+    const resolvedClassId = loadout.classId || root.character?.classId || '';
+    const resolvedClassName = normalizeClassName(resolvedClassId || root.characterInfo?.characterClassName || '');
+    const resolvedRole = isSupport ? 'support' : 'dps';
+    const resolvedSpec = getCharacterSpecName({
+      className: resolvedClassName,
+      role: resolvedRole,
+      engravings: loadout.engravings,
+      arkPassive: loadout.arkPassive,
+      battlePoint: bp,
+      loadout: loadout
+    });
+
     return {
       name: root.characterInfo?.characterName || 'Personnage Importé',
-      role: isSupport ? 'support' : 'dps',
+      className: resolvedClassName,
+      classId: resolvedClassId,
+      spec: resolvedSpec,
+      role: resolvedRole,
       ilvl,
       inGameScore: parseFloat(inGameScore.toFixed(2)),
       calculatedScore: parseFloat(calculatedTotal.toFixed(2)),
@@ -15913,7 +15971,7 @@
     slayer: { default: "Predator", alt: "Punisher", keys: ["predator", "punisher", "slayer"] },
     souleater: { default: "Full Moon Harvester", alt: "Night's Edge", keys: ["moon", "night", "edge", "souleater"] },
     bard: { default: "Desperate Salvation", alt: "True Courage", keys: ["salvation", "courage", "bard"] },
-    artist: { default: "Full Bloom", alt: "Recurrence", keys: ["bloom", "recurrence", "artist"] },
+    artist: { default: "Full Bloom", alt: "Recurrence", keys: ["bloom", "recurrence", "artist", "yinyangshi"] },
     deathblade: { default: "Surge", alt: "Remaining Energy", keys: ["surge", "remaining", "deathblade", "blade"] },
     sorceress: { default: "Igniter", alt: "Reflux", keys: ["igniter", "reflux", "sorceress"] },
     gunlancer: { default: "Combat Readiness", alt: "Lone Knight", keys: ["combat readiness", "lone knight", "gunlancer", "warlord"] },
@@ -16268,7 +16326,64 @@
     2470020: 'Asura Destruction',
     // Valkyrie
     2480100: 'Knight of Light',
-    2480200: 'Liberator'
+    2480200: 'Liberator',
+    // Soulfist
+    2240000: 'Energy Overflow',
+    2240100: 'Robust Spirit',
+    // Scrapper
+    2230000: 'Ultimate Skill: Taijutsu',
+    2230100: 'Shock Training',
+    // Wardancer
+    2220000: 'First Intention',
+    2220100: 'Esoteric Skill Enhancement',
+    // Berserker
+    2160010: 'Mayhem',
+    2160020: "Berserker's Technique",
+    // Destroyer
+    2170010: 'Rage Hammer',
+    2170020: 'Gravity Training',
+    // Gunlancer
+    2180010: 'Combat Readiness',
+    2180020: 'Lone Knight',
+    // Glaivier
+    2250010: 'Pinnacle',
+    2250020: 'Control',
+    // Striker
+    2260010: 'Deathblow',
+    2260020: 'Esoteric Flurry',
+    // Deadeye
+    2270010: 'Enhanced Weapon',
+    2270020: 'Pistoleer',
+    // Gunslinger
+    2280010: 'Peacemaker',
+    2280020: 'Time to Hunt',
+    // Artillerist
+    2290010: 'Barrage Enhancement',
+    2290020: 'Firepower Enhancement',
+    // Sharpshooter
+    2300010: 'Death Strike',
+    2300020: 'Loyal Companion',
+    // Machinist
+    2310010: 'Evolutionary Legacy',
+    2310020: 'Arthetinean Skill',
+    // Sorceress
+    2380010: 'Igniter',
+    2380020: 'Reflux',
+    // Deathblade
+    2390010: 'Surge',
+    2390020: 'Remaining Energy',
+    // Arcanist
+    2410010: 'Grace of the Empress',
+    2410020: 'Order of the Emperor',
+    // Summoner
+    2420010: 'Master Summoner',
+    2420020: 'Communication Overflow',
+    // Reaper
+    2430010: 'Hunger',
+    2430020: 'Lunar Voice',
+    // Aeromancer
+    2490010: 'Wind Fury',
+    2490020: 'Drizzle'
   };
 
   function getCharacterSpecName(ch) {
@@ -16281,6 +16396,7 @@
     }
 
     const raw = ch.rawProfile || (ch.loadout ? ch : null) || (typeof CANONICAL_PRESETS !== 'undefined' ? CANONICAL_PRESETS[cKey] : null);
+    const normClass = normalizeClassName(ch.className || (ch.loadout && ch.loadout.classId) || (raw && raw.loadout && raw.loadout.classId) || (raw && raw.className) || '').toLowerCase();
 
     // 2. Détection via Ark Passive (Enlightenment nodes)
     const arkPass = ch.arkPassive || (raw && (raw.arkPassive || (raw.loadout && raw.loadout.arkPassive)));
@@ -16290,6 +16406,40 @@
           return BIBLE_ENLIGHTENMENT_SPECS[node.id];
         }
       }
+    }
+
+    // 2b. Détection dynamique via les statistiques de combat (Spec vs Swift/Crit)
+    const loadoutObj = ch.loadout || (raw && (raw.loadout || raw));
+    const statsList = (loadoutObj && Array.isArray(loadoutObj.stats)) ? loadoutObj.stats : [];
+    const critStat = statsList.find(s => s.type === 15)?.value || 0;
+    const swiftStat = statsList.find(s => s.type === 16)?.value || 0;
+    const specStat = statsList.find(s => s.type === 17)?.value || 0;
+    const isSpecMain = specStat > 1000 || (specStat > swiftStat && specStat > critStat);
+
+    if (statsList.length > 0 && (critStat > 0 || swiftStat > 0 || specStat > 0)) {
+      if (normClass.includes('soulfist')) return isSpecMain ? 'Robust Spirit' : 'Energy Overflow';
+      if (normClass.includes('souleater')) return isSpecMain ? 'Full Moon Harvester' : "Night's Edge";
+      if (normClass.includes('scrapper')) return isSpecMain ? 'Shock Training' : 'Ultimate Skill: Taijutsu';
+      if (normClass.includes('wardancer')) return isSpecMain ? 'Esoteric Skill Enhancement' : 'First Intention';
+      if (normClass.includes('berserker')) return isSpecMain ? "Berserker's Technique" : 'Mayhem';
+      if (normClass.includes('breaker')) return isSpecMain ? 'Brawl King Storm' : 'Asura Destruction';
+      if (normClass.includes('slayer')) return isSpecMain ? 'Punisher' : 'Predator';
+      if (normClass.includes('deathblade')) return isSpecMain ? 'Surge' : 'Remaining Energy';
+      if (normClass.includes('gunlancer')) return isSpecMain ? 'Combat Readiness' : 'Lone Knight';
+      if (normClass.includes('sorceress')) return isSpecMain ? 'Igniter' : 'Reflux';
+      if (normClass.includes('striker')) return isSpecMain ? 'Deathblow' : 'Esoteric Flurry';
+      if (normClass.includes('shadowhunter')) return isSpecMain ? 'Demonic Impulse' : 'Perfect Suppression';
+      if (normClass.includes('destroyer')) return isSpecMain ? 'Gravity Training' : 'Rage Hammer';
+      if (normClass.includes('artillerist')) return isSpecMain ? 'Barrage Enhancement' : 'Firepower Enhancement';
+      if (normClass.includes('machinist')) return isSpecMain ? 'Evolutionary Legacy' : 'Arthetinean Skill';
+      if (normClass.includes('arcanist')) return isSpecMain ? 'Grace of the Empress' : 'Order of the Emperor';
+      if (normClass.includes('summoner')) return isSpecMain ? 'Master Summoner' : 'Communication Overflow';
+      if (normClass.includes('reaper')) return isSpecMain ? 'Lunar Voice' : 'Hunger';
+      if (normClass.includes('glaivier')) return isSpecMain ? 'Pinnacle' : 'Control';
+      if (normClass.includes('aeromancer')) return swiftStat > 1000 ? 'Wind Fury' : 'Drizzle';
+      if (normClass.includes('deadeye')) return (specStat > 900 && swiftStat > 600) ? 'Pistoleer' : 'Enhanced Weapon';
+      if (normClass.includes('gunslinger')) return specStat > 600 ? 'Time to Hunt' : 'Peacemaker';
+      if (normClass.includes('sharpshooter')) return specStat > 600 ? 'Death Strike' : 'Loyal Companion';
     }
 
     // 3. Extraction depuis les gravures du personnage (Bible ou In-Game)
@@ -16305,7 +16455,6 @@
     }
 
     // 4. Déduction DPS pour les classes support si le profil est explicitement configuré en DPS
-    const normClass = normalizeClassName(ch.className || '').toLowerCase();
     const isExplicitDps = (ch.role === 'dps') || 
       (ch.battlePoint && ch.battlePoint.isSupport === false) || 
       (raw && raw.battlePoint && raw.battlePoint.isSupport === false);
@@ -16313,8 +16462,13 @@
     if (isExplicitDps) {
       if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Judgment';
       if (normClass.includes('bard')) return 'True Courage';
-      if (normClass.includes('artist')) return 'Recurrence';
+      if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Recurrence';
       if (normClass.includes('valkyrie')) return 'Liberator';
+    } else {
+      if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Blessed Aura';
+      if (normClass.includes('bard')) return 'Desperate Salvation';
+      if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Full Bloom';
+      if (normClass.includes('valkyrie')) return 'Knight of Light';
     }
 
     // 5. Déduction via le nom de la classe
@@ -16731,7 +16885,7 @@
   function extractPlayerSystems(playerChar, isEn = false) {
     if (!playerChar) return {};
     const normClass = normalizeClassName(playerChar.className || '').toLowerCase();
-    const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && ['paladin', 'bard', 'artist', 'holyknight', 'valkyrie'].some(s => normClass.includes(s)));
+    const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && ['paladin', 'bard', 'artist', 'holyknight', 'valkyrie', 'yinyangshi'].some(s => normClass.includes(s)));
     const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
     const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
 
@@ -16879,7 +17033,7 @@
         engLabel = (isEn ? "Blessed Aura 3, 5 Full T4 Relic Engravings" : "Aura Sacrée 3, 5 Gravures Reliques T4") + stoneNotice;
       } else if (normClass.includes('bard')) {
         engLabel = (isEn ? "Desperate Salvation 3, 5 Full T4 Relic Engravings" : "Salut Désespéré 3, 5 Gravures Reliques T4") + stoneNotice;
-      } else if (normClass.includes('artist')) {
+      } else if (normClass.includes('artist') || normClass.includes('yinyangshi')) {
         engLabel = (isEn ? "Full Bloom 3, 5 Full T4 Relic Engravings" : "Pleine Floraison 3, 5 Gravures Reliques T4") + stoneNotice;
       } else if (normClass.includes('valkyrie')) {
         engLabel = (isEn ? "Knight of Light 3, 5 Full T4 Relic Engravings" : "Chevalière de Lumière 3, 5 Gravures Reliques T4") + stoneNotice;
@@ -18280,12 +18434,14 @@
   }
 
   function getMainStatName(className, isEn) {
-    const c = (className || '').toLowerCase();
-    const isHunter = ['devilhunter', 'blaster', 'hawkeye', 'gunslinger', 'scouter', 'machinist', 'sharpshooter', 'deadeye', 'artillerist'].some(k => c.includes(k));
-    const isAssassin = ['blade', 'demonic', 'reaper', 'souleater', 'soul_eater', 'shadowhunter', 'deathblade'].some(k => c.includes(k));
-    const isMage = ['bard', 'arcana', 'summoner', 'sorceress', 'arcanist'].some(k => c.includes(k));
-    const isSpecialist = ['artist', 'aeromancer', 'alchemist', 'wildcard'].some(k => c.includes(k));
-    if (isHunter || isAssassin) return isEn ? 'Dexterity' : 'Dextérité';
+    const c = (className || '').toLowerCase().replace(/[\s\-_]/g, '');
+    const isHunter = ['devilhunter', 'blaster', 'hawkeye', 'gunslinger', 'scouter', 'machinist', 'sharpshooter', 'deadeye', 'artillerist', 'franctireur', 'fusiliere', 'artilleur', 'sagittaire', 'machiniste'].some(k => c.includes(k));
+    const isAssassin = ['blade', 'demonic', 'reaper', 'souleater', 'shadowhunter', 'deathblade', 'sanglante', 'demoniste', 'faucheuse', 'devoreuse'].some(k => c.includes(k));
+    const isMartialArtist = ['battlemaster', 'wardancer', 'infighter', 'scrapper', 'forcemaster', 'soulmaster', 'soulfist', 'lancemaster', 'glaivier', 'striker', 'breaker', 'heavyinfighter', 'elementiste', 'pugiliste', 'spiritiste', 'lanciere', 'essentialiste', 'sangha'].some(k => c.includes(k));
+    const isMage = ['bard', 'arcana', 'summoner', 'sorceress', 'arcanist', 'barde', 'sorciere', 'invocatrice'].some(k => c.includes(k));
+    const isSpecialist = ['artist', 'aeromancer', 'alchemist', 'wildsoul', 'artiste', 'aeromancienne', 'yinyangshi', 'painter', 'weatherartist'].some(k => c.includes(k));
+
+    if (isHunter || isAssassin || isMartialArtist) return isEn ? 'Dexterity' : 'Dextérité';
     if (isMage || isSpecialist) return isEn ? 'Intelligence' : 'Intelligence';
     return isEn ? 'Strength' : 'Force';
   }
@@ -22482,6 +22638,8 @@
   window.__renderBenchmarkTab = renderBenchmarkTab;
   window.__initBenchmarkEvents = initBenchmarkEvents;
   window.__findOptimalBenchmark = findOptimalBenchmark;
+  window.__normalizeClassName = normalizeClassName;
+  window.__getMainStatName = getMainStatName;
   window.__getCharacterSpecName = getCharacterSpecName;
   window.__extractPlayerSystems = extractPlayerSystems;
   window.__parseBibleCharacter = parseBibleCharacter;
