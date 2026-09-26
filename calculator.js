@@ -48,7 +48,7 @@
     ]
   };
 
-  // Dictionnaire de normalisation universel des 27 classes Lost Ark (FR / EN / IDs internes)
+  // Dictionnaire de normalisation universel des 28 classes Lost Ark (FR / EN / IDs internes)
   const CLASS_NAME_MAP = {
     // Warriors
     holyknight: 'Paladin',
@@ -161,7 +161,14 @@
     meteorologist: 'Aeromancer',
     wildsoul: 'Wildsoul',
     wild_soul: 'Wildsoul',
-    alchemist: 'Wildsoul'
+    alchemist: 'Wildsoul',
+    dimensionalist: 'Dimensionalist',
+    dimension_master: 'Dimensionalist',
+    dimensionmaster: 'Dimensionalist',
+    'dimension master': 'Dimensionalist',
+    dimensionnaliste: 'Dimensionalist',
+    dimensioniste: 'Dimensionalist',
+    maitredesdimensions: 'Dimensionalist'
   };
 
   function normalizeClassName(raw) {
@@ -179,6 +186,7 @@
     if (stripped.includes('souleater') || stripped.includes('soul_eater')) return 'Souleater';
     if (stripped.includes('yinyangshi') || stripped.includes('artist') || stripped.includes('artiste') || stripped.includes('painter')) return 'Artist';
     if (stripped.includes('aeromancer') || stripped.includes('weatherartist')) return 'Aeromancer';
+    if (stripped.includes('dimension') || stripped.includes('dimensionalist')) return 'Dimensionalist';
     return clean.charAt(0).toUpperCase() + clean.slice(1).replace(/_/g, ' ');
   }
 
@@ -261,6 +269,8 @@
       weatherartist: 'aeromancer.png',
       meteorologist: 'aeromancer.png',
       wildsoul: 'wildsoul.png',
+      dimensionalist: 'dimensionalist.png',
+      dimensionmaster: 'dimensionalist.png',
       guardianknight: 'guardianknight.png'
     };
 
@@ -2682,6 +2692,7 @@
     if (raw.includes('artist') || raw.includes('yinyangshi')) return 'artist';
     if (raw.includes('valkyrie') || raw.includes('holyknight_female') || raw.includes('holyknightfemale')) return 'valkyrie';
     if (raw.includes('paladin') || raw.includes('holyknight') || raw.includes('neversup')) return 'paladin';
+    if (raw.includes('dimension') || raw.includes('knäy') || raw.includes('knay')) return 'dimensionalist';
     return 'shadowhunter';
   }
 
@@ -5430,6 +5441,13 @@
       specs: [
         { id: 'wind_fury', name: '🌪️ Fureur du Vent (Parapluie Rapide)', nameEn: '🌪️ Wind Fury (Fast Umbrella)', role: 'dps' },
         { id: 'drizzle', name: '🌧️ Bruine (Météo/Dégâts Spé)', nameEn: '🌧️ Drizzle (Weather Special)', role: 'dps' }
+      ]
+    },
+    dimensionalist: {
+      name: 'Dimensionalist',
+      specs: [
+        { id: 'time_wielder', name: '⏳ Maître du Temps (Time Wielder / Spé)', nameEn: '⏳ Time Wielder (Spec / Non-Positional)', role: 'dps' },
+        { id: 'space_wielder', name: '🌌 Maître de l\'Espace (Space Wielder / Rap)', nameEn: '🌌 Space Wielder (Swift / Back Attack)', role: 'dps' }
       ]
     }
   };
@@ -13580,6 +13598,7 @@
       id: profile.name.toLowerCase(),
       name: profile.name,
       className: profile.className || (profile.role === 'support' ? 'Support' : 'DPS'),
+      spec: profile.spec || '',
       role: profile.role,
       server: profile.server || `${region.toUpperCase()}`,
       guild: profile.guild || '',
@@ -15991,7 +16010,8 @@
     striker: { default: "Deathblow", alt: "Esoteric Flurry", keys: ["deathblow", "flurry", "striker"] },
     soulfist: { default: "Energy Overflow", alt: "Robust Spirit", keys: ["energy overflow", "robust", "soulfist", "soulmaster"] },
     deadeye: { default: "Enhanced Weapon", alt: "Pistoleer", keys: ["enhanced weapon", "pistoleer", "deadeye", "devilhunter"] },
-    valkyrie: { default: "Knight of Light", alt: "Liberator", keys: ["knight of light", "liberator", "valkyrie", "holyknight_female", "holyknightfemale"] }
+    valkyrie: { default: "Knight of Light", alt: "Liberator", keys: ["knight of light", "liberator", "valkyrie", "holyknight_female", "holyknightfemale"] },
+    dimensionalist: { default: "Time Wielder", alt: "Space Wielder", keys: ["time wielder", "space wielder", "dimensionalist", "dimension_master", "dimension master", "dimensionmaster", "dimension"] }
   };
 
   function isEnglishLang() {
@@ -16383,7 +16403,20 @@
     2430020: 'Lunar Voice',
     // Aeromancer
     2490010: 'Wind Fury',
-    2490020: 'Drizzle'
+    2490020: 'Drizzle',
+    // Dimensionalist
+    220500100: 'Space Wielder',
+    220500300: 'Space Wielder',
+    220500600: 'Space Wielder',
+    220500700: 'Space Wielder',
+    220501000: 'Space Wielder',
+    220501100: 'Space Wielder',
+    220500000: 'Time Wielder',
+    220500200: 'Time Wielder',
+    220500400: 'Time Wielder',
+    220500500: 'Time Wielder',
+    220500800: 'Time Wielder',
+    220500900: 'Time Wielder'
   };
 
   function getCharacterSpecName(ch) {
@@ -16440,6 +16473,7 @@
       if (normClass.includes('deadeye')) return (specStat > 900 && swiftStat > 600) ? 'Pistoleer' : 'Enhanced Weapon';
       if (normClass.includes('gunslinger')) return specStat > 600 ? 'Time to Hunt' : 'Peacemaker';
       if (normClass.includes('sharpshooter')) return specStat > 600 ? 'Death Strike' : 'Loyal Companion';
+      if (normClass.includes('dimensionalist') || normClass.includes('dimension')) return swiftStat > 900 ? 'Space Wielder' : 'Time Wielder';
     }
 
     // 3. Extraction depuis les gravures du personnage (Bible ou In-Game)
@@ -17702,6 +17736,12 @@
       { name: 'Dingeladina', region: 'CE', ilvl: 1771.67, cp: 5272, role: 'dps', spec: 'Liberator' },
       { name: 'Nephílía', region: 'CE', ilvl: 1770.83, cp: 5369, role: 'dps', spec: 'Liberator' },
       { name: 'Lynkyrie', region: 'CE', ilvl: 1787.50, cp: 6686, role: 'dps', spec: 'Liberator' }
+    ],
+    'dimensionalist': [
+      { name: 'Knäy', region: 'CE', ilvl: 1737.50, cp: 3745, role: 'dps', spec: 'Space Wielder' },
+      { name: 'Hhôpe', region: 'CE', ilvl: 1750.00, cp: 4350, role: 'dps', spec: 'Space Wielder' },
+      { name: 'Mariabetaniah', region: 'NA', ilvl: 1750.00, cp: 4200, role: 'dps', spec: 'Time Wielder' },
+      { name: 'Hourglass', region: 'CE', ilvl: 1760.00, cp: 4800, role: 'dps', spec: 'Time Wielder' }
     ]
   };
 
@@ -18439,7 +18479,7 @@
     const isAssassin = ['blade', 'demonic', 'reaper', 'souleater', 'shadowhunter', 'deathblade', 'sanglante', 'demoniste', 'faucheuse', 'devoreuse'].some(k => c.includes(k));
     const isMartialArtist = ['battlemaster', 'wardancer', 'infighter', 'scrapper', 'forcemaster', 'soulmaster', 'soulfist', 'lancemaster', 'glaivier', 'striker', 'breaker', 'heavyinfighter', 'elementiste', 'pugiliste', 'spiritiste', 'lanciere', 'essentialiste', 'sangha'].some(k => c.includes(k));
     const isMage = ['bard', 'arcana', 'summoner', 'sorceress', 'arcanist', 'barde', 'sorciere', 'invocatrice'].some(k => c.includes(k));
-    const isSpecialist = ['artist', 'aeromancer', 'alchemist', 'wildsoul', 'artiste', 'aeromancienne', 'yinyangshi', 'painter', 'weatherartist'].some(k => c.includes(k));
+    const isSpecialist = ['artist', 'aeromancer', 'alchemist', 'wildsoul', 'artiste', 'aeromancienne', 'yinyangshi', 'painter', 'weatherartist', 'dimensionalist', 'dimensionmaster', 'dimension', 'dimensionnaliste'].some(k => c.includes(k));
 
     if (isHunter || isAssassin || isMartialArtist) return isEn ? 'Dexterity' : 'Dextérité';
     if (isMage || isSpecialist) return isEn ? 'Intelligence' : 'Intelligence';
@@ -22674,6 +22714,8 @@
   window.__buildAstrogemsBreakdownHtml = buildAstrogemsBreakdownHtml;
   window.__buildArkGridCoresBreakdownHtml = buildArkGridCoresBreakdownHtml;
   window.__extractArkGridCoreDetail = extractArkGridCoreDetail;
+  window.__getClassIconUrl = getClassIconUrl;
+  window.__applyLoadedProfile = applyLoadedProfile;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
