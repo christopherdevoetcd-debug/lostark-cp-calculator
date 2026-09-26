@@ -15300,22 +15300,22 @@
     try {
       const normClass = normalizeClassName(c.className || '').toLowerCase();
       const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.includes(s));
-      const pRole = c.role || (isSupportClass ? 'support' : 'dps');
+      const pName = (c.name || c.id || '').toLowerCase().trim();
       const peers = VERIFIED_LIVE_PEERS[normClass] || [];
-      const peersToFetch = peers.filter(p => !p.role || p.role === pRole);
+      const peersToFetch = peers.filter(p => (!p.role || p.role === pRole) && p.name.toLowerCase() !== pName);
 
-      // On pré-charge en tâche de fond jusqu'à 4 pairs vérifiés de même rôle
-      peersToFetch.slice(0, 4).forEach(peer => {
+      // On pré-charge en tâche de fond jusqu'à 6 pairs vérifiés de même rôle (sans le joueur lui-même)
+      peersToFetch.slice(0, 6).forEach(peer => {
         if (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.name.toLowerCase() === peer.name.toLowerCase())) {
           fetchLiveBibleBenchmark(peer.name, peer.region, pRole).then(b => {
-            if (b && (!b.role || b.role === pRole)) {
+            if (b && (!b.role || b.role === pRole) && (b.name || '').toLowerCase().trim() !== pName) {
               if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
               if (!benchmarkState.searchedTargets.some(s => s.id === b.id)) {
                 benchmarkState.searchedTargets.push(b);
               }
-              if (!benchmarkState.customTarget || benchmarkState.customTarget.isDynamic || (benchmarkState.customTarget.role && benchmarkState.customTarget.role !== pRole)) {
+              if (!benchmarkState.customTarget || benchmarkState.customTarget.isDynamic || (benchmarkState.customTarget.name || '').toLowerCase().trim() === pName || (benchmarkState.customTarget.role && benchmarkState.customTarget.role !== pRole)) {
                 const opt = findOptimalBenchmark(c);
-                if (opt && opt.isLive) {
+                if (opt && opt.isLive && (opt.name || '').toLowerCase().trim() !== pName) {
                   benchmarkState.customTarget = opt;
                   benchmarkState.currentTargetId = opt.id;
                 }
@@ -17738,10 +17738,12 @@
       { name: 'Lynkyrie', region: 'CE', ilvl: 1787.50, cp: 6686, role: 'dps', spec: 'Liberator' }
     ],
     'dimensionalist': [
+      { name: 'Prophyzeit', region: 'CE', ilvl: 1750.83, cp: 3901, role: 'dps', spec: 'Space Wielder' },
       { name: 'Knäy', region: 'CE', ilvl: 1737.50, cp: 3745, role: 'dps', spec: 'Space Wielder' },
-      { name: 'Hhôpe', region: 'CE', ilvl: 1750.00, cp: 4350, role: 'dps', spec: 'Space Wielder' },
-      { name: 'Mariabetaniah', region: 'NA', ilvl: 1750.00, cp: 4200, role: 'dps', spec: 'Time Wielder' },
-      { name: 'Hourglass', region: 'CE', ilvl: 1760.00, cp: 4800, role: 'dps', spec: 'Time Wielder' }
+      { name: 'Lndxz', region: 'CE', ilvl: 1730.00, cp: 3137, role: 'dps', spec: 'Space Wielder' },
+      { name: 'Nymren', region: 'CE', ilvl: 1720.00, cp: 2748, role: 'dps', spec: 'Space Wielder' },
+      { name: 'Weiztwink', region: 'CE', ilvl: 1712.66, cp: 1958, role: 'dps', spec: 'Time Wielder' },
+      { name: 'Momnt', region: 'CE', ilvl: 1700.00, cp: 1187, role: 'dps', spec: 'Time Wielder' }
     ]
   };
 
@@ -17938,11 +17940,14 @@
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
     const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
     const pRole = playerChar.role || (isSupportClass ? 'support' : 'dps');
+    const pName = (playerChar.name || playerChar.id || '').toLowerCase().trim();
     const list = [];
 
-    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (MÊME CLASSE ET MÊME RÔLE STRICTEMENT)
+    // 1. Profils RÉELS LIVE recherchés et auto-chargés depuis lostark.bible (MÊME CLASSE ET MÊME RÔLE STRICTEMENT, SANS LE JOUEUR LUI-MÊME)
     const searchedList = benchmarkState.searchedTargets || [];
     searchedList.forEach(s => {
+      const sName = (s.name || s.id || '').toLowerCase().trim();
+      if (sName === pName) return;
       const sClass = normalizeClassName(s.className || s.characterClass || s.class || '').toLowerCase();
       const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       if (s && s.isLive && sClass === pClass && sRole === pRole) {
@@ -17950,12 +17955,14 @@
       }
     });
 
-    // 2. Personnages du Roster actif DE LA MÊME CLASSE ET MÊME RÔLE UNIQUEMENT
+    // 2. Personnages du Roster actif DE LA MÊME CLASSE ET MÊME RÔLE UNIQUEMENT (SANS LE JOUEUR LUI-MÊME)
     const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
     currentRoster.forEach(c => {
+      const cName = (c.name || c.id || '').toLowerCase().trim();
+      if (cName === pName) return;
       const cClass = normalizeClassName(c.className || c.characterClass || c.class || '').toLowerCase();
       const cRole = c.role || (isSupportClass ? 'support' : 'dps');
-      if ((c.name || c.id) !== (playerChar.name || playerChar.id) && cClass === pClass && cRole === pRole) {
+      if (cClass === pClass && cRole === pRole) {
         list.push(convertCharToBenchmarkFormat(c, isEnLang()));
       }
     });
@@ -21248,12 +21255,14 @@
     // Résolution du profil cible (100% profils LIVE ou Roster réel, zéro preset statique, zéro profil synthétique)
     let target = benchmarkState.customTarget;
 
-    // VALIDATION STRICTE DE LA CLASSE ET DU RÔLE :
-    // Si la cible en cache ou sélectionnée n'est pas de la même classe ou du même rôle, on la rejette obligatoirement
+    // VALIDATION STRICTE DE LA CLASSE, DU RÔLE ET EXCLUSION DU JOUEUR :
+    // Si la cible en cache ou sélectionnée n'est pas de la même classe ou du même rôle, ou si c'est le joueur lui-même, on la rejette obligatoirement
+    const pName = (player.name || player.id || '').toLowerCase().trim();
     if (target) {
+      const tName = (target.name || target.id || '').toLowerCase().trim();
       const tClass = normalizeClassName(target.className || '').toLowerCase();
       const tRole = target.role || (isSupportClass ? (target.spec === 'Blessed Aura' || target.spec === 'Desperate Salvation' || target.spec === 'Full Bloom' || target.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
-      if (tClass !== pClass || tRole !== pRole) {
+      if (tName === pName || tClass !== pClass || tRole !== pRole) {
         target = null;
         benchmarkState.customTarget = null;
         benchmarkState.currentTargetId = null;
@@ -21262,17 +21271,21 @@
 
     if (!target) {
       if (benchmarkState.currentTargetId) {
-        // 1. Cherche dans les profils disponibles de CETTE CLASSE et MÊME RÔLE
+        // 1. Cherche dans les profils disponibles de CETTE CLASSE et MÊME RÔLE (sans le joueur lui-même)
         target = avail.find(b => {
           if (b.id !== benchmarkState.currentTargetId) return false;
+          const bName = (b.name || b.id || '').toLowerCase().trim();
+          if (bName === pName) return false;
           if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
           const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
           return bRole === pRole;
         });
-        // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE et MÊME RÔLE
+        // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE et MÊME RÔLE (sans le joueur lui-même)
         if (!target) {
           target = (benchmarkState.searchedTargets || []).find(b => {
             if (b.id !== benchmarkState.currentTargetId) return false;
+            const bName = (b.name || b.id || '').toLowerCase().trim();
+            if (bName === pName) return false;
             if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
             const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
             return bRole === pRole;
@@ -21281,14 +21294,18 @@
       }
     }
 
-    // Priorité absolue aux profils LIVE de lostark.bible (MÊME CLASSE ET MÊME RÔLE) :
+    // Priorité absolue aux profils LIVE de lostark.bible (MÊME CLASSE ET MÊME RÔLE, SANS LE JOUEUR LUI-MÊME) :
     const hasLivePeer = avail.some(b => {
       if (!b.isLive) return false;
+      const bName = (b.name || b.id || '').toLowerCase().trim();
+      if (bName === pName) return false;
       if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
       const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     }) || (benchmarkState.searchedTargets || []).some(b => {
       if (!b || !b.isLive) return false;
+      const bName = (b.name || b.id || '').toLowerCase().trim();
+      if (bName === pName) return false;
       if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
       const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
@@ -21297,7 +21314,7 @@
     // Si la cible actuelle est dynamique ou absente, mais qu'un profil LIVE de cette classe et rôle est disponible en mémoire, on bascule dessus immédiatement
     if ((!target || target.isDynamic) && hasLivePeer && !benchmarkState.manualDynamicChosen) {
       const liveOpt = findOptimalBenchmark(player);
-      if (liveOpt && liveOpt.isLive) {
+      if (liveOpt && liveOpt.isLive && (liveOpt.name || '').toLowerCase().trim() !== pName) {
         target = liveOpt;
         benchmarkState.customTarget = liveOpt;
         benchmarkState.currentTargetId = liveOpt.id;
@@ -21370,6 +21387,8 @@
         
         const searchedList = (benchmarkState.searchedTargets || []).filter(s => {
           if (!s || !s.isLive) return false;
+          const sName = (s.name || s.id || '').toLowerCase().trim();
+          if (sName === pName) return false;
           if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
           const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
           return sRole === pRole;
@@ -21386,7 +21405,8 @@
 
         const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
         const sameClassRoster = currentRoster.filter(c => {
-          if ((c.name || c.id) === (player.name || player.id)) return false;
+          const cName = (c.name || c.id || '').toLowerCase().trim();
+          if (cName === pName) return false;
           if (normalizeClassName(c.className || '').toLowerCase() !== pClass) return false;
           const cRole = c.role || (isSupportClass ? 'support' : 'dps');
           return cRole === pRole;
@@ -21421,14 +21441,16 @@
     if (select) {
       let optionsHtml = '';
 
-      // 1. Profils LIVE de CETTE CLASSE et MÊME RÔLE recherchés & synchronisés en direct sur lostark.bible
+      // 1. Profils LIVE de CETTE CLASSE et MÊME RÔLE recherchés & synchronisés en direct sur lostark.bible (sans le joueur lui-même)
       const searchedList = (benchmarkState.searchedTargets || []).filter(s => {
         if (!s || !s.isLive) return false;
+        const sName = (s.name || s.id || '').toLowerCase().trim();
+        if (sName === pName) return false;
         if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
         const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
         return sRole === pRole;
       });
-      if (benchmarkState.customTarget && normalizeClassName(benchmarkState.customTarget.className || '').toLowerCase() === pClass && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
+      if (benchmarkState.customTarget && normalizeClassName(benchmarkState.customTarget.className || '').toLowerCase() === pClass && (benchmarkState.customTarget.name || '').toLowerCase().trim() !== pName && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
         const ctRole = benchmarkState.customTarget.role || (isSupportClass ? (benchmarkState.customTarget.spec === 'Blessed Aura' || benchmarkState.customTarget.spec === 'Desperate Salvation' || benchmarkState.customTarget.spec === 'Full Bloom' || benchmarkState.customTarget.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
         if (ctRole === pRole) {
           searchedList.unshift(benchmarkState.customTarget);
@@ -22496,6 +22518,9 @@
 
     try {
       const activePlayer = getCurrentActiveCharacter();
+      if (activePlayer && cleanName.toLowerCase() === (activePlayer.name || '').toLowerCase().trim()) {
+        throw new Error(isEn ? "You cannot compare a character against themselves. Please select another reference player." : "Vous ne pouvez pas vous comparer à vous-même. Veuillez sélectionner un autre joueur de référence.");
+      }
       const liveBench = await fetchLiveBibleBenchmark(cleanName, reg, (activePlayer && activePlayer.role) || 'support');
       if (!liveBench) throw new Error(isEn ? "Profile not found" : "Profil introuvable");
 
