@@ -17487,8 +17487,6 @@
       { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '💪', cost: 75000 },
       { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '📜', cost: 40000 },
       { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '🎯', cost: 50000 },
-      { key: 'transWeapon', title: isEn ? "Weapon Transcendence" : "Transcendance Arme", icon: '⚔️', cost: 15000 },
-      { key: 'transArmor', title: isEn ? "Armor Transcendence" : "Transcendance Armures", icon: '🛡️', cost: 25000 },
       { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '💡', cost: 25000 },
       { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '🧬', cost: 20000 },
       { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '🚀', cost: 30000 },
@@ -20140,8 +20138,8 @@
               <span>${isEn ? 'Weapon honing rank and Quality (95-100) are the primary sources of Weapon Power scaling Base AP.' : 'Le niveau d\'affinage d\'arme et une qualité 95-100 sont le moteur principal de la Puissance d\'Arme alimentant le Base AP.'}</span>
             </div>
             <div class="stats-factor-card">
-              <strong>✨ ${isEn ? 'Transcendence & Elixirs' : 'Transcendance & Élixirs'}</strong>
-              <span>${isEn ? 'Weapon R3 (21 pts) & Armor R3 (105 pts) grant tens of thousands in flat Main Stat and Weapon Power.' : 'La Transcendance Arme R3 (21 pts) et Armures (105 pts) donne des dizaines de milliers de points de Main Stat et Puissance d\'Arme fixes.'}</span>
+              <strong>✨ ${isEn ? 'T4 Advanced Honing (+40)' : 'Affinage Avancé T4 (+40)'}</strong>
+              <span>${isEn ? 'Advanced Honing tiers (+10 to +40) inject massive amounts of flat Main Stat and Weapon Power directly into every piece.' : 'Les paliers d\'Affinage Avancé (+10 à +40) injectent directement des bonus massifs de Stat Principale et de Puissance d\'Arme sur chaque pièce.'}</span>
             </div>
             <div class="stats-factor-card">
               <strong>📜 ${isEn ? 'Roster & Permanent Potions' : 'Potions Codex & Expédition'}</strong>
@@ -20156,8 +20154,8 @@
           <div class="verdict-content">
             <strong style="color:#fb923c;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
-              ? `To bridge the +${cpImpact} CP gap: prioritize honing your T4 weapon, unlock Rank 3 weapon/armor transcendence, roll legendary 40-set elixirs with Atk Power, and collect missing permanent stat potions from your Codex (Alt+D).`
-              : `Pour combler les +${cpImpact} CP de retard : prioriser l'affinage de votre Arme T4, finaliser la Transcendance R3 (Arme et Armures), sécuriser un set 40 d'élixirs avec Puissance d'Attaque, et vérifier dans votre Codex (Alt+D) les potions permanentes de caractéristiques non récupérées.`}</span>
+              ? `To bridge the +${cpImpact} CP gap: prioritize honing your T4 weapon (each tier above +20 gives an exponential leap in Weapon Power), advance your T4 armor levels to increase your Main Stat pool, complete remaining Advanced Honing tiers (+40), and collect missing permanent stat potions from your Codex (Alt+D).`
+              : `Pour combler les +${cpImpact} CP de retard : prioriser l'affinage de votre Arme T4 (chaque palier au-dessus de +20 apporte un saut exponentiel de Puissance d'Arme), monter vos pièces d'armure T4 (source majeure de Stat Principale), compléter les paliers d'Affinage Avancé (+40), et récupérer les potions permanentes de statistiques manquantes dans votre Codex (Alt+D).`}</span>
           </div>
         </div>
       </div>
@@ -21684,8 +21682,6 @@
         { key: 'baseAttackStat', name: isEn ? 'Main Stat & Base AP' : 'Stat Principale & Attaque Base', icon: '💪', prio: 'med' },
         { key: 'engravings', name: isEn ? 'Engravings & Ability Stone' : 'Gravures & Pierre de Naissance', icon: '📜', prio: 'equal' },
         { key: 'combatStats', name: isEn ? 'Combat Stats (Crit/Spec/Swift)' : 'Stats de Combat (Crit/Spé/Rap)', icon: '🎯', prio: 'equal' },
-        { key: 'transWeapon', name: isEn ? 'Weapon Transcendence' : 'Transcendance Arme', icon: '⚔️', prio: 'equal' },
-        { key: 'transArmor', name: isEn ? 'Armor Transcendence (105 Pts)' : 'Transcendance Armures (105 Pts)', icon: '🛡️', prio: 'equal' },
         { key: 'arkEvolution', name: isEn ? 'Ark Passive: Evolution (Stats)' : 'Ark Passive : Évolution (Stats)', icon: '🧬', prio: 'med' },
         { key: 'arkEnlightenment', name: isEn ? 'Ark Passive: Enlightenment (Tree)' : 'Ark Passive : Illumination (Arbre)', icon: '💡', prio: 'med' },
         { key: 'arkLeap', name: isEn ? 'Ark Passive: Leap (Hyper)' : 'Ark Passive : Saut (Hyper)', icon: '🚀', prio: 'equal' },
