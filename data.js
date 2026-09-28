@@ -6713,6 +6713,283 @@ window.ALPHA_KNOWN_ACCESSORIES = [
     }
   }
 ];;
+window.NEVERSUP_KNOWN_ACCESSORIES = [
+  {
+    "slot": "neck",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 13
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 3824
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 17777
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 17777
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 17777
+        },
+        {
+          "type": 2,
+          "index": 46,
+          "base": false,
+          "value": 800
+        },
+        {
+          "type": 2,
+          "index": 50,
+          "base": false,
+          "value": 160
+        },
+        {
+          "type": 2,
+          "index": 151,
+          "base": false,
+          "value": 195
+        }
+      ]
+    }
+  },
+  {
+    "slot": "ear1",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2817
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 12119
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 12119
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 12119
+        },
+        {
+          "type": 51,
+          "index": 0,
+          "base": false,
+          "value": 210
+        },
+        {
+          "type": 2,
+          "index": 152,
+          "base": false,
+          "value": 180
+        },
+        {
+          "type": 2,
+          "index": 27,
+          "base": false,
+          "value": 1300
+        }
+      ]
+    }
+  },
+  {
+    "slot": "ear2",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2705
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 13806
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 13806
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 13806
+        },
+        {
+          "type": 2,
+          "index": 152,
+          "base": false,
+          "value": 180
+        },
+        {
+          "type": 2,
+          "index": 34,
+          "base": false,
+          "value": 25
+        },
+        {
+          "type": 2,
+          "index": 49,
+          "base": false,
+          "value": 95
+        }
+      ]
+    }
+  },
+  {
+    "slot": "finger1",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2232
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 11891
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 11891
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 11891
+        },
+        {
+          "type": 54,
+          "index": 0,
+          "base": false,
+          "value": 500
+        },
+        {
+          "type": 59,
+          "index": 16000001,
+          "base": false,
+          "value": 200
+        },
+        {
+          "type": 2,
+          "index": 76,
+          "base": false,
+          "value": 110
+        }
+      ]
+    }
+  },
+  {
+    "slot": "finger2",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2190
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 12762
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 12762
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 12762
+        },
+        {
+          "type": 59,
+          "index": 16000001,
+          "base": false,
+          "value": 200
+        },
+        {
+          "type": 54,
+          "index": 0,
+          "base": false,
+          "value": 500
+        },
+        {
+          "type": 2,
+          "index": 34,
+          "base": false,
+          "value": 25
+        }
+      ]
+    }
+  }
+];;
 
 window.ALPHA_KNOWN_BRACELET = {
     slot: "bracelet",

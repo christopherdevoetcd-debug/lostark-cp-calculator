@@ -3558,8 +3558,12 @@
           icon: '💍',
           name: isEn ? 'T4 Accessory: Polish Dead Line ➔ Mid Roll' : 'Accessoire T4 : Polissage Ligne Morte ➔ Roll Mid',
           sub: isEn
-            ? `Reroll dead stat into Mid Attack Power/Damage line (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% net CP Inven) (~45k g)`
-            : `Reroll stat morte en ligne Attaque/Dégâts Mid (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% CP net Inven) (~45k g)`,
+            ? (isSupport
+                ? `Reroll dead stat (Crit Dmg / Recovery) into Mid Brand / Ally Buff / AP line (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% Buff Power) (~45k g)`
+                : `Reroll dead stat into Mid Attack Power / Damage line (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% net CP Inven) (~45k g)`)
+            : (isSupport
+                ? `Reroll stat morte (Dégâts Crit / Récup PV) en ligne Marque / Buff Allié / PA (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% Buff Power) (~45k g)`
+                : `Reroll stat morte en ligne Attaque / Dégâts Mid (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% CP net Inven) (~45k g)`),
           cost,
           cp,
           ilvl: 0,
@@ -3579,8 +3583,12 @@
           icon: '💎',
           name: isEn ? 'T4 Accessory: Upgrade Mid Line ➔ High Roll' : 'Accessoire T4 : Amélioration Ligne Mid ➔ Roll High',
           sub: isEn
-            ? `Target High Roll line (Weapon Power / Outgoing Dmg: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% net CP) (~600k g)`
-            : `Viser une ligne Roll Élevé (Puissance Arme / Dégâts Sortants : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% CP net) (~600k g)`,
+            ? (isSupport
+                ? `Target High Roll line (Ally Atk Power / Damage Enh. / Brand: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% Buff Power) (~600k g)`
+                : `Target High Roll line (Weapon Power / Outgoing Dmg: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% net CP) (~600k g)`)
+            : (isSupport
+                ? `Viser une ligne Roll Élevé (Amplification PA Allié / Dégâts Allié / Marque : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% Buff Power) (~600k g)`
+                : `Viser une ligne Roll Élevé (Puissance Arme / Dégâts Sortants : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% CP net) (~600k g)`),
           cost,
           cp,
           ilvl: 0,
@@ -9073,6 +9081,9 @@
     if ((!pAccItems || pAccItems.length === 0) && playerChar && playerChar.name && (playerChar.name.toLowerCase() === 'alphâ' || playerChar.name.toLowerCase() === 'àlphâ' || playerChar.id === 'alphâ' || playerChar.id === 'àlphâ')) {
       pAccItems = ALPHA_KNOWN_ACCESSORIES;
     }
+    if ((!pAccItems || pAccItems.length === 0) && playerChar && playerChar.name && (playerChar.name.toLowerCase().includes('neversup') || playerChar.id === 'neversup' || playerChar.id === 'demo_paladin')) {
+      pAccItems = typeof NEVERSUP_KNOWN_ACCESSORIES !== 'undefined' ? NEVERSUP_KNOWN_ACCESSORIES : null;
+    }
 
     let highCount = 0;
     let midCount = 0;
@@ -10259,6 +10270,9 @@
     // Fallback direct sur les données réelles vérifiées de Àlphâ si non ré-hydratées depuis le cache local
     if ((!pAccItems || pAccItems.length === 0) && player && player.name && (player.name.toLowerCase() === 'alphâ' || player.name.toLowerCase() === 'àlphâ' || player.id === 'alphâ' || player.id === 'àlphâ')) {
       pAccItems = ALPHA_KNOWN_ACCESSORIES;
+    }
+    if ((!pAccItems || pAccItems.length === 0) && player && player.name && (player.name.toLowerCase().includes('neversup') || player.id === 'neversup' || player.id === 'demo_paladin')) {
+      pAccItems = typeof NEVERSUP_KNOWN_ACCESSORIES !== 'undefined' ? NEVERSUP_KNOWN_ACCESSORIES : null;
     }
 
     const slots = [
