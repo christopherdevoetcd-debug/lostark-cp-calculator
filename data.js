@@ -6437,42 +6437,282 @@ window.BIBLE_ENLIGHTENMENT_SPECS = {
   };;
 
 window.ALPHA_KNOWN_ACCESSORIES = [
-    { slot: "neck", data: { stats: [
-      { type: 57, index: 1, base: true, value: 13 },
-      { type: 2, index: 6, base: true, value: 4097 },
-      { type: 2, index: 27, base: false, value: 6500 },
-      { type: 4, index: 621000002, base: false, value: 0 },
-      { type: 2, index: 124, base: false, value: 195 }
-    ]}},
-    { slot: "ear1", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2740 },
-      { type: 2, index: 152, base: false, value: 300 },
-      { type: 2, index: 49, base: false, value: 40 },
-      { type: 2, index: 124, base: false, value: 80 }
-    ]}},
-    { slot: "ear2", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2775 },
-      { type: 2, index: 152, base: false, value: 300 },
-      { type: 51, index: 0, base: false, value: 95 },
-      { type: 2, index: 49, base: false, value: 40 }
-    ]}},
-    { slot: "finger1", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2332 },
-      { type: 2, index: 74, base: false, value: 155 },
-      { type: 2, index: 34, base: false, value: 10 },
-      { type: 2, index: 27, base: false, value: 3250 }
-    ]}},
-    { slot: "finger2", data: { stats: [
-      { type: 57, index: 1, base: true, value: 12 },
-      { type: 2, index: 6, base: true, value: 2342 },
-      { type: 2, index: 124, base: false, value: 195 },
-      { type: 59, index: 16000001, base: false, value: 200 },
-      { type: 2, index: 76, base: false, value: 400 }
-    ]}}
-  ];;
+  {
+    "slot": "neck",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 13
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 3789
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 15446
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 15446
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 15446
+        },
+        {
+          "type": 4,
+          "index": 621000001,
+          "base": false,
+          "value": 0
+        },
+        {
+          "type": 2,
+          "index": 50,
+          "base": false,
+          "value": 160
+        },
+        {
+          "type": 2,
+          "index": 124,
+          "base": false,
+          "value": 390
+        }
+      ]
+    }
+  },
+  {
+    "slot": "ear1",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2707
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 12015
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 12015
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 12015
+        },
+        {
+          "type": 2,
+          "index": 49,
+          "base": false,
+          "value": 95
+        },
+        {
+          "type": 2,
+          "index": 152,
+          "base": false,
+          "value": 180
+        },
+        {
+          "type": 2,
+          "index": 124,
+          "base": false,
+          "value": 390
+        }
+      ]
+    }
+  },
+  {
+    "slot": "ear2",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2707
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 12015
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 12015
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 12015
+        },
+        {
+          "type": 2,
+          "index": 49,
+          "base": false,
+          "value": 95
+        },
+        {
+          "type": 2,
+          "index": 152,
+          "base": false,
+          "value": 180
+        },
+        {
+          "type": 2,
+          "index": 124,
+          "base": false,
+          "value": 390
+        }
+      ]
+    }
+  },
+  {
+    "slot": "finger1",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2166
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 11156
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 11156
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 11156
+        },
+        {
+          "type": 2,
+          "index": 76,
+          "base": false,
+          "value": 240
+        },
+        {
+          "type": 2,
+          "index": 74,
+          "base": false,
+          "value": 95
+        },
+        {
+          "type": 2,
+          "index": 124,
+          "base": false,
+          "value": 390
+        }
+      ]
+    }
+  },
+  {
+    "slot": "finger2",
+    "data": {
+      "stats": [
+        {
+          "type": 57,
+          "index": 1,
+          "base": true,
+          "value": 12
+        },
+        {
+          "type": 2,
+          "index": 6,
+          "base": true,
+          "value": 2166
+        },
+        {
+          "type": 2,
+          "index": 5,
+          "base": true,
+          "value": 11156
+        },
+        {
+          "type": 2,
+          "index": 3,
+          "base": true,
+          "value": 11156
+        },
+        {
+          "type": 2,
+          "index": 4,
+          "base": true,
+          "value": 11156
+        },
+        {
+          "type": 2,
+          "index": 76,
+          "base": false,
+          "value": 240
+        },
+        {
+          "type": 2,
+          "index": 74,
+          "base": false,
+          "value": 95
+        },
+        {
+          "type": 2,
+          "index": 124,
+          "base": false,
+          "value": 390
+        }
+      ]
+    }
+  }
+];;
 
 window.ALPHA_KNOWN_BRACELET = {
     slot: "bracelet",

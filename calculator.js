@@ -3502,8 +3502,8 @@
 
     // Évaluation dynamique des Accessoires T4 (Dead -> Mid, et Mid -> High)
     const accEval = evaluateCharacterAccessories(curChar, isSupport, isEnLang());
-    let accDeadToMidAvailable = Math.max(1, accEval.deadCount || 0);
-    let accMidToHighAvailable = Math.max(2, accEval.midCount || 0);
+    let accDeadToMidAvailable = accEval ? (accEval.deadCount || 0) : 0;
+    let accMidToHighAvailable = accEval ? (accEval.midCount || 0) : 0;
 
     const brDiag = evaluateBracelet(curChar, isEnLang());
     let braceletAvailable = (brDiag && brDiag.tier !== 's' && brDiag.potentialGainCp > 0) ? 1 : 0;
