@@ -1137,12 +1137,12 @@
       const avgTaps = getAverageTaps(chances[lvl]);
       const wCost = costs[lvl];
       
-      const destStones = isWeapon ? wCost[0] : 0;
-      const guardStones = isWeapon ? 0 : wCost[1];
-      const fusion = wCost[2];
-      const shards = wCost[3];
-      const leaps = wCost[4];
-      const rawGold = wCost[5];
+      const destStones = isWeapon ? costs[0][lvl] : 0;
+      const guardStones = isWeapon ? 0 : costs[1][lvl];
+      const fusion = costs[2][lvl];
+      const shards = costs[3][lvl];
+      const leaps = costs[4][lvl];
+      const rawGold = costs[5][lvl];
       
       const priceDest = state.marketPrices['destiny-destruction-stone'] || 16;
       const priceGuard = state.marketPrices['destiny-guardian-stone'] || 4;
