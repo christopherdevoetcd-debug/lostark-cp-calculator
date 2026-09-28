@@ -59,7 +59,7 @@ The application is entirely static and runs directly in any browser:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Neevercry/lostark-cp-calculator.git
+   git clone https://github.com/lNevercry/lostark-cp-calculator.git
    cd lostark-cp-calculator
    ```
 
