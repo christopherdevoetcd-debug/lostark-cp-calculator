@@ -354,6 +354,7 @@
 
   // État de l'application
   const state = {
+    marketPrices: { 'destiny-leapstone': 65, 'prime-oreha-fusion-material': 60, 'abidos-fusion-material': 120, 'destiny-destruction-stone': 160, 'destiny-guardian-stone': 40, 'destiny-shard': 0, 'gold': 1 },
     role: 'support',
     currentIlvl: 1750.0,
     currentCp: 3369,
@@ -1090,6 +1091,75 @@
   /**
    * Met à jour les résultats du prédicteur rapide (Onglet 1)
    */
+  
+  function getAverageTaps(baseChance) {
+      if (!baseChance || baseChance >= 1) return 1;
+      let artisan = 0;
+      let currentChance = baseChance;
+      let expectedTaps = 0;
+      let probReachingThisTap = 1.0;
+      let tap = 1;
+
+      while (artisan < 1.0 && tap < 200) {
+          expectedTaps += probReachingThisTap * currentChance * tap;
+          let artisanGained = currentChance / 2.15;
+          let probFail = 1 - currentChance;
+          artisan += artisanGained;
+          
+          if (artisan >= 1.0) {
+              expectedTaps += (probReachingThisTap * probFail) * (tap + 1);
+              break;
+          }
+          
+          probReachingThisTap *= probFail;
+          tap++;
+          let nextChance = baseChance + (baseChance * 0.1 * (tap - 1));
+          currentChance = Math.min(baseChance * 2, nextChance);
+      }
+      return expectedTaps;
+  }
+
+  function getLevelCost(piece, lvl) {
+      // lvl is the array index (e.g., 11 for +11 -> +12)
+      if (lvl < 10 || lvl > 24) return 0;
+      
+      const isWeapon = piece === 'weapon';
+      const costs = isWeapon ? window.T4_WEAPON_COST : window.T4_ARMOR_COST;
+      const unlocks = isWeapon ? window.T4_WEAPON_UNLOCK : window.T4_ARMOR_UNLOCK;
+      const chances = window.T4_HONING_CHANCES;
+      
+      if (!costs || !chances) {
+         // Fallback if data is missing
+         const fallback = isWeapon ? HONING_COSTS.weapon : HONING_COSTS.armor;
+         return fallback[lvl] || (isWeapon ? 50000 : 25000);
+      }
+      
+      const avgTaps = getAverageTaps(chances[lvl]);
+      const wCost = costs[lvl];
+      
+      const destStones = isWeapon ? wCost[0] : 0;
+      const guardStones = isWeapon ? 0 : wCost[1];
+      const fusion = wCost[2];
+      const shards = wCost[3];
+      const leaps = wCost[4];
+      const rawGold = wCost[5];
+      
+      const priceDest = state.marketPrices['destiny-destruction-stone'] || 16;
+      const priceGuard = state.marketPrices['destiny-guardian-stone'] || 4;
+      const priceFusion = state.marketPrices['abidos-fusion-material'] || 120; // Defaulting to Abidos, technically 10-19 is prime oreha, 20+ is abidos. Let's simplify and use the highest or just assume abidos. Actually, we should check level. 
+      // For T4: 1640-1690 (+10 to +19) uses Prime Oreha. +20 to +25 uses Abidos.
+      const actualFusionPrice = lvl >= 20 ? (state.marketPrices['abidos-fusion-material'] || 120) : (state.marketPrices['prime-oreha-fusion-material'] || 60);
+      const priceLeap = state.marketPrices['destiny-leapstone'] || 65;
+      
+      const tapCostGold = rawGold +
+           destStones * priceDest + 
+           guardStones * priceGuard + 
+           fusion * actualFusionPrice + 
+           leaps * priceLeap;
+
+      return tapCostGold * avgTaps;
+  }
+
   function updatePredictorView() {
     const { currentIlvl, currentCp, targetIlvl, role, gemBonus } = state;
 
@@ -1249,9 +1319,8 @@
       const startLvl = baseGear[piece];
       const endLvl = state.gear[piece];
       if (endLvl > startLvl) {
-        const costTable = piece === 'weapon' ? HONING_COSTS.weapon : HONING_COSTS.armor;
-        for (let l = startLvl + 1; l <= endLvl; l++) {
-          totalSimGold += costTable[l] || (piece === 'weapon' ? 50000 : 25000);
+        for (let l = startLvl; l < endLvl; l++) {
+          totalSimGold += getLevelCost(piece, l);
         }
       }
     }
@@ -3578,7 +3647,7 @@
       // 5. Affinage d'Arme T4 — Modèle Inven (sqrt(Stat * WeaponAP / 6))
       if (scope.gear && curGear.weapon < 22) {
         const nextLvl = curGear.weapon + 1;
-        const cost = HONING_COSTS.weapon[nextLvl] || (nextLvl >= 21 ? 160000 : 75000);
+        const cost = getLevelCost('weapon', curGear.weapon);
         const wpRatio = nextLvl >= 21 ? 0.0105 : 0.0080;
         const cp = startCp * wpRatio;
         const ilvl = 0.8333;
@@ -3608,7 +3677,7 @@
         armorOrder.forEach(p => {
           if (curGear[p] < 22) {
             const nextLvl = curGear[p] + 1;
-            const cost = HONING_COSTS.armor[nextLvl] || (nextLvl >= 21 ? 85000 : 26000);
+            const cost = getLevelCost(p, curGear[p]);
             const armRatio = (p === 'chest' || p === 'pants') ? 0.0019 : 0.0014;
             const cp = startCp * armRatio;
             const ilvl = 0.8333;
@@ -15117,9 +15186,43 @@
 
 
   // Initialisation au chargement
+  
+  async function fetchMarketPrices() {
+    try {
+      const response = await fetch('https://marketdata-api.yrzhao1068589.workers.dev/v1/prices/latest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          region_slug: 'euc',
+          item_slugs: [
+            'destiny-leapstone',
+            'prime-oreha-fusion-material',
+            'abidos-fusion-material',
+            'destiny-destruction-stone',
+            'destiny-guardian-stone'
+          ]
+        })
+      });
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          if (item.item_slug === 'destiny-destruction-stone' || item.item_slug === 'destiny-guardian-stone') {
+             state.marketPrices[item.item_slug] = item.price / 10; // Crystals are sold in bundles of 10
+          } else {
+             state.marketPrices[item.item_slug] = item.price;
+          }
+        });
+      }
+      console.log('[MARKET API] Prices updated:', state.marketPrices);
+    } catch (e) {
+      console.error('[MARKET API] Failed to fetch prices:', e);
+    }
+  }
+
   async function initApp() {
     console.log('[APP] initApp executed! readyState:', document.readyState);
     bindEvents();
+    fetchMarketPrices();
 
     const savedRoster = getUserRoster();
     if (savedRoster && savedRoster.length > 0) {
