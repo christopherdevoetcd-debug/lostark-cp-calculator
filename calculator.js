@@ -8580,6 +8580,21 @@
       .replace(/Dextérité/gi, 'Dexterity')
       .replace(/Intelligence/gi, 'Intelligence');
 
+    
+      .replace(/Compétences Non Directionnelles/gi, 'Non-Directional Skills')
+      .replace(/Dégâts Coup Crit/gi, 'Crit Damage')
+      .replace(/Dégâts Sortants/gi, 'Outgoing Damage')
+      .replace(/Neutralisation/gi, 'Stagger')
+      .replace(/Marteau/gi, 'Hammer')
+      .replace(/Précision/gi, 'Precise')
+      .replace(/Embuscade/gi, 'Ambush')
+      .replace(/Ardeur/gi, 'Fervor')
+      .replace(/Ovation/gi, 'Cheers')
+      .replace(/Vulnérabilité Crit/gi, 'Crit Vulnerability')
+      .replace(/Attaque par l'Arrière/gi, 'Back Attack')
+      .replace(/Attaque Frontale/gi, 'Frontal Attack')
+      .replace(/Dégâts Monstres Inférieurs/gi, 'Damage to Challenge or lower')
+
     // 7. Accessoires & Rolls
     res = res
       .replace(/Lignes d'Accessoires T4 \(High Rolls\)/gi, 'T4 Accessory Lines (High Rolls)')
