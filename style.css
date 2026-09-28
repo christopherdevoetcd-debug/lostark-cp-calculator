@@ -2586,10 +2586,40 @@ select optgroup {
   border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
-.step-tier-badge.a {
-  background: rgba(59, 130, 246, 0.2);
+.step-tier-badge.b {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.step-guide-box {
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+.guide-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.45;
+}
+
+.guide-k {
   color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.guide-v {
+  color: #e2e8f0;
 }
 
 .roadmap-empty {

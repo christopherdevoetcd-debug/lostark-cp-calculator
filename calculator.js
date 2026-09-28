@@ -3564,6 +3564,12 @@
             : (isSupport
                 ? `Reroll stat morte (Dégâts Crit / Récup PV) en ligne Marque / Buff Allié / PA (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% Buff Power) (~45k g)`
                 : `Reroll stat morte en ligne Attaque / Dégâts Mid (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% CP net Inven) (~45k g)`),
+          targets: isSupport
+            ? (isEn ? 'Replace dead stat with: Brand Power % • Ally Atk. Power % • Ally Damage %' : 'Remplacer la stat inutile par : Puissance de Marque % • Amplification PA % • Dégâts Allié %')
+            : (isEn ? 'Replace dead stat with: Weapon Power % • Atk. Power % • Additional Damage %' : "Remplacer la stat morte par : Puissance d'Arme % • Puissance d'Attaque % • Dégâts Additionnels %"),
+          method: isEn
+            ? 'Accessory Alchemist NPC: 3 clicks @ 1,200g + powder (or purchase a cheap Mid/Mid accessory on Auction House ~45k g).'
+            : "PNJ Alchimiste d'Accessoires : 3 clics à 1 200g + poudre (ou achat bijou Mid/Mid ~45k g à l'Hôtel des Ventes).",
           cost,
           cp,
           ilvl: 0,
@@ -3578,10 +3584,16 @@
       if (scope.acc && accDeadToMidAvailable === 0 && accMidToHighAvailable > 0) {
         const cost = 600000;
         const cp = startCp * (isSupport ? 0.0105 : 0.0090);
+        const slotNamesEn = ['Earring #1', 'Earring #2', 'Ring #1', 'Ring #2', 'Necklace'];
+        const slotNamesFr = ["Boucle d'oreille #1", "Boucle d'oreille #2", "Anneau #1", "Anneau #2", "Collier"];
+        const accIdx = Math.max(0, 9 - accMidToHighAvailable);
+        const sName = isEn ? (slotNamesEn[accIdx % 5] || 'Accessory') : (slotNamesFr[accIdx % 5] || 'Accessoire');
         list.push({
           type: 'acc_high',
           icon: '💎',
-          name: isEn ? 'T4 Accessory: Upgrade Mid Line ➔ High Roll' : 'Accessoire T4 : Amélioration Ligne Mid ➔ Roll High',
+          name: isEn
+            ? `T4 Accessory: Upgrade Mid Line ➔ High Roll (${sName})`
+            : `Accessoire T4 : Amélioration Ligne Mid ➔ Roll High (${sName})`,
           sub: isEn
             ? (isSupport
                 ? `Target High Roll line (Ally Atk Power / Damage Enh. / Brand: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% Buff Power) (~600k g)`
@@ -3589,6 +3601,12 @@
             : (isSupport
                 ? `Viser une ligne Roll Élevé (Amplification PA Allié / Dégâts Allié / Marque : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% Buff Power) (~600k g)`
                 : `Viser une ligne Roll Élevé (Puissance Arme / Dégâts Sortants : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% CP net) (~600k g)`),
+          targets: isSupport
+            ? (isEn ? 'Upgrade to High: Ally Atk Power (+5.0%) • Ally Damage (+7.5%) • Brand (+8.0%)' : 'Viser en High : Amplification PA Allié (+5.0%) • Dégâts Allié (+7.5%) • Marque (+8.0%)')
+            : (isEn ? 'Upgrade to High: Weapon Power (+3.0%) • Atk. Power (+1.55%) • Crit Damage (+4.0%)' : "Viser en High : Puissance d'Arme (+3.0%) • Puissance d'Attaque (+1.55%) • Dégâts Crit (+4.0%)"),
+          method: isEn
+            ? 'Purchase a High/Mid accessory on Auction House (~600k g), or reroll existing piece with Radiant Powder at Accessory Alchemist NPC.'
+            : "Acheter un bijou High/Mid à l'Hôtel des Ventes (~600k g), ou polir votre pièce existante avec de la Poudre d'Affinage chez l'Alchimiste.",
           cost,
           cp,
           ilvl: 0,
@@ -3603,13 +3621,26 @@
       if (scope.arkGrid && astrogemsAvailable > 0) {
         const cost = 81000;
         const cp = startCp * (isSupport ? 0.0160 : 0.0150);
+        const astroSlot = 4 - astrogemsAvailable;
         list.push({
           type: 'astrogem',
           icon: '✨',
-          name: isEn ? 'Ark Grid: Cut Epic Astrogem (BiS Substats)' : 'Grille d\'Ark : Tailler Astrogemme Épique (Sous-stats BiS)',
+          name: isEn
+            ? `Ark Grid: Cut Epic Astrogem (Node Slot #${astroSlot})`
+            : `Grille d'Ark : Tailler Astrogemme Épique (Nœud #${astroSlot})`,
           sub: isEn
-            ? `Target 2 BiS offensive substats via ~10 average cuts (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% net CP Inven) (~81k g)`
-            : `Viser 2 sous-stats BiS via ~10 tailles moyennes (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% CP net Inven) (~81k g)`,
+            ? (isSupport
+                ? `Target 2 BiS support substats (Ally Dmg / Brand Power) via ~10 cuts (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% net CP) (~81k g)`
+                : `Target 2 BiS offensive substats via ~10 cuts (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% net CP) (~81k g)`)
+            : (isSupport
+                ? `Viser 2 sous-stats BiS support (Dégâts Allié / Marque) via ~10 tailles (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% CP net) (~81k g)`
+                : `Viser 2 sous-stats BiS offensives via ~10 tailles (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% CP net) (~81k g)`),
+          targets: isSupport
+            ? (isEn ? 'Puissance de Marque (Brand Power) • Ally Damage Enh. • Ally Atk. Power Enh.' : 'Puissance de Marque • Amélioration Dégâts Allié • Amélioration PA Allié')
+            : (isEn ? 'Attack Power (AP) • Additional Damage • Boss Damage' : "Puissance d'Attaque (AP) • Dégâts Additionnels • Dégâts aux Boss"),
+          method: isEn
+            ? 'Ark Grid Menu (Alt+K) ➔ Socket an Epic (Purple) Astrogem node. Tap 9 times (900 g/tap). Aim for at least 2 procs on BiS lines. If rolls fail, recycle and recut.'
+            : "Menu Grille d'Ark (Alt+K) ➔ Insérer une Astrogemme Épique (violette). Tailler les 9 essais (900 g/clic). Viser au moins 2 procs sur les lignes BiS. Recycler si raté.",
           cost,
           cp,
           ilvl: 0,
@@ -3727,6 +3758,8 @@
           sub: isEn
             ? `Weapon Power boost (+${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`
             : `Boost de Puissance d'Arme (+${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`,
+          targets: isEn ? `Weapon Power +${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP (+${(wpRatio * 100).toFixed(2)}% Base AP)` : `Puissance d'Arme +${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP (+${(wpRatio * 100).toFixed(2)}% Attaque Base)`,
+          method: isEn ? 'Honing NPC: Destined Destruction Stones, Leapstones, T4 Oreha Fusions & Artisan Energy (Pity safeguard).' : "PNJ Affinage : Pierres de Destruction de Destinée, Pierres de Bond, Minerais de Fusion T4 et Énergie d'Artisan.",
           cost,
           cp,
           ilvl,
@@ -3805,6 +3838,8 @@
           icon: '💎',
           name: isEn ? `T4 Gem: Upgrade Lv. 8 ➔ Lv. 9 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 8 ➔ Niv. 9 (Slot #${gemIdx})`,
           sub: isEn ? 'T4 Gem endgame push (+0.80% net CP Inven) (~850k g)' : 'Montée endgame de gemme T4 (+0.80% CP net Inven) (~850k g)',
+          targets: isSupport ? (isEn ? 'Increases Ally Attack Power Buff (+1.12% Buff Power)' : "Augmente l'amplification du buff d'attaque allié (+1.12% Buff Power)") : (isEn ? 'Increases Skill Damage (+0.80% net CP) for major DPS skill' : "Augmente les dégâts de compétence (+0.80% CP net) sur votre compétence principale"),
+          method: isEn ? 'Fuse 3x Lv. 8 Gems (or buy direct Lv. 9 from Auction House). Assign to priority raid damage skill.' : "Fusionner 3x Gemmes T4 Niv. 8 (ou achat direct à l'Hôtel des Ventes). Assigner sur votre compétence principale de raid.",
           cost,
           cp,
           ilvl: 0,
@@ -3966,6 +4001,13 @@
         const goldHtml = s.cost > 0 ? `<span class="step-metric-pill gold">${formatNumber(s.cost)} g</span>` : '';
         const roiHtml = s.roi > 0 ? `<span class="step-metric-pill roi">${formatNumber(Math.round(s.roi))} g / CP</span>` : '';
 
+        const guideHtml = (s.targets || s.method) ? `
+          <div class="step-guide-box">
+            ${s.targets ? `<div class="guide-line"><span class="guide-k">${isEnAdv ? '🎯 Target Stats:' : '🎯 Stats Cibles :'}</span> <span class="guide-v">${s.targets}</span></div>` : ''}
+            ${s.method ? `<div class="guide-line"><span class="guide-k">${isEnAdv ? '📍 In-Game Method:' : '📍 Méthode en jeu :'}</span> <span class="guide-v">${s.method}</span></div>` : ''}
+          </div>
+        ` : '';
+
         html += `
           <div class="roadmap-step-item">
             <div class="step-num-badge">${idx + 1}</div>
@@ -3982,6 +4024,7 @@
                 ${goldHtml}
                 ${roiHtml}
               </div>
+              ${guideHtml}
             </div>
           </div>
         `;
