@@ -1311,12 +1311,15 @@
 
     // Calcul du coût estimé en Gold brut (Honing Sheet)
     let totalSimGold = 0;
+    let totalRawGold = 0;
     for (const piece of ['weapon', 'head', 'shoulder', 'chest', 'pants', 'gloves']) {
       const startLvl = baseGear[piece];
       const endLvl = state.gear[piece];
       if (endLvl > startLvl) {
         for (let l = startLvl; l < endLvl; l++) {
-          totalSimGold += getLevelCost(piece, l);
+          const costObj = getLevelCost(piece, l);
+          totalSimGold += costObj.totalValue;
+          totalRawGold += costObj.rawGold;
         }
       }
     }
@@ -1325,11 +1328,12 @@
     if (state.advHoning > baseAdv) {
       for (let adv = baseAdv + 10; adv <= state.advHoning; adv += 10) {
         totalSimGold += (HONING_COSTS.advWeapon[adv] || 50000) + (HONING_COSTS.advArmorTotal[adv] || 200000);
+        totalRawGold += (HONING_COSTS.advWeapon[adv] || 50000) + (HONING_COSTS.advArmorTotal[adv] || 200000);
       }
     }
 
     if (dom.simEstimatedGold) {
-      dom.simEstimatedGold.textContent = totalSimGold > 0 ? `${formatNumber(totalSimGold)} g` : '0 g';
+      dom.simEstimatedGold.innerHTML = totalSimGold > 0 ? `${formatNumber(totalSimGold)} g <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">(Market Value)</span><br><span style="font-size:14px; color:#ffb13b;">${formatNumber(totalRawGold)} g</span> <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">(Raw Gold only)</span>` : '0 g';
     }
 
     if (dom.simGoldPerCp) {
