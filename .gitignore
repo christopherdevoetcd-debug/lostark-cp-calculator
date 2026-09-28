@@ -1,0 +1,3 @@
+client-agent/
+node_modules/
+*.exe

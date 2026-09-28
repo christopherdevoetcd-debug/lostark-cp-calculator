@@ -1,0 +1,4 @@
+client-agent/
+node_modules/
+.git/
+*.exe
