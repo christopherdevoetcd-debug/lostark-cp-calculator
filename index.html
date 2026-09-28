@@ -2377,7 +2377,38 @@
     </footer>
   </div>
 
-  <!-- Modal d'Importation lostark.bible -->
+  
+  <!-- MODAL D'AIDE / TUTORIEL -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal-content" style="max-width: 550px;">
+      <button class="modal-close" id="btnCloseHelpModal">&times;</button>
+      <div class="modal-header">
+        <h2 data-i18n="help_title">Comment utiliser le Calculateur T4 ?</h2>
+        <p data-i18n="help_subtitle">Optimisez votre personnage en 3 étapes simples.</p>
+      </div>
+      <div class="modal-body" style="color: var(--text-dim); line-height: 1.6; font-size: 14px;">
+        <div style="margin-bottom: 16px;">
+          <strong style="color: var(--text-main); font-size: 15px;">1. 🌐 Importation (lostark.bible)</strong>
+          <br> <span data-i18n="help_step1">Entrez votre pseudo pour charger instantanément tout votre équipement, vos gemmes et l'Ark Passive directement depuis le jeu.</span>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <strong style="color: var(--text-main); font-size: 15px;">2. 📊 Comparateur & Benchmark</strong>
+          <br> <span data-i18n="help_step2">Allez dans l'onglet "Benchmark". L'outil trouvera des joueurs de votre classe avec un niveau similaire et vous montrera exactement quelles pièces améliorer pour rattraper leur Combat Power.</span>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <strong style="color: var(--text-main); font-size: 15px;">3. 🛠️ Prédicteur d'Affinage</strong>
+          <br> <span data-i18n="help_step3">Utilisez la jauge d'iLvl Cible (Goal). L'algorithme calculera le gain exact de CP que vous obtiendrez et son coût estimé en Gold, pour savoir si l'investissement en vaut la peine.</span>
+        </div>
+        <div style="margin-top: 24px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 13px; text-align: center;">
+          💡 <em data-i18n="help_tip">Astuce : Vous pouvez simuler des changements de gemmes ou de bracelet à la volée, le Combat Power s'ajustera en temps réel.</em>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" id="btnCloseHelpModalFooter" data-i18n="btn_close">Compris !</button>
+      </div>
+    </div>
+  </div>
+\n\n  <!-- Modal d'Importation lostark.bible -->
   <div class="modal-overlay" id="importModal">
     <div class="modal-container" style="max-width: 580px;">
       <div class="modal-header">
