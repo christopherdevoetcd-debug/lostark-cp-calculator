@@ -354,7 +354,7 @@
 
   // État de l'application
   const state = {
-    marketPrices: { 'destiny-leapstone': 65, 'prime-oreha-fusion-material': 60, 'abidos-fusion-material': 120, 'destiny-destruction-stone': 160, 'destiny-guardian-stone': 40, 'destiny-shard': 0, 'gold': 1 },
+    marketPrices: { 'destiny-leapstone': 65, 'prime-oreha-fusion-material': 60, 'abidos-fusion-material': 120, 'destiny-destruction-stone': 16, 'destiny-guardian-stone': 4, 'destiny-shard': 0, 'gold': 1 },
     role: 'support',
     currentIlvl: 1750.0,
     currentCp: 3369,
@@ -1100,7 +1100,7 @@
       let probReachingThisTap = 1.0;
       let tap = 1;
 
-      while (artisan < 1.0 && tap < 200) {
+      while (artisan < 1.0 && tap < 500) {
           expectedTaps += probReachingThisTap * currentChance * tap;
           let artisanGained = currentChance / 2.15;
           let probFail = 1 - currentChance;
@@ -1151,8 +1151,8 @@
            leaps * priceLeap;
 
       return {
-         totalValue: tapCostGold * avgTaps,
-         rawGold: rawGold * avgTaps
+         totalValue: Math.round(tapCostGold * avgTaps),
+         rawGold: Math.round(rawGold * avgTaps)
       };
   }
 
@@ -1318,8 +1318,8 @@
       if (endLvl > startLvl) {
         for (let l = startLvl; l < endLvl; l++) {
           const costObj = getLevelCost(piece, l);
-          totalSimGold += costObj.totalValue;
-          totalRawGold += costObj.rawGold;
+          totalSimGold += Math.round(costObj.totalValue);
+          totalRawGold += Math.round(costObj.rawGold);
         }
       }
     }
@@ -15214,6 +15214,9 @@
         });
       }
       console.log('[MARKET API] Prices updated:', state.marketPrices);
+      if (typeof updatePredictorView === 'function') updatePredictorView();
+      if (typeof updateHoningView === 'function') updateHoningView();
+      if (typeof updateSmartAdvisor === 'function') updateSmartAdvisor();
     } catch (e) {
       console.error('[MARKET API] Failed to fetch prices:', e);
     }
