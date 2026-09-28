@@ -78,6 +78,34 @@ The application is entirely static and runs directly in any browser:
 
 ---
 
+---
+
+## 🔄 Local Raid Tracker Companion (Optional)
+
+For players using a local DPS meter (such as **LOA Logs**), the project includes an optional, lightweight companion script located in the [`agent/`](agent/) folder. It automatically synchronizes your weekly raid clears, gates completed, and gold revenues directly with the web dashboard.
+
+### 🚀 How to Run the Companion
+
+1. **Option A (Instant Start via Batch File):**
+   - Navigate to the `agent/` folder.
+   - Double-click **`start-agent.bat`** (or run `node agent/lostark-raid-agent.js`).
+   - The agent starts locally on port `4848` and connects to your browser automatically.
+
+2. **Option B (Silent Background Service):**
+   - Run `start-agent-hidden.vbs` to launch silently without leaving a terminal window open.
+
+---
+
+### 🛡️ Privacy, Security & Anti-Cheat Guarantee
+
+We take player security and privacy with the utmost seriousness:
+
+- 🔒 **100% Local Execution (`127.0.0.1:4848`)**: The companion only creates a local loopback server on your computer. **Zero data is ever transmitted, uploaded, or shared with external servers or third parties.** Everything stays strictly between your local logs and your local browser.
+- 🛡️ **Zero Game Process Interference (EAC Safe)**: The script **NEVER** hooks into `LostArk.exe`, does **NOT** read game memory, and has **zero interaction** with Easy Anti-Cheat (EAC). It simply performs passive, read-only queries on the local SQLite log database (`%LOCALAPPDATA%\LOA Logs\encounters.db`) already written to your disk by your meter.
+- 🔍 **100% Open Source & Auditable**: The script is fewer than 400 lines of standard, readable JavaScript with zero obfuscation. You can inspect every line yourself in [`agent/lostark-raid-agent.js`](agent/lostark-raid-agent.js).
+
+---
+
 ## ⚙️ Configuration (OAuth & API)
 
 If you plan to fork and host this project on your own domain, update the OAuth Configuration in `data.js`:
