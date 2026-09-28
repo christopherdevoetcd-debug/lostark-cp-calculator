@@ -9708,6 +9708,30 @@
     return Math.round(astrogemsNeeded * costPerGoodAstrogem);
   }
 
+  
+  function computeAccessoriesUpgradeCost(player, target) {
+    if (!player || !target) return 45000;
+    const isSupport = player.role === 'support' || (player.role !== 'dps' && ['paladin', 'bard', 'artist', 'holyknight', 'valkyrie', 'yinyangshi'].some(s => (player.className||'').toLowerCase().includes(s)));
+    const pAcc = evaluateCharacterAccessories(player, isSupport);
+    const tAcc = evaluateCharacterAccessories(target, isSupport);
+    
+    let cost = 0;
+    let missingHigh = tAcc.highCount - pAcc.highCount;
+    let missingMid = tAcc.midCount - pAcc.midCount;
+    
+    if (missingHigh > 0) {
+        cost += missingHigh * 600000;
+    } else if (missingHigh < 0) {
+        missingMid += missingHigh * 2;
+    }
+    
+    if (missingMid > 0) {
+        cost += missingMid * 45000;
+    }
+    
+    return cost > 0 ? cost : 45000;
+  }
+
   function computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn) {
     if (!pSys) pSys = extractPlayerSystems(player, isEn);
     if (!tSys) tSys = resolveTargetSystems(target, isEn);
@@ -9719,7 +9743,7 @@
       { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '🌙', cost: 80898 },
       { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '⭐', cost: 80898 },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: computeAstrogemUpgradeCost(pSys, tSys) },
-      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: 45000 },
+      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: computeAccessoriesUpgradeCost(player, target) },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '🔮', cost: 30000 },
