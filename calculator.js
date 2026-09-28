@@ -6703,11 +6703,7 @@
 
       // 2. Maintien de l'iLvl cible toujours supérieur ou égal à l'iLvl actuel (évite tout gain négatif)
       if (state.targetIlvl <= state.currentIlvl) {
-        state.targetIlvl = targetGap > 0 
-          ? parseFloat((state.currentIlvl + targetGap).toFixed(2))
-          : parseFloat((state.currentIlvl + 10).toFixed(2));
-      } else if (targetGap > 0 && dIlvl > 0) {
-        state.targetIlvl = parseFloat((state.currentIlvl + targetGap).toFixed(2));
+        state.targetIlvl = parseFloat((state.currentIlvl + 10).toFixed(2));
       }
 
       // 3. Ajustement de la borne minimale du curseur cible
