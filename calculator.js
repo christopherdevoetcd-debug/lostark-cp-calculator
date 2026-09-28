@@ -3395,48 +3395,59 @@
     const curChar = getCurrentActiveCharacter();
     const cId = (activeCharacterId || (curChar && (curChar.id || curChar.name)) || '').toLowerCase();
 
-    // Détection dynamique universelle des gemmes à améliorer
+    // Détection dynamique universelle des gemmes à améliorer (T4 Lvl 8, 9, 10)
     let gemsTo8Remaining = 0;
-    let gemsTo9Remaining = 11;
+    let gemsTo9Remaining = 0;
+    let gemsTo10Remaining = 0;
 
     const activeGemParts = extractCharacterGemParts(curChar);
     if (activeGemParts && activeGemParts.length > 0) {
       const t8Threshold = isSupport ? 9.20 : 5.50;
       const t9Threshold = isSupport ? 10.40 : 6.10;
+      const t10Threshold = isSupport ? 11.50 : 6.80;
       const normParts = activeGemParts.map(g => (g > 20 ? g / 100 : g));
       gemsTo8Remaining = normParts.filter(g => g < t8Threshold).length;
-      gemsTo9Remaining = normParts.filter(g => g < t9Threshold).length;
+      gemsTo9Remaining = normParts.filter(g => g >= t8Threshold && g < t9Threshold).length;
+      gemsTo10Remaining = normParts.filter(g => g >= t9Threshold && g < t10Threshold).length;
       if (curChar && (!curChar.gemParts || curChar.gemParts.length === 0)) {
         curChar.gemParts = activeGemParts;
       }
     } else {
       const demoGemCounts = {
-        neevercry: { to8: 0, to9: 3 },
-        kaarlach: { to8: 2, to9: 10 },
-        neeverslayer: { to8: 0, to9: 6 },
-        neversup: { to8: 6, to9: 11 },
-        jigokuushoujo: { to8: 8, to9: 11 },
-        neverbreak: { to8: 6, to9: 11 }
+        neevercry: { to8: 0, to9: 3, to10: 8 },
+        kaarlach: { to8: 2, to9: 9, to10: 0 },
+        neeverslayer: { to8: 0, to9: 6, to10: 5 },
+        neversup: { to8: 6, to9: 5, to10: 0 },
+        jigokuushoujo: { to8: 8, to9: 3, to10: 0 },
+        neverbreak: { to8: 6, to9: 5, to10: 0 }
       };
       if (demoGemCounts[cId]) {
         gemsTo8Remaining = demoGemCounts[cId].to8;
         gemsTo9Remaining = demoGemCounts[cId].to9;
+        gemsTo10Remaining = demoGemCounts[cId].to10 || 0;
       } else {
         const deck = (curChar && curChar.opt && curChar.opt.gemsDeck) || ((curChar && curChar.ilvl >= 1740) ? 'lvl8' : 'lvl7');
-        if (deck === 'lvl10' || deck === 'lvl9') {
+        if (deck === 'lvl10') {
           gemsTo8Remaining = 0;
           gemsTo9Remaining = 0;
+          gemsTo10Remaining = 0;
+        } else if (deck === 'lvl9') {
+          gemsTo8Remaining = 0;
+          gemsTo9Remaining = 0;
+          gemsTo10Remaining = 11;
         } else if (deck === 'lvl8') {
           gemsTo8Remaining = 0;
           gemsTo9Remaining = 11;
+          gemsTo10Remaining = 0;
         } else {
           gemsTo8Remaining = isSupport ? 6 : 11;
-          gemsTo9Remaining = 11;
+          gemsTo9Remaining = 0;
+          gemsTo10Remaining = 0;
         }
       }
     }
 
-    // Détection dynamique des Livres Reliques T4 manquants (Formule Inven 9 Juillet 2025)
+    // Détection dynamique des Livres Reliques T4 manquants (Formule Inven)
     const DEMO_ENGRAVINGS = {
       neverbreak: [{ grade: "engrave_grade04", id: 1141, progress: 16 }],
       kaarlach: [{ grade: "engrave_grade04", id: 1141, progress: 15 }],
@@ -3487,7 +3498,12 @@
     const arkStatus = getArkGridStatus(curChar);
     let arkGridSunAvailable = arkStatus.hasSun17 ? 0 : 1;
     let arkGridMoonAvailable = arkStatus.hasMoon17 ? 0 : 1;
-    let accPolishAvailable = getAccPolishAvailable(curChar);
+    let astrogemsAvailable = 3; // Permet jusqu'à 3 optimisations d'astrogemmes BiS Épiques
+
+    // Évaluation dynamique des Accessoires T4 (Dead -> Mid, et Mid -> High)
+    const accEval = evaluateCharacterAccessories(curChar, isSupport, isEnLang());
+    let accDeadToMidAvailable = Math.max(1, accEval.deadCount || 0);
+    let accMidToHighAvailable = Math.max(2, accEval.midCount || 0);
 
     const brDiag = evaluateBracelet(curChar, isEnLang());
     let braceletAvailable = (brDiag && brDiag.tier !== 's' && brDiag.potentialGainCp > 0) ? 1 : 0;
@@ -3533,24 +3549,66 @@
         });
       }
 
-      // 1. Acc Polish — Modèle Inven (+1.20% CP en DPS, +1.47% en Support)
-      if (scope.acc && accPolishAvailable > 0) {
-        const cost = 7500;
-        const cp = startCp * (isSupport ? 0.0147 : 0.0120);
+      // 1.0 Accessoires T4 — Polissage Lignes Mortes ➔ Mid Roll (~45 000 g / proc)
+      if (scope.acc && accDeadToMidAvailable > 0) {
+        const cost = 45000;
+        const cp = startCp * (isSupport ? 0.0095 : 0.0080);
         list.push({
-          type: 'acc',
+          type: 'acc_mid',
           icon: '💍',
-          name: isEn ? 'T4 Accessory: Roll Mid Weapon % Line' : 'Accessoire T4 : Roll Ligne Arme % Mid',
+          name: isEn ? 'T4 Accessory: Polish Dead Line ➔ Mid Roll' : 'Accessoire T4 : Polissage Ligne Morte ➔ Roll Mid',
           sub: isEn
-            ? `Direct Attack Power bonus (+${(isSupport ? 1.47 : 1.20).toFixed(2)}% CP Inven) for minimal cost (~7,500 g)`
-            : `Bonus direct de puissance d'attaque (+${(isSupport ? 1.47 : 1.20).toFixed(2)}% CP Inven) pour un coût minime (~7 500 g)`,
+            ? `Reroll dead stat into Mid Attack Power/Damage line (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% net CP Inven) (~45k g)`
+            : `Reroll stat morte en ligne Attaque/Dégâts Mid (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% CP net Inven) (~45k g)`,
           cost,
           cp,
           ilvl: 0,
           roi: cost / cp,
           tier: 's-plus',
           tierLabel: isEn ? 'Tier S+' : 'Rang S+',
-          apply: () => { accPolishAvailable--; }
+          apply: () => { accDeadToMidAvailable--; }
+        });
+      }
+
+      // 1.1 Accessoires T4 — Amélioration Lignes Mid ➔ High Roll (~600 000 g / proc)
+      if (scope.acc && accDeadToMidAvailable === 0 && accMidToHighAvailable > 0) {
+        const cost = 600000;
+        const cp = startCp * (isSupport ? 0.0105 : 0.0090);
+        list.push({
+          type: 'acc_high',
+          icon: '💎',
+          name: isEn ? 'T4 Accessory: Upgrade Mid Line ➔ High Roll' : 'Accessoire T4 : Amélioration Ligne Mid ➔ Roll High',
+          sub: isEn
+            ? `Target High Roll line (Weapon Power / Outgoing Dmg: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% net CP) (~600k g)`
+            : `Viser une ligne Roll Élevé (Puissance Arme / Dégâts Sortants : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% CP net) (~600k g)`,
+          cost,
+          cp,
+          ilvl: 0,
+          roi: cost / cp,
+          tier: 'a',
+          tierLabel: isEn ? 'Tier A' : 'Rang A',
+          apply: () => { accMidToHighAvailable--; }
+        });
+      }
+
+      // 1.2 Astrogemmes Grille d'Ark — Reroll BiS Épique (~81 000 g / gemme)
+      if (scope.arkGrid && astrogemsAvailable > 0) {
+        const cost = 81000;
+        const cp = startCp * (isSupport ? 0.0160 : 0.0150);
+        list.push({
+          type: 'astrogem',
+          icon: '✨',
+          name: isEn ? 'Ark Grid: Cut Epic Astrogem (BiS Substats)' : 'Grille d\'Ark : Tailler Astrogemme Épique (Sous-stats BiS)',
+          sub: isEn
+            ? `Target 2 BiS offensive substats via ~10 average cuts (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% net CP Inven) (~81k g)`
+            : `Viser 2 sous-stats BiS via ~10 tailles moyennes (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% CP net Inven) (~81k g)`,
+          cost,
+          cp,
+          ilvl: 0,
+          roi: cost / cp,
+          tier: 's-plus',
+          tierLabel: isEn ? 'Tier S+' : 'Rang S+',
+          apply: () => { astrogemsAvailable--; }
         });
       }
 
@@ -3622,13 +3680,13 @@
         });
       }
 
-      // 4. Gemmes T4 Niv. 7 ➔ Niv. 8 — Modèle Inven (+0.81% CP net en DPS, +1.15% en Support)
+      // 4. Gemmes T4 Niv. 7 ➔ Niv. 8 (Fusion 3x Lv. 7 = ~290k g)
       if (scope.gems && gemsTo8Remaining > 0) {
-        const cost = 65000;
+        const cost = 290000;
         const cp = startCp * (isSupport ? 0.0115 : 0.00808);
         const gemIdx = Math.max(1, 11 - gemsTo8Remaining + 1);
         list.push({
-          type: 'gem',
+          type: 'gem_8',
           icon: '💎',
           name: isEn ? `T4 Gem: Upgrade Lv. 7 ➔ Lv. 8 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 7 ➔ Niv. 8 (Slot #${gemIdx})`,
           sub: isEn
@@ -3638,17 +3696,17 @@
           cp,
           ilvl: 0,
           roi: cost / cp,
-          tier: 's',
-          tierLabel: isEn ? 'Tier S' : 'Rang S',
+          tier: 'a',
+          tierLabel: isEn ? 'Tier A' : 'Rang A',
           apply: () => { gemsTo8Remaining--; }
         });
       }
 
-      // 5. Affinage d'Arme T4 — Modèle Inven (sqrt(Stat * WeaponAP / 6))
-      if (scope.gear && curGear.weapon < 22) {
+      // 5. Affinage d'Arme T4 — Modèle Inven (Jusqu'à +25 !)
+      if (scope.gear && curGear.weapon < 25) {
         const nextLvl = curGear.weapon + 1;
         const cost = getLevelCost('weapon', curGear.weapon).totalValue;
-        const wpRatio = nextLvl >= 21 ? 0.0105 : 0.0080;
+        const wpRatio = nextLvl >= 24 ? 0.0135 : (nextLvl >= 21 ? 0.0105 : 0.0080);
         const cp = startCp * wpRatio;
         const ilvl = 0.8333;
         list.push({
@@ -3659,8 +3717,8 @@
           to: nextLvl,
           name: isEn ? `Weapon Honing: +${curGear.weapon} ➔ +${nextLvl}` : `Affinage Arme : +${curGear.weapon} ➔ +${nextLvl}`,
           sub: isEn
-            ? `Weapon Power boost (+${nextLvl >= 21 ? 2400 : 1850} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`
-            : `Boost de Puissance d'Arme (+${nextLvl >= 21 ? 2400 : 1850} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`,
+            ? `Weapon Power boost (+${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`
+            : `Boost de Puissance d'Arme (+${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`,
           cost,
           cp,
           ilvl,
@@ -3671,11 +3729,11 @@
         });
       }
 
-      // 6. Affinage des Armures T4 — Modèle Inven
+      // 6. Affinage des Armures T4 — Modèle Inven (Jusqu'à +25 !)
       if (scope.gear) {
         const armorOrder = ['chest', 'pants', 'head', 'shoulder', 'gloves'];
         armorOrder.forEach(p => {
-          if (curGear[p] < 22) {
+          if (curGear[p] < 25) {
             const nextLvl = curGear[p] + 1;
             const cost = getLevelCost(p, curGear[p]).totalValue;
             const armRatio = (p === 'chest' || p === 'pants') ? 0.0019 : 0.0014;
@@ -3729,16 +3787,16 @@
         });
       }
 
-      // 8. Gemmes T4 Niv. 8 ➔ Niv. 9 — Modèle Inven
+      // 8. Gemmes T4 Niv. 8 ➔ Niv. 9 (Fusion 3x Lv. 8 = ~850k g)
       if (scope.gems && gemsTo8Remaining === 0 && gemsTo9Remaining > 0) {
-        const cost = 195000;
+        const cost = 850000;
         const cp = startCp * (isSupport ? 0.0112 : 0.00803);
-        const gemIdx = 12 - gemsTo9Remaining;
+        const gemIdx = Math.max(1, 11 - gemsTo9Remaining + 1);
         list.push({
-          type: 'gem',
+          type: 'gem_9',
           icon: '💎',
           name: isEn ? `T4 Gem: Upgrade Lv. 8 ➔ Lv. 9 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 8 ➔ Niv. 9 (Slot #${gemIdx})`,
-          sub: isEn ? 'T4 Gem endgame push (+0.80% net CP Inven)' : 'Montée endgame de gemme T4 (+0.80% CP net Inven)',
+          sub: isEn ? 'T4 Gem endgame push (+0.80% net CP Inven) (~850k g)' : 'Montée endgame de gemme T4 (+0.80% CP net Inven) (~850k g)',
           cost,
           cp,
           ilvl: 0,
@@ -3746,6 +3804,26 @@
           tier: 'b',
           tierLabel: isEn ? 'Tier B' : 'Rang B',
           apply: () => { gemsTo9Remaining--; }
+        });
+      }
+
+      // 9. Gemmes T4 Niv. 9 ➔ Niv. 10 (Fusion 3x Lv. 9 = ~2,500k g)
+      if (scope.gems && gemsTo8Remaining === 0 && gemsTo9Remaining === 0 && gemsTo10Remaining > 0) {
+        const cost = 2500000;
+        const cp = startCp * (isSupport ? 0.0125 : 0.0090);
+        const gemIdx = Math.max(1, 11 - gemsTo10Remaining + 1);
+        list.push({
+          type: 'gem_10',
+          icon: '💎',
+          name: isEn ? `T4 Gem: Upgrade Lv. 9 ➔ Lv. 10 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 9 ➔ Niv. 10 (Slot #${gemIdx})`,
+          sub: isEn ? 'Maximum T4 Gem power (+0.90% net CP Inven) (~2.5M g)' : 'Puissance maximale gemme T4 (+0.90% CP net Inven) (~2.5M g)',
+          cost,
+          cp,
+          ilvl: 0,
+          roi: cost / cp,
+          tier: 'b',
+          tierLabel: isEn ? 'Tier B' : 'Rang B',
+          apply: () => { gemsTo10Remaining--; }
         });
       }
 
