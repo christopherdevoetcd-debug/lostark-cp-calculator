@@ -1120,22 +1120,17 @@
   }
 
   function getLevelCost(piece, lvl) {
-      // lvl is the array index (e.g., 11 for +11 -> +12)
-      if (lvl < 10 || lvl > 24) return 0;
+      if (lvl < 10 || lvl > 24) return { totalValue: 0, rawGold: 0 };
       
       const isWeapon = piece === 'weapon';
       const costs = isWeapon ? window.T4_WEAPON_COST : window.T4_ARMOR_COST;
-      const unlocks = isWeapon ? window.T4_WEAPON_UNLOCK : window.T4_ARMOR_UNLOCK;
       const chances = window.T4_HONING_CHANCES;
       
       if (!costs || !chances) {
-         // Fallback if data is missing
-         const fallback = isWeapon ? HONING_COSTS.weapon : HONING_COSTS.armor;
-         return fallback[lvl] || (isWeapon ? 50000 : 25000);
+         return { totalValue: 50000, rawGold: 50000 };
       }
       
       const avgTaps = getAverageTaps(chances[lvl]);
-      const wCost = costs[lvl];
       
       const destStones = isWeapon ? costs[0][lvl] : 0;
       const guardStones = isWeapon ? 0 : costs[1][lvl];
@@ -1146,8 +1141,6 @@
       
       const priceDest = state.marketPrices['destiny-destruction-stone'] || 16;
       const priceGuard = state.marketPrices['destiny-guardian-stone'] || 4;
-      const priceFusion = state.marketPrices['abidos-fusion-material'] || 120; // Defaulting to Abidos, technically 10-19 is prime oreha, 20+ is abidos. Let's simplify and use the highest or just assume abidos. Actually, we should check level. 
-      // For T4: 1640-1690 (+10 to +19) uses Prime Oreha. +20 to +25 uses Abidos.
       const actualFusionPrice = lvl >= 20 ? (state.marketPrices['abidos-fusion-material'] || 120) : (state.marketPrices['prime-oreha-fusion-material'] || 60);
       const priceLeap = state.marketPrices['destiny-leapstone'] || 65;
       
@@ -1157,7 +1150,10 @@
            fusion * actualFusionPrice + 
            leaps * priceLeap;
 
-      return tapCostGold * avgTaps;
+      return {
+         totalValue: tapCostGold * avgTaps,
+         rawGold: rawGold * avgTaps
+      };
   }
 
   function updatePredictorView() {
@@ -3647,7 +3643,7 @@
       // 5. Affinage d'Arme T4 — Modèle Inven (sqrt(Stat * WeaponAP / 6))
       if (scope.gear && curGear.weapon < 22) {
         const nextLvl = curGear.weapon + 1;
-        const cost = getLevelCost('weapon', curGear.weapon);
+        const cost = getLevelCost('weapon', curGear.weapon).totalValue;
         const wpRatio = nextLvl >= 21 ? 0.0105 : 0.0080;
         const cp = startCp * wpRatio;
         const ilvl = 0.8333;
@@ -3677,7 +3673,7 @@
         armorOrder.forEach(p => {
           if (curGear[p] < 22) {
             const nextLvl = curGear[p] + 1;
-            const cost = getLevelCost(p, curGear[p]);
+            const cost = getLevelCost(p, curGear[p]).totalValue;
             const armRatio = (p === 'chest' || p === 'pants') ? 0.0019 : 0.0014;
             const cp = startCp * armRatio;
             const ilvl = 0.8333;
