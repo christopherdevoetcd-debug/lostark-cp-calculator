@@ -9691,6 +9691,23 @@
     return diff > 0 ? diff : 180000;
   }
 
+  
+  function computeAstrogemUpgradeCost(pSys, tSys) {
+    if (!pSys || !tSys) return 60000;
+    const pAst = pSys.arkGridAstrogems ? pSys.arkGridAstrogems.bonusPct : 0;
+    const tAst = tSys.arkGridAstrogems ? tSys.arkGridAstrogems.bonusPct : 0;
+    const delta = tAst - pAst;
+    if (delta <= 0) return 60000;
+    
+    // 1 Epic Astrogem = 9 clicks * 900g = 8,100g. 
+    // Average 10 completed Astrogems to get a good roll = 81,000g per good Astrogem.
+    // A good Epic Astrogem gives roughly 1.50% DPS.
+    const astrogemsNeeded = delta / 1.50;
+    const costPerGoodAstrogem = 81000; 
+    
+    return Math.round(astrogemsNeeded * costPerGoodAstrogem);
+  }
+
   function computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn) {
     if (!pSys) pSys = extractPlayerSystems(player, isEn);
     if (!tSys) tSys = resolveTargetSystems(target, isEn);
@@ -9701,7 +9718,7 @@
       { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '☀️', cost: 80898 },
       { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '🌙', cost: 80898 },
       { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '⭐', cost: 80898 },
-      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: 60000 },
+      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: computeAstrogemUpgradeCost(pSys, tSys) },
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: 45000 },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
