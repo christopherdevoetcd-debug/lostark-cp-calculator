@@ -3091,7 +3091,22 @@
     }
 
     let efficiency = totalMultPercent;
-    if (!isSupport && baseStats.length > 0) {
+    let combatStatMult = 0;
+    
+    // Integration of Loseii's methodology: 
+    // T4 combat stats (Crit/Spec/Swift) on bracelets are valued at ~0.43% damage equivalent per 120 points.
+    baseStats.forEach(stat => {
+      const lbl = stat.label || '';
+      const vStr = (stat.val || '').replace('+', '').replace(/\s/g, '').replace(' ', '');
+      const v = parseInt(vStr, 10) || 0;
+      if (lbl.includes('Spé') || lbl.includes('Spec') || lbl.includes('Rap') || lbl.includes('Swif') || lbl.includes('Cri')) {
+         combatStatMult += (v / 120) * 0.43;
+      }
+    });
+
+    if (combatStatMult > 0) {
+      efficiency += combatStatMult;
+    } else if (!isSupport && baseStats.length > 0) {
       efficiency += 1.2;
     }
 
