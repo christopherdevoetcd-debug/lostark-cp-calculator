@@ -3612,9 +3612,9 @@
         });
       }
 
-      // 1.5. Bracelet T4 — Évaluation & Reroll de Stats Mortes / Procs BiS
+      // 1.5. Bracelet T4 — Évaluation & Reroll BiS (Optionnel / Casino RNG)
       if (scope.bracelet && braceletAvailable > 0 && brDiag) {
-        const cost = 75000;
+        const cost = 450000;
         const cp = brDiag.potentialGainCp;
         const roi = cost / cp;
         const hasDead = brDiag.deadStats && brDiag.deadStats.length > 0;
@@ -3623,21 +3623,21 @@
           type: 'bracelet',
           icon: '📿',
           name: isEn
-            ? (hasDead ? 'T4 Bracelet: Reroll Dead Stat to BiS Perk' : 'T4 Bracelet: Push to Tier A/S Rolls')
-            : (hasDead ? 'Bracelet T4 : Reroll Stat Morte en Proc BiS' : 'Bracelet T4 : Optimisation Tier A/S'),
+            ? (hasDead ? 'T4 Bracelet: Reroll Dead Stat to BiS Perk (Casino)' : 'T4 Bracelet: Push to Tier A/S Rolls (Casino)')
+            : (hasDead ? 'Bracelet T4 : Reroll Stat Morte en Proc BiS (Casino)' : 'Bracelet T4 : Optimisation Tier A/S (Casino)'),
           sub: isEn
             ? (hasDead
-                ? `Replace ${deadStatName} (+${Math.round(cp)} CP, high ROI vs Lv. 9 gems)`
-                : `Target 2 BiS perks to reach Tier A/S (+${Math.round(cp)} CP Inven)`)
+                ? `Heavy RNG gamble: Replace ${deadStatName} (+${Math.round(cp)} CP)`
+                : `Heavy RNG gamble: Target 2 BiS perks to reach Tier A/S (+${Math.round(cp)} CP)`)
             : (hasDead
-                ? `Remplacement de ${deadStatName} (+${Math.round(cp)} CP, ROI très élevé vs gemmes 9)`
-                : `Viser 2 procs BiS pour atteindre le Tier A/S (+${Math.round(cp)} CP Inven)`),
+                ? `Gamble très aléatoire : Remplacement de ${deadStatName} (+${Math.round(cp)} CP)`
+                : `Gamble très aléatoire : Viser 2 procs BiS pour le Tier A/S (+${Math.round(cp)} CP)`),
           cost,
           cp,
           ilvl: 0,
           roi,
-          tier: roi < 1000 ? 's-plus' : 's',
-          tierLabel: isEn ? (roi < 1000 ? 'Tier S+' : 'Tier S') : (roi < 1000 ? 'Rang S+' : 'Rang S'),
+          tier: 'b',
+          tierLabel: isEn ? 'Tier B (RNG)' : 'Rang B (Casino)',
           apply: () => { braceletAvailable--; }
         });
       }
