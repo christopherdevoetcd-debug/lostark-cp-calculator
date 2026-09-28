@@ -13414,21 +13414,58 @@
     const ilvl = loadout.itemLevel ? Math.floor(loadout.itemLevel) : 1750;
     const gear = { weapon: 17, head: 15, chest: 15, pants: 15, gloves: 15, shoulder: 15 };
     let advHoning = 40;
+    let isSerkaWeapon = false;
+    let serkaArmorCount = 0;
 
     if (loadout.items) {
       loadout.items.forEach(it => {
         const slot = it.slot;
         const d = it.data;
         if (!d) return;
-        if (slot === 'weapon' && d.honing !== undefined) gear.weapon = d.honing;
-        if (slot === 'head' && d.honing !== undefined) gear.head = d.honing;
-        if (slot === 'upper_body' && d.honing !== undefined) gear.chest = d.honing;
-        if (slot === 'lower_body' && d.honing !== undefined) gear.pants = d.honing;
-        if (slot === 'hand' && d.honing !== undefined) gear.gloves = d.honing;
-        if (slot === 'shoulder' && d.honing !== undefined) gear.shoulder = d.honing;
+        const isSerka = !!(it.id && it.id.toString().startsWith('13462'));
+        if (slot === 'weapon' && d.honing !== undefined) {
+          gear.weapon = d.honing;
+          if (isSerka) isSerkaWeapon = true;
+        }
+        if (slot === 'head' && d.honing !== undefined) {
+          gear.head = d.honing;
+          if (isSerka) serkaArmorCount++;
+        }
+        if (slot === 'upper_body' && d.honing !== undefined) {
+          gear.chest = d.honing;
+          if (isSerka) serkaArmorCount++;
+        }
+        if (slot === 'lower_body' && d.honing !== undefined) {
+          gear.pants = d.honing;
+          if (isSerka) serkaArmorCount++;
+        }
+        if (slot === 'hand' && d.honing !== undefined) {
+          gear.gloves = d.honing;
+          if (isSerka) serkaArmorCount++;
+        }
+        if (slot === 'shoulder' && d.honing !== undefined) {
+          gear.shoulder = d.honing;
+          if (isSerka) serkaArmorCount++;
+        }
         if (d.advancedHoning !== undefined) advHoning = d.advancedHoning;
       });
     }
+
+    // Heuristiques de sécurité pour profils sans items ID détaillés
+    if (!isSerkaWeapon && (ilvl >= 1735 && gear.weapon <= 16)) {
+      isSerkaWeapon = true;
+    }
+    const rawArmorAvg = Math.round(((gear.head || 14) + (gear.chest || 14) + (gear.pants || 14) + (gear.shoulder || 14) + (gear.gloves || 14)) / 5);
+    if (serkaArmorCount === 0 && (ilvl >= 1735 && rawArmorAvg <= 14)) {
+      serkaArmorCount = 5;
+    }
+
+    gear.isSerkaWeapon = isSerkaWeapon;
+    gear.weaponTier = isSerkaWeapon ? 2 : 1;
+    gear.effectiveWeapon = gear.weapon + (isSerkaWeapon ? 9 : 0);
+    gear.serkaArmorCount = serkaArmorCount;
+    gear.isSerkaArmors = serkaArmorCount >= 3;
+    gear.effectiveAvgArmor = rawArmorAvg + (gear.isSerkaArmors ? 9 : 0);
 
     const resolvedClassId = loadout.classId || root.character?.classId || '';
     const resolvedClassName = normalizeClassName(resolvedClassId || root.characterInfo?.characterClassName || '');
@@ -16134,11 +16171,13 @@
       .replace(/Affinage Avancé/gi, 'T4 Advanced Honing')
       .replace(/Affinage Adv\s*:/gi, 'Adv. Honing:')
       .replace(/Affinage Adv/gi, 'Adv. Honing')
-      .replace(/Affinage/gi, 'Honing')
+      .replace(/Armures T4 Serka Moyenne/gi, 'T4 Serka Armor Avg')
+      .replace(/Arme T4 Serka/gi, 'T4 Serka Weapon')
       .replace(/Armures T4 Moyenne/gi, 'T4 Armor Avg')
       .replace(/Armures T4/gi, 'T4 Armor')
       .replace(/Armure T4/gi, 'T4 Armor')
       .replace(/Arme T4/gi, 'T4 Weapon')
+      .replace(/\(Éq\.\s*\+(\d+)\)/gi, '(Eq. +$1)')
       .replace(/Qualité\s*(\d+)/gi, 'Quality $1')
       .replace(/Qualité/gi, 'Quality')
       .replace(/complet\b/gi, 'complete');
@@ -16948,6 +16987,15 @@
     const wLvl = gear.weapon !== undefined ? gear.weapon : 17;
     const avgArmor = Math.round(((gear.head || 14) + (gear.chest || 14) + (gear.pants || 14) + (gear.shoulder || 14) + (gear.gloves || 14)) / 5);
 
+    // Détection Serka (Advanced Ancient T4 Tier 2: décalage de +9 crans d'affinage / +45 iLvl)
+    const pIlvlForGear = playerChar.ilvl || (canon && canon.ilvl) || 1750;
+    const isSerkaWeapon = !!(gear.isSerkaWeapon || gear.weaponTier === 2 || (pIlvlForGear >= 1735 && wLvl <= 16));
+    const serkaArmorCount = gear.serkaArmorCount !== undefined ? gear.serkaArmorCount : (gear.isSerkaArmors ? 5 : ((pIlvlForGear >= 1735 && avgArmor <= 14) ? 5 : 0));
+    const isSerkaArmors = serkaArmorCount >= 3;
+
+    const effWLvl = gear.effectiveWeapon !== undefined ? gear.effectiveWeapon : (wLvl + (isSerkaWeapon ? 9 : 0));
+    const effAvgArmor = gear.effectiveAvgArmor !== undefined ? gear.effectiveAvgArmor : (avgArmor + (isSerkaArmors ? 9 : 0));
+
     // Extraction de la qualité réelle de l'arme (type 4 ou property weaponQuality)
     const qPart = allBpParts.find(p => p.type === 4 || p.quality !== undefined);
     const wQual = (qPart && qPart.quality !== undefined)
@@ -16967,14 +17015,14 @@
               ? (playerChar.rawProfile.weaponQualityValue / 100) 
               : (10 + (wQual * 0.196))));
 
-    // Bonus d'Affinage Inven (+1.20% net CP par niveau au-dessus du palier +12)
-    const wHoningBonus = Math.max(0, (wLvl - 12) * 1.20);
+    // Bonus d'Affinage Inven (+1.20% net CP par niveau équivalent au-dessus du palier +12)
+    const wHoningBonus = Math.max(0, (effWLvl - 12) * 1.20);
     const weaponBonusPct = Number((wQualVal + wHoningBonus).toFixed(2));
 
-    // Armures T4 : MainStat + Vitalité/HP des 5 pièces d'armure (+1.37% DPS / +1.50% Supp par niveau moyen)
+    // Armures T4 : MainStat + Vitalité/HP des 5 pièces d'armure (+1.37% DPS / +1.50% Supp par niveau moyen équivalent)
     const armorBonusPct = isSupport 
-      ? Number((12.00 + (avgArmor - 12) * 1.50).toFixed(2)) 
-      : Number((8.00 + (avgArmor - 12) * 1.37).toFixed(2));
+      ? Number((12.00 + (effAvgArmor - 12) * 1.50).toFixed(2)) 
+      : Number((8.00 + (effAvgArmor - 12) * 1.37).toFixed(2));
 
     // 3. Adv Honing
     const adv = playerChar.advHoning !== undefined 
@@ -17205,11 +17253,14 @@
     const starBonusPct = starEval.bonusPct;
     const starLabel = starEval.label;
 
-    const weaponLabel = isEn
-      ? `T4 Weapon +${wLvl} (Quality ${wQual})`
-      : `Arme T4 +${wLvl} (Qualité ${wQual})`;
+    const weaponNameStr = isSerkaWeapon
+      ? (isEn ? `T4 Serka Weapon +${wLvl} (Eq. +${effWLvl})` : `Arme T4 Serka +${wLvl} (Éq. +${effWLvl})`)
+      : (isEn ? `T4 Weapon +${wLvl}` : `Arme T4 +${wLvl}`);
+    const weaponLabel = `${weaponNameStr} (${isEn ? 'Quality' : 'Qualité'} ${wQual})`;
 
-    const armorsLabel = isEn ? `T4 Armor Avg +${avgArmor}` : `Armures T4 Moyenne +${avgArmor}`;
+    const armorsLabel = isSerkaArmors
+      ? (isEn ? `T4 Serka Armor Avg +${avgArmor} (Eq. +${effAvgArmor})` : `Armures T4 Serka Moyenne +${avgArmor} (Éq. +${effAvgArmor})`)
+      : (isEn ? `T4 Armor Avg +${avgArmor}` : `Armures T4 Moyenne +${avgArmor}`);
 
     const advLabel = isEn
       ? `T4 Advanced Honing +${adv} ${adv >= 40 ? 'complete' : ''}`.trim()
@@ -17336,8 +17387,8 @@
       arkGridMoon: { label: moonLabel, bonusPct: moonBonusPct },
       arkGridStar: { label: starLabel, bonusPct: starBonusPct },
       arkGridAstrogems: { label: astroLabel, bonusPct: astroBonusPct },
-      weapon: { label: weaponLabel, bonusPct: weaponBonusPct, quality: wQual, qualityVal: wQualVal },
-      armors: { label: armorsLabel, bonusPct: Number(armorBonusPct.toFixed(2)) },
+      weapon: { label: weaponLabel, bonusPct: weaponBonusPct, quality: wQual, qualityVal: wQualVal, wLvl, effWLvl, isSerka: isSerkaWeapon },
+      armors: { label: armorsLabel, bonusPct: Number(armorBonusPct.toFixed(2)), avgArmor, effAvgArmor, isSerka: isSerkaArmors, serkaArmorCount },
       advHoning: { label: advLabel, bonusPct: advBonusPct },
       transWeapon: { label: transWeaponLabel, bonusPct: 14.50 },
       transArmor: { label: transArmorLabel, bonusPct: 18.20 },
@@ -20162,6 +20213,438 @@
     `;
   }
 
+  function extractCharacterWeaponDetails(char, isEn) {
+    const sys = extractPlayerSystems(char, isEn);
+    const wep = sys.weapon || {};
+    const allBpParts = (char.rawProfile && char.rawProfile.battlePoint && char.rawProfile.battlePoint.parts)
+      || (char.battlePoint && char.battlePoint.parts)
+      || (char.rawProfile && char.rawProfile.loadout && char.rawProfile.loadout.battlePoint && char.rawProfile.loadout.battlePoint.parts)
+      || (char.loadout && char.loadout.battlePoint && char.loadout.battlePoint.parts)
+      || [];
+    const t1Part = allBpParts.find(p => p.type === 1);
+    const weaponPower = t1Part ? (t1Part.weaponPower || 0) : (char.weaponPower || 0);
+
+    const wLvl = wep.wLvl !== undefined ? wep.wLvl : 18;
+    const effWLvl = wep.effWLvl !== undefined ? wep.effWLvl : wLvl;
+    const isSerka = !!wep.isSerka;
+    const quality = wep.quality !== undefined ? wep.quality : 90;
+    const qualityVal = wep.qualityVal !== undefined ? wep.qualityVal : (10 + quality * 0.196);
+    const bonusPct = wep.bonusPct || 35.0;
+    const adv = char.advHoning !== undefined ? char.advHoning : 40;
+    const ilvlPiece = isSerka ? (1655 + wLvl * 5 + adv * 0.5) : (1610 + wLvl * 5 + adv * 0.5);
+
+    return {
+      wLvl,
+      effWLvl,
+      isSerka,
+      quality,
+      qualityVal,
+      weaponPower,
+      bonusPct,
+      adv,
+      ilvlPiece
+    };
+  }
+
+  function buildWeaponBreakdownHtml(player, target, cpImpact, isEn) {
+    const p = extractCharacterWeaponDetails(player, isEn);
+    const t = extractCharacterWeaponDetails(target, isEn);
+    const deltaPct = Number((t.bonusPct - p.bonusPct).toFixed(2));
+    const dWp = t.weaponPower - p.weaponPower;
+    const dLvl = t.effWLvl - p.effWLvl;
+
+    const pTierLabel = p.isSerka ? (isEn ? 'Serka Tier 2 (Adv. Ancient)' : 'Serka Palier 2 (Ancien Avancé)') : (isEn ? 'Aegir Tier 1 (Ancient)' : 'Aegir Palier 1 (Ancien)');
+    const tTierLabel = t.isSerka ? (isEn ? 'Serka Tier 2 (Adv. Ancient)' : 'Serka Palier 2 (Ancien Avancé)') : (isEn ? 'Aegir Tier 1 (Ancient)' : 'Aegir Palier 1 (Ancien)');
+
+    return `
+      <div class="acc-breakdown-panel weapon-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>🗡️</span>
+              <strong>${isEn ? 'T4 Weapon Honing, Quality & Gear Tier Breakdown' : 'Détail de l\'Affinage de l\'Arme T4, Qualité & Palier d\'Équipement'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171;">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn
+              ? 'Detailed comparison of weapon honing rank, quality additional damage, base weapon power, and Tier 1 (Aegir) vs Tier 2 (Serka Shadow Raid) gear transfer mechanics.'
+              : 'Comparaison détaillée du niveau d\'affinage d\'arme, des dégâts additionnels de qualité, de la Puissance d\'Arme brute et des mécaniques de transfert Aegir (Palier 1) vers Serka (Palier 2).'}
+          </div>
+        </div>
+
+        <!-- Bannière Pédagogique : Transfert de Stuff Serka & Décalage d\'Affinage -->
+        <div class="stats-educational-banner baseatk" style="border-left-color: #38bdf8;">
+          <span class="edu-icon">💡</span>
+          <div class="edu-content">
+            <strong>${isEn ? 'Understanding T4 Weapon Tiers: Aegir (Tier 1) vs Serka (Tier 2)' : 'Comprendre les Paliers d\'Arme T4 : Aegir (Palier 1) vs Serka (Palier 2)'}</strong>
+            <div>
+              ${isEn
+                ? `The <strong>Serka Shadow Raid</strong> introduces <strong>Tier 2 Advanced Ancient Equipment</strong>. When transferring an Aegir weapon (+20 to +25) to Serka gear, the raw honing number drops by <strong>9 levels</strong>, while preserving and expanding its base item level (+45 base iLvl leap):<br>
+                  • <strong>Serka Weapon +15</strong> has a base item level of <strong>1750 iLvl</strong> (with +40 Adv. Honing), which is mathematically equivalent to an <strong>Aegir Weapon +24</strong>!<br>
+                  • A Serka weapon provides a tremendous leap in <strong>Weapon Power (+30,000+ WP)</strong>, directly inflating your Base AP and raid damage.`
+                : `Le <strong>Raid Shadow Serka</strong> introduit le palier d'équipement <strong>T4 Palier 2 (Ancien Avancé)</strong>. Lors du transfert d'une arme Aegir (+20 à +25) vers le stuff Serka, le chiffre brut d'affinage diminue de <strong>9 crans</strong> tout en augmentant la puissance réelle (+45 iLvl de base) :<br>
+                  • Une <strong>Arme Serka +15</strong> atteint un niveau d'objet de <strong>1750 iLvl</strong> (avec Affinage Avancé +40), ce qui équivaut mathématiquement à une arme <strong>Aegir +24</strong> !<br>
+                  • Le passage à l'arme Serka injecte un saut massif de <strong>Puissance d'Arme (+30 000+ WP)</strong>, augmentant exponentiellement votre Attaque de Base et votre Combat Power.`
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartes Face-à-Face Joueur vs Cible -->
+        <div class="astrogems-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">👤</span>
+                <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                  ${p.ilvlPiece.toFixed(0)} iLvl Arme
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                +${p.bonusPct.toFixed(2)}% Mult.
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${pTierLabel}</span>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🗡️ <strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">+${p.wLvl} ${p.isSerka ? `(Éq. +${p.effWLvl})` : ''}</span>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>⭐ <strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">Qualité ${p.quality} (+${p.qualityVal.toFixed(2)}% Dégâts)</span>
+              </div>
+              <div class="acc-line-badge low">
+                <span>⚡ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.weaponPower)} WP</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card astrogems-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${t.ilvlPiece.toFixed(0)} iLvl Arme
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${tTierLabel}</span>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>🗡️ <strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">+${t.wLvl} ${t.isSerka ? `(Éq. +${t.effWLvl})` : ''}</span>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>⭐ <strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">Qualité ${t.quality} (+${t.qualityVal.toFixed(2)}% Dégâts)</span>
+              </div>
+              <div class="acc-line-badge low">
+                <span>⚡ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.weaponPower)} WP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé -->
+        <div class="astrogems-table-container">
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Weapon Metric' : 'Métrique d\'Arme'}</th>
+                <th>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</th>
+                <th>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</th>
+                <th class="col-cp-gain">${isEn ? 'Comparative Delta' : 'Écart Comparatif'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>🛡️ ${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
+                <td>${pTierLabel}</td>
+                <td><strong style="color:#34d399;">${tTierLabel}</strong></td>
+                <td class="col-cp-gain">${t.isSerka && !p.isSerka ? (isEn ? 'Tier 2 Serka Shift' : 'Transfert Serka Palier 2') : (isEn ? 'Same Tier' : 'Même Palier')}</td>
+              </tr>
+              <tr>
+                <td><strong>🗡️ ${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
+                <td>+${p.effWLvl} ${p.isSerka ? `(Affiché +${p.wLvl})` : ''}</td>
+                <td><strong style="color:#34d399;">+${t.effWLvl} ${t.isSerka ? `(Affiché +${t.wLvl})` : ''}</strong></td>
+                <td class="col-cp-gain">${dLvl > 0 ? `+${dLvl} crans d'écart` : (dLvl < 0 ? `${dLvl} crans` : '= 0')}</td>
+              </tr>
+              <tr>
+                <td><strong>⚡ ${isEn ? 'Raw Weapon Power' : 'Puissance d\'Arme Brute'}</strong></td>
+                <td>${formatNumber(p.weaponPower)} WP</td>
+                <td><strong style="color:#34d399;">${formatNumber(t.weaponPower)} WP</strong></td>
+                <td class="col-cp-gain"><strong>${dWp > 0 ? `+${formatNumber(dWp)} WP` : `${formatNumber(dWp)} WP`}</strong></td>
+              </tr>
+              <tr>
+                <td><strong>⭐ ${isEn ? 'Weapon Quality Dmg' : 'Dégâts de Qualité'}</strong></td>
+                <td>Qualité ${p.quality} (+${p.qualityVal.toFixed(2)}%)</td>
+                <td>Qualité ${t.quality} (+${t.qualityVal.toFixed(2)}%)</td>
+                <td class="col-cp-gain">${(t.qualityVal - p.qualityVal) >= 0 ? `+${(t.qualityVal - p.qualityVal).toFixed(2)}%` : `${(t.qualityVal - p.qualityVal).toFixed(2)}%`}</td>
+              </tr>
+              <tr>
+                <td><strong>📈 ${isEn ? 'Total Weapon System Score' : 'Score Multiplicateur d\'Arme'}</strong></td>
+                <td>+${p.bonusPct.toFixed(2)}%</td>
+                <td><strong style="color:#34d399;">+${t.bonusPct.toFixed(2)}%</strong></td>
+                <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Combat Power Impact' : 'Impact sur le Combat Power'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Recommandation Finale -->
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#ef4444;">
+          <span class="verdict-icon">🎯</span>
+          <div class="verdict-content">
+            <strong style="color:#f87171;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <span>${isEn
+              ? `To bridge this +${cpImpact} CP gap: prioritize advancing to the Serka Shadow Raid (Hard 1730+ / Nightmare 1740+) to craft and transfer your weapon into Tier 2 Advanced Ancient (+45 base iLvl leap and +30k+ Weapon Power). If already in Serka, hone your weapon beyond +15.`
+              : `Pour combler ce retard de +${cpImpact} CP : prioriser l'accès au Raid Shadow Serka (Hard 1730+ / Nightmare 1740+) pour forger et transférer votre arme vers le palier Ancien Avancé (gain immédiat de +45 iLvl de base et +30k+ de Puissance d'Arme). Si déjà transféré, continuer l'affinage au-delà de +15.`}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function extractCharacterArmorsDetails(char, isEn) {
+    const sys = extractPlayerSystems(char, isEn);
+    const arm = sys.armors || {};
+    const allBpParts = (char.rawProfile && char.rawProfile.battlePoint && char.rawProfile.battlePoint.parts)
+      || (char.battlePoint && char.battlePoint.parts)
+      || (char.rawProfile && char.rawProfile.loadout && char.rawProfile.loadout.battlePoint && char.rawProfile.loadout.battlePoint.parts)
+      || (char.loadout && char.loadout.battlePoint && char.loadout.battlePoint.parts)
+      || [];
+    const t1Part = allBpParts.find(p => p.type === 1);
+    const t2Part = allBpParts.find(p => p.type === 2);
+    const mainStat = t1Part ? (t1Part.mainStat || 0) : (char.mainStat || 0);
+    const maxHp = t2Part ? (t2Part.maxHp || 0) : (char.maxHp || 0);
+    const mainStatName = getMainStatName(char.className || '', isEn);
+
+    const avgArmor = arm.avgArmor !== undefined ? arm.avgArmor : 18;
+    const effAvgArmor = arm.effAvgArmor !== undefined ? arm.effAvgArmor : avgArmor;
+    const isSerka = !!arm.isSerka;
+    const serkaArmorCount = arm.serkaArmorCount !== undefined ? arm.serkaArmorCount : (isSerka ? 5 : 0);
+    const bonusPct = arm.bonusPct || 17.0;
+    const adv = char.advHoning !== undefined ? char.advHoning : 40;
+    const ilvlPiece = isSerka ? (1655 + avgArmor * 5 + adv * 0.5) : (1610 + avgArmor * 5 + adv * 0.5);
+
+    return {
+      avgArmor,
+      effAvgArmor,
+      isSerka,
+      serkaArmorCount,
+      mainStat,
+      maxHp,
+      mainStatName,
+      bonusPct,
+      adv,
+      ilvlPiece
+    };
+  }
+
+  function buildArmorsBreakdownHtml(player, target, cpImpact, isEn) {
+    const p = extractCharacterArmorsDetails(player, isEn);
+    const t = extractCharacterArmorsDetails(target, isEn);
+    const deltaPct = Number((t.bonusPct - p.bonusPct).toFixed(2));
+    const dMainStat = t.mainStat - p.mainStat;
+    const dLvl = t.effAvgArmor - p.effAvgArmor;
+
+    const pTierLabel = p.isSerka ? (isEn ? `Serka Tier 2 (${p.serkaArmorCount}/5 Adv. Ancient)` : `Serka Palier 2 (${p.serkaArmorCount}/5 Ancien Avancé)`) : (isEn ? 'Aegir Tier 1 (Ancient)' : 'Aegir Palier 1 (Ancien)');
+    const tTierLabel = t.isSerka ? (isEn ? `Serka Tier 2 (${t.serkaArmorCount}/5 Adv. Ancient)` : `Serka Palier 2 (${t.serkaArmorCount}/5 Ancien Avancé)`) : (isEn ? 'Aegir Tier 1 (Ancient)' : 'Aegir Palier 1 (Ancien)');
+
+    return `
+      <div class="acc-breakdown-panel armors-breakdown-panel">
+        <div class="acc-breakdown-header">
+          <div class="acc-breakdown-title-row">
+            <div class="acc-breakdown-title">
+              <span>🛡️</span>
+              <strong>${isEn ? 'T4 Armors Honing, Main Stat & Gear Tier Breakdown' : 'Détail de l\'Affinage des Armures T4, Stat Principale & Palier d\'Équipement'}</strong>
+            </div>
+            <span class="acc-breakdown-tag" style="background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.35); color: #38bdf8;">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
+            </span>
+          </div>
+          <div class="acc-breakdown-subtitle">
+            ${isEn
+              ? 'Comprehensive comparison of the 5 armor pieces (Head, Shoulders, Chest, Pants, Gloves), Main Stat contributions, and Tier 1 (Aegir) vs Tier 2 (Serka) gear transfer mechanics.'
+              : 'Comparaison détaillée des 5 pièces d\'armure (Casque, Épaulières, Torse, Pantalon, Gants), de l\'apport en Stat Principale et des mécaniques de transfert Aegir (Palier 1) vers Serka (Palier 2).'}
+          </div>
+        </div>
+
+        <!-- Bannière Pédagogique : Armures Serka & Stat Principale -->
+        <div class="stats-educational-banner baseatk" style="border-left-color: #38bdf8;">
+          <span class="edu-icon">💡</span>
+          <div class="edu-content">
+            <strong>${isEn ? 'Understanding T4 Armors: The Bedrock of Your Main Stat' : 'Comprendre les Armures T4 : Le Socle de votre Stat Principale'}</strong>
+            <div>
+              ${isEn
+                ? `In Lost Ark T4, the 5 armor pieces supply the overwhelming majority of your <strong>Main Stat (${escapeHtml(p.mainStatName)})</strong> and Max HP.<br>
+                  • Transferring to the <strong>Serka Shadow Raid set</strong> advances your gear by <strong>+9 equivalent honing levels</strong> (+45 base iLvl).<br>
+                  • <strong>Serka Armors +12</strong> reach <strong>1735 iLvl</strong> (with +40 Adv. Honing), providing far greater Main Stat than Aegir +18/+19 armors (1720-1725 iLvl).`
+                : `Dans Lost Ark T4, les 5 pièces d'armure fournissent l'immense majorité de votre <strong>Stat Principale (${escapeHtml(p.mainStatName)})</strong> et de vos Points de Vie Max.<br>
+                  • Le transfert vers le set du <strong>Raid Shadow Serka</strong> décale votre équipement de <strong>+9 crans d'affinage équivalents</strong> (+45 iLvl de base).<br>
+                  • Des <strong>Armures Serka +12</strong> atteignent <strong>1735 iLvl</strong> (avec Affinage Avancé +40), octroyant des dizaines de milliers de points de Stat Principale de plus que des armures Aegir +18/+19 (1720-1725 iLvl).`
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Cartes Face-à-Face Joueur vs Cible -->
+        <div class="astrogems-cards-grid">
+          <!-- Carte Joueur -->
+          <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">👤</span>
+                <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                  ${p.ilvlPiece.toFixed(0)} iLvl Armures
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill neutral">
+                +${p.bonusPct.toFixed(2)}% Mult.
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${pTierLabel}</span>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>⚔️ <strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">+${p.avgArmor} ${p.isSerka ? `(Éq. +${p.effAvgArmor})` : ''}</span>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>💪 <strong>${escapeHtml(p.mainStatName)}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.mainStat)}</span>
+              </div>
+              <div class="acc-line-badge low">
+                <span>❤️ <strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.maxHp)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Cible Référence -->
+          <div class="acc-piece-card astrogems-card target-card parity">
+            <div class="acc-piece-top">
+              <div class="acc-piece-name">
+                <span class="acc-piece-icon">🎯</span>
+                <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</strong>
+                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                  ${t.ilvlPiece.toFixed(0)} iLvl Armures
+                </span>
+              </div>
+              <span class="acc-piece-gain-pill ${cpImpact > 0 ? 'gap' : 'neutral'}">
+                ${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}
+              </span>
+            </div>
+            <div class="acc-piece-body">
+              <div class="acc-line-badge high">
+                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${tTierLabel}</span>
+              </div>
+              <div class="acc-line-badge mid">
+                <span>⚔️ <strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">+${t.avgArmor} ${t.isSerka ? `(Éq. +${t.effAvgArmor})` : ''}</span>
+              </div>
+              <div class="acc-line-badge fixed">
+                <span>💪 <strong>${escapeHtml(t.mainStatName)}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.mainStat)}</span>
+              </div>
+              <div class="acc-line-badge low">
+                <span>❤️ <strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.maxHp)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau Comparatif Détaillé -->
+        <div class="astrogems-table-container">
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Armor Metric' : 'Métrique d\'Armure'}</th>
+                <th>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</th>
+                <th>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</th>
+                <th class="col-cp-gain">${isEn ? 'Comparative Delta' : 'Écart Comparatif'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>🛡️ ${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
+                <td>${pTierLabel}</td>
+                <td><strong style="color:#34d399;">${tTierLabel}</strong></td>
+                <td class="col-cp-gain">${t.isSerka && !p.isSerka ? (isEn ? 'Tier 2 Serka Shift' : 'Transfert Serka Palier 2') : (isEn ? 'Same Tier' : 'Même Palier')}</td>
+              </tr>
+              <tr>
+                <td><strong>⚔️ ${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
+                <td>+${p.effAvgArmor} ${p.isSerka ? `(Affiché +${p.avgArmor})` : ''}</td>
+                <td><strong style="color:#34d399;">+${t.effAvgArmor} ${t.isSerka ? `(Affiché +${t.avgArmor})` : ''}</strong></td>
+                <td class="col-cp-gain">${dLvl > 0 ? `+${dLvl} crans d'écart` : (dLvl < 0 ? `${dLvl} crans` : '= 0')}</td>
+              </tr>
+              <tr>
+                <td><strong>💪 ${isEn ? 'Main Stat' : 'Stat Principale'} (${escapeHtml(p.mainStatName)})</strong></td>
+                <td>${formatNumber(p.mainStat)}</td>
+                <td><strong style="color:#34d399;">${formatNumber(t.mainStat)}</strong></td>
+                <td class="col-cp-gain"><strong>${dMainStat > 0 ? `+${formatNumber(dMainStat)} pts` : `${formatNumber(dMainStat)} pts`}</strong></td>
+              </tr>
+              <tr>
+                <td><strong>📈 ${isEn ? 'Total Armor System Score' : 'Score Multiplicateur d\'Armure'}</strong></td>
+                <td>+${p.bonusPct.toFixed(2)}%</td>
+                <td><strong style="color:#34d399;">+${t.bonusPct.toFixed(2)}%</strong></td>
+                <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td colspan="3"><strong>${isEn ? 'Combat Power Impact' : 'Impact sur le Combat Power'}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : '= 0 CP'}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Recommandation Finale -->
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#0ea5e9;">
+          <span class="verdict-icon">🎯</span>
+          <div class="verdict-content">
+            <strong style="color:#38bdf8;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <span>${isEn
+              ? `To bridge this +${cpImpact} CP gap: hone your Aegir armors toward +20 to qualify for the Serka raid transfer, or craft Serka armors (Hard/Nightmare) for massive Main Stat leaps. Completing Advanced Honing (+40) also heavily inflates your defensive and main stat pool.`
+              : `Pour combler ce retard de +${cpImpact} CP : monter vos armures Aegir vers le palier +20 pour préparer le transfert Serka, ou forger les pièces d'armure Serka (Hard/Nightmare) pour débloquer des gains massifs de Stat Principale. Finaliser l'Affinage Avancé (+40) renforce également massivement vos caractéristiques.`}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+
   function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
     const p = extractCharacterCombatStatsDetails(player, isEn);
     const t = extractCharacterCombatStatsDetails(target, isEn);
@@ -21723,7 +22206,9 @@
         const isArkGridSun = cfg.key === 'arkGridSun';
         const isArkGridMoon = cfg.key === 'arkGridMoon';
         const isArkGridStar = cfg.key === 'arkGridStar';
-        const hasInteractivePanel = isAcc || isBracelet || isAstrogems || isEngravings || isBaseAtk || isCombatStats || isArkGridSun || isArkGridMoon || isArkGridStar;
+        const isWeapon = cfg.key === 'weapon';
+        const isArmors = cfg.key === 'armors';
+        const hasInteractivePanel = isAcc || isBracelet || isAstrogems || isEngravings || isBaseAtk || isCombatStats || isArkGridSun || isArkGridMoon || isArkGridStar || isWeapon || isArmors;
 
         const isHiddenInEqual = isEqual && !hasInteractivePanel;
         if (isHiddenInEqual) equalRowsCount++;
@@ -21826,6 +22311,18 @@
               <span class="arkgridstar-toggle-icon">➕</span>
             </button>
           `;
+        } else if (isWeapon) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-weapon-toggle" id="btnToggleWeaponDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Weapon Honing, Quality & Serka Tier breakdown' : 'Cliquer pour déplier l\'Affinage d\'Arme, la Qualité & le Palier Serka'}">
+              <span class="weapon-toggle-icon">➕</span>
+            </button>
+          `;
+        } else if (isArmors) {
+          toggleBtn = `
+            <button type="button" class="btn-acc-toggle btn-armors-toggle" id="btnToggleArmorsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Armors Honing, Main Stat & Serka Tier breakdown' : 'Cliquer pour déplier l\'Affinage des Armures, la Stat Principale & le Palier Serka'}">
+              <span class="armors-toggle-icon">➕</span>
+            </button>
+          `;
         }
 
         const trClass = [
@@ -21838,10 +22335,12 @@
           isCombatStats ? 'row-combatstats-parent' : '',
           isArkGridSun ? 'row-arkgridsun-parent' : '',
           isArkGridMoon ? 'row-arkgridmoon-parent' : '',
-          isArkGridStar ? 'row-arkgridstar-parent' : ''
+          isArkGridStar ? 'row-arkgridstar-parent' : '',
+          isWeapon ? 'row-weapon-parent' : '',
+          isArmors ? 'row-armors-parent' : ''
         ].filter(Boolean).join(' ');
 
-        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : (isBaseAtk ? 'id="rowSysBaseAtk"' : (isCombatStats ? 'id="rowSysCombatStats"' : (isArkGridSun ? 'id="rowSysArkGridSun"' : (isArkGridMoon ? 'id="rowSysArkGridMoon"' : (isArkGridStar ? 'id="rowSysArkGridStar"' : ''))))))));
+        const trId = isAcc ? 'id="rowSysAccessories"' : (isBracelet ? 'id="rowSysBracelet"' : (isAstrogems ? 'id="rowSysAstrogems"' : (isEngravings ? 'id="rowSysEngravings"' : (isBaseAtk ? 'id="rowSysBaseAtk"' : (isCombatStats ? 'id="rowSysCombatStats"' : (isArkGridSun ? 'id="rowSysArkGridSun"' : (isArkGridMoon ? 'id="rowSysArkGridMoon"' : (isArkGridStar ? 'id="rowSysArkGridStar"' : (isWeapon ? 'id="rowSysWeapon"' : (isArmors ? 'id="rowSysArmors"' : ''))))))))));
 
         rowsHtml += `
           <tr class="${trClass}" ${trId}>
@@ -21936,6 +22435,24 @@
             <tr id="rowArkGridStarDetails" class="row-arkgridstar-details" style="display: none;">
               <td colspan="6">
                 ${starDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isWeapon) {
+          const weaponDetailsHtml = buildWeaponBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowWeaponDetails" class="row-weapon-details" style="display: none;">
+              <td colspan="6">
+                ${weaponDetailsHtml}
+              </td>
+            </tr>
+          `;
+        } else if (isArmors) {
+          const armorsDetailsHtml = buildArmorsBreakdownHtml(player, target, cpImpact, isEn);
+          rowsHtml += `
+            <tr id="rowArmorsDetails" class="row-armors-details" style="display: none;">
+              <td colspan="6">
+                ${armorsDetailsHtml}
               </td>
             </tr>
           `;
@@ -22222,6 +22739,50 @@
         if (rowArkGridStarParent) {
           rowArkGridStarParent.addEventListener('click', (e) => {
             if (!e.target.closest('a') && !e.target.closest('button')) doToggleArkGridStar(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif de l'Arme T4 & Palier Serka
+      const btnWeapon = document.getElementById('btnToggleWeaponDetails');
+      const rowWeaponParent = document.getElementById('rowSysWeapon');
+      const rowWeaponDet = document.getElementById('rowWeaponDetails');
+      if (btnWeapon && rowWeaponDet) {
+        const doToggleWeapon = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowWeaponDet.style.display === 'none';
+          rowWeaponDet.style.display = isHidden ? 'table-row' : 'none';
+          btnWeapon.setAttribute('aria-expanded', isHidden);
+          const icon = btnWeapon.querySelector('.weapon-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowWeaponParent) rowWeaponParent.classList.toggle('expanded', isHidden);
+        };
+        btnWeapon.addEventListener('click', doToggleWeapon);
+        if (rowWeaponParent) {
+          rowWeaponParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleWeapon(e);
+          });
+        }
+      }
+
+      // Gestion du dépliage interactif des Armures T4 & Palier Serka
+      const btnArmors = document.getElementById('btnToggleArmorsDetails');
+      const rowArmorsParent = document.getElementById('rowSysArmors');
+      const rowArmorsDet = document.getElementById('rowArmorsDetails');
+      if (btnArmors && rowArmorsDet) {
+        const doToggleArmors = (e) => {
+          if (e) e.stopPropagation();
+          const isHidden = rowArmorsDet.style.display === 'none';
+          rowArmorsDet.style.display = isHidden ? 'table-row' : 'none';
+          btnArmors.setAttribute('aria-expanded', isHidden);
+          const icon = btnArmors.querySelector('.armors-toggle-icon');
+          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (rowArmorsParent) rowArmorsParent.classList.toggle('expanded', isHidden);
+        };
+        btnArmors.addEventListener('click', doToggleArmors);
+        if (rowArmorsParent) {
+          rowArmorsParent.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) doToggleArmors(e);
           });
         }
       }
@@ -22734,7 +23295,8 @@
   window.__buildBraceletBreakdownHtml = buildBraceletBreakdownHtml;
   window.__buildAstrogemsBreakdownHtml = buildAstrogemsBreakdownHtml;
   window.__buildArkGridCoresBreakdownHtml = buildArkGridCoresBreakdownHtml;
-  window.__extractArkGridCoreDetail = extractArkGridCoreDetail;
+  window.__buildWeaponBreakdownHtml = buildWeaponBreakdownHtml;
+  window.__buildArmorsBreakdownHtml = buildArmorsBreakdownHtml;
   window.__getClassIconUrl = getClassIconUrl;
   window.__applyLoadedProfile = applyLoadedProfile;
 
