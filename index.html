@@ -2378,29 +2378,55 @@
   </div>
 
   
+  
   <!-- MODAL D'AIDE / TUTORIEL -->
   <div class="modal-overlay" id="helpModal">
-    <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-content" style="max-width: 650px;">
       <button class="modal-close" id="btnCloseHelpModal">&times;</button>
       <div class="modal-header">
-        <h2 data-i18n="help_title">Comment utiliser le Calculateur T4 ?</h2>
-        <p data-i18n="help_subtitle">Optimisez votre personnage en 3 étapes simples.</p>
+        <h2 data-i18n="help_title">Comment utiliser l'outil ?</h2>
+        <p data-i18n="help_subtitle">Le site regroupe 8 modules puissants pour optimiser votre personnage.</p>
       </div>
-      <div class="modal-body" style="color: var(--text-dim); line-height: 1.6; font-size: 14px;">
-        <div style="margin-bottom: 16px;">
-          <strong style="color: var(--text-main); font-size: 15px;">1. 🌐 Importation (lostark.bible)</strong>
-          <br> <span data-i18n="help_step1">Entrez votre pseudo pour charger instantanément tout votre équipement, vos gemmes et l'Ark Passive directement depuis le jeu.</span>
+      <div class="modal-body" style="color: var(--text-dim); line-height: 1.5; font-size: 14px; max-height: 65vh; overflow-y: auto;">
+        <p style="margin-bottom: 16px;" data-i18n="help_intro">Voici un aperçu des différents modules à votre disposition :</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #38bdf8; font-size: 13px;">🌐 Importation</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_import">Chargez votre équipement, gemmes et Ark Passive depuis lostark.bible. (Point de départ)</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #a855f7; font-size: 13px;">⚖️ Benchmark & Comparator</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_benchmark">Comparez votre build aux meilleurs joueurs pour voir quoi améliorer.</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #f43f5e; font-size: 13px;">⚡ Quick Predictor</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_predictor">Estimez votre gain global de Combat Power en fonction d'un iLvl cible.</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #fbbf24; font-size: 13px;">🎯 Smart Advisor</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_advisor">Trouvez les améliorations les plus rentables et optimisez votre budget.</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #4ade80; font-size: 13px;">🔨 Piece-by-Piece Honing</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_honing">Simulez le coût exact de l'affinage de chaque pièce au forgeron.</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #f472b6; font-size: 13px;">🌟 Ark Passive Simulator</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_ark">Testez différentes combinaisons de points (Evolution, Enlightenment, Leap).</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #60a5fa; font-size: 13px;">💎 T4 Optimization</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_opti">Ajustez virtuellement vos gemmes, bijoux et effets de set pour voir l'impact.</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #fb923c; font-size: 13px;">💰 Raids & Gold Tracker</strong>
+            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_raid">Suivez vos revenus en gold de la semaine via l'agent local.</div>
+          </div>
         </div>
-        <div style="margin-bottom: 16px;">
-          <strong style="color: var(--text-main); font-size: 15px;">2. 📊 Comparateur & Benchmark</strong>
-          <br> <span data-i18n="help_step2">Allez dans l'onglet "Benchmark". L'outil trouvera des joueurs de votre classe avec un niveau similaire et vous montrera exactement quelles pièces améliorer pour rattraper leur Combat Power.</span>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <strong style="color: var(--text-main); font-size: 15px;">3. 🛠️ Prédicteur d'Affinage</strong>
-          <br> <span data-i18n="help_step3">Utilisez la jauge d'iLvl Cible (Goal). L'algorithme calculera le gain exact de CP que vous obtiendrez et son coût estimé en Gold, pour savoir si l'investissement en vaut la peine.</span>
-        </div>
-        <div style="margin-top: 24px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 13px; text-align: center;">
-          💡 <em data-i18n="help_tip">Astuce : Vous pouvez simuler des changements de gemmes ou de bracelet à la volée, le Combat Power s'ajustera en temps réel.</em>
+
+        <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 13px; text-align: center;">
+          💡 <em data-i18n="help_tip">Toutes vos modifications dans les onglets (Gemmes, Ark Passive, Affinage) mettent à jour votre Combat Power en temps réel !</em>
         </div>
       </div>
       <div class="modal-footer">
@@ -2408,7 +2434,8 @@
       </div>
     </div>
   </div>
-\n\n  <!-- Modal d'Importation lostark.bible -->
+
+  <!-- Modal d'Importation lostark.bible -->
   <div class="modal-overlay" id="importModal">
     <div class="modal-container" style="max-width: 580px;">
       <div class="modal-header">
