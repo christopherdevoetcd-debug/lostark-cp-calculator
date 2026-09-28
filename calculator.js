@@ -8579,9 +8579,7 @@
       .replace(/Force/gi, 'Strength')
       .replace(/Dextérité/gi, 'Dexterity')
       .replace(/Intelligence/gi, 'Intelligence');
-
-    
-      .replace(/Compétences Non Directionnelles/gi, 'Non-Directional Skills')
+    res = res.replace(/Compétences Non Directionnelles/gi, 'Non-Directional Skills')
       .replace(/Dégâts Coup Crit/gi, 'Crit Damage')
       .replace(/Dégâts Sortants/gi, 'Outgoing Damage')
       .replace(/Neutralisation/gi, 'Stagger')
