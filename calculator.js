@@ -9668,6 +9668,29 @@
     return sys;
   }
 
+  
+  function computeGemUpgradeCost(player, target) {
+    if (!player || !target) return 180000;
+    const pGems = extractCharacterGemParts(player) || [];
+    const tGems = extractCharacterGemParts(target) || [];
+    
+    const getGemValue = (val) => {
+        if (val >= 12.0 || (val >= 6.9 && val <= 7.1)) return 3750000; // Lvl 10 T4
+        if (val >= 10.7 || (val >= 6.3 && val <= 6.4)) return 1275000; // Lvl 9 T4
+        if (val >= 9.5 || (val >= 5.7 && val <= 5.8)) return 435000; // Lvl 8 T4
+        if (val >= 8.3 || (val >= 5.1 && val <= 5.2)) return 145000; // Lvl 7 T4 (~435k / 3)
+        if (val >= 7.1 || (val >= 4.5 && val <= 4.6)) return 48000; // Lvl 6 T4
+        if (val >= 6.0 || (val >= 3.9 && val <= 4.1)) return 16000; // Lvl 5 T4
+        return 0;
+    };
+    
+    let pVal = 0; pGems.forEach(g => pVal += getGemValue(g));
+    let tVal = 0; tGems.forEach(g => tVal += getGemValue(g));
+    
+    const diff = tVal - pVal;
+    return diff > 0 ? diff : 180000;
+  }
+
   function computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn) {
     if (!pSys) pSys = extractPlayerSystems(player, isEn);
     if (!tSys) tSys = resolveTargetSystems(target, isEn);
@@ -9683,7 +9706,7 @@
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '🔮', cost: 30000 },
-      { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '⚡', cost: 180000 },
+      { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '⚡', cost: computeGemUpgradeCost(player, target) },
       { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '🛡️', cost: 65000 },
       { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '💪', cost: 75000 },
       { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '📜', cost: 40000 },
