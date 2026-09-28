@@ -8140,6 +8140,116 @@
     renderRaidTrackerView();
   }
 
+  function cycleRaidMode(cKey, rKey) {
+    if (!raidTrackerState.roster[cKey] || !raidTrackerState.roster[cKey].raids[rKey]) return;
+    const cr = raidTrackerState.roster[cKey].raids[rKey];
+    const order = ['normal', 'hard', 'nightmare'];
+    const currentIdx = order.indexOf(cr.mode || 'normal');
+    const nextMode = order[(currentIdx + 1) % order.length];
+    cr.mode = nextMode;
+    cr.modeAuto = false;
+    saveRaidTrackerState();
+    renderRaidTrackerView();
+  }
+
+  function toggleAllCharacterGates(cKey) {
+    if (!raidTrackerState.roster[cKey]) return;
+    const cObj = raidTrackerState.roster[cKey];
+    let allDone = true;
+    Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+      const cr = cObj.raids[rKey];
+      if (!cr || !cr.g1 || !cr.g2) allDone = false;
+    });
+
+    const targetDone = !allDone;
+    const now = Date.now();
+    Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+      if (!cObj.raids[rKey]) cObj.raids[rKey] = { mode: 'normal', g1: false, g2: false, chest: false };
+      const cr = cObj.raids[rKey];
+      cr.g1 = targetDone;
+      cr.g1Time = targetDone ? (cr.g1Time || now) : null;
+      cr.g2 = targetDone;
+      cr.g2Time = targetDone ? (cr.g2Time || now) : null;
+    });
+    saveRaidTrackerState();
+    renderRaidTrackerView();
+  }
+
+  function toggleAllCharacterChests(cKey) {
+    if (!raidTrackerState.roster[cKey]) return;
+    const cObj = raidTrackerState.roster[cKey];
+    let allChests = true;
+    Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+      const cr = cObj.raids[rKey];
+      if (!cr || !cr.chest) allChests = false;
+    });
+
+    const targetChest = !allChests;
+    Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+      if (!cObj.raids[rKey]) cObj.raids[rKey] = { mode: 'normal', g1: false, g2: false, chest: false };
+      cObj.raids[rKey].chest = targetChest;
+    });
+    saveRaidTrackerState();
+    renderRaidTrackerView();
+  }
+
+  function toggleAllRosterGates() {
+    const rosterList = getActiveRosterList();
+    let allAccountDone = true;
+    rosterList.forEach(ch => {
+      const cKey = (ch.id || ch.name).toLowerCase();
+      const cObj = raidTrackerState.roster[cKey];
+      if (!cObj) { allAccountDone = false; return; }
+      Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+        const cr = cObj.raids[rKey];
+        if (!cr || !cr.g1 || !cr.g2) allAccountDone = false;
+      });
+    });
+
+    const targetDone = !allAccountDone;
+    const now = Date.now();
+    rosterList.forEach(ch => {
+      const cKey = (ch.id || ch.name).toLowerCase();
+      ensureCharacterRaidState(cKey, ch.ilvl);
+      const cObj = raidTrackerState.roster[cKey];
+      Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+        const cr = cObj.raids[rKey];
+        cr.g1 = targetDone;
+        cr.g1Time = targetDone ? (cr.g1Time || now) : null;
+        cr.g2 = targetDone;
+        cr.g2Time = targetDone ? (cr.g2Time || now) : null;
+      });
+    });
+    saveRaidTrackerState();
+    renderRaidTrackerView();
+  }
+
+  function toggleAllRosterChests() {
+    const rosterList = getActiveRosterList();
+    let allAccountChests = true;
+    rosterList.forEach(ch => {
+      const cKey = (ch.id || ch.name).toLowerCase();
+      const cObj = raidTrackerState.roster[cKey];
+      if (!cObj) { allAccountChests = false; return; }
+      Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+        const cr = cObj.raids[rKey];
+        if (!cr || !cr.chest) allAccountChests = false;
+      });
+    });
+
+    const targetChest = !allAccountChests;
+    rosterList.forEach(ch => {
+      const cKey = (ch.id || ch.name).toLowerCase();
+      ensureCharacterRaidState(cKey, ch.ilvl);
+      const cObj = raidTrackerState.roster[cKey];
+      Object.keys(RAID_DEFINITIONS).forEach(rKey => {
+        cObj.raids[rKey].chest = targetChest;
+      });
+    });
+    saveRaidTrackerState();
+    renderRaidTrackerView();
+  }
+
   function setRaidChest(cKey, rKey, checked) {
     if (!raidTrackerState.roster[cKey] || !raidTrackerState.roster[cKey].raids[rKey]) return;
     raidTrackerState.roster[cKey].raids[rKey].chest = checked;
@@ -8181,6 +8291,7 @@
 
     let totalAccountEarnedGold = 0;
     let totalAccountPotentialGold = 0;
+    let totalAccountChestCost = 0;
     let totalClearedGates = 0;
     let totalCompletedRaids = 0;
     const totalMaxRaids = rosterList.length * 3;
@@ -8211,23 +8322,46 @@
           <div class="char-raid-card" data-char="${cKey}">
             <div class="char-raid-card-header">
               <div class="char-meta-left">
-                <div class="char-raid-avatar-frame">
+                <div class="char-raid-avatar-frame ${isSupp ? 'role-support' : 'role-dps'}">
                   <img class="char-raid-avatar ${isFullBody ? 'ags-fullbody-zoom' : ''}" src="${avatarUrl}" alt="${escapeHtml(ch.name)}" width="44" height="44" loading="eager" onerror="this.onerror=null; this.src='${fallbackFace}';">
                 </div>
-                <div>
+                <div class="char-info-col">
                   <div class="char-raid-name-row">
                     <span class="char-raid-name">${escapeHtml(ch.name)}</span>
-                    <span class="char-raid-ilvl">${(ch.ilvl || 1700).toFixed(2)}</span>
+                    <span class="char-server-badge">[${escapeHtml(ch.server || 'CE')}]</span>
                   </div>
-                  <div class="char-raid-sub">${escapeHtml(ch.className || '')} • ${roleText}</div>
+                  <div class="char-raid-sub">
+                    <span class="char-class-txt">${escapeHtml(ch.className || '')}</span>
+                    <span class="char-sep">•</span>
+                    <span class="char-raid-ilvl">${(ch.ilvl || 1700).toFixed(2)}</span>
+                    <span class="char-sep">•</span>
+                    <span class="char-role-badge ${isSupp ? 'badge-support' : 'badge-dps'}">${roleText}</span>
+                  </div>
                 </div>
               </div>
-              <div class="char-raid-gold-badge">
-                <span class="label">${t('raid_char_total')}</span>
-                <strong><span>0</span> / 0 g</strong>
+              <div class="char-header-right">
+                <div class="char-quick-actions">
+                  <button type="button" class="char-action-btn btn-char-clear-all" data-char="${cKey}" title="${isFr ? 'Valider ou réinitialiser tous les raids de ce personnage' : 'Toggle all raids cleared for this character'}">
+                    ✓
+                  </button>
+                  <button type="button" class="char-action-btn btn-char-chests-all" data-char="${cKey}" title="${isFr ? 'Acheter ou retirer tous les coffres de ce personnage' : 'Toggle all chests for this character'}">
+                    📦
+                  </button>
+                </div>
+                <div class="char-raid-gold-badge">
+                  <span class="char-gold-cur">0</span>
+                  <span class="char-gold-sep">/</span>
+                  <span class="char-gold-max">0 g</span>
+                </div>
               </div>
             </div>
 
+            <!-- Mini barre de progression d'or du perso -->
+            <div class="char-progress-track">
+              <div class="char-progress-bar" style="width: 0%;"></div>
+            </div>
+
+            <!-- Chips des 3 Raids -->
             <div class="char-raids-list">
         `;
 
@@ -8237,43 +8371,48 @@
           const mode = cr.mode || 'normal';
           const modeDef = (raidDef && raidDef[mode]) || raidDef.normal;
           const chestCost = modeDef.chest;
+          const raidArtUrl = raidDef.image || `images/raids/${rKey}.webp`;
+          const modeShort = mode === 'nightmare' ? 'NM' : (mode === 'hard' ? 'HM' : 'N');
 
           html += `
-            <div class="raid-row-item" data-raid="${rKey}">
-              <div class="raid-row-left">
-                <span class="raid-row-icon">${raidDef.icon}</span>
-                <div>
-                  <span class="raid-row-name">${t(raidDef.nameKey) || raidDef.fallbackName}</span>
-                  <span class="raid-row-bosses">${raidDef.bosses}</span>
+            <div class="raid-chip" data-char="${cKey}" data-raid="${rKey}">
+              <img class="raid-chip-art" src="${raidArtUrl}" alt="" loading="lazy">
+
+              <div class="raid-chip-top">
+                <div class="raid-chip-identity">
+                  <span class="raid-chip-icon">${raidDef.icon}</span>
+                  <span class="raid-chip-name" title="${raidDef.bosses}">${t(raidDef.nameKey) || raidDef.fallbackName}</span>
+                </div>
+
+                <div class="raid-diff-badge-wrapper">
+                  <button type="button" class="raid-diff-pill diff-${mode}" data-char="${cKey}" data-raid="${rKey}" title="${isFr ? 'Cliquer pour changer de difficulté' : 'Click to cycle difficulty'}">
+                    <span class="diff-short">${modeShort}</span>
+                    <span class="diff-gold">(${(modeDef.total / 1000).toFixed(0)}k)</span>
+                    ${cr.modeAuto ? '<span class="diff-auto-dot" title="Auto LOA Logs">●</span>' : ''}
+                  </button>
+                </div>
+
+                <div class="raid-chip-gold">
+                  +${modeDef.total.toLocaleString()} g
                 </div>
               </div>
 
-              <div class="raid-diff-select-wrapper">
-                <select class="raid-diff-select" data-char="${cKey}" data-raid="${rKey}">
-                  <option value="normal" ${mode === 'normal' ? 'selected' : ''}>${t('raid_diff_normal')} (${(raidDef.normal.total / 1000).toFixed(0)}k g)${cr.modeAuto && mode === 'normal' ? ' • Auto' : ''}</option>
-                  <option value="hard" ${mode === 'hard' ? 'selected' : ''}>${t('raid_diff_hard')} (${(raidDef.hard.total / 1000).toFixed(0)}k g)${cr.modeAuto && mode === 'hard' ? ' • Auto' : ''}</option>
-                  <option value="nightmare" ${mode === 'nightmare' ? 'selected' : ''}>${t('raid_diff_nightmare')} (${(raidDef.nightmare.total / 1000).toFixed(0)}k g)${cr.modeAuto && mode === 'nightmare' ? ' • Auto' : ''}</option>
-                </select>
-              </div>
-
-              <div class="raid-gates-group">
-                <div class="gate-btn-pill" data-char="${cKey}" data-raid="${rKey}" data-gate="1">
-                  <span>${isFr ? 'P1' : 'G1'}</span>
+              <div class="raid-chip-controls">
+                <div class="gate-pips-group">
+                  <button type="button" class="gate-pip ${cr.g1 ? 'cleared' : ''}" data-char="${cKey}" data-raid="${rKey}" data-gate="1">
+                    <span class="gate-pip-lbl">${cr.g1 ? '✓ ' : ''}${isFr ? 'P1' : 'G1'}</span>
+                    <span class="gate-pip-reward">+${(modeDef.g1 / 1000).toFixed(1).replace('.0', '')}k</span>
+                  </button>
+                  <button type="button" class="gate-pip ${cr.g2 ? 'cleared' : ''}" data-char="${cKey}" data-raid="${rKey}" data-gate="2">
+                    <span class="gate-pip-lbl">${cr.g2 ? '✓ ' : ''}${isFr ? 'P2' : 'G2'}</span>
+                    <span class="gate-pip-reward">+${(modeDef.g2 / 1000).toFixed(1).replace('.0', '')}k</span>
+                  </button>
                 </div>
-                <div class="gate-btn-pill" data-char="${cKey}" data-raid="${rKey}" data-gate="2">
-                  <span>${isFr ? 'P2' : 'G2'}</span>
-                </div>
-              </div>
 
-              <div class="raid-chest-toggle-area">
-                <label class="chest-chk-label">
-                  <input type="checkbox" class="raid-chest-chk" data-char="${cKey}" data-raid="${rKey}" ${cr.chest ? 'checked' : ''}>
-                  <span>${t('raid_chest_label').replace('{cost}', (chestCost / 1000).toFixed(1).replace('.0', '') + 'k')}</span>
-                </label>
-              </div>
-
-              <div class="raid-row-total-gold">
-                +${modeDef.total.toLocaleString()} g
+                <button type="button" class="chest-toggle-pill ${cr.chest ? 'active' : ''}" data-char="${cKey}" data-raid="${rKey}" title="${t('raid_chest_label').replace('{cost}', (chestCost / 1000).toFixed(1).replace('.0', '') + 'k')}">
+                  <span class="chest-icon">📦</span>
+                  <span class="chest-cost">-${(chestCost / 1000).toFixed(1).replace('.0', '')}k</span>
+                </button>
               </div>
             </div>
           `;
@@ -8288,7 +8427,7 @@
       grid.innerHTML = html;
 
       // Listeners interactifs
-      grid.querySelectorAll('.gate-btn-pill').forEach(pill => {
+      grid.querySelectorAll('.gate-pip').forEach(pill => {
         pill.addEventListener('click', (e) => {
           e.stopPropagation();
           const cKey = pill.getAttribute('data-char');
@@ -8298,24 +8437,43 @@
         });
       });
 
-      grid.querySelectorAll('.raid-diff-select').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-          const cKey = sel.getAttribute('data-char');
-          const rKey = sel.getAttribute('data-raid');
-          setRaidMode(cKey, rKey, sel.value);
+      grid.querySelectorAll('.raid-diff-pill').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cKey = btn.getAttribute('data-char');
+          const rKey = btn.getAttribute('data-raid');
+          cycleRaidMode(cKey, rKey);
         });
       });
 
-      grid.querySelectorAll('.raid-chest-chk').forEach(chk => {
-        chk.addEventListener('change', (e) => {
-          const cKey = chk.getAttribute('data-char');
-          const rKey = chk.getAttribute('data-raid');
-          setRaidChest(cKey, rKey, chk.checked);
+      grid.querySelectorAll('.chest-toggle-pill').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cKey = btn.getAttribute('data-char');
+          const rKey = btn.getAttribute('data-raid');
+          const cr = (raidTrackerState.roster[cKey] && raidTrackerState.roster[cKey].raids[rKey]) || {};
+          setRaidChest(cKey, rKey, !cr.chest);
+        });
+      });
+
+      grid.querySelectorAll('.btn-char-clear-all').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cKey = btn.getAttribute('data-char');
+          toggleAllCharacterGates(cKey);
+        });
+      });
+
+      grid.querySelectorAll('.btn-char-chests-all').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cKey = btn.getAttribute('data-char');
+          toggleAllCharacterChests(cKey);
         });
       });
     }
 
-    // Mise à jour continue et fluide in-place des valeurs (sans toucher aux balises <img>)
+    // Mise à jour fluide in-place des valeurs
     rosterList.forEach(ch => {
       const cKey = (ch.id || ch.name).toLowerCase();
       const charState = raidTrackerState.roster[cKey] || { raids: {} };
@@ -8325,12 +8483,14 @@
       let charEarnedGold = 0;
       let charPotentialGold = 0;
       let charCompletedRaids = 0;
+      let charAllChests = true;
 
       Object.keys(RAID_DEFINITIONS).forEach(rKey => {
         const raidDef = RAID_DEFINITIONS[rKey];
         const cr = charState.raids[rKey] || {};
         const mode = cr.mode || 'normal';
         const modeDef = (raidDef && raidDef[mode]) || raidDef.normal;
+        if (!cr.chest) charAllChests = false;
 
         const g1Earned = cr.g1 ? modeDef.g1 : 0;
         const g2Earned = cr.g2 ? modeDef.g2 : 0;
@@ -8341,6 +8501,7 @@
           const chestDeduct = (cr.g1 && cr.g2) ? modeDef.chest : (cr.g1 ? modeDef.chest1 : (cr.g2 ? modeDef.chest2 : 0));
           raidEarned = Math.max(0, raidEarned - chestDeduct);
           raidPotential = Math.max(0, raidPotential - modeDef.chest);
+          totalAccountChestCost += chestDeduct;
         }
 
         charEarnedGold += raidEarned;
@@ -8353,44 +8514,50 @@
           totalCompletedRaids++;
         }
 
-        const row = card.querySelector(`.raid-row-item[data-raid="${rKey}"]`);
-        if (row) {
-          const sel = row.querySelector('.raid-diff-select');
-          if (sel) {
-            const autoBadge = cr.modeAuto ? ' • Auto' : '';
-            sel.innerHTML = `
-              <option value="normal" ${mode === 'normal' ? 'selected' : ''}>${t('raid_diff_normal')} (${(raidDef.normal.total / 1000).toFixed(0)}k g)${cr.modeAuto && mode === 'normal' ? autoBadge : ''}</option>
-              <option value="hard" ${mode === 'hard' ? 'selected' : ''}>${t('raid_diff_hard')} (${(raidDef.hard.total / 1000).toFixed(0)}k g)${cr.modeAuto && mode === 'hard' ? autoBadge : ''}</option>
-              <option value="nightmare" ${mode === 'nightmare' ? 'selected' : ''}>${t('raid_diff_nightmare')} (${(raidDef.nightmare.total / 1000).toFixed(0)}k g)${cr.modeAuto && mode === 'nightmare' ? autoBadge : ''}</option>
+        const chip = card.querySelector(`.raid-chip[data-raid="${rKey}"]`);
+        if (chip) {
+          const isDone = !!(cr.g1 && cr.g2);
+          const isJailed = !isDone && !!(cr.g1 || cr.g2);
+          chip.classList.toggle('is-cleared', isDone);
+          chip.classList.toggle('is-jailed', isJailed);
+
+          const diffPill = chip.querySelector('.raid-diff-pill');
+          if (diffPill) {
+            diffPill.className = `raid-diff-pill diff-${mode}`;
+            const modeShort = mode === 'nightmare' ? 'NM' : (mode === 'hard' ? 'HM' : 'N');
+            diffPill.innerHTML = `
+              <span class="diff-short">${modeShort}</span>
+              <span class="diff-gold">(${(modeDef.total / 1000).toFixed(0)}k)</span>
+              ${cr.modeAuto ? '<span class="diff-auto-dot" title="Auto LOA Logs">●</span>' : ''}
             `;
-            sel.value = mode;
-            sel.title = cr.modeAuto ? (isFr ? 'Difficulté détectée automatiquement depuis les logs LOA Logs' : 'Difficulty auto-detected from LOA Logs') : '';
+            diffPill.title = cr.modeAuto ? (isFr ? 'Difficulté détectée automatiquement depuis LOA Logs (cliquer pour changer)' : 'Auto-detected from LOA Logs (click to change)') : (isFr ? 'Cliquer pour changer de mode' : 'Click to cycle difficulty');
           }
 
-          const g1Pill = row.querySelector('.gate-btn-pill[data-gate="1"]');
-          if (g1Pill) {
-            g1Pill.classList.toggle('cleared', !!cr.g1);
+          const g1Pip = chip.querySelector('.gate-pip[data-gate="1"]');
+          if (g1Pip) {
+            g1Pip.classList.toggle('cleared', !!cr.g1);
             const g1TimeStr = cr.g1Time ? formatClearTime(cr.g1Time) : '';
-            g1Pill.title = cr.g1 && g1TimeStr ? t('raid_cleared_at').replace('{time}', g1TimeStr) : '';
-            const g1Label = `${cr.g1 ? '✓ ' : ''}${isFr ? 'P1' : 'G1'} (+${(modeDef.g1 / 1000).toFixed(1).replace('.0', '')}k)`;
-            g1Pill.innerHTML = `<span>${g1Label}</span>${cr.g1 && g1TimeStr ? `<span class="gate-kill-time">${g1TimeStr}</span>` : ''}`;
+            g1Pip.title = cr.g1 && g1TimeStr ? t('raid_cleared_at').replace('{time}', g1TimeStr) : '';
+            const g1Lbl = `${cr.g1 ? '✓ ' : ''}${isFr ? 'P1' : 'G1'}`;
+            g1Pip.innerHTML = `<span class="gate-pip-lbl">${g1Lbl}</span><span class="gate-pip-reward">+${(modeDef.g1 / 1000).toFixed(1).replace('.0', '')}k</span>${cr.g1 && g1TimeStr ? `<span class="gate-pip-time">${g1TimeStr}</span>` : ''}`;
           }
 
-          const g2Pill = row.querySelector('.gate-btn-pill[data-gate="2"]');
+          const g2Pill = chip.querySelector('.gate-pip[data-gate="2"]');
           if (g2Pill) {
             g2Pill.classList.toggle('cleared', !!cr.g2);
             const g2TimeStr = cr.g2Time ? formatClearTime(cr.g2Time) : '';
             g2Pill.title = cr.g2 && g2TimeStr ? t('raid_cleared_at').replace('{time}', g2TimeStr) : '';
-            const g2Label = `${cr.g2 ? '✓ ' : ''}${isFr ? 'P2' : 'G2'} (+${(modeDef.g2 / 1000).toFixed(1).replace('.0', '')}k)`;
-            g2Pill.innerHTML = `<span>${g2Label}</span>${cr.g2 && g2TimeStr ? `<span class="gate-kill-time">${g2TimeStr}</span>` : ''}`;
+            const g2Lbl = `${cr.g2 ? '✓ ' : ''}${isFr ? 'P2' : 'G2'}`;
+            g2Pill.innerHTML = `<span class="gate-pip-lbl">${g2Lbl}</span><span class="gate-pip-reward">+${(modeDef.g2 / 1000).toFixed(1).replace('.0', '')}k</span>${cr.g2 && g2TimeStr ? `<span class="gate-pip-time">${g2TimeStr}</span>` : ''}`;
           }
 
-          const chestSpan = row.querySelector('.chest-chk-label span');
-          if (chestSpan) {
-            chestSpan.textContent = t('raid_chest_label').replace('{cost}', (modeDef.chest / 1000).toFixed(1).replace('.0', '') + 'k');
+          const chestBtn = chip.querySelector('.chest-toggle-pill');
+          if (chestBtn) {
+            chestBtn.classList.toggle('active', !!cr.chest);
+            chestBtn.querySelector('.chest-cost').textContent = `-${(modeDef.chest / 1000).toFixed(1).replace('.0', '')}k`;
           }
 
-          const totalGoldEl = row.querySelector('.raid-row-total-gold');
+          const totalGoldEl = chip.querySelector('.raid-chip-gold');
           if (totalGoldEl) {
             totalGoldEl.style.color = raidEarned > 0 ? '#34d399' : '#fbbf24';
             totalGoldEl.textContent = raidEarned > 0 ? `${raidEarned.toLocaleString()} g` : `+${(modeDef.total - (cr.chest ? modeDef.chest : 0)).toLocaleString()} g`;
@@ -8401,11 +8568,51 @@
       totalAccountEarnedGold += charEarnedGold;
       totalAccountPotentialGold += charPotentialGold;
 
-      const badgeStrong = card.querySelector('.char-raid-gold-badge strong');
-      if (badgeStrong) {
-        badgeStrong.innerHTML = `<span style="color: ${charEarnedGold > 0 ? '#34d399' : '#fbbf24'};">${charEarnedGold.toLocaleString()}</span> / ${charPotentialGold.toLocaleString()} g`;
+      // État général du personnage
+      const isCharAllCleared = charCompletedRaids === Object.keys(RAID_DEFINITIONS).length;
+      card.classList.toggle('is-all-cleared', isCharAllCleared);
+
+      const clearAllBtn = card.querySelector('.btn-char-clear-all');
+      if (clearAllBtn) clearAllBtn.classList.toggle('is-active', isCharAllCleared);
+
+      const chestsAllBtn = card.querySelector('.btn-char-chests-all');
+      if (chestsAllBtn) chestsAllBtn.classList.toggle('is-active', charAllChests);
+
+      const goldCur = card.querySelector('.char-gold-cur');
+      if (goldCur) {
+        goldCur.textContent = charEarnedGold.toLocaleString();
+        goldCur.style.color = charEarnedGold > 0 ? '#34d399' : '#fbbf24';
+      }
+      const goldMax = card.querySelector('.char-gold-max');
+      if (goldMax) {
+        goldMax.textContent = `${charPotentialGold.toLocaleString()} g`;
+      }
+
+      const progressBar = card.querySelector('.char-progress-bar');
+      if (progressBar) {
+        const charPct = charPotentialGold > 0 ? Math.round((charEarnedGold / charPotentialGold) * 100) : 0;
+        progressBar.style.width = `${charPct}%`;
       }
     });
+
+    // Mise à jour de la bannière Hero Neria.lol
+    const heroEarnedVal = document.getElementById('raidHeroEarnedVal');
+    const heroPotentialVal = document.getElementById('raidHeroPotentialVal');
+    const heroPctBadge = document.getElementById('raidHeroPctBadge');
+    const heroBarEarned = document.getElementById('raidHeroBarEarned');
+    const heroBarChests = document.getElementById('raidHeroBarChests');
+
+    const pct = totalAccountPotentialGold > 0 ? Math.round((totalAccountEarnedGold / totalAccountPotentialGold) * 100) : 0;
+    const remainingGold = Math.max(0, totalAccountPotentialGold - totalAccountEarnedGold);
+
+    if (heroEarnedVal) heroEarnedVal.textContent = `${totalAccountEarnedGold.toLocaleString()} g`;
+    if (heroPotentialVal) heroPotentialVal.textContent = `${totalAccountPotentialGold.toLocaleString()} g max`;
+    if (heroPctBadge) heroPctBadge.textContent = `${pct}% ${isFr ? 'encaissés' : 'earned'}`;
+    if (heroBarEarned) heroBarEarned.style.width = `${pct}%`;
+    if (heroBarChests) {
+      const chestPct = totalAccountPotentialGold > 0 ? Math.min(100 - pct, Math.round((totalAccountChestCost / totalAccountPotentialGold) * 100)) : 0;
+      heroBarChests.style.width = `${chestPct}%`;
+    }
 
     // Mise à jour des KPI Cards
     const kpiEarnedVal = document.getElementById('raidKpiEarnedVal');
@@ -8415,9 +8622,6 @@
     const kpiProgressVal = document.getElementById('raidKpiProgressVal');
     const kpiGatesSub = document.getElementById('raidKpiGatesSub');
     const kpiPotentialVal = document.getElementById('raidKpiPotentialVal');
-
-    const pct = totalAccountPotentialGold > 0 ? Math.round((totalAccountEarnedGold / totalAccountPotentialGold) * 100) : 0;
-    const remainingGold = Math.max(0, totalAccountPotentialGold - totalAccountEarnedGold);
 
     if (kpiEarnedVal) kpiEarnedVal.textContent = `${totalAccountEarnedGold.toLocaleString()} g`;
     if (kpiEarnedSub) kpiEarnedSub.textContent = t('raid_kpi_earned_sub').replace('{pct}', pct);
@@ -8458,6 +8662,20 @@
     if (btnRefresh) {
       btnRefresh.addEventListener('click', () => {
         fetchRaidTrackerStatus(true);
+      });
+    }
+
+    const btnMarkAll = document.getElementById('btnRosterMarkAllCleared');
+    if (btnMarkAll) {
+      btnMarkAll.addEventListener('click', () => {
+        toggleAllRosterGates();
+      });
+    }
+
+    const btnAllChests = document.getElementById('btnRosterToggleAllChests');
+    if (btnAllChests) {
+      btnAllChests.addEventListener('click', () => {
+        toggleAllRosterChests();
       });
     }
 

@@ -3985,61 +3985,221 @@ select optgroup {
   }
 }
 
-.roster-raids-grid {
+/* ==============================================================================
+   7. RAID TRACKER & GOLD REVENUE (NERIA.LOL MODERN THEME)
+   ============================================================================== */
+
+/* Bannière Hero Net Gold */
+.raidtracker-netgold-banner {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 15, 29, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 18px 22px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.netgold-banner-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.netgold-main-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.netgold-caption {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.netgold-digits-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.netgold-total {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 800;
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+  letter-spacing: -0.02em;
+}
+
+.netgold-separator {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.netgold-max {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.netgold-badge-pct {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+}
+
+.netgold-quick-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-roster-quick {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-roster-quick:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.netgold-progress-track {
+  height: 9px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+
+.netgold-bar-cleared {
+  height: 100%;
+  background: linear-gradient(90deg, #059669 0%, #10b981 60%, #34d399 100%);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.netgold-bar-chests {
+  height: 100%;
+  background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Grille Responsive des Personnages (Multi-colonnes comme Neria.lol) */
+.roster-raids-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
+@media (max-width: 1280px) {
+  .roster-raids-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .roster-raids-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Carte Personnage */
 .char-raid-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 15, 28, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
   overflow: hidden;
-  transition: border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
 }
 
 .char-raid-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.65);
 }
 
+.char-raid-card.is-all-cleared {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 20px -2px rgba(16, 185, 129, 0.12);
+}
+
+/* En-tête de la Carte Personnage */
 .char-raid-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  padding: 12px 14px 10px;
   background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid var(--border-color);
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .char-meta-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
 }
 
 .char-raid-avatar-frame {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  background: #1e293b;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .char-raid-card:hover .char-raid-avatar-frame {
-  transform: scale(1.06);
+  transform: scale(1.05);
+}
+
+.char-raid-avatar-frame.role-support {
   border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.char-raid-avatar-frame.role-dps {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
 }
 
 .char-raid-avatar {
@@ -4055,184 +4215,419 @@ select optgroup {
   transform-origin: 50% 28%;
 }
 
+.char-info-col {
+  min-width: 0;
+  flex: 1;
+}
+
 .char-raid-name-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .char-raid-name {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
-  color: #fff;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.char-server-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.char-raid-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.char-class-txt {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.char-sep {
+  color: #475569;
 }
 
 .char-raid-ilvl {
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--accent-gold);
+  font-size: 11.5px;
   font-weight: 700;
+  color: #fbbf24;
 }
 
-.char-raid-sub {
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-top: 2px;
+.char-role-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  line-height: 1.2;
+}
+
+.char-role-badge.badge-support {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.char-role-badge.badge-dps {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+/* Actions rapides et badge gold de la carte */
+.char-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.char-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.char-action-btn {
+  width: 25px;
+  height: 25px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11.5px;
+}
+
+.char-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.btn-char-clear-all.is-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-char-chests-all.is-active {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
 }
 
 .char-raid-gold-badge {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.char-raid-gold-badge .label {
-  color: var(--text-muted);
-}
-
-.char-raid-gold-badge strong {
-  color: #fbbf24;
+  align-items: baseline;
+  gap: 3px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.char-gold-cur {
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.char-gold-sep,
+.char-gold-max {
+  color: #64748b;
+  font-size: 10px;
+}
+
+/* Barre de progression perso */
+.char-progress-track {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.char-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  transition: width 0.4s ease;
+}
+
+/* Liste des Chips de Raid */
 .char-raids-list {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
 }
 
-.raid-row-item {
-  display: grid;
-  grid-template-columns: 260px 170px 1fr 140px 110px;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.raid-row-item:last-child {
-  border-bottom: none;
-}
-
-@media (max-width: 1100px) {
-  .raid-row-item {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
-.raid-row-left {
+/* Chip de Raid individuel (Style Neria.lol) */
+.raid-chip {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.7);
+  padding: 9px 12px;
+  transition: all 0.2s ease;
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.raid-row-icon {
-  font-size: 22px;
-}
-
-.raid-row-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--text-main);
-  display: block;
-}
-
-.raid-row-bosses {
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.raid-diff-select-wrapper select {
-  width: 100%;
-  padding: 6px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  color: var(--text-main);
-  cursor: pointer;
-}
-
-.raid-gates-group {
-  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.gate-btn-pill {
-  flex: 1;
+.raid-chip:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.raid-chip.is-cleared {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.raid-chip.is-jailed {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+/* Artwork de fond du Raid */
+.raid-chip-art {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 60%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  opacity: 0.20;
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.9) 15%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.9) 15%, transparent 100%);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.raid-chip.is-cleared .raid-chip-art {
+  opacity: 0.38;
+}
+
+/* Ligne supérieure du chip */
+.raid-chip-top {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 7px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.raid-chip-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.raid-chip-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.raid-chip-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badge de difficulté interactif */
+.raid-diff-badge-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.raid-diff-pill {
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
   cursor: pointer;
-  user-select: none;
-  font-size: 12px;
   transition: all 0.2s ease;
-  text-align: center;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.gate-btn-pill input {
-  display: none;
+.raid-diff-pill:hover {
+  filter: brightness(1.25);
+  transform: scale(1.03);
 }
 
-.gate-btn-pill:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
+.raid-diff-pill.diff-nightmare {
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
 }
 
-.gate-btn-pill.cleared {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.4);
+.raid-diff-pill.diff-hard {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde047;
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+
+.raid-diff-pill.diff-normal {
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.diff-auto-dot {
+  font-size: 7px;
   color: #34d399;
 }
 
-.gate-btn-pill.cleared span:first-of-type {
-  font-weight: 700;
-}
-
-.gate-kill-time {
-  font-size: 10px;
+/* Gain en or du chip */
+.raid-chip-gold {
   font-family: var(--font-mono);
-  color: #6ee7b7;
-  margin-top: 2px;
-}
-
-.raid-chest-toggle-area {
-  display: flex;
-  align-items: center;
-}
-
-.chest-chk-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  color: var(--text-dim);
-  cursor: pointer;
-}
-
-.chest-chk-label input {
-  cursor: pointer;
-  accent-color: #f59e0b;
-}
-
-.raid-row-total-gold {
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   color: #fbbf24;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  white-space: nowrap;
+}
+
+.raid-chip.is-cleared .raid-chip-gold {
+  color: #34d399;
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+/* Ligne inférieure : contrôles des portes et coffre */
+.raid-chip-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.gate-pips-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.gate-pip {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  user-select: none;
+}
+
+.gate-pip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.gate-pip.cleared {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.15) 100%);
+  border-color: rgba(16, 185, 129, 0.55);
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.gate-pip-lbl {
+  font-weight: 700;
+}
+
+.gate-pip-reward {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.gate-pip-time {
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  color: #6ee7b7;
+  margin-left: 2px;
+}
+
+/* Bouton toggle coffre */
+.chest-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: #64748b;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.chest-toggle-pill:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.chest-toggle-pill.active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #fbbf24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+  font-weight: 700;
 }
 
 /* ==============================================================================
