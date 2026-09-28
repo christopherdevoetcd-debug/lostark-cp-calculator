@@ -18414,17 +18414,26 @@
       });
 
       const totalWeight = weights.reduce((a, b) => a + b, 0);
-      let allocated = 0;
+      let distributedCp = 0;
 
+      // Passe 1 : Allocation proportionnelle brute
       slots.forEach((s, idx) => {
-        if (idx === slots.length - 1) {
-          s.impactCp = Math.max(0, cpImpact - allocated);
-        } else {
-          const share = Math.round((weights[idx] / totalWeight) * cpImpact);
-          s.impactCp = share;
-          allocated += share;
-        }
+        const share = Math.round((weights[idx] / totalWeight) * cpImpact);
+        s.impactCp = share;
+        distributedCp += share;
+      });
 
+      // Réconciliation stricte pour garantir 100% de parité (somme == cpImpact)
+      if (distributedCp !== cpImpact) {
+        const diff = cpImpact - distributedCp;
+        const maxSlot = slots.reduce((best, cur) => cur.impactCp > (best ? best.impactCp : -1) ? cur : best, null);
+        if (maxSlot) {
+          maxSlot.impactCp = Math.max(0, maxSlot.impactCp + diff);
+        }
+      }
+
+      // Passe 2 : Détermination des verdicts
+      slots.forEach(s => {
         const deadStats = s.pLines.filter(l => l.isDead);
         const unrolledCount = s.pLines.filter(l => l.tierLabel.includes('Affiner') || l.tierLabel.includes('To Roll')).length;
         const lowLines = s.pLines.filter(l => l.rollTier === 'low' && !l.isDead && !l.tierLabel.includes('Affiner') && !l.tierLabel.includes('To Roll')).map(l => isEn ? formatLostArkEnglish(l.text) : l.text);
@@ -19506,17 +19515,25 @@
       return { lineCps, totalCp: 0 };
     }
 
-    let allocatedCp = 0;
+    let distributedCp = 0;
+    const tempAllocations = [];
+
     for (let i = 0; i < rawDeltas.length; i++) {
       const d = rawDeltas[i];
-      if (i === rawDeltas.length - 1) {
-        // Le dernier élément reçoit le reste exact pour garantir 100% de parité
-        lineCps[d.id] = Math.max(0, cpImpact - allocatedCp);
-      } else {
-        const share = d.diff / totalDelta;
-        const lineCp = Math.round(share * cpImpact);
-        lineCps[d.id] = lineCp;
-        allocatedCp += lineCp;
+      const share = d.diff / totalDelta;
+      const lineCp = Math.round(share * cpImpact);
+      lineCps[d.id] = lineCp;
+      distributedCp += lineCp;
+      tempAllocations.push({ id: d.id, cp: lineCp });
+    }
+
+    // Réconciliation stricte pour garantir 100% de parité (somme == cpImpact)
+    if (distributedCp !== cpImpact) {
+      const diff = cpImpact - distributedCp;
+      // Absorber la différence sur la stat ayant reçu le plus de CP pour minimiser l'impact visuel
+      const maxItem = tempAllocations.reduce((best, cur) => cur.cp > (best ? best.cp : -1) ? cur : best, null);
+      if (maxItem) {
+        lineCps[maxItem.id] = Math.max(0, lineCps[maxItem.id] + diff);
       }
     }
 
