@@ -804,28 +804,6 @@
     canonPartsCount: document.getElementById('canonPartsCount'),
     canonTableBody: document.getElementById('canonTableBody'),
 
-    
-    const helpModal = document.getElementById('helpModal');
-    const btnOpenHelp = document.getElementById('btnOpenHelpModal');
-    const btnCloseHelp = document.getElementById('btnCloseHelpModal');
-    const btnCloseHelpFooter = document.getElementById('btnCloseHelpModalFooter');
-
-    if (btnOpenHelp && helpModal) {
-      btnOpenHelp.addEventListener('click', () => helpModal.classList.add('active'));
-    }
-    if (btnCloseHelp && helpModal) {
-      btnCloseHelp.addEventListener('click', () => helpModal.classList.remove('active'));
-    }
-    if (btnCloseHelpFooter && helpModal) {
-      btnCloseHelpFooter.addEventListener('click', () => helpModal.classList.remove('active'));
-    }
-    if (helpModal) {
-      helpModal.addEventListener('click', (e) => {
-        if (e.target === helpModal) helpModal.classList.remove('active');
-      });
-    }
-
-
     // Modal d'Importation lostark.bible
     btnOpenImportModal: document.getElementById('btnOpenImportModal'),
     btnCloseImportModal: document.getElementById('btnCloseImportModal'),
@@ -6998,6 +6976,27 @@
       dom.optArkGrid.addEventListener('change', (e) => {
         state.opt.arkGrid = e.target.checked;
         updateOptimizationView();
+      });
+    }
+
+    // Modal d'Aide
+    const helpModal = document.getElementById('helpModal');
+    const btnOpenHelp = document.getElementById('btnOpenHelpModal');
+    const btnCloseHelp = document.getElementById('btnCloseHelpModal');
+    const btnCloseHelpFooter = document.getElementById('btnCloseHelpModalFooter');
+
+    if (btnOpenHelp && helpModal) {
+      btnOpenHelp.addEventListener('click', () => helpModal.classList.add('active'));
+    }
+    if (btnCloseHelp && helpModal) {
+      btnCloseHelp.addEventListener('click', () => helpModal.classList.remove('active'));
+    }
+    if (btnCloseHelpFooter && helpModal) {
+      btnCloseHelpFooter.addEventListener('click', () => helpModal.classList.remove('active'));
+    }
+    if (helpModal) {
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) helpModal.classList.remove('active');
       });
     }
 
