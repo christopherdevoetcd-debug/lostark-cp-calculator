@@ -1200,9 +1200,7 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'en' || stored === 'fr') return stored;
     } catch (e) {}
-    if (typeof navigator !== 'undefined' && navigator.language && navigator.language.startsWith('fr')) {
-      return 'fr';
-    }
+    
     return 'en';
   }
 
