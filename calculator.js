@@ -2724,32 +2724,95 @@
   }
 
 
+  // Bonus CP% moyen par niveau de gemme T4 (même échelle que extractPlayerSystems)
+  const GEM_LEVEL_BONUS_PCT = { 7: 31.5, 8: 36.0, 9: 40.5, 10: 48.0 };
+  // Coût (gold) pour monter UNE gemme T4 du niveau clé au niveau suivant
+  const GEM_UPGRADE_COST = { 7: 276000, 8: 813000, 9: 2415000 };
+  // Coût (gold) pour amener un cœur de la Grille d'Ark à 17 points
+  const ARK_CORE_17_COST = 80898;
+  const ARK_CORE_DEFS = [
+    { key: 'orderSun', prefix: '67300', fr: 'Ordre Soleil', en: 'Order Sun' },
+    { key: 'orderMoon', prefix: '67301', fr: 'Ordre Lune', en: 'Order Moon' },
+    { key: 'orderStar', prefix: '67302', fr: 'Ordre Étoile', en: 'Order Star' },
+    { key: 'chaosSun', prefix: '67310', fr: 'Chaos Soleil', en: 'Chaos Sun' },
+    { key: 'chaosMoon', prefix: '67311', fr: 'Chaos Lune', en: 'Chaos Moon' },
+    { key: 'chaosStar', prefix: '67312', fr: 'Chaos Étoile', en: 'Chaos Star' }
+  ];
+  const GPD_TIER_LABELS = { 's-plus': 'Rang S+', 's': 'Rang S', 'a': 'Rang A', 'b': 'Rang B', 'c': 'Rang C' };
+
+  // Répartition des gemmes par niveau à partir des valeurs de gemParts (seuils DPS/Support)
+  function countGemLevels(parts, isSupport) {
+    const counts = { 7: 0, 8: 0, 9: 0, 10: 0 };
+    const l10 = isSupport ? 12.00 : 7.00;
+    const l9 = isSupport ? 10.80 : 6.35;
+    const l8 = isSupport ? 9.60 : 5.70;
+    parts.forEach(g => {
+      if (g >= l10 - 0.05) counts[10]++;
+      else if (g >= l9 - 0.05) counts[9]++;
+      else if (g >= l8 - 0.05) counts[8]++;
+      else counts[7]++;
+    });
+    return counts;
+  }
+
+  // Repli sur le libellé de getCharacterGemSummary : "3x Niv. 9", "Full Gemmes 8 T4"...
+  function countGemLevelsFromLabel(label) {
+    const counts = { 7: 0, 8: 0, 9: 0, 10: 0 };
+    let found = false;
+    const re = /(\d+)x\s*(?:Lv\.|Niv\.)\s*(\d+)/g;
+    let m;
+    while ((m = re.exec(label))) {
+      const lvl = parseInt(m[2], 10);
+      if (counts[lvl] !== undefined) { counts[lvl] += parseInt(m[1], 10); found = true; }
+    }
+    if (!found) {
+      const full = /Full.*?(?:Lv\.|Gemmes)\s*(10|[789])\b/.exec(label);
+      if (!full) return null;
+      counts[parseInt(full[1], 10)] = 11;
+    }
+    return counts;
+  }
+
   function getDynamicGpdTable(charObj, role, isEn) {
     const charRole = (charObj && detectCharacterRole(charObj)) || role || 'dps';
     if (!charObj) return EUC_EFFICIENCY_DATA[charRole] || EUC_EFFICIENCY_DATA.support;
     const isSupport = charRole === 'support';
-    const sys = extractPlayerSystems(charObj, isSupport);
-    
+    const sys = extractPlayerSystems(charObj, isEn);
+
     let dynTable = [];
-    
+
+    // Support : gold par 0.01% de buff ; DPS : gold par 1% de dégâts.
+    // Le tier est toujours évalué sur le coût par 1% pour garder les mêmes seuils.
+    const ratioUnit = isSupport ? 100 : 1;
+    const pushRow = (id, name, sub, gain, cost, comment) => {
+      if (!(gain > 0) || !(cost > 0)) return;
+      const ratio = Math.round(cost / (gain * ratioUnit));
+      const tier = getTierFromRatio(cost / gain);
+      dynTable.push({
+        id,
+        name,
+        sub,
+        gainText: `+${gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'}`,
+        gainVal: Number(gain.toFixed(2)),
+        cost: Math.round(cost),
+        ratioText: formatNumber(ratio) + ' g',
+        ratioVal: ratio,
+        tier,
+        tierLabel: GPD_TIER_LABELS[tier],
+        comment
+      });
+    };
+
     // 1. Weapon Honing
     let wLvl = sys.weapon.wLvl || 12;
     if (wLvl < 25) {
       const dmgGain = 1.22; // approx from prompt for weapon
       const costRaw = HONING_COSTS.weapon[wLvl + 1] || 150000;
-      const totalCost = costRaw * 30; // approx including mats
-      const ratio = Math.round(totalCost / dmgGain);
-      dynTable.push({
-        id: 'dyn_weapon',
-        name: isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
-        sub: isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
-        gainText: `+${dmgGain.toFixed(2)}% DPS`,
-        gainVal: dmgGain,
-        cost: totalCost,
-        ratioText: formatNumber(ratio) + ' g',
-        ratioVal: ratio,
-        tier: getTierFromRatio(ratio)
-      });
+      pushRow('dyn_weapon',
+        isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
+        isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
+        dmgGain, costRaw * 30, // approx including mats
+        isEn ? 'Next weapon honing level.' : 'Prochain palier d\'affinage d\'arme.');
     }
 
     // 2. Armor Honing
@@ -2757,99 +2820,83 @@
     if (aLvl < 25) {
       const dmgGain = isSupport ? 1.50 : 1.08; // 1.08% from prompt for armors
       const costRaw = (HONING_COSTS.armor[aLvl + 1] || 25000) * 5;
-      const totalCost = costRaw * 22;
-      const ratio = Math.round(totalCost / dmgGain);
-      dynTable.push({
-        id: 'dyn_armor',
-        name: isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
-        sub: isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,
-        gainText: `+${dmgGain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'}`,
-        gainVal: dmgGain,
-        cost: totalCost,
-        ratioText: formatNumber(ratio) + ' g',
-        ratioVal: ratio,
-        tier: getTierFromRatio(ratio)
+      pushRow('dyn_armor',
+        isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
+        isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,
+        dmgGain, costRaw * 22,
+        isEn ? 'Next honing level on all 5 armor pieces.' : 'Prochain palier d\'affinage sur les 5 pièces d\'armure.');
+    }
+
+    // 3. Gems : une ligne par niveau présent, gain = Δ bonus moyen au prorata des gemmes concernées
+    const gemParts = extractCharacterGemParts(charObj);
+    const gemCounts = (gemParts && gemParts.length > 0)
+      ? countGemLevels(gemParts, isSupport)
+      : countGemLevelsFromLabel((sys.gems && sys.gems.label) || '');
+    if (gemCounts) {
+      const totalGems = gemCounts[7] + gemCounts[8] + gemCounts[9] + gemCounts[10];
+      [7, 8, 9].forEach(lvl => {
+        const n = gemCounts[lvl];
+        if (!n) return;
+        const gain = n * (GEM_LEVEL_BONUS_PCT[lvl + 1] - GEM_LEVEL_BONUS_PCT[lvl]) / totalGems;
+        pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
+          isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
+          isEn ? `${n} gem(s) out of ${totalGems}` : `${n} gemme(s) sur ${totalGems}`,
+          gain, n * GEM_UPGRADE_COST[lvl],
+          isEn ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced.` : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées.`);
       });
     }
 
-    // 3. Gems
-    let gDesc = sys.gems.label || '';
-    let currentGemLvl = 7;
-    if (gDesc.includes('10')) currentGemLvl = 10;
-    else if (gDesc.includes('9')) currentGemLvl = 9;
-    else if (gDesc.includes('8')) currentGemLvl = 8;
-    
-    if (currentGemLvl < 10) {
-      const gain = currentGemLvl === 7 ? 4.83 : (currentGemLvl === 8 ? 4.79 : 4.00);
-      const totalCost = currentGemLvl === 7 ? 3080000 : (currentGemLvl === 8 ? 9240000 : 25000000);
-      const ratio = Math.round(totalCost / gain);
-      dynTable.push({
-        id: 'dyn_gems',
-        name: isEn ? `Skill gems — Level ${currentGemLvl + 1}` : `Gemmes de Compétences — Niv. ${currentGemLvl + 1}`,
-        sub: isEn ? `Full set upgrade` : `Upgrade du set complet`,
-        gainText: `+${gain.toFixed(2)}% DPS`,
-        gainVal: gain,
-        cost: totalCost,
-        ratioText: formatNumber(ratio) + ' g',
-        ratioVal: ratio,
-        tier: getTierFromRatio(ratio)
-      });
-    }
-
-    // 4. Astrogems (Cutting epics to next tier)
-    const astroGain = 1.08;
-    const astroCost = 675000;
-    const astroRatio = 623000;
-    dynTable.push({
-      id: 'dyn_astro',
-      name: isEn ? 'Ark grid — Astrogems' : 'Grille d\'Ark — Astrogemmes',
-      sub: isEn ? 'Cutting epics ➔ Next Tier' : 'Taille d\'épiques ➔ Palier Suivant',
-      gainText: `+${astroGain.toFixed(2)}% DPS`,
-      gainVal: astroGain,
-      cost: astroCost,
-      ratioText: formatNumber(astroRatio) + ' g',
-      ratioVal: astroRatio,
-      tier: getTierFromRatio(astroRatio)
+    // 4. Ark Grid cores → 17 points (gain marginal depuis les points actuels)
+    const ark = getArkGridStatus(charObj);
+    const slots = ark.slots || {};
+    const hasSlotData = Object.values(slots).some(v => v > 0);
+    ARK_CORE_DEFS.forEach(def => {
+      let pts = slots[def.key] || 0;
+      if (!hasSlotData) {
+        // Pas de cœurs bruts : repli sur les drapeaux 17P, uniquement pour les cœurs d'Ordre
+        if (!def.key.startsWith('order')) return;
+        const has17 = def.key === 'orderSun' ? ark.hasSun17 : (def.key === 'orderMoon' ? ark.hasMoon17 : ark.hasStar17);
+        pts = has17 ? 17 : 10;
+      }
+      if (pts <= 0 || pts >= 17) return;
+      const cur = getArkGridCoreBonus(def.prefix, pts, isSupport, false);
+      const next = getArkGridCoreBonus(def.prefix, 17, isSupport, false);
+      // Les cœurs se cumulent multiplicativement (cf. evalCoreGroup)
+      const gain = ((1 + next / 100) / (1 + cur / 100) - 1) * 100;
+      pushRow(`dyn_core_${def.key}`,
+        isEn ? `Ark Grid — ${def.en} core 17P` : `Grille d'Ark — Cœur ${def.fr} 17P`,
+        isEn ? `From ${pts} points` : `Depuis ${pts} points`,
+        gain, ARK_CORE_17_COST,
+        isEn ? `Marginal gain from ${pts} to 17 points.` : `Gain marginal de ${pts} à 17 points.`);
     });
 
-    // 5. Bracelet
-    const bracGain = 0.77;
-    const bracCost = 271000;
-    const bracRatio = 351000;
-    dynTable.push({
-      id: 'dyn_brac',
-      name: isEn ? 'Bracelet — Next Tier' : 'Bracelet — Palier Supérieur',
-      sub: isEn ? 'Roll a new bracelet campaign' : 'Campagne de reroll complète',
-      gainText: `+${bracGain.toFixed(2)}% DPS`,
-      gainVal: bracGain,
-      cost: bracCost,
-      ratioText: formatNumber(bracRatio) + ' g',
-      ratioVal: bracRatio,
-      tier: getTierFromRatio(bracRatio)
-    });
+    // 5. Astrogems (Cutting epics to next tier)
+    pushRow('dyn_astro',
+      isEn ? 'Ark grid — Astrogems' : 'Grille d\'Ark — Astrogemmes',
+      isEn ? 'Cutting epics ➔ Next Tier' : 'Taille d\'épiques ➔ Palier Suivant',
+      1.08, 675000,
+      isEn ? 'Cut epic astrogems to reach the next tier.' : 'Tailler des astrogemmes épiques pour le palier suivant.');
 
-    // 6. Accessoires
-    const accGain = 0.22;
-    const accCost = 166000;
-    const accRatio = 740000;
-    dynTable.push({
-      id: 'dyn_acc',
-      name: isEn ? 'Earring / Ring Upgrade' : 'Upgrade Bijou',
-      sub: isEn ? 'Replace weakest accessory' : 'Remplacer le bijou le plus faible',
-      gainText: `+${accGain.toFixed(2)}% DPS`,
-      gainVal: accGain,
-      cost: accCost,
-      ratioText: formatNumber(accRatio) + ' g',
-      ratioVal: accRatio,
-      tier: getTierFromRatio(accRatio)
-    });
+    // 6. Bracelet
+    pushRow('dyn_brac',
+      isEn ? 'Bracelet — Next Tier' : 'Bracelet — Palier Supérieur',
+      isEn ? 'Roll a new bracelet campaign' : 'Campagne de reroll complète',
+      0.77, 271000,
+      isEn ? 'Full bracelet reroll campaign.' : 'Campagne complète de reroll de bracelet.');
+
+    // 7. Accessoires
+    pushRow('dyn_acc',
+      isEn ? 'Earring / Ring Upgrade' : 'Upgrade Bijou',
+      isEn ? 'Replace weakest accessory' : 'Remplacer le bijou le plus faible',
+      0.22, 166000,
+      isEn ? 'Replace your weakest accessory.' : 'Remplacer ton bijou le plus faible.');
 
     // Sort by most efficient (lowest ratio)
     dynTable.sort((a, b) => a.ratioVal - b.ratioVal);
-    
+
     return dynTable;
   }
-  
+
   function getTierFromRatio(ratio) {
     if (ratio <= 400000) return 's-plus';
     if (ratio <= 750000) return 's';
@@ -10601,21 +10648,9 @@
 
     let gemBonusPct = 36.00;
     if (parts && parts.length > 0) {
-      let c10 = 0, c9 = 0, c8 = 0, c7 = 0;
-      const l10 = isSupport ? 12.00 : 7.00;
-      const l9 = isSupport ? 10.80 : 6.35;
-      const l8 = isSupport ? 9.60 : 5.70;
-      const l7 = isSupport ? 8.50 : 5.05;
-
-      parts.forEach(g => {
-        if (g >= l10 - 0.05) c10++;
-        else if (g >= l9 - 0.05) c9++;
-        else if (g >= l8 - 0.05) c8++;
-        else c7++;
-      });
-
-      const total = parts.length;
-      gemBonusPct = Number(((c10 * 48.0 + c9 * 40.5 + c8 * 36.0 + c7 * 31.5) / total).toFixed(2));
+      const gc = countGemLevels(parts, isSupport);
+      const weighted = [7, 8, 9, 10].reduce((s, lvl) => s + gc[lvl] * GEM_LEVEL_BONUS_PCT[lvl], 0);
+      gemBonusPct = Number((weighted / parts.length).toFixed(2));
     } else {
       if (gemDesc.includes('10')) gemBonusPct = 48.00;
       else if (gemDesc.includes('9')) gemBonusPct = 40.50;
