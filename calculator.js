@@ -2728,8 +2728,11 @@
   const GEM_LEVEL_BONUS_PCT = { 7: 31.5, 8: 36.0, 9: 40.5, 10: 48.0 };
   // Coût (gold) pour monter UNE gemme T4 du niveau clé au niveau suivant
   const GEM_UPGRADE_COST = { 7: 276000, 8: 813000, 9: 2415000 };
-  // Coût (gold) pour amener un cœur de la Grille d'Ark à 17 points
-  const ARK_CORE_17_COST = 80898;
+  // Coût (gold) par point de cœur manquant pour atteindre 17 points.
+  // Calé sur l'ancien forfait de 80 898 g, interprété comme un passage 14 → 17 (3 points).
+  const ARK_CORE_COST_PER_POINT = Math.round(80898 / 3);
+  // Bonus d'arme (échelle bonusPct de extractPlayerSystems) gagné par niveau d'affinage effectif
+  const WEAPON_HONING_BONUS_PER_LVL = 1.20;
   const ARK_CORE_DEFS = [
     { key: 'orderSun', prefix: '67300', fr: 'Ordre Soleil', en: 'Order Sun' },
     { key: 'orderMoon', prefix: '67301', fr: 'Ordre Lune', en: 'Order Moon' },
@@ -2805,14 +2808,19 @@
 
     // 1. Weapon Honing
     let wLvl = sys.weapon.wLvl || 12;
-    if (wLvl < 25) {
-      const dmgGain = 1.22; // approx from prompt for weapon
-      const costRaw = HONING_COSTS.weapon[wLvl + 1] || 150000;
+    // Serka : même puissance qu'Aegir +9, on estime donc le coût sur le niveau effectif
+    const effWLvl = sys.weapon.effWLvl !== undefined ? sys.weapon.effWLvl : wLvl;
+    if (effWLvl < 25) {
+      // Gain relatif : +1 niveau ajoute WEAPON_HONING_BONUS_PER_LVL au bonus d'arme actuel
+      const curWeaponPct = sys.weapon.bonusPct || 0;
+      const dmgGain = ((1 + (curWeaponPct + WEAPON_HONING_BONUS_PER_LVL) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
+      // Coût attendu du palier : tentatives moyennes (artisan) × matériaux au prix du marché
+      const cost = getLevelCost('weapon', effWLvl).totalValue;
       pushRow('dyn_weapon',
         isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
         isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
-        dmgGain, costRaw * 30, // approx including mats
-        isEn ? 'Next weapon honing level.' : 'Prochain palier d\'affinage d\'arme.');
+        dmgGain, cost,
+        isEn ? 'Expected cost (average taps with artisan energy, market-priced materials).' : 'Coût attendu (nombre moyen de tentatives avec artisanat, matériaux au prix du marché).');
     }
 
     // 2. Armor Honing
@@ -2866,8 +2874,8 @@
       pushRow(`dyn_core_${def.key}`,
         isEn ? `Ark Grid — ${def.en} core 17P` : `Grille d'Ark — Cœur ${def.fr} 17P`,
         isEn ? `From ${pts} points` : `Depuis ${pts} points`,
-        gain, ARK_CORE_17_COST,
-        isEn ? `Marginal gain from ${pts} to 17 points.` : `Gain marginal de ${pts} à 17 points.`);
+        gain, (17 - pts) * ARK_CORE_COST_PER_POINT,
+        isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`);
     });
 
     // 5. Astrogems (Cutting epics to next tier)
@@ -10610,7 +10618,7 @@
               : (10 + (wQual * 0.196))));
 
     // Bonus d'Affinage Inven (+1.20% net CP par niveau équivalent au-dessus du palier +12)
-    const wHoningBonus = Math.max(0, (effWLvl - 12) * 1.20);
+    const wHoningBonus = Math.max(0, (effWLvl - 12) * WEAPON_HONING_BONUS_PER_LVL);
     const weaponBonusPct = Number((wQualVal + wHoningBonus).toFixed(2));
 
     // Armures T4 : MainStat + Vitalité/HP des 5 pièces d'armure (+1.37% DPS / +1.50% Supp par niveau moyen équivalent)
