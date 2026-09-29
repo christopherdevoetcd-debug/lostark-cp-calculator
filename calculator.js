@@ -1535,7 +1535,7 @@
     let simPrefix = '';
     if (diffCp > 0 && totalSimGold > 0) {
       const goldPerCp = Math.round(totalSimGold / diffCp);
-      simPrefix = `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.1); color: var(--accent-gold);">
+      simPrefix = `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(232, 230, 220,0.1); color: var(--accent-gold);">
         📊 <strong>${isEn ? 'Simulation Summary' : 'Bilan Simulation'} :</strong> +${formatNumber(diffCp)} CP ${isEn ? 'for' : 'pour'} ~${formatNumber(totalSimGold)} gold (${isEn ? 'ratio' : 'ratio'} : <strong>${formatNumber(goldPerCp)} g / CP</strong>).
       </div>`;
     }
@@ -2551,7 +2551,7 @@
     if (dom.optBadge) {
       dom.optBadge.textContent = isSupport ? 'Arsonistic Support (SupCalc)' : 'Arsonistic DPS (Calc)';
       dom.optBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
-      dom.optBadge.style.borderColor = isSupport ? 'rgba(56, 189, 248, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+      dom.optBadge.style.borderColor = isSupport ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
     }
 
     const isEn = isEnLang();
@@ -2967,7 +2967,7 @@
         ? (isEn ? 'Support: Cost per 0.01% Raid Buff' : 'Support : Coût par 0.01% Buff Alliés')
         : (isEn ? 'DPS: Cost per 1.00% Personal DPS' : 'DPS : Coût par 1.00% DPS Personnel');
       dom.effRoleBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
-      dom.effRoleBadge.style.borderColor = isSupport ? 'rgba(56, 189, 248, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+      dom.effRoleBadge.style.borderColor = isSupport ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
     }
 
     if (dom.effColGainHeader) {
@@ -3655,7 +3655,7 @@
           html += `
             <div class="bracelet-item-pill useful">
               <span>✅ <strong>${escapeHtml(cleanLbl)}</strong></span>
-              <span class="pill-mult" style="color:#34d399; font-weight:700;">+${u.mult.toFixed(2)}%</span>
+              <span class="pill-mult" style="color:#8CC084; font-weight:700;">+${u.mult.toFixed(2)}%</span>
             </div>
           `;
         });
@@ -3663,8 +3663,8 @@
           const cleanLbl = formatBraceletLine(d.label, isEn);
           html += `
             <div class="bracelet-item-pill dead">
-              <span>⚠️ <strong style="color:#fb7185;">${escapeHtml(cleanLbl)}</strong></span>
-              <span class="pill-mult" style="color:#fb7185; font-size:11px;">${isEn ? 'Dead stat (0% CP)' : 'Stat morte (0% CP)'}</span>
+              <span>⚠️ <strong style="color:#E07A63;">${escapeHtml(cleanLbl)}</strong></span>
+              <span class="pill-mult" style="color:#E07A63; font-size:11px;">${isEn ? 'Dead stat (0% CP)' : 'Stat morte (0% CP)'}</span>
             </div>
           `;
         });
@@ -4252,7 +4252,7 @@
             </td>
             <td><span class="gpd-read-text">${row.whatItReads}</span></td>
             <td><span class="gpd-rung-badge">${row.wherePutsYou}</span></td>
-            <td><span class="gpd-step-muted">${row.lastStep} <br><small style="color:#fbbf24;">(${row.lastRate})</small></span></td>
+            <td><span class="gpd-step-muted">${row.lastStep} <br><small style="color:#E0A43A;">(${row.lastRate})</small></span></td>
             <td>
               <div class="gpd-next-step-cell">
                 <span class="gpd-next-step-name">${row.nextStep}</span>
@@ -5272,11 +5272,11 @@
     if (dom.astroRaritySub) dom.astroRaritySub.textContent = isEn ? `Sum of 4 lines: ${res.levelSum}/20` : `Somme des 4 lignes : ${res.levelSum}/20`;
     if (dom.astroCostVal) {
       dom.astroCostVal.textContent = `${res.effectiveCost} Point${res.effectiveCost > 1 ? 's' : ''}`;
-      dom.astroCostVal.style.color = res.costClass === 'optimal' ? '#34d399' : (res.costClass === 'standard' ? '#38bdf8' : '#f87171');
+      dom.astroCostVal.style.color = res.costClass === 'optimal' ? '#8CC084' : (res.costClass === 'standard' ? '#E0A43A' : '#E07A63');
     }
     if (dom.astroViabilityVal) {
       dom.astroViabilityVal.textContent = res.viabilityText;
-      dom.astroViabilityVal.style.color = res.costClass === 'optimal' ? '#34d399' : (res.costClass === 'standard' ? '#38bdf8' : '#f87171');
+      dom.astroViabilityVal.style.color = res.costClass === 'optimal' ? '#8CC084' : (res.costClass === 'standard' ? '#E0A43A' : '#E07A63');
     }
     if (dom.astroViabilitySub) dom.astroViabilitySub.textContent = res.viabilitySub;
     if (dom.astroAnalysisText) dom.astroAnalysisText.textContent = res.explanation;
@@ -5473,7 +5473,7 @@
         ? 'Support Split (Buff + Heal)' 
         : (isEn ? 'Canonical DPS' : 'DPS Canonique');
       dom.canonRoleBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
-      dom.canonRoleBadge.style.borderColor = isSupport ? 'rgba(56, 189, 248, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+      dom.canonRoleBadge.style.borderColor = isSupport ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
     }
 
     if (dom.canonInGameScore) dom.canonInGameScore.textContent = formatNumber(prof.inGameScore || prof.cp || 0);
@@ -5548,7 +5548,7 @@
             </td>
             <td style="font-family: var(--font-mono);">${it.val}</td>
             <td style="font-family: var(--font-mono); color: ${it.mult === '+0.00%' ? 'var(--text-muted)' : 'var(--accent-green)'};">${it.mult}</td>
-            <td style="color: ${it.type.includes('Heal') ? '#f87171' : it.type.includes('Buff') ? 'var(--support-color)' : 'var(--dps-color)'}; font-weight: 600;">
+            <td style="color: ${it.type.includes('Heal') ? '#E07A63' : it.type.includes('Buff') ? 'var(--support-color)' : 'var(--dps-color)'}; font-weight: 600;">
               ${displayType}
             </td>
           </tr>
@@ -6249,7 +6249,7 @@
         statusEl.className = 'modal-status error';
         statusEl.innerHTML = `⚠️ <strong>Impossible d'interroger lostark.bible pour ${escapeHtml(cleanName)} :</strong><br>
         1. Vérifiez l'orthographe exacte du pseudo et la région (${escapeHtml(reg)}).<br>
-        2. Option de secours : ouvrez <a href="${escapeHtml(directUrl)}" target="_blank" rel="noopener noreferrer" style="color:#fff; text-decoration:underline;">ce lien</a>, copiez tout le texte JSON et collez-le dans <strong>Option manuelle</strong> ci-dessous !`;
+        2. Option de secours : ouvrez <a href="${escapeHtml(directUrl)}" target="_blank" rel="noopener noreferrer" style="color:#E8E6DC; text-decoration:underline;">ce lien</a>, copiez tout le texte JSON et collez-le dans <strong>Option manuelle</strong> ci-dessous !`;
       }
       return null;
     }
@@ -6767,16 +6767,16 @@
         const ilvl = c.itemLevel || c.itemAvgLevel || c.ilvl || c.maxItemLevel || 0;
 
         html += `
-          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 10px; margin-top: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); border: 1px solid rgba(232, 230, 220,0.06); border-radius: 6px; padding: 6px 10px; margin-top: 4px;">
             <div>
               <strong style="color: var(--text-main); font-size: 13px;">${charName}</strong>
               <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">${charClass} • ${ilvl > 0 ? ilvl.toFixed(1) : ''} iLvl</span>
             </div>
             <div style="display: flex; gap: 6px;">
-              <button type="button" class="btn-add-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+              <button type="button" class="btn-add-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(140, 192, 132, 0.15); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
                 ➕ Ajouter
               </button>
-              <button type="button" class="btn-load-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+              <button type="button" class="btn-load-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(232, 230, 220, 0.15); border: 1px solid rgba(232, 230, 220, 0.4); color: #E0A43A; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
                 Charger
               </button>
             </div>
@@ -6992,9 +6992,9 @@
       html += `
         <div class="user-roster-card-item">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <img class="user-roster-avatar" src="${avatarSrc}" data-fallback="${classIconSrc}" onerror="this.onerror=null; this.src=this.getAttribute('data-fallback');" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #0f172a; border: 1px solid rgba(255,255,255,0.2);">
+            <img class="user-roster-avatar" src="${avatarSrc}" data-fallback="${classIconSrc}" onerror="this.onerror=null; this.src=this.getAttribute('data-fallback');" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #121310; border: 1px solid rgba(232, 230, 220,0.2);">
             <div>
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #fff;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #E8E6DC;">
                 <img class="chip-class-sigil" src="${classIconSrc}" alt="${safeClass}" title="${safeClass}">
                 <span>${safeName}</span>
               </div>
@@ -7004,10 +7004,10 @@
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" class="btn-select-roster-char" data-id="${cId}" style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.4); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+            <button type="button" class="btn-select-roster-char" data-id="${cId}" style="background: rgba(232, 230, 220,0.15); border: 1px solid rgba(232, 230, 220,0.4); color: #E0A43A; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
               Charger
             </button>
-            <button type="button" class="btn-delete-roster-char" data-id="${cId}" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.4); color: #fb7185; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+            <button type="button" class="btn-delete-roster-char" data-id="${cId}" style="background: rgba(224, 122, 99,0.15); border: 1px solid rgba(224, 122, 99,0.4); color: #E07A63; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
               🗑️
             </button>
           </div>
@@ -7825,7 +7825,7 @@
     if (dom.roleBadge) {
       dom.roleBadge.textContent = newRole === 'support' ? 'Modèle Support' : 'Modèle DPS';
       dom.roleBadge.style.color = newRole === 'support' ? 'var(--support-color)' : 'var(--dps-color)';
-      dom.roleBadge.style.borderColor = newRole === 'support' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+      dom.roleBadge.style.borderColor = newRole === 'support' ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
     }
     
     updatePredictorView();
@@ -8081,7 +8081,7 @@
           if (customBg) {
             dom.scoreBrGrade.className = 'score-grade-badge';
             dom.scoreBrGrade.style.backgroundColor = customBg;
-            dom.scoreBrGrade.style.color = customFg || '#ffffff';
+            dom.scoreBrGrade.style.color = customFg || '#E8E6DC';
           } else {
             dom.scoreBrGrade.style.backgroundColor = '';
             dom.scoreBrGrade.style.color = '';
@@ -8120,24 +8120,24 @@
         const agScoreStr = calcGrade.toFixed(1);
 
         const ladder = [
-          ["S+", 96.1, "grade-s-plus", "#f59e0b"],
-          ["S", 93.3, "grade-s", "#0284c7"],
-          ["S-", 90.0, "grade-s", "#0284c7"],
-          ["A+", 86.7, "grade-a", "#7c3aed"],
-          ["A", 83.3, "grade-a", "#7c3aed"],
-          ["A-", 80.0, "grade-a", "#7c3aed"],
-          ["B+", 76.7, "grade-b", "#2563eb"],
-          ["B", 73.3, "grade-b", "#2563eb"],
-          ["B-", 70.0, "grade-b", "#2563eb"],
-          ["C+", 66.7, "grade-c", "#059669"],
-          ["C", 63.3, "grade-c", "#059669"],
-          ["C-", 60.0, "grade-c", "#059669"],
-          ["D", 50.0, "grade-d", "#475569"]
+          ["S+", 96.1, "grade-s-plus", "#E0A43A"],
+          ["S", 93.3, "grade-s", "#2A2B24"],
+          ["S-", 90.0, "grade-s", "#2A2B24"],
+          ["A+", 86.7, "grade-a", "#CFCBBD"],
+          ["A", 83.3, "grade-a", "#CFCBBD"],
+          ["A-", 80.0, "grade-a", "#CFCBBD"],
+          ["B+", 76.7, "grade-b", "#2A2B24"],
+          ["B", 73.3, "grade-b", "#2A2B24"],
+          ["B-", 70.0, "grade-b", "#2A2B24"],
+          ["C+", 66.7, "grade-c", "#8CC084"],
+          ["C", 63.3, "grade-c", "#8CC084"],
+          ["C-", 60.0, "grade-c", "#8CC084"],
+          ["D", 50.0, "grade-d", "#6A675C"]
         ];
 
         let agLetter = "B+";
         let agClass = "grade-b";
-        let agColor = "#2563eb";
+        let agColor = "#2A2B24";
         for (const [r, cut, cls, col] of ladder) {
           if (calcGrade >= cut) {
             agLetter = r;
@@ -8151,7 +8151,7 @@
           dom.scoreAgGrade.textContent = agLetter;
           dom.scoreAgGrade.className = 'score-grade-badge ' + agClass;
           dom.scoreAgGrade.style.backgroundColor = agColor;
-          dom.scoreAgGrade.style.color = '#ffffff';
+          dom.scoreAgGrade.style.color = '#E8E6DC';
         }
         if (dom.scoreAgScore) dom.scoreAgScore.textContent = agScoreStr;
         if (dom.scoreAgPct) {
@@ -9062,7 +9062,7 @@
 
           const totalGoldEl = chip.querySelector('.raid-chip-gold');
           if (totalGoldEl) {
-            totalGoldEl.style.color = raidEarned > 0 ? '#34d399' : '#fbbf24';
+            totalGoldEl.style.color = raidEarned > 0 ? '#8CC084' : '#E0A43A';
             totalGoldEl.textContent = raidEarned > 0 ? `${raidEarned.toLocaleString()} g` : `+${(modeDef.total - (cr.chest ? modeDef.chest : 0)).toLocaleString()} g`;
           }
         }
@@ -9084,7 +9084,7 @@
       const goldCur = card.querySelector('.char-gold-cur');
       if (goldCur) {
         goldCur.textContent = charEarnedGold.toLocaleString();
-        goldCur.style.color = charEarnedGold > 0 ? '#34d399' : '#fbbf24';
+        goldCur.style.color = charEarnedGold > 0 ? '#8CC084' : '#E0A43A';
       }
       const goldMax = card.querySelector('.char-gold-max');
       if (goldMax) {
@@ -12188,7 +12188,7 @@
       } else if (l === lineCps.tMainLine || l.isMainStat) {
         if (lineCps.mainDiff < 0) {
           const lead = Math.abs(lineCps.mainDiff).toLocaleString('fr-FR');
-          pillHtml = `<span class="line-parity-pill" style="color:#60a5fa;" title="${isEn ? 'Counted in Main Stat & Base AP row' : 'Comptabilisé dans la ligne Stat Principale & Attaque Base'}">-${lead} ${isEn ? 'vs Player' : 'vs Joueur'}</span>`;
+          pillHtml = `<span class="line-parity-pill" style="color:#9CB4C6;" title="${isEn ? 'Counted in Main Stat & Base AP row' : 'Comptabilisé dans la ligne Stat Principale & Attaque Base'}">-${lead} ${isEn ? 'vs Player' : 'vs Joueur'}</span>`;
         } else if (lineCps.mainDiff > 0) {
           const lead = lineCps.mainDiff.toLocaleString('fr-FR');
           pillHtml = `<span class="line-parity-pill" title="${isEn ? 'Counted in Base AP row' : 'Comptabilisé dans Attaque Base'}">+${lead} ${isEn ? '(Base AP)' : '(Attaque Base)'}</span>`;
@@ -12220,7 +12220,7 @@
         if (pair && pair.pP && Math.abs(pair.tP.mult - pair.pP.mult) < 0.1) {
           pillHtml = `<span class="line-parity-pill">${isEn ? 'BiS (Parity)' : 'Parité BiS'}</span>`;
         } else if (pair && pair.cp > 0) {
-          pillHtml = `<span class="line-parity-pill" style="color:#f59e0b;" title="${isEn ? 'Target has higher perk tier' : 'Cible possède un palier supérieur'}">${isEn ? 'Tier Upgrade Avail.' : 'Palier Supérieur Dispo'}</span>`;
+          pillHtml = `<span class="line-parity-pill" style="color:#E0A43A;" title="${isEn ? 'Target has higher perk tier' : 'Cible possède un palier supérieur'}">${isEn ? 'Tier Upgrade Avail.' : 'Palier Supérieur Dispo'}</span>`;
         }
       } else if (l.isDefensive) {
         pillHtml = `<span class="line-parity-pill" style="color:var(--text-muted);">${isEn ? 'Survival (0% Buff CP)' : 'Survie (0% Buff CP)'}</span>`;
@@ -12255,7 +12255,7 @@
         <td><strong>${isEn ? 'Main Stat' : 'Statistique Principale'} (${getMainStatName(pClassName, isEn)})</strong></td>
         <td>${lineCps.pMainLine ? escapeHtml(lineCps.pMainLine.text) : '—'}</td>
         <td>${lineCps.tMainLine ? escapeHtml(lineCps.tMainLine.text) : '—'}</td>
-        <td class="col-cp-gain" style="${lineCps.mainDiff < 0 ? 'color:#60a5fa;' : 'color:var(--text-muted);'}">
+        <td class="col-cp-gain" style="${lineCps.mainDiff < 0 ? 'color:#9CB4C6;' : 'color:var(--text-muted);'}">
           ${lineCps.mainDiff < 0 
             ? `+${Math.abs(lineCps.mainDiff).toLocaleString('fr-FR')} ${isEn ? 'Player Lead' : 'Avance Joueur'} <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>` 
             : `= 0 CP <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>`}
@@ -12271,7 +12271,7 @@
         : (pair.defLine ? `${escapeHtml(pair.defLine.text)} <em style="font-size:10.5px; color:var(--text-muted);">(${isEn ? 'Survival 0% Buff CP' : 'Survie 0% Buff CP'})</em>` : (isEn ? 'Empty Slot' : 'Emplacement Libre'));
       const targetDesc = escapeHtml(pair.tP.text);
       const cpText = pair.cp > 0 
-        ? `<strong style="color:#34d399;">+${pair.cp} CP</strong> <em style="font-size:10.5px; font-weight:normal; display:block; color:#34d399;">(+${pair.gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'})</em>` 
+        ? `<strong style="color:#8CC084;">+${pair.cp} CP</strong> <em style="font-size:10.5px; font-weight:normal; display:block; color:#8CC084;">(+${pair.gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'})</em>` 
         : `<span style="color:var(--text-muted);">= 0 CP (${isEn ? 'BiS Parity' : 'Parité BiS'})</span>`;
 
       tableRowsHtml += `
@@ -12328,7 +12328,7 @@
               <span>🔮</span>
               <strong>${isEn ? 'Individual T4 Bracelet & Passive Rolls Breakdown' : 'Détail du Bracelet T4 & Lignes de Passifs'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.35); color: #c084fc;">
+            <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #CFCBBD;">
               ${cpImpact > 0 ? `+${cpImpact} CP ${isEn ? 'gap' : 'd\'écart global'}` : (isEn ? 'Optimized parity' : 'Parité optimale')}
             </span>
           </div>
@@ -12346,7 +12346,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🔮</span>
                 <strong>${isEn ? 'Your T4 Bracelet' : 'Votre Bracelet T4'}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(168, 85, 247, 0.2); color: #d8b4fe; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #CFCBBD; margin-left: 6px;">
                   ${isEn ? 'Ancient / Relic' : 'Relique T4'}
                 </span>
               </div>
@@ -12372,7 +12372,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${isEn ? 'Target Reference' : 'Référence Cible'}
                 </span>
               </div>
@@ -12583,7 +12583,7 @@
       const leadPct = Number((s.valPct - tStat.valPct).toFixed(2));
       const leadCp = leadPct > 0.05 ? Math.round(leadPct * cpPerPct) : 0;
       const leadBadge = leadCp > 0 
-        ? `<span class="line-cp-pill" style="background: rgba(96, 165, 250, 0.2); border-color: rgba(96, 165, 250, 0.4); color: #60a5fa;">+${leadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>` 
+        ? `<span class="line-cp-pill" style="background: rgba(156, 180, 198, 0.2); border-color: rgba(156, 180, 198, 0.4); color: #9CB4C6;">+${leadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>` 
         : '';
       return `
         <div class="acc-line-badge high">
@@ -12616,9 +12616,9 @@
 
       let cpCell = '<span style="color:var(--text-muted);">= 0 CP</span>';
       if (lineCp > 0) {
-        cpCell = `<strong style="color:#34d399;">+${lineCp} CP</strong>`;
+        cpCell = `<strong style="color:#8CC084;">+${lineCp} CP</strong>`;
       } else if (leadCp > 0) {
-        cpCell = `<span style="color:#60a5fa; font-weight:600;">+${leadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>`;
+        cpCell = `<span style="color:#9CB4C6; font-weight:600;">+${leadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>`;
       }
 
       return `
@@ -12665,7 +12665,7 @@
               <span>✨</span>
               <strong>${isEn ? 'Ark Grid Astrogems & Substats Breakdown' : 'Détail des Astrogemmes & Sous-statistiques d\'Ark Grid'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: #fbbf24;">
+            <span class="acc-breakdown-tag" style="background: rgba(224, 164, 58, 0.15); border-color: rgba(224, 164, 58, 0.35); color: #E0A43A;">
               ${cpImpact > 0 ? `+${cpImpact} CP ${isEn ? 'gap' : 'd\'écart global'}` : (isEn ? 'Optimized parity' : 'Parité optimale')}
             </span>
           </div>
@@ -12683,7 +12683,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">✨</span>
                 <strong>${isEn ? 'Your Astrogems' : 'Vos Astrogemmes'}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(245, 158, 11, 0.2); color: #fde68a; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(224, 164, 58, 0.2); color: #F0C77A; margin-left: 6px;">
                   ${isEn ? 'Ark Grid (24 Slots)' : 'Grille d\'Ark (24 Slots)'}
                 </span>
               </div>
@@ -12705,7 +12705,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${isEn ? 'Target Reference' : 'Référence Cible'}
                 </span>
               </div>
@@ -13062,7 +13062,7 @@
               <span>💪</span>
               <strong>${isEn ? 'Main Stat & Base Attack Power (Base AP) Breakdown' : 'Détail de la Stat Principale & Puissance d\'Attaque de Base (Base AP)'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.35); color: #fb923c;">
+            <span class="acc-breakdown-tag" style="background: rgba(224, 164, 58, 0.15); border-color: rgba(224, 164, 58, 0.35); color: #E0A43A;">
               ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Optimized parity' : 'Parité optimale')}
             </span>
           </div>
@@ -13103,7 +13103,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">👤</span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${(player.ilvl || 1750).toFixed(2)} iLvl
                 </span>
               </div>
@@ -13122,7 +13122,7 @@
               </div>
               <div class="acc-line-badge fixed">
                 <span>⚡ <strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.baseAtk)} AP</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.baseAtk)} AP</span>
               </div>
             </div>
           </div>
@@ -13133,7 +13133,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${(target && target.ilvl ? target.ilvl.toFixed(2) : '1759.17')} iLvl
                 </span>
               </div>
@@ -13159,7 +13159,7 @@
               <div class="acc-line-badge fixed">
                 <span>⚡ <strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.baseAtk)} AP</span>
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.baseAtk)} AP</span>
                   ${dBaseAtk > 0 ? `<span class="line-cp-pill">+${formatNumber(dBaseAtk)} AP</span>` : ''}
                 </div>
               </div>
@@ -13198,7 +13198,7 @@
               <tr>
                 <td><strong>⚡ ${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque de Base'}</strong></td>
                 <td><strong>${formatNumber(p.baseAtk)} AP</strong></td>
-                <td><strong style="color:#34d399;">${formatNumber(t.baseAtk)} AP</strong></td>
+                <td><strong style="color:#8CC084;">${formatNumber(t.baseAtk)} AP</strong></td>
                 <td class="col-cp-gain"><strong>${dBaseAtk > 0 ? `+${formatNumber(dBaseAtk)} AP` : `${formatNumber(dBaseAtk)} AP`}</strong></td>
               </tr>
               <tr>
@@ -13219,7 +13219,7 @@
 
         <!-- 4 Leviers & Facteurs d'Écart -->
         <div style="margin-top: 14px;">
-          <div style="font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <div style="font-size:13px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <span>🔍</span> <span>${isEn ? 'Where does this +' + cpImpact + ' CP difference come from?' : 'D\'où vient cette différence de +' + cpImpact + ' CP ?'}</span>
           </div>
           <div class="stats-factor-grid">
@@ -13243,10 +13243,10 @@
         </div>
 
         <!-- Recommandation Finale -->
-        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#f97316;">
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#E0A43A;">
           <span class="verdict-icon">🎯</span>
           <div class="verdict-content">
-            <strong style="color:#fb923c;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <strong style="color:#E0A43A;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
               ? `To bridge the +${cpImpact} CP gap: prioritize honing your T4 weapon (each tier above +20 gives an exponential leap in Weapon Power), advance your T4 armor levels to increase your Main Stat pool, complete remaining Advanced Honing tiers (+40), and collect missing permanent stat potions from your Codex (Alt+D).`
               : `Pour combler les +${cpImpact} CP de retard : prioriser l'affinage de votre Arme T4 (chaque palier au-dessus de +20 apporte un saut exponentiel de Puissance d'Arme), monter vos pièces d'armure T4 (source majeure de Stat Principale), compléter les paliers d'Affinage Avancé (+40), et récupérer les potions permanentes de statistiques manquantes dans votre Codex (Alt+D).`}</span>
@@ -13307,7 +13307,7 @@
               <span>🗡️</span>
               <strong>${isEn ? 'T4 Weapon Honing, Quality & Gear Tier Breakdown' : 'Détail de l\'Affinage de l\'Arme T4, Qualité & Palier d\'Équipement'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171;">
+            <span class="acc-breakdown-tag" style="background: rgba(224, 122, 99, 0.15); border-color: rgba(224, 122, 99, 0.35); color: #E07A63;">
               ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
             </span>
           </div>
@@ -13319,7 +13319,7 @@
         </div>
 
         <!-- Bannière Pédagogique : Transfert de Stuff Serka & Décalage d\'Affinage -->
-        <div class="stats-educational-banner baseatk" style="border-left-color: #38bdf8;">
+        <div class="stats-educational-banner baseatk" style="border-left-color: #E0A43A;">
           <span class="edu-icon">💡</span>
           <div class="edu-content">
             <strong>${isEn ? 'Understanding T4 Weapon Tiers: Aegir (Tier 1) vs Serka (Tier 2)' : 'Comprendre les Paliers d\'Arme T4 : Aegir (Palier 1) vs Serka (Palier 2)'}</strong>
@@ -13344,7 +13344,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">👤</span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${p.ilvlPiece.toFixed(0)} iLvl Arme
                 </span>
               </div>
@@ -13367,7 +13367,7 @@
               </div>
               <div class="acc-line-badge low">
                 <span>⚡ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.weaponPower)} WP</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.weaponPower)} WP</span>
               </div>
             </div>
           </div>
@@ -13378,7 +13378,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${t.ilvlPiece.toFixed(0)} iLvl Arme
                 </span>
               </div>
@@ -13389,11 +13389,11 @@
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
                 <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${tTierLabel}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${tTierLabel}</span>
               </div>
               <div class="acc-line-badge mid">
                 <span>🗡️ <strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">+${t.wLvl} ${t.isSerka ? `(Éq. +${t.effWLvl})` : ''}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">+${t.wLvl} ${t.isSerka ? `(Éq. +${t.effWLvl})` : ''}</span>
               </div>
               <div class="acc-line-badge fixed">
                 <span>⭐ <strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
@@ -13401,7 +13401,7 @@
               </div>
               <div class="acc-line-badge low">
                 <span>⚡ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.weaponPower)} WP</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.weaponPower)} WP</span>
               </div>
             </div>
           </div>
@@ -13422,19 +13422,19 @@
               <tr>
                 <td><strong>🛡️ ${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
                 <td>${pTierLabel}</td>
-                <td><strong style="color:#34d399;">${tTierLabel}</strong></td>
+                <td><strong style="color:#8CC084;">${tTierLabel}</strong></td>
                 <td class="col-cp-gain">${t.isSerka && !p.isSerka ? (isEn ? 'Tier 2 Serka Shift' : 'Transfert Serka Palier 2') : (isEn ? 'Same Tier' : 'Même Palier')}</td>
               </tr>
               <tr>
                 <td><strong>🗡️ ${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
                 <td>+${p.effWLvl} ${p.isSerka ? `(Affiché +${p.wLvl})` : ''}</td>
-                <td><strong style="color:#34d399;">+${t.effWLvl} ${t.isSerka ? `(Affiché +${t.wLvl})` : ''}</strong></td>
+                <td><strong style="color:#8CC084;">+${t.effWLvl} ${t.isSerka ? `(Affiché +${t.wLvl})` : ''}</strong></td>
                 <td class="col-cp-gain">${dLvl > 0 ? `+${dLvl} crans d'écart` : (dLvl < 0 ? `${dLvl} crans` : '= 0')}</td>
               </tr>
               <tr>
                 <td><strong>⚡ ${isEn ? 'Raw Weapon Power' : 'Puissance d\'Arme Brute'}</strong></td>
                 <td>${formatNumber(p.weaponPower)} WP</td>
-                <td><strong style="color:#34d399;">${formatNumber(t.weaponPower)} WP</strong></td>
+                <td><strong style="color:#8CC084;">${formatNumber(t.weaponPower)} WP</strong></td>
                 <td class="col-cp-gain"><strong>${dWp > 0 ? `+${formatNumber(dWp)} WP` : `${formatNumber(dWp)} WP`}</strong></td>
               </tr>
               <tr>
@@ -13446,7 +13446,7 @@
               <tr>
                 <td><strong>📈 ${isEn ? 'Total Weapon System Score' : 'Score Multiplicateur d\'Arme'}</strong></td>
                 <td>+${p.bonusPct.toFixed(2)}%</td>
-                <td><strong style="color:#34d399;">+${t.bonusPct.toFixed(2)}%</strong></td>
+                <td><strong style="color:#8CC084;">+${t.bonusPct.toFixed(2)}%</strong></td>
                 <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
               </tr>
             </tbody>
@@ -13460,10 +13460,10 @@
         </div>
 
         <!-- Recommandation Finale -->
-        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#ef4444;">
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#E07A63;">
           <span class="verdict-icon">🎯</span>
           <div class="verdict-content">
-            <strong style="color:#f87171;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <strong style="color:#E07A63;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
               ? `To bridge this +${cpImpact} CP gap: prioritize advancing to the Serka Shadow Raid (Hard 1730+ / Nightmare 1740+) to craft and transfer your weapon into Tier 2 Advanced Ancient (+45 base iLvl leap and +30k+ Weapon Power). If already in Serka, hone your weapon beyond +15.`
               : `Pour combler ce retard de +${cpImpact} CP : prioriser l'accès au Raid Shadow Serka (Hard 1730+ / Nightmare 1740+) pour forger et transférer votre arme vers le palier Ancien Avancé (gain immédiat de +45 iLvl de base et +30k+ de Puissance d'Arme). Si déjà transféré, continuer l'affinage au-delà de +15.`}</span>
@@ -13527,7 +13527,7 @@
               <span>🛡️</span>
               <strong>${isEn ? 'T4 Armors Honing, Main Stat & Gear Tier Breakdown' : 'Détail de l\'Affinage des Armures T4, Stat Principale & Palier d\'Équipement'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.35); color: #38bdf8;">
+            <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #E0A43A;">
               ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
             </span>
           </div>
@@ -13539,7 +13539,7 @@
         </div>
 
         <!-- Bannière Pédagogique : Armures Serka & Stat Principale -->
-        <div class="stats-educational-banner baseatk" style="border-left-color: #38bdf8;">
+        <div class="stats-educational-banner baseatk" style="border-left-color: #E0A43A;">
           <span class="edu-icon">💡</span>
           <div class="edu-content">
             <strong>${isEn ? 'Understanding T4 Armors: The Bedrock of Your Main Stat' : 'Comprendre les Armures T4 : Le Socle de votre Stat Principale'}</strong>
@@ -13564,7 +13564,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">👤</span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${p.ilvlPiece.toFixed(0)} iLvl Armures
                 </span>
               </div>
@@ -13587,7 +13587,7 @@
               </div>
               <div class="acc-line-badge low">
                 <span>❤️ <strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.maxHp)}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.maxHp)}</span>
               </div>
             </div>
           </div>
@@ -13598,7 +13598,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${t.ilvlPiece.toFixed(0)} iLvl Armures
                 </span>
               </div>
@@ -13609,19 +13609,19 @@
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
                 <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${tTierLabel}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${tTierLabel}</span>
               </div>
               <div class="acc-line-badge mid">
                 <span>⚔️ <strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">+${t.avgArmor} ${t.isSerka ? `(Éq. +${t.effAvgArmor})` : ''}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">+${t.avgArmor} ${t.isSerka ? `(Éq. +${t.effAvgArmor})` : ''}</span>
               </div>
               <div class="acc-line-badge fixed">
                 <span>💪 <strong>${escapeHtml(t.mainStatName)}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.mainStat)}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.mainStat)}</span>
               </div>
               <div class="acc-line-badge low">
                 <span>❤️ <strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.maxHp)}</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.maxHp)}</span>
               </div>
             </div>
           </div>
@@ -13642,25 +13642,25 @@
               <tr>
                 <td><strong>🛡️ ${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
                 <td>${pTierLabel}</td>
-                <td><strong style="color:#34d399;">${tTierLabel}</strong></td>
+                <td><strong style="color:#8CC084;">${tTierLabel}</strong></td>
                 <td class="col-cp-gain">${t.isSerka && !p.isSerka ? (isEn ? 'Tier 2 Serka Shift' : 'Transfert Serka Palier 2') : (isEn ? 'Same Tier' : 'Même Palier')}</td>
               </tr>
               <tr>
                 <td><strong>⚔️ ${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
                 <td>+${p.effAvgArmor} ${p.isSerka ? `(Affiché +${p.avgArmor})` : ''}</td>
-                <td><strong style="color:#34d399;">+${t.effAvgArmor} ${t.isSerka ? `(Affiché +${t.avgArmor})` : ''}</strong></td>
+                <td><strong style="color:#8CC084;">+${t.effAvgArmor} ${t.isSerka ? `(Affiché +${t.avgArmor})` : ''}</strong></td>
                 <td class="col-cp-gain">${dLvl > 0 ? `+${dLvl} crans d'écart` : (dLvl < 0 ? `${dLvl} crans` : '= 0')}</td>
               </tr>
               <tr>
                 <td><strong>💪 ${isEn ? 'Main Stat' : 'Stat Principale'} (${escapeHtml(p.mainStatName)})</strong></td>
                 <td>${formatNumber(p.mainStat)}</td>
-                <td><strong style="color:#34d399;">${formatNumber(t.mainStat)}</strong></td>
+                <td><strong style="color:#8CC084;">${formatNumber(t.mainStat)}</strong></td>
                 <td class="col-cp-gain"><strong>${dMainStat > 0 ? `+${formatNumber(dMainStat)} pts` : `${formatNumber(dMainStat)} pts`}</strong></td>
               </tr>
               <tr>
                 <td><strong>📈 ${isEn ? 'Total Armor System Score' : 'Score Multiplicateur d\'Armure'}</strong></td>
                 <td>+${p.bonusPct.toFixed(2)}%</td>
-                <td><strong style="color:#34d399;">+${t.bonusPct.toFixed(2)}%</strong></td>
+                <td><strong style="color:#8CC084;">+${t.bonusPct.toFixed(2)}%</strong></td>
                 <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
               </tr>
             </tbody>
@@ -13674,10 +13674,10 @@
         </div>
 
         <!-- Recommandation Finale -->
-        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#0ea5e9;">
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#E0A43A;">
           <span class="verdict-icon">🎯</span>
           <div class="verdict-content">
-            <strong style="color:#38bdf8;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <strong style="color:#E0A43A;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
               ? `To bridge this +${cpImpact} CP gap: hone your Aegir armors toward +20 to qualify for the Serka raid transfer, or craft Serka armors (Hard/Nightmare) for massive Main Stat leaps. Completing Advanced Honing (+40) also heavily inflates your defensive and main stat pool.`
               : `Pour combler ce retard de +${cpImpact} CP : monter vos armures Aegir vers le palier +20 pour préparer le transfert Serka, ou forger les pièces d'armure Serka (Hard/Nightmare) pour débloquer des gains massifs de Stat Principale. Finaliser l'Affinage Avancé (+40) renforce également massivement vos caractéristiques.`}</span>
@@ -13707,7 +13707,7 @@
               <span>🎯</span>
               <strong>${isEn ? 'Combat Stats Breakdown (Crit / Spec / Swiftness)' : 'Détail des Caractéristiques de Combat (Crit / Spé / Rapide)'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399;">
+            <span class="acc-breakdown-tag" style="background: rgba(140, 192, 132, 0.15); border-color: rgba(140, 192, 132, 0.35); color: #8CC084;">
               ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Optimized parity' : 'Parité optimale')}
             </span>
           </div>
@@ -13752,7 +13752,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">👤</span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${formatNumber(p.totalPts)} pts
                 </span>
               </div>
@@ -13777,7 +13777,7 @@
               ` : ''}
               <div class="acc-line-badge fixed">
                 <span>📊 <strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#38bdf8;">${formatNumber(p.totalPts)} pts</span>
+                <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.totalPts)} pts</span>
               </div>
             </div>
           </div>
@@ -13788,7 +13788,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${formatNumber(t.totalPts)} pts
                 </span>
               </div>
@@ -13823,7 +13823,7 @@
               <div class="acc-line-badge fixed">
                 <span>📊 <strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">${formatNumber(t.totalPts)} pts</span>
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.totalPts)} pts</span>
                   ${deltaPts > 0 ? `<span class="line-cp-pill">+${deltaPts} pts</span>` : ''}
                 </div>
               </div>
@@ -13862,7 +13862,7 @@
               <tr>
                 <td><strong>📊 ${isEn ? 'Total Combined Points' : 'Total Points Combinés'}</strong></td>
                 <td><strong>${formatNumber(p.totalPts)} pts</strong></td>
-                <td><strong style="color:#34d399;">${formatNumber(t.totalPts)} pts</strong></td>
+                <td><strong style="color:#8CC084;">${formatNumber(t.totalPts)} pts</strong></td>
                 <td class="col-cp-gain"><strong>${deltaPts > 0 ? `+${deltaPts} pts` : `${deltaPts} pts`}</strong></td>
               </tr>
               <tr>
@@ -13883,7 +13883,7 @@
 
         <!-- 3 Raisons de l'écart de points -->
         <div style="margin-top: 14px;">
-          <div style="font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <div style="font-size:13px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <span>🔍</span> <span>${isEn ? 'Why does the reference profile have +' + deltaPts + ' more Combat Stat points?' : 'Pourquoi la référence a-t-elle +' + deltaPts + ' points de Combat Stats en plus ?'}</span>
           </div>
           <div class="stats-factor-grid">
@@ -13903,10 +13903,10 @@
         </div>
 
         <!-- Recommandation Finale -->
-        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#10b981;">
+        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#8CC084;">
           <span class="verdict-icon">🎯</span>
           <div class="verdict-content">
-            <strong style="color:#34d399;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
+            <strong style="color:#8CC084;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
               ? `To bridge the +${cpImpact} CP gap: prioritize acquiring high-quality (85-100) T4 accessories on your main stats (Swiftness/Spec), roll a bracelet with dual high combat stat lines, and verify missing permanent combat stat potions in your Codex (Alt+D).`
               : `Pour combler les +${cpImpact} CP d'écart : viser des bijoux T4 de haute qualité (85 à 100) sur vos stats maîtresses (Rapidité / Spécialisation), chercher un bracelet avec double roll de stats de combat élevées, et vérifier les potions permanentes de combat stats non validées dans votre Codex (Alt+D).`}</span>
@@ -13938,7 +13938,7 @@
     const pEngsHtml = pEngs.map(e => `
       <div class="acc-line-badge high">
         <span>📜 <strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
-        ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(56,189,248,0.2); color:#38bdf8;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
+        ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(232, 230, 220,0.2); color:#E0A43A;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
       </div>
     `).join('');
 
@@ -13949,8 +13949,8 @@
       return `
         <div class="acc-line-badge high">
           <span>📜 <strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
-          ${isDifferentEng ? `<span class="line-cp-pill" style="background:rgba(234,179,8,0.2); border-color:rgba(234,179,8,0.4); color:#facc15;">${isEn ? 'Diff Engraving' : 'Gravure Différente'}</span>` : ''}
-          ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(52,211,153,0.2); color:#34d399;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
+          ${isDifferentEng ? `<span class="line-cp-pill" style="background:rgba(234,179,8,0.2); border-color:rgba(234,179,8,0.4); color:#E0A43A;">${isEn ? 'Diff Engraving' : 'Gravure Différente'}</span>` : ''}
+          ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(140, 192, 132,0.2); color:#8CC084;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
         </div>
       `;
     }).join('');
@@ -13983,8 +13983,8 @@
               </div>
             </td>
             <td>${escapeHtml(pName)}</td>
-            <td><strong style="color:#facc15;">${escapeHtml(tName)}</strong></td>
-            <td class="col-cp-gain" style="color:#34d399;"><strong>${gainStr}</strong></td>
+            <td><strong style="color:#E0A43A;">${escapeHtml(tName)}</strong></td>
+            <td class="col-cp-gain" style="color:#8CC084;"><strong>${gainStr}</strong></td>
           </tr>
         `;
       }
@@ -14012,7 +14012,7 @@
             </td>
             <td>+${p.valuePct.toFixed(2)}%${pStone}</td>
             <td>+${t.valuePct.toFixed(2)}%${tStone}</td>
-            <td class="col-cp-gain" style="color:${gain > 0 ? '#34d399' : '#60a5fa'};"><strong>${gainStr}</strong></td>
+            <td class="col-cp-gain" style="color:${gain > 0 ? '#8CC084' : '#9CB4C6'};"><strong>${gainStr}</strong></td>
           </tr>
         `;
       }
@@ -14040,7 +14040,7 @@
               <span>📜</span>
               <strong>${isEn ? 'T4 Relic Engravings & Ability Stone Breakdown' : 'Détail des Gravures Reliques T4 & Pierre de Naissance'}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.35); color: #38bdf8;">
+            <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #E0A43A;">
               ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaTotal.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Optimized parity' : 'Parité optimale')}
             </span>
           </div>
@@ -14058,7 +14058,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">👤</span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   5 T4 Relic
                 </span>
               </div>
@@ -14080,7 +14080,7 @@
               <div class="acc-piece-name">
                 <span class="acc-piece-icon">🎯</span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
-                <span class="acc-line-tier-tag" style="background: rgba(52, 211, 153, 0.2); color: #34d399; margin-left: 6px;">
+                <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${isEn ? 'Target Reference' : 'Référence Cible'}
                 </span>
               </div>
@@ -14124,7 +14124,7 @@
           </table>
         </div>
 
-        <div class="astrogems-verdict-banner" style="border-left-color:#38bdf8;">
+        <div class="astrogems-verdict-banner" style="border-left-color:#E0A43A;">
           <span class="verdict-icon">💡</span>
           <div class="verdict-content">
             ${explanationText}
@@ -14408,7 +14408,7 @@
     const groupThemes = {
       sun: {
         icon: '☀️',
-        color: '#f59e0b',
+        color: '#E0A43A',
         nameFr: 'Cœurs Soleil (Ordre & Chaos)',
         nameEn: 'Sun Cores (Order & Chaos)',
         statFr: 'Buff Power (Dégâts Allié & Dégâts)',
@@ -14416,7 +14416,7 @@
       },
       moon: {
         icon: '🌙',
-        color: '#818cf8',
+        color: '#CFCBBD',
         nameFr: 'Cœurs Lune (Ordre & Chaos)',
         nameEn: 'Moon Cores (Order & Chaos)',
         statFr: 'Buff Power (Boucliers & Soins)',
@@ -14424,7 +14424,7 @@
       },
       star: {
         icon: '⭐',
-        color: '#c084fc',
+        color: '#CFCBBD',
         nameFr: 'Cœurs Étoile (Ordre & Chaos)',
         nameEn: 'Star Cores (Order & Chaos)',
         statFr: 'DPS Net & CDR Compétences',
@@ -14447,8 +14447,8 @@
               <span>${theme.icon}</span>
               <strong>${isEn ? `Ark Grid: ${titleGroup} Breakdown` : `Détail de la Grille d'Ark : ${titleGroup}`}</strong>
             </div>
-            <span class="acc-breakdown-tag" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.35); color: ${theme.color};">
-              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaMult.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (deltaMult < 0 ? `<span style="color:#60a5fa;">+${Math.abs(Math.round(deltaMult * (player.cp || 3200) / 100))} CP (${isEn ? 'Lead' : 'Avance'})</span>` : (isEn ? 'Parity' : 'Parité'))}
+            <span class="acc-breakdown-tag" style="background: rgba(224, 164, 58, 0.15); border-color: rgba(224, 164, 58, 0.35); color: ${theme.color};">
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaMult.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (deltaMult < 0 ? `<span style="color:#9CB4C6;">+${Math.abs(Math.round(deltaMult * (player.cp || 3200) / 100))} CP (${isEn ? 'Lead' : 'Avance'})</span>` : (isEn ? 'Parity' : 'Parité'))}
             </span>
           </div>
           <div class="acc-breakdown-subtitle">
@@ -14467,7 +14467,7 @@
                 <span class="acc-inspect-slot-name">${isEn ? 'My Character' : 'Mon Personnage'}</span>
                 <span class="acc-inspect-item-name">${escapeHtml(player.name)}</span>
               </div>
-              <span class="acc-inspect-ilvl" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+              <span class="acc-inspect-ilvl" style="background: rgba(232, 230, 220, 0.15); color: #E0A43A; border: 1px solid rgba(232, 230, 220, 0.3);">
                 ${p.highestTier > 0 ? (isEn ? `Tier ${p.highestTier}P` : `Palier ${p.highestTier}P`) : 'Standard'}
               </span>
             </div>
@@ -14500,7 +14500,7 @@
                 <span class="acc-inspect-slot-name">${isEn ? 'Benchmark Target' : 'Profil Référence'}</span>
                 <span class="acc-inspect-item-name">${escapeHtml(target.name)}</span>
               </div>
-              <span class="acc-inspect-ilvl" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+              <span class="acc-inspect-ilvl" style="background: rgba(140, 192, 132, 0.15); color: #8CC084; border: 1px solid rgba(140, 192, 132, 0.3);">
                 ${t.highestTier > 0 ? (isEn ? `Tier ${t.highestTier}P` : `Palier ${t.highestTier}P`) : 'Standard'}
               </span>
             </div>
@@ -14522,7 +14522,7 @@
               <div class="acc-line-badge fixed">
                 <span>✨ <strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-family:var(--font-mono); font-weight:700; color:#34d399;">+${t.totalMult.toFixed(2)}%</span>
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">+${t.totalMult.toFixed(2)}%</span>
                   ${deltaMult > 0.05 ? `<span class="line-cp-pill">+${deltaMult.toFixed(2)}%</span>` : ''}
                 </div>
               </div>
@@ -14549,26 +14549,26 @@
               <tr>
                 <td><strong>☀️ ${isEn ? `Order ${p.groupLabel} Core` : `Cœur d'Ordre ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'}</span></td>
                 <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.order.specificName || p.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.order.grade} ${isEn ? 'Tier' : 'Palier'} ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</span></td>
-                <td><strong style="color:#34d399; font-size:12.5px;">${escapeHtml(t.order.specificName || t.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.order.grade} ${isEn ? 'Tier' : 'Palier'} ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong style="color:#8CC084; font-size:12.5px;">${escapeHtml(t.order.specificName || t.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.order.grade} ${isEn ? 'Tier' : 'Palier'} ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaOrder >= 0 ? `+${deltaOrder.toFixed(2)}%` : `${deltaOrder.toFixed(2)}%`}</td>
               </tr>
               <tr>
                 <td><strong>🌀 ${isEn ? `Chaos ${p.groupLabel} Core` : `Cœur de Chaos ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'}</span></td>
                 <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</span></td>
-                <td><strong style="color:#34d399; font-size:12.5px;">${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong style="color:#8CC084; font-size:12.5px;">${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaChaos >= 0 ? `+${deltaChaos.toFixed(2)}%` : `${deltaChaos.toFixed(2)}%`}</td>
               </tr>
               <tr>
                 <td><strong>✨ ${isEn ? 'Compounded Synergy Multiplier' : 'Synergie Multiplicative Croisée'}</strong></td>
                 <td><strong>+${p.totalMult.toFixed(2)}%</strong></td>
-                <td><strong style="color:#34d399;">+${t.totalMult.toFixed(2)}%</strong></td>
+                <td><strong style="color:#8CC084;">+${t.totalMult.toFixed(2)}%</strong></td>
                 <td class="col-cp-gain"><strong>${deltaMult >= 0 ? `+${deltaMult.toFixed(2)}%` : `${deltaMult.toFixed(2)}%`}</strong></td>
               </tr>
             </tbody>
             <tfoot>
               <tr class="row-total">
                 <td colspan="3"><strong>${isEn ? 'Combat Power Impact (Direct Core Contribution)' : 'Gain de Combat Power (Impact de l\'Écart de Cœurs)'}</strong></td>
-                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : (deltaMult < 0 ? `<span style="color:#60a5fa;">-${Math.abs(Math.round(deltaMult * (player.cp || 3200) / 100))} CP (${isEn ? 'Lead' : 'Avance'})</span>` : '= 0 CP')}</strong></td>
+                <td class="col-cp-gain total"><strong>${cpImpact > 0 ? `+${cpImpact} CP` : (deltaMult < 0 ? `<span style="color:#9CB4C6;">-${Math.abs(Math.round(deltaMult * (player.cp || 3200) / 100))} CP (${isEn ? 'Lead' : 'Avance'})</span>` : '= 0 CP')}</strong></td>
               </tr>
             </tfoot>
           </table>
@@ -14697,9 +14697,9 @@
 
             <div class="eq-operator">+</div>
 
-            <div class="eq-box player-lead" style="border-color: rgba(148, 163, 184, 0.3);">
+            <div class="eq-box player-lead" style="border-color: rgba(154, 151, 138, 0.3);">
               <div class="eq-box-label">${isEn ? 'Base Stats & Synergies' : 'Stats de Base & Synergies'}</div>
-              <div class="eq-box-val" style="color: #cbd5e1;">+${formatNumber(baseSynergies)} CP</div>
+              <div class="eq-box-val" style="color: #CFCBBD;">+${formatNumber(baseSynergies)} CP</div>
               <div class="eq-box-sub">${isEn ? 'Main Stat & Compounding' : 'Stat Principale & Multiplicateurs'}</div>
             </div>
 
@@ -14733,7 +14733,7 @@
             <span class="reconciliation-icon">⚖️</span>
             <strong>${isEn ? 'Combat Power Math Reconciliation' : 'Bilan Mathématique du Combat Power'}</strong>
           </div>
-          <span class="reconciliation-tag" style="background: rgba(52, 211, 153, 0.15); color: #34d399; border-color: rgba(52, 211, 153, 0.35);">
+          <span class="reconciliation-tag" style="background: rgba(140, 192, 132, 0.15); color: #8CC084; border-color: rgba(140, 192, 132, 0.35);">
             ${isEn ? 'Player Advantage' : 'Avantage Joueur'}
           </span>
         </div>
@@ -14851,15 +14851,15 @@
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
         benchmarkState.isAutoFetching = true;
         heroCard.innerHTML = `
-          <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
+          <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
             <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
-            <div style="font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
+            <div style="font-size: 17px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
               ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
             </div>
             <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
               ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(140, 192, 132, 0.12); border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
               <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
             </div>
           </div>
@@ -14888,9 +14888,9 @@
       // Si aucun profil n'est disponible et aucun fetch n'est en cours :
       // État d'invitation à la recherche (NON BLOQUANT, interactif)
       heroCard.innerHTML = `
-        <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin: 16px 0;">
+        <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
           <div style="font-size: 36px; margin-bottom: 12px;">🔍</div>
-          <div style="font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
+          <div style="font-size: 17px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
             ${isEn ? 'No Benchmark Profile Selected' : 'Aucun Profil de Référence Sélectionné'}
           </div>
           <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
@@ -14898,7 +14898,7 @@
               ? `To benchmark your <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), enter any player name or lostark.bible profile link in the search bar below.`
               : `Pour comparer votre <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), saisissez le pseudo d'un joueur ou un lien lostark.bible dans la barre de recherche ci-dessous.`}
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232, 230, 220, 0.12); border: 1px solid rgba(232, 230, 220, 0.3); color: #E0A43A; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
             <span>🌐 ${isEn ? '100% Live lostark.bible profiles supported' : 'Profils 100% LIVE lostark.bible supportés'}</span>
           </div>
         </div>
@@ -15046,7 +15046,7 @@
               <img src="${pAvatar}" alt="${escapeHtml(player.name)}" loading="eager" onerror="this.onerror=null; this.src='images/classes/paladin.png';">
             </div>
             <div class="bench-char-info">
-              <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#38bdf8;">${t('bench_card_player_title')}</span>
+              <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#E0A43A;">${t('bench_card_player_title')}</span>
               <div class="bench-char-name-row">
                 <span class="bench-char-name">${escapeHtml(player.name)}</span>
                 <span class="bench-char-ilvl">${(player.ilvl || 1700).toFixed(2)}</span>
@@ -15074,7 +15074,7 @@
         <div class="bench-delta-center">
           <span class="bench-vs-pill">VS</span>
           <div class="bench-delta-badge">
-            <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#94a3b8;">${t('bench_delta_title')}</span>
+            <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#9A978A;">${t('bench_delta_title')}</span>
             <span class="bench-delta-val">${isTargetAhead ? '+' : ''}${formatNumber(deltaCp)} CP</span>
             <span class="bench-delta-pct">${isTargetAhead ? '+' : ''}${deltaPct}% ${isEn ? 'performance gap' : 'de performance'}</span>
           </div>
@@ -15092,10 +15092,10 @@
             </div>
             <div class="bench-char-info">
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#34d399;">${t('bench_card_target_title')}</span>
+                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#8CC084;">${t('bench_card_target_title')}</span>
                 ${target.isLive 
-                  ? `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🟢 LIVE lostark.bible</span>` 
-                  : `<span style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); color: #a5b4fc; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🎯 ${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
+                  ? `<span style="background: rgba(140, 192, 132, 0.2); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🟢 LIVE lostark.bible</span>` 
+                  : `<span style="background: rgba(232, 230, 220, 0.2); border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🎯 ${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
                 }
               </div>
               <div class="bench-char-name-row">
@@ -15118,8 +15118,8 @@
           <div class="bench-pills-row">
             <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
             ${target.isLive && target.bibleUrl
-              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#38bdf8; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>`
-              : `<span class="bench-pill" style="margin-left:auto; background:rgba(99,102,241,0.15); border-color:rgba(99,102,241,0.3); color:#a5b4fc;">🎯 ${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
+              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>`
+              : `<span class="bench-pill" style="margin-left:auto; background:rgba(232, 230, 220,0.15); border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">🎯 ${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
             }
           </div>
         </div>
@@ -15142,7 +15142,7 @@
         gapsGrid.innerHTML = `
           <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px;">
             <span style="font-size: 28px;">🏆</span>
-            <h4 style="margin: 8px 0 4px 0; color: #34d399;">${isEn ? 'Perfect Parity / Ahead' : 'Parfaite Parité / Avance Globale'}</h4>
+            <h4 style="margin: 8px 0 4px 0; color: #8CC084;">${isEn ? 'Perfect Parity / Ahead' : 'Parfaite Parité / Avance Globale'}</h4>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">${isEn ? 'All your equipment systems are equal or superior to this reference benchmark.' : 'Tous vos systèmes d\'équipement sont équivalents ou supérieurs à ce profil de référence.'}</p>
           </div>
         `;
@@ -15296,7 +15296,7 @@
         if (cpImpact > 0) {
           cpDisplay = `+${cpImpact} CP`;
         } else if (playerLeadCp > 0) {
-          cpDisplay = `<span style="color:#60a5fa;">+${playerLeadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>`;
+          cpDisplay = `<span style="color:#9CB4C6;">+${playerLeadCp} CP (${isEn ? 'Lead' : 'Avance'})</span>`;
         }
 
         let toggleBtn = '';
@@ -15393,7 +15393,7 @@
             <td class="col-player">${escapeHtml(pItem.label)} (${pItem.bonusPct.toFixed(2)}%)</td>
             <td class="col-target">${escapeHtml(tItem.label)} (${tItem.bonusPct.toFixed(2)}%)</td>
             <td class="col-delta"><span class="${badgeClass}">${deltaStr}</span></td>
-            <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; color:${cpImpact > 0 ? '#34d399' : 'var(--text-muted)'};">
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; color:${cpImpact > 0 ? '#8CC084' : 'var(--text-muted)'};">
               ${cpDisplay}
             </td>
             <td><span class="prio-pill ${prioClass}">${escapeHtml(prioLabel)}</span></td>
@@ -15513,7 +15513,7 @@
         }
         tfoot.innerHTML = `
           <tr class="benchmark-table-total-row">
-            <td colspan="4" style="padding: 12px 16px; font-weight: 700; color: #f8fafc;">
+            <td colspan="4" style="padding: 12px 16px; font-weight: 700; color: #E8E6DC;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:16px;">📈</span>
                 <div>
@@ -15524,7 +15524,7 @@
                 </div>
               </div>
             </td>
-            <td class="col-cp" style="font-family:var(--font-mono); font-weight:800; font-size:14px; color:#34d399; padding: 12px 16px;">
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:800; font-size:14px; color:#8CC084; padding: 12px 16px;">
               +${formatNumber(totalPositiveTableCp)} CP
             </td>
             <td style="padding: 12px 16px;">
@@ -15533,7 +15533,7 @@
           </tr>
           ${totalPlayerLeadTableCp > 0 ? `
             <tr class="benchmark-table-lead-row">
-              <td colspan="4" style="padding: 10px 16px; font-weight: 600; color: #93c5fd;">
+              <td colspan="4" style="padding: 10px 16px; font-weight: 600; color: #B5C7D4;">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span style="font-size:15px;">🛡️</span>
                   <div>
@@ -15544,7 +15544,7 @@
                   </div>
                 </div>
               </td>
-              <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; font-size:13px; color:#60a5fa; padding: 10px 16px;">
+              <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; font-size:13px; color:#9CB4C6; padding: 10px 16px;">
                 -${formatNumber(totalPlayerLeadTableCp)} CP (${isEn ? 'Lead' : 'Avance'})
               </td>
               <td style="padding: 10px 16px;">
@@ -15553,7 +15553,7 @@
             </tr>
           ` : ''}
           <tr class="benchmark-table-net-row">
-            <td colspan="4" style="padding: 14px 16px; font-weight: 800; color: #38bdf8;">
+            <td colspan="4" style="padding: 14px 16px; font-weight: 800; color: #E0A43A;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:18px;">⚖️</span>
                 <div>
@@ -15567,11 +15567,11 @@
                 </div>
               </div>
             </td>
-            <td class="col-cp" style="font-family:var(--font-mono); font-weight:900; font-size:16px; color:#38bdf8; padding: 14px 16px;">
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:900; font-size:16px; color:#E0A43A; padding: 14px 16px;">
               ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP
             </td>
             <td style="padding: 14px 16px;">
-              <span class="prio-pill equal" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); font-weight:700;">
+              <span class="prio-pill equal" style="background:rgba(232, 230, 220,0.15); color:#E0A43A; border:1px solid rgba(232, 230, 220,0.35); font-weight:700;">
                 ${isEn ? 'Official Raid Delta' : 'Écart Raid Réel'}
               </span>
             </td>
@@ -16420,7 +16420,7 @@
 
     let dHtml = '';
     deals.forEach(d => {
-      const color = d.pct < 0 ? '#10b981' : '#ef4444'; // green if deal, red if overpriced
+      const color = d.pct < 0 ? '#8CC084' : '#E07A63'; // green if deal, red if overpriced
       const sign = d.pct > 0 ? '+' : '';
       dHtml += `
         <tr>
@@ -16462,7 +16462,7 @@
       const netProfit = (ey * (c.sell - tax)) - totalCost;
       const roi = (netProfit / totalCost) * 100;
 
-      const color = netProfit > 0 ? '#10b981' : '#ef4444';
+      const color = netProfit > 0 ? '#8CC084' : '#E07A63';
       const sign = netProfit > 0 ? '+' : '';
 
       cHtml += `
