@@ -2900,7 +2900,7 @@
     pushRow('dyn_astro',
       isEn ? 'Ark grid — Astrogems' : 'Grille d\'Ark — Astrogemmes',
       isEn ? 'Cutting epics ➔ Next Tier' : 'Taille d\'épiques ➔ Palier Suivant',
-      1.08, 675000,
+      ASTRO_CUT_GAIN, ASTRO_CUT_COST,
       isEn ? 'Cut epic astrogems to reach the next tier.' : 'Tailler des astrogemmes épiques pour le palier suivant.');
 
     // 6. Bracelet
@@ -3790,8 +3790,8 @@
     let agWhere = 'B+ · 78.5';
     let agLastStep = isEn ? 'B ➔ B+ (3.5 offensive rolls)' : 'B ➔ B+ (3.5 rolls off.)';
     let agNextStep = isEn ? '➔ A- (3.75 offensive rolls)' : '➔ A- (3.75 rolls off.)';
-    let agCost = 675000;
-    let agGain = 1.08;
+    let agCost = ASTRO_CUT_COST;
+    let agGain = ASTRO_CUT_GAIN;
     let agRate = Math.round(agCost / agGain);
 
     // 5. Karma Enlightenment (Ark Passive)
@@ -9475,11 +9475,11 @@
       .replace(/Dextérité/gi, 'Dexterity')
       .replace(/Intelligence/gi, 'Intelligence');
     res = res.replace(/Compétences Non Directionnelles/gi, 'Non-Directional Skills')
-      .replace(/Dégâts Coup Crit/gi, 'Crit Damage')
+      .replace(/Dégâts Coup Crit/gi, 'Crit Hit Dmg')
       .replace(/Dégâts Sortants/gi, 'Outgoing Damage')
       .replace(/Neutralisation/gi, 'Stagger')
       .replace(/Marteau/gi, 'Hammer')
-      .replace(/Précision/gi, 'Precise')
+      .replace(/Précision/gi, 'Precision')
       .replace(/Embuscade/gi, 'Ambush')
       .replace(/Ardeur/gi, 'Fervor')
       .replace(/Ovation/gi, 'Cheers')
@@ -9761,6 +9761,9 @@
   const ACC_UPGRADE_COST = 166000;
   // Coût (gold) d'une campagne complète de reroll de bracelet
   const BRACELET_REROLL_COST = 271000;
+  // Taille d'astrogemmes épiques vers le palier suivant : coût (gold) et gain (%)
+  const ASTRO_CUT_COST = 675000;
+  const ASTRO_CUT_GAIN = 1.08;
   const ACC_SLOTS = ['neck', 'ear1', 'ear2', 'finger1', 'finger2'];
   // Bijou cible d'un remplacement : 2 lignes principales du rôle en High + PA d'arme plate Mid
   const ACC_TARGET_LINES = {
@@ -10571,7 +10574,7 @@
       : `Relique (${brSummaryPerks} : +${brBonusPct.toFixed(2)}%)`;
 
     return {
-      engravings: { label: engLabel, bonusPct: engBonusPct },
+      engravings: { label: engLabel, bonusPct: engBonusPct, estimated: !hasRealEng },
       baseAttackStat: { label: baseAtkLabel, bonusPct: baseAtkBonusPct },
       combatStats: { label: combatStatsLabel, bonusPct: combatStatsBonusPct },
       arkEvolution: { label: `${evoPts} Pts ${isEn ? 'Evolution' : 'Évolution'}`, bonusPct: Number((evoPts * 0.15).toFixed(2)) },
@@ -10622,7 +10625,8 @@
           : (ilvl >= 1770 ? ` (Pierre +3/+4 & Relique: +${engVal.toFixed(2)}%)` : ` (Pierre +2/+3 & Relique: +${engVal.toFixed(2)}%)`);
         sys.engravings = {
           label: (isEn ? `${specName} 3, 5 Full T4 Relic Engravings` : `${specName} 3, 5 Gravures Reliques T4`) + stoneBonus,
-          bonusPct: engVal
+          bonusPct: engVal,
+          estimated: true
         };
       }
     } else {
@@ -10634,7 +10638,8 @@
           : (ilvl >= 1770 ? ` (Pierre +3/+4 & Relique: +${engVal.toFixed(2)}%)` : ` (Pierre +2/+3 & Relique: +${engVal.toFixed(2)}%)`);
         sys.engravings = {
           label: (isEn ? `${specName} 3, 5 Full T4 Relic Engravings` : `${specName} 3, 5 Gravures Reliques T4`) + stoneBonus,
-          bonusPct: engVal
+          bonusPct: engVal,
+          estimated: true
         };
       }
     }
@@ -10721,14 +10726,17 @@
     const pGems = extractCharacterGemParts(player) || [];
     const tGems = extractCharacterGemParts(target) || [];
     
+    // Coût cumulé pour amener une gemme du Niv. 7 à son niveau (mêmes coûts unitaires que le GPD)
+    const levelOf = (val) => {
+      if (val >= 12.0 || (val >= 6.9 && val <= 7.1)) return 10;
+      if (val >= 10.7 || (val >= 6.3 && val <= 6.4)) return 9;
+      if (val >= 9.5 || (val >= 5.7 && val <= 5.8)) return 8;
+      return 7;
+    };
     const getGemValue = (val) => {
-        if (val >= 12.0 || (val >= 6.9 && val <= 7.1)) return 3750000; // Lvl 10 T4
-        if (val >= 10.7 || (val >= 6.3 && val <= 6.4)) return 1275000; // Lvl 9 T4
-        if (val >= 9.5 || (val >= 5.7 && val <= 5.8)) return 435000; // Lvl 8 T4
-        if (val >= 8.3 || (val >= 5.1 && val <= 5.2)) return 145000; // Lvl 7 T4 (~435k / 3)
-        if (val >= 7.1 || (val >= 4.5 && val <= 4.6)) return 48000; // Lvl 6 T4
-        if (val >= 6.0 || (val >= 3.9 && val <= 4.1)) return 16000; // Lvl 5 T4
-        return 0;
+      let total = 0;
+      for (let l = 7; l < levelOf(val); l++) total += GEM_UPGRADE_COST[l];
+      return total;
     };
     
     let pVal = 0; pGems.forEach(g => pVal += getGemValue(g));
@@ -10746,18 +10754,18 @@
     const delta = tAst - pAst;
     if (delta <= 0) return 60000;
     
-    // 1 Epic Astrogem = 9 clicks * 900g = 8,100g. 
-    // Average 10 completed Astrogems to get a good roll = 81,000g per good Astrogem.
-    // A good Epic Astrogem gives roughly 1.50% DPS.
-    const astrogemsNeeded = delta / 1.50;
-    const costPerGoodAstrogem = 81000; 
-    
-    return Math.round(astrogemsNeeded * costPerGoodAstrogem);
+    // Même taux que la ligne « Taille d'épiques » du GPD : ASTRO_CUT_COST pour +ASTRO_CUT_GAIN %
+    return Math.round(delta / ASTRO_CUT_GAIN * ASTRO_CUT_COST);
   }
 
   // Écart de CP d'un système entre joueur (p) et référence (t) : les systèmes se multiplient,
   // donc l'écart est le gain relatif (1 + t) / (1 + p) − 1 appliqué au CP du joueur.
   // Positif : la référence est devant ; négatif : le joueur est devant.
+  // Une valeur « estimée » (donnée absente, remplacée par une valeur par défaut) ne crée pas d'écart
+  function isEstimatedPair(p, t) {
+    return !!((p && p.estimated) || (t && t.estimated));
+  }
+
   function systemGapCp(pPct, tPct, cp) {
     const base = cp && cp > 1000 ? cp : 3800;
     return base * ((1 + (tPct || 0) / 100) / (1 + (pPct || 0) / 100) - 1);
@@ -10801,9 +10809,11 @@
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: BRACELET_REROLL_COST },
       { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '', cost: computeGemUpgradeCost(player, target) },
       { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '', cost: honingPathCost('armor', pArmors.effAvgArmor !== undefined ? pArmors.effAvgArmor : (pArmors.avgArmor || 12), tArmors.effAvgArmor, 5) },
-      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 75000 },
+      // Stat principale et stats de combat découlent de l'équipement (bijoux, bracelet, affinage), déjà comptés
+      // sur leurs propres lignes : coût 0 = affichées au diagnostic mais exclues du plan d'action.
+      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 0 },
       { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '', cost: 40000 },
-      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '', cost: 50000 },
+      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '', cost: 0 },
       { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '', cost: 25000 },
       { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '', cost: 20000 },
       { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '', cost: 30000 },
@@ -10813,8 +10823,8 @@
     systemMeta.forEach(m => {
       const p = pSys[m.key] || { bonusPct: 0, label: '' };
       const t = tSys[m.key] || { bonusPct: 0, label: '' };
-      const delta = Number((t.bonusPct - p.bonusPct).toFixed(2));
-      const gapCp = systemGapCp(p.bonusPct, t.bonusPct, player.cp);
+      const delta = isEstimatedPair(p, t) ? 0 : Number((t.bonusPct - p.bonusPct).toFixed(2));
+      const gapCp = delta === 0 ? 0 : systemGapCp(p.bonusPct, t.bonusPct, player.cp);
 
       let tLabel = t.label || '';
       let pLabel = p.label || '';
@@ -11033,7 +11043,7 @@
     let engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`;
 
     const tSys = {
-      engravings: { label: engLabel, bonusPct: tEng },
+      engravings: { label: engLabel, bonusPct: tEng, estimated: !!(pSys.engravings && pSys.engravings.estimated) },
       baseAttackStat: pSys.baseAttackStat || { label: getMainStatName(normClass, isEn) + (playerChar.ilvl >= 1770 ? ' 735k' : ' 690k'), bonusPct: playerChar.ilvl >= 1770 ? 37.00 : 34.50 },
       combatStats: pSys.combatStats || { label: isEn ? "Combat Stats" : "Stats de Combat", bonusPct: playerChar.ilvl >= 1770 ? 78.36 : 77.07 },
       arkEvolution: { label: isEn ? '140 Evolution Pts' : '140 Pts Évolution', bonusPct: tEvo },
@@ -15229,9 +15239,15 @@
           pLabel = formatLostArkEnglish(pLabel);
           tLabel = formatLostArkEnglish(tLabel);
         }
+        const estimatedPair = isEstimatedPair(pRaw, tRaw);
+        if (estimatedPair) {
+          const note = isEn ? ' [estimated — not read]' : ' [estimé — non lu]';
+          if (pRaw.estimated) pLabel += note;
+          if (tRaw.estimated) tLabel += note;
+        }
         const pItem = { label: pLabel, bonusPct: pRaw.bonusPct };
         const tItem = { label: tLabel, bonusPct: tRaw.bonusPct };
-        const delta = Number((tItem.bonusPct - pItem.bonusPct).toFixed(2));
+        const delta = estimatedPair ? 0 : Number((tItem.bonusPct - pItem.bonusPct).toFixed(2));
         const isEqual = Math.abs(delta) <= 0.02;
 
         const isAcc = cfg.key === 'accessories';
@@ -15285,6 +15301,11 @@
         } else if (cfg.prio === 'opt' && delta > 0) {
           prioLabel = t('bench_prio_opt');
           prioClass = 'opt';
+        } else if (delta > 0.02) {
+          // Retard hors seuils : stats dérivées de l'équipement, sinon simple écart
+          const derived = cfg.key === 'combatStats' || cfg.key === 'baseAttackStat';
+          prioLabel = derived ? t('bench_prio_derived') : t('bench_prio_med');
+          prioClass = 'med';
         }
 
         let cpDisplay = '—';
@@ -16018,6 +16039,8 @@
     }
 
     const normClass = normalizeClassName(header.class || (parsed.loadout && parsed.loadout.classId) || parsed.className || '');
+    // Déclaré avant detectCharacterRole, qui l'utilise (ReferenceError « before initialization » sinon)
+    const displayName = capitalize(header.name || cleanName);
     const liveRole = detectCharacterRole({
       className: normClass,
       classId: parsed.loadout && parsed.loadout.classId,
@@ -16027,7 +16050,6 @@
     const isSupport = liveRole === 'support' || (parsed.battlePoint && parsed.battlePoint.isSupport === true);
     const liveIlvl = header.ilvl ? Number(header.ilvl.toFixed(2)) : (parsed.ilvl || 1740);
     const liveCp = parseFloat((header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000).toFixed(2));
-    const displayName = capitalize(header.name || cleanName);
 
     const liveChar = {
       name: displayName,
