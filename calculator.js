@@ -2007,16 +2007,22 @@
     if (dom.dispDpsGemTotalCp) dom.dispDpsGemTotalCp.textContent = `+${formatNumber(totalGemCp)} CP`;
     if (dom.dispDpsGemCpDelta) {
       const sign = deltaCp > 0 ? '+' : (deltaCp < 0 ? '-' : '+');
-      dom.dispDpsGemCpDelta.textContent = `${sign}${formatNumber(Math.abs(deltaCp))} CP vs profil actuel`;
+      dom.dispDpsGemCpDelta.textContent = isEnLang()
+        ? `${sign}${formatNumber(Math.abs(deltaCp))} CP vs current profile`
+        : `${sign}${formatNumber(Math.abs(deltaCp))} CP vs profil actuel`;
     }
 
     if (dom.gemDpsAdvisorText) {
       const s1Short = skills.s1.name.split('(')[0].trim();
       const s2Short = skills.s2.name.split('(')[0].trim();
       if (perSkillGemsState.dps1Lvl >= 9 && perSkillGemsState.dps2Lvl >= 9) {
-        dom.gemDpsAdvisorText.innerHTML = `<strong>Configuration DPS :</strong> Vos 2 compétences de burst majeures (<em>${s1Short}</em> et <em>${s2Short}</em>) sont équipées en gemmes Niveau 9/10 (+40%/+44%), garantissant le meilleur multiplicateur de dégâts par gold investi.`;
+        dom.gemDpsAdvisorText.innerHTML = isEnLang()
+          ? `<strong>DPS setup:</strong> your 2 main burst skills (<em>${s1Short}</em> and <em>${s2Short}</em>) already have Lv. 9/10 gems (+40%/+44%), the best damage multiplier per gold spent.`
+          : `<strong>Configuration DPS :</strong> Vos 2 compétences de burst majeures (<em>${s1Short}</em> et <em>${s2Short}</em>) sont équipées en gemmes Niveau 9/10 (+40%/+44%), garantissant le meilleur multiplicateur de dégâts par gold investi.`;
       } else {
-        dom.gemDpsAdvisorText.innerHTML = `<strong>Priorité Stratégique DPS :</strong> Montez en priorité la gemme de <em>${s1Short}</em> au Niveau 9 (+40% Dégâts). C'est votre compétence la plus rentable du cycle de combat.`;
+        dom.gemDpsAdvisorText.innerHTML = isEnLang()
+          ? `<strong>DPS priority:</strong> raise the <em>${s1Short}</em> gem to Lv. 9 (+40% damage) first. It is the most cost-effective skill in your rotation.`
+          : `<strong>Priorité Stratégique DPS :</strong> Montez en priorité la gemme de <em>${s1Short}</em> au Niveau 9 (+40% Dégâts). C'est votre compétence la plus rentable du cycle de combat.`;
       }
     }
   }
@@ -3015,7 +3021,24 @@
       dps_karma_enlight_6: { name: 'Karma Enlightenment: Ranks 0 ➔ 6', sub: 'Ark Passive Karma DPS System', comment: 'Unlocks major class enlightenment nodes (+4.67% net DPS).' },
       dps_ark_grid_order_17: { name: 'Ark Grid: Order (Sun+Moon+Star) 17P', sub: 'Full 17-Point Ark Grid Tree', comment: 'Largest single damage gain in this table: +20.8% DPS for ~890k gold.' },
       dps_weapon_19: { name: 'Standard Honing: Weapon +18 ➔ +19', sub: 'T4 Honing • Aegir Weapon', comment: 'Weapon continuity before the +20 wall.' },
-      dps_weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed power without rng failure using full materials.' }
+      dps_weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed power without rng failure using full materials.' },
+      dps_karma_evo_6: { name: 'Karma Evolution: Ranks 0 ➔ 6', sub: 'Ark Passive Karma System (DPS)', comment: 'Passive increase to combat stats and multipliers.' },
+      dps_weapon_adv_11_20: { name: 'Advanced Weapon Honing: Stages 11 ➔ 20', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Second advanced weapon honing block, very solid ROI.' },
+      dps_weapon_20: { name: 'Standard Honing: Weapon +19 ➔ +20', sub: 'T4 Honing • Aegir Weapon', comment: 'The +20 milestone: expensive, but key for the 1780+ bracket.' },
+      dps_weapon_21: { name: 'Standard Honing: Weapon +20 ➔ +21', sub: 'T4 Honing • Aegir Weapon', comment: '+21 step with a larger weapon power bonus.' },
+      dps_weapon_adv_21_30: { name: 'Advanced Weapon Honing: Stages 21 ➔ 30', sub: 'Advanced Honing Brelshaza T4 • 10 Levels', comment: 'Large guaranteed gain without RNG for ~449k gold.' },
+      dps_gems_7_8_cd: { name: 'T4 Cooldown Gems: Lv. 7 ➔ Lv. 8', sub: '1 cooldown gem on a core rotation skill', comment: 'Aligns your skill rotation for smoother play and more DPS.' },
+      dps_weapon_adv_31_40: { name: 'Advanced Weapon Honing: Stages 31 ➔ 40', sub: 'Advanced Honing Brelshaza T4 • 10 Levels', comment: 'Final advanced weapon honing block.' },
+      dps_gems_7_8_dmg: { name: 'T4 Damage Gems: Lv. 7 ➔ Lv. 8 (Skill 60%)', sub: '1 damage gem on your main skill', comment: 'Worth it on the skill that deals the largest share of your damage.' },
+      dps_weapon_22: { name: 'Standard Honing: Weapon +21 ➔ +22', sub: 'T4 Honing • Aegir Weapon', comment: 'Rising cost, needs solid gold reserves.' },
+      dps_weapon_23: { name: 'Standard Honing: Weapon +22 ➔ +23', sub: 'T4 Honing • Aegir Weapon', comment: 'Weapon at +23.' },
+      dps_armor_adv_1_10: { name: 'Advanced Armor Honing: Stages 1 ➔ 10', sub: '5 armor pieces (Echidna)', comment: 'Adds main stat and guaranteed item level.' },
+      dps_armor_adv_11_20: { name: 'Advanced Armor Honing: Stages 11 ➔ 20', sub: '5 armor pieces (Echidna)', comment: 'Overall item level and main stat gain for raids.' },
+      dps_armors_all_20: { name: 'Armor Honing: All to +20', sub: '5 armor pieces (+19 ➔ +20)', comment: 'Reaches the 1780+ bracket on every armor piece.' },
+      dps_weapon_24: { name: 'Standard Honing: Weapon +23 ➔ +24', sub: 'T4 Honing • Aegir Weapon', comment: 'Aegir weapon +24: a heavy investment.' },
+      dps_gems_8_9_cd: { name: 'T4 Gems: Lv. 8 ➔ Lv. 9 (1 cycle)', sub: 'Main cooldown gem', comment: 'Endgame rotation optimization.' },
+      dps_weapon_25: { name: 'Standard Honing: Weapon +24 ➔ +25', sub: 'T4 Honing • Aegir Weapon (+25 max)', comment: 'Aegir cap: weapon power at its ceiling.' },
+      dps_gems_9_10_dmg: { name: 'T4 Damage Gem: Lv. 9 ➔ Lv. 10 (Skill 60%)', sub: '1 endgame T4 Lv. 10 gem', comment: '2.4 million gold for 1.9% DPS. Keep this for the very end of progression.' },
     };
 
     if (dom.effNextBestDesc) {
@@ -7828,7 +7851,9 @@
     if (dom.roleSupport) dom.roleSupport.classList.toggle('active', newRole === 'support');
     if (dom.roleDps) dom.roleDps.classList.toggle('active', newRole === 'dps');
     if (dom.roleBadge) {
-      dom.roleBadge.textContent = newRole === 'support' ? 'Modèle Support' : 'Modèle DPS';
+      dom.roleBadge.textContent = isEnLang()
+        ? (newRole === 'support' ? 'Support model' : 'DPS model')
+        : (newRole === 'support' ? 'Modèle Support' : 'Modèle DPS');
       dom.roleBadge.style.color = newRole === 'support' ? 'var(--support-color)' : 'var(--dps-color)';
       dom.roleBadge.style.borderColor = newRole === 'support' ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
     }
@@ -7856,8 +7881,10 @@
       dom.charCardClass.innerHTML = `<img class="class-sigil-tag" src="${sigilSrc}" alt=""> <span>${cName}</span>`;
     }
     if (dom.charCardServer) {
-      const sName = p.server || 'Serveur';
-      const gName = p.guild ? `${p.guild} • ` : '';
+      const sName = p.server || (isEnLang() ? 'Server' : 'Serveur');
+      // Les rosters de démo portent la guilde fictive « Archétype Démo » (data.js)
+      const guild = p.guild && isEnLang() ? p.guild.replace('Archétype Démo', 'Demo archetype') : p.guild;
+      const gName = guild ? `${guild} • ` : '';
       dom.charCardServer.textContent = `${gName}${sName}`;
     }
     if (dom.charCardIlvl) dom.charCardIlvl.textContent = (state.currentIlvl || p.ilvl || 1750).toFixed(2);
@@ -14858,7 +14885,7 @@
       if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
         benchmarkState.isAutoFetching = true;
         heroCard.innerHTML = `
-          <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
+          <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: transparent; border-radius: 0; margin: 16px 0;">
             <div style="font-size: 40px; margin-bottom: 12px;"></div>
             <div style="font-size: 19px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
               ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
@@ -14866,7 +14893,7 @@
             <div style="font-size: 15px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
               ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(140, 192, 132, 0.12); border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 0; font-size: 13px; font-weight: 600;">
               <span>${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
             </div>
           </div>
@@ -14895,7 +14922,7 @@
       // Si aucun profil n'est disponible et aucun fetch n'est en cours :
       // État d'invitation à la recherche (NON BLOQUANT, interactif)
       heroCard.innerHTML = `
-        <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
+        <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: transparent; border-radius: 0; margin: 16px 0;">
           <div style="font-size: 40px; margin-bottom: 12px;"></div>
           <div style="font-size: 19px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
             ${isEn ? 'No Benchmark Profile Selected' : 'Aucun Profil de Référence Sélectionné'}
@@ -14905,7 +14932,7 @@
               ? `To benchmark your <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), enter any player name or lostark.bible profile link in the search bar below.`
               : `Pour comparer votre <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), saisissez le pseudo d'un joueur ou un lien lostark.bible dans la barre de recherche ci-dessous.`}
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232, 230, 220, 0.12); border: 1px solid rgba(232, 230, 220, 0.3); color: #E0A43A; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;">
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid rgba(232, 230, 220, 0.3); color: #E0A43A; padding: 6px 16px; border-radius: 0; font-size: 13px; font-weight: 600;">
             <span>${isEn ? '100% Live lostark.bible profiles supported' : 'Profils 100% LIVE lostark.bible supportés'}</span>
           </div>
         </div>
@@ -15101,8 +15128,8 @@
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size:12px; text-transform:uppercase; font-weight:700; color:#8CC084;">${t('bench_card_target_title')}</span>
                 ${target.isLive 
-                  ? `<span style="background: rgba(140, 192, 132, 0.2); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">LIVE lostark.bible</span>` 
-                  : `<span style="background: rgba(232, 230, 220, 0.2); border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
+                  ? `<span style="background: transparent; border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 0; display: inline-flex; align-items: center; gap: 3px;">LIVE lostark.bible</span>` 
+                  : `<span style="background: transparent; border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 0; display: inline-flex; align-items: center; gap: 3px;">${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
                 }
               </div>
               <div class="bench-char-name-row">
@@ -15126,7 +15153,7 @@
             <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
             ${target.isLive && target.bibleUrl
               ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:13px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">${t('bench_view_bible')}</a>`
-              : `<span class="bench-pill" style="margin-left:auto; background:rgba(232, 230, 220,0.15); border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
+              : `<span class="bench-pill" style="margin-left:auto; background: transparent; border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
             }
           </div>
         </div>
@@ -15578,7 +15605,7 @@
               ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP
             </td>
             <td style="padding: 14px 16px;">
-              <span class="prio-pill equal" style="background:rgba(232, 230, 220,0.15); color:#E0A43A; border:1px solid rgba(232, 230, 220,0.35); font-weight:700;">
+              <span class="prio-pill equal" style="background: transparent; color:#E0A43A; border:1px solid rgba(232, 230, 220,0.35); font-weight:700;">
                 ${isEn ? 'Official Raid Delta' : 'Écart Raid Réel'}
               </span>
             </td>

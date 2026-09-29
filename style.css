@@ -1451,7 +1451,7 @@ select optgroup {
 .analysis-box {
   background: rgba(232, 230, 220, 0.02);
   border: 1px solid rgba(232, 230, 220, 0.06);
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
   border-radius: 2px var(--radius-sm) var(--radius-sm) 2px;
   padding: 12px 14px;
   display: flex;
@@ -1721,19 +1721,19 @@ select optgroup {
 }
 
 .highlight-select {
-  border-color: rgba(232, 230, 220, 0.5) !important;
-  background-color: #1a1528 !important;
+  border-color: var(--border-active) !important;
+  background-color: var(--bg-input) !important;
   color: #E8E6DC !important;
   font-weight: 600 !important;
 }
 
 .highlight-select:focus {
-  border-color: #CFCBBD !important;
-  box-shadow: 0 0 0 2px rgba(232, 230, 220, 0.3) !important;
+  border-color: var(--accent) !important;
+  box-shadow: none !important;
 }
 
 .highlight-select option {
-  background-color: #1a1528 !important;
+  background-color: var(--bg-card) !important;
   color: #E8E6DC !important;
   padding: 8px 12px;
 }
@@ -2743,7 +2743,7 @@ select optgroup {
   margin-top: 8px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(232, 230, 220, 0.08);
-  border-left: 3px solid #9CB4C6;
+  border-left: 2px solid #9CB4C6;
   border-radius: 3px;
   padding: 8px 12px;
   display: flex;
@@ -3108,7 +3108,7 @@ select optgroup {
 }
 
 .gem-skill-row.bottleneck {
-  border-left: 3px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
   background: rgba(224, 164, 58, 0.03);
 }
 
@@ -4877,7 +4877,7 @@ select optgroup {
 
 .bench-select:hover {
   border-color: #E0A43A;
-  background-color: #131d35;
+  background-color: #1B1C16;
   box-shadow: none;
 }
 
@@ -5323,19 +5323,19 @@ select optgroup {
 }
 
 .bench-gap-gain-pill.player-lead {
-  color: #9CB4C6;
-  background: rgba(156, 180, 198, 0.15);
-  border-color: rgba(156, 180, 198, 0.35);
+  color: var(--gain);
+  background: transparent;
+  border-color: transparent;
 }
 
 .bench-gap-card-lead {
-  border-color: rgba(156, 180, 198, 0.35) !important;
-  background: rgba(30, 58, 138, 0.12) !important;
+  border-color: rgba(140, 192, 132, 0.35) !important;
+  background: transparent !important;
 }
 
 .bench-gap-rank.rank-lead {
-  color: #9CB4C6;
-  background: rgba(156, 180, 198, 0.15);
+  color: var(--gain);
+  background: transparent;
 }
 
 .bench-gap-title {
@@ -5486,7 +5486,7 @@ select optgroup {
   background: rgba(232, 230, 220, 0.03);
   padding: 10px 12px;
   border-radius: 3px;
-  border-left: 3px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
 }
 
 .reconciliation-explanation strong {
@@ -5904,23 +5904,23 @@ select optgroup {
 }
 
 .baseatk-breakdown-panel {
-  border-left: 3px solid #E0A43A !important;
+  border-left: 2px solid #E0A43A !important;
 }
 
 .combatstats-breakdown-panel {
-  border-left: 3px solid #8CC084 !important;
+  border-left: 2px solid #8CC084 !important;
 }
 
 .arkgridsun-breakdown-panel {
-  border-left: 3px solid #E0A43A !important;
+  border-left: 2px solid #E0A43A !important;
 }
 
 .arkgridmoon-breakdown-panel {
-  border-left: 3px solid #CFCBBD !important;
+  border-left: 2px solid #CFCBBD !important;
 }
 
 .arkgridstar-breakdown-panel {
-  border-left: 3px solid #CFCBBD !important;
+  border-left: 2px solid #CFCBBD !important;
 }
 
 /* --- FOOTER DU GRAND TABLEAU COMPARATIF (BILAN MATHÉMATIQUE CP) --- */
@@ -5958,7 +5958,7 @@ select optgroup {
   padding: 12px 16px;
   background: rgba(18, 19, 16, 0.75);
   border: 1px solid rgba(232, 230, 220, 0.08);
-  border-left: 4px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
   border-radius: 3px;
   display: flex;
   align-items: flex-start;
@@ -6021,7 +6021,7 @@ select optgroup {
 
 .acc-breakdown-panel {
   padding: 16px 20px 20px 20px;
-  border-left: 3px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
   margin: 6px 12px 16px 12px;
   background: rgba(18, 19, 16, 0.95);
   border-radius: 0 4px 4px 0;
@@ -6097,13 +6097,13 @@ select optgroup {
   background: rgba(27, 28, 22, 0.85);
 }
 .acc-piece-card.has-gap {
-  border-left: 3px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
 }
 .acc-piece-card.heavy-gap {
-  border-left: 3px solid #E07A63;
+  border-left: 2px solid #E07A63;
 }
 .acc-piece-card.parity {
-  border-left: 3px solid #8E8A7C;
+  border-left: 2px solid #8E8A7C;
 }
 
 .acc-piece-top {
@@ -6256,7 +6256,7 @@ select optgroup {
 
 /* --- DÉTAIL DU BRACELET T4 (BENCHMARK) --- */
 .bracelet-breakdown-panel {
-  border-left: 3px solid #CFCBBD;
+  border-left: 2px solid #CFCBBD;
 }
 
 .bracelet-cards-grid {
@@ -6393,7 +6393,7 @@ select optgroup {
   padding: 12px 16px;
   background: rgba(18, 19, 16, 0.85);
   border: 1px solid rgba(232, 230, 220, 0.3);
-  border-left: 4px solid #CFCBBD;
+  border-left: 2px solid #CFCBBD;
   border-radius: 3px;
   display: flex;
   align-items: flex-start;
@@ -6415,7 +6415,7 @@ select optgroup {
 
 /* --- DÉTAIL DES ASTROGEMMES D'ARK GRID (BENCHMARK) --- */
 .astrogems-breakdown-panel {
-  border-left: 3px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
 }
 
 .astrogems-cards-grid {
@@ -6508,7 +6508,7 @@ select optgroup {
   padding: 12px 16px;
   background: rgba(18, 19, 16, 0.85);
   border: 1px solid rgba(224, 164, 58, 0.3);
-  border-left: 4px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
   border-radius: 3px;
   display: flex;
   align-items: flex-start;
@@ -6530,7 +6530,7 @@ select optgroup {
 
 /* --- DÉTAIL DES GRAVURES RELIQUES T4 & PIERRE (BENCHMARK) --- */
 .engravings-breakdown-panel {
-  border-left: 3px solid #E0A43A;
+  border-left: 2px solid #E0A43A;
 }
 
 /* PLAN D'ACTION RECOMMANDÉ */
@@ -6985,7 +6985,7 @@ select optgroup {
 }
 
 .gpd-master-table .col-rate {
-  min-width: 200px;
+  min-width: 160px;
 }
 
 .gpd-master-table tbody tr:hover,
@@ -7014,6 +7014,9 @@ select optgroup {
 }
 
 .gpd-read-text {
+  display: inline-block;
+  max-width: 240px;
+  vertical-align: bottom;
   color: var(--text-dim);
   font-size: 13px;
   white-space: nowrap;
@@ -7134,4 +7137,245 @@ select optgroup {
 
 .piece-line-tag.trait {
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   LEDGER — étape 4 : Affinage, Ark Passive / Grille d'Ark, Optimisation
+   (accessoires, bracelet, gemmes, taillage) et Benchmark.
+   Limité à ces onglets : sections à filets, cellules sans fond,
+   boutons segmentés, badges en texte mono.
+   ========================================================================== */
+
+/* Sections : plus de cartes */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) .card {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border-medium);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 20px 0 4px;
+}
+
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) .card-header {
+  background: transparent;
+  border: 0;
+  padding: 0 0 14px;
+}
+
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) .card-header h2,
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) .card > h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Cellules : filet de 1 px, pas de fond ni d'arrondi */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .advice-card, .advisor-kpi-card, .agent-dl-card, .agent-notice-box, .agent-step-box,
+  .analysis-box, .ark-header-card, .ark-summary-card, .ark-tree-card, .bench-action-item,
+  .bench-char-card, .bench-cp-box, .bench-gap-card, .bench-search-box, .big-result-box,
+  .cut-kpi-card, .gem-ratio-card, .honing-computed-box, .stat-cell, .astrogem-grader-card,
+  .cut-analysis-box, .gem-analysis-box, .tree-metric-cell, .breakdown-item
+) {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Bandes de couleur décoratives en haut des cellules */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(.ark-tree-card, .advisor-kpi-card, .bench-gap-card, .ark-summary-card, .astrogem-grader-card)::before {
+  display: none;
+}
+
+/* Lignes de liste (affinage, gemmes par compétence) : filets horizontaux */
+:is(#tab-honing, #tab-optimization) :is(.gear-row, .gem-skill-row) {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:is(#tab-honing, #tab-optimization) :is(.gear-row, .gem-skill-row):hover {
+  background: var(--bg-card-hover);
+}
+
+/* Valeurs chiffrées */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .kpi-value, .cut-kpi-val, .gem-ratio-val, .tree-metric-val, .stat-val, .gear-level, .res-sub
+) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .kpi-label, .cut-kpi-label, .gem-ratio-label, .tree-metric-label, .stat-label
+) {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Boutons segmentés */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .btn-action-pill, .toggle-chip, .role-btn, .bench-filter-pill, .btn-honing-all
+) {
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .btn-action-pill, .toggle-chip, .role-btn, .bench-filter-pill, .btn-honing-all
+):hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+}
+
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .btn-action-pill, .toggle-chip, .role-btn, .bench-filter-pill
+).active {
+  background: var(--bg-surface-elevated);
+  border-color: var(--border-active);
+  color: var(--accent);
+}
+
+/* +/− d'affinage : petits boutons carrés */
+#tab-honing .btn-step {
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  border-radius: 0;
+  color: var(--text-muted);
+}
+
+#tab-honing .btn-step:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+}
+
+/* Champs */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(.clean-select, input[type="number"], input[type="text"], input[type="search"]) {
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(.clean-select, input):focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* Badges : texte mono, sans fond */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(
+  .badge-t4, .badge-t4-special, .bench-delta-badge, .bench-gap-gain-pill, .tree-tier-badge,
+  .agent-dl-badge, .bench-char-spec-badge, .gem-rank-pill, .gem-tag, .gem-tier-badge,
+  .prio-pill, .tree-delta-pill, .info-pill, .bench-vs-pill, .bench-pill, .bracelet-tier-badge,
+  .acc-line-tier-tag, .bench-gap-rank, .model-badge
+) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Exception : S+ garde l'or plein (seul rang en couleur) */
+:is(#tab-arkpassive, #tab-optimization) .gem-rank-pill.rank-s-plus {
+  background: var(--accent);
+  color: #0E0F0C;
+  padding: 1px 6px;
+}
+
+/* Barres de progression : fines et nettes */
+:is(#tab-honing, #tab-arkpassive, #tab-optimization, #tab-benchmark) :is(.bracelet-progress-bar, .char-progress-bar, .gauge-bar-current) {
+  border-radius: 0;
+}
+
+/* Bannière de décision du taillage : garde sa couleur d'état, perd l'arrondi */
+#tab-optimization .cutting-decision-banner {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Tableaux du benchmark et des comparateurs */
+#tab-benchmark :is(.benchmark-table, .bracelet-compare-table, .astrogems-compare-table),
+#tab-optimization :is(.bracelet-compare-table, .astrogems-compare-table) {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+#tab-benchmark :is(.benchmark-table, .bracelet-compare-table, .astrogems-compare-table) :is(th, td),
+#tab-optimization :is(.bracelet-compare-table, .astrogems-compare-table) :is(th, td) {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+#tab-benchmark :is(.benchmark-table, .bracelet-compare-table, .astrogems-compare-table) th,
+#tab-optimization :is(.bracelet-compare-table, .astrogems-compare-table) th {
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border-medium);
+  border-bottom: 1px solid var(--border-medium);
+}
+
+
+/* Boutons : aucune règle n'existait, les navigateurs affichaient leur style par défaut */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 2px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #0E0F0C;
+}
+
+.btn-primary:hover {
+  background: #F0BC5E;
+  border-color: #F0BC5E;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-active);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-surface-elevated);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-secondary.compact,
+.btn-primary.compact {
+  min-height: 32px;
+  font-size: 13px;
 }

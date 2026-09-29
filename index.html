@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=21.1">
+  <link rel="stylesheet" href="style.css?v=22.2">
 </head>
 <body>
   <div class="app-container">
@@ -76,7 +76,7 @@
         <div class="char-avatar-wrapper">
           <img id="charAvatarImg" class="char-avatar-img" src="images/classes/paladin.png" alt="Portrait du Personnage">
           <div class="char-avatar-overlay"></div>
-          <span class="char-avatar-role-badge" id="charAvatarRoleBadge"><img class="class-sigil-badge" src="images/classes/paladin.png" alt=""> <span>Support</span></span>
+          <span class="char-avatar-role-badge" id="charAvatarRoleBadge"><img class="class-sigil-badge" src="images/classes/paladin.png" alt=""> <span data-i18n="role_support">Support</span></span>
         </div>
 
         <!-- Colonne d'Informations et Métriques détaillées à droite -->
@@ -110,7 +110,7 @@
                 <div class="score-card-title">
                   <span data-i18n="card_title_acc">Accessoires T4</span>
                 </div>
-                <span class="score-role-tag" id="scoreAccRoleTag">DPS</span>
+                <span class="score-role-tag" id="scoreAccRoleTag" data-i18n="role_dps">DPS</span>
               </div>
               <div class="score-card-body">
                 <span class="score-grade-badge grade-a" id="scoreAccGrade">A+</span>
@@ -130,7 +130,7 @@
                 <div class="score-card-title">
                   <span data-i18n="card_title_bracelet">Bracelet T4</span>
                 </div>
-                <span class="score-role-tag" id="scoreBrRoleTag">DPS</span>
+                <span class="score-role-tag" id="scoreBrRoleTag" data-i18n="role_dps">DPS</span>
               </div>
               <div class="score-card-body">
                 <span class="score-grade-badge grade-b" id="scoreBrGrade">B-</span>
@@ -150,7 +150,7 @@
                 <div class="score-card-title">
                   <span data-i18n="card_title_astro">Astrogemmes</span>
                 </div>
-                <span class="score-role-tag" id="scoreAgRoleTag">DPS</span>
+                <span class="score-role-tag" id="scoreAgRoleTag" data-i18n="role_dps">DPS</span>
               </div>
               <div class="score-card-body">
                 <span class="score-grade-badge grade-b" id="scoreAgGrade">B+</span>
@@ -408,7 +408,7 @@
               <div class="gpd-filter-left">
                 <span class="filter-label" data-i18n="gpd_filter_goal_lbl">Objectif</span>
                 <div class="gpd-goal-buttons" id="gpdGoalButtons">
-                  <button type="button" class="btn-goal-pill active" data-goal="all">Tous</button>
+                  <button type="button" class="btn-goal-pill active" data-goal="all" data-i18n="gpd_goal_all">Tous</button>
                   <button type="button" class="btn-goal-pill" data-goal="100">+100 CP</button>
                   <button type="button" class="btn-goal-pill" data-goal="200">+200 CP</button>
                   <button type="button" class="btn-goal-pill" data-goal="300">+300 CP</button>
@@ -869,7 +869,7 @@
               <!-- Indicateur Métrique de l'Arbre -->
               <div class="tree-metric-footer">
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label">Multiplicateur Bond</span>
+                  <span class="tree-metric-label" data-i18n="ark_mult_leap_lbl">Multiplicateur Bond</span>
                   <span class="tree-metric-val" id="dispArkLeapMult">+8.50%</span>
                 </div>
                 <div class="tree-metric-cell">
@@ -884,7 +884,7 @@
           <!-- Synthèse Globale & KPI d'Ark Passive -->
           <div class="card ark-summary-card">
             <div class="card-header">
-              <h2>Impact Global sur le Combat Power & vos Buffs</h2>
+              <h2 data-i18n="ark_summary_header">Impact Global sur le Combat Power & vos Buffs</h2>
               <span class="model-badge" id="arkSummaryRoleBadge">Modèle Support T4</span>
             </div>
 
@@ -896,7 +896,7 @@
               </div>
 
               <div class="advisor-kpi-card highlight-roi">
-                <div class="kpi-label">Multiplicateur Global de Buff</div>
+                <div class="kpi-label" data-i18n="ark_kpi_global_buff">Multiplicateur Global de Buff</div>
                 <div class="kpi-value" id="arkResGlobalMult">+246.00%</div>
                 <div class="kpi-sub" id="arkResBuffDetail">Buff AP Alliés : ~42.8% net</div>
               </div>
@@ -926,7 +926,7 @@
           <div class="card astrogem-grader-card">
             <div class="card-header">
               <div>
-                <span class="badge-t4-special">MODÈLE MATHÉMATIQUE ARK GRID (LOSEII.COM)</span>
+                <span class="badge-t4-special" data-i18n="astro_model_badge">Modèle Ark Grid (loseii.com)</span>
                 <h2 data-i18n="astro_header_title">Évaluateur & Grader de Gemmes Astrales (Astrogem Grader T4)</h2>
                 <p class="subtitle" style="margin-top: 4px; font-size: 14px; color: var(--text-muted);" data-i18n="astro_subtitle">Notez instantanément votre gemme astrale (0 à 100+), son rang (S+ à F), son gain réel en % dégâts ou buff groupe, et sa viabilité pour compléter les cœurs à 17 points de votre Grille d'Ark.</p>
               </div>
@@ -1055,7 +1055,7 @@
                   <button type="button" class="btn-action-pill active" id="btnAstroPresetPerfect8">Perfect C8 (S+)</button>
                   <button type="button" class="btn-action-pill" id="btnAstroPresetRelic9">Relique C9 Support (A+)</button>
                   <button type="button" class="btn-action-pill" id="btnAstroPresetRelic10">Relique C10 DPS (S)</button>
-                  <button type="button" class="btn-action-pill" id="btnAstroPresetFodder">Gemme Fodder / Recyclage</button>
+                  <button type="button" class="btn-action-pill" id="btnAstroPresetFodder" data-i18n="astro_preset_fodder">Gemme fodder / recyclage</button>
                 </div>
               </div>
             </div>
@@ -1453,7 +1453,7 @@
                   </div>
                   <div class="gem-skill-metrics">
                     <span class="gem-metric-cd" id="dispCd_hp">14.7s CD</span>
-                    <span class="gem-metric-status ok" id="dispStatus_hp">Shield Fréquent</span>
+                    <span class="gem-metric-status ok" id="dispStatus_hp" data-i18n="opt_supp_gem_prot_tag">Shield Fréquent</span>
                   </div>
                 </div>
 
@@ -1461,10 +1461,10 @@
                 <div class="gem-skill-row secondary-gems">
                   <div class="gem-skill-info">
                     <div class="gem-skill-title-row">
-                      <strong class="gem-skill-name">7 Gemmes Secondaires (Utilitaires & Éveil)</strong>
+                      <strong class="gem-skill-name" data-i18n="opt_supp_gem_sec_title">7 Gemmes Secondaires (Utilitaires & Éveil)</strong>
                       <span class="gem-tag utility">7 Slots Restants</span>
                     </div>
-                    <div class="gem-skill-sub">Exécuteur Sacré, Frappe Céleste, Épée de Justice, Éveil</div>
+                    <div class="gem-skill-sub" data-i18n="opt_supp_gem_util_skills">Exécuteur Sacré, Frappe Céleste, Épée de Justice, Éveil</div>
                   </div>
                   <div class="gem-skill-control">
                     <label for="gemLvl_other" data-i18n="opt_gem_avg_lbl">Niveau Moyen :</label>
@@ -1492,19 +1492,19 @@
                 </div>
 
                 <div class="gem-ratio-card">
-                  <span class="gem-ratio-label">Uptime Marque (Brand)</span>
+                  <span class="gem-ratio-label" data-i18n="opt_ratio_brand_lbl">Uptime Marque (Brand)</span>
                   <div class="gem-ratio-val" id="dispGemBrandUptime">100.0%</div>
-                  <div class="gem-ratio-sub">+10% dégâts groupe permanent</div>
+                  <div class="gem-ratio-sub" data-i18n="opt_supp_gem_brand_perm">+10% dégâts groupe permanent</div>
                 </div>
 
                 <div class="gem-ratio-card">
-                  <span class="gem-ratio-label">Cycle Aura Bénie (True Gauge)</span>
+                  <span class="gem-ratio-label" data-i18n="opt_supp_gem_aura_cycle">Cycle Aura Bénie (True Gauge)</span>
                   <div class="gem-ratio-val" id="dispGemGaugeRate">+18.5%</div>
-                  <div class="gem-ratio-sub">Vitesse de recharge d'identité</div>
+                  <div class="gem-ratio-sub" data-i18n="opt_supp_gem_aura_speed">Vitesse de recharge d'identité</div>
                 </div>
 
                 <div class="gem-ratio-card highlight-gold">
-                  <span class="gem-ratio-label">Apport Combat Power (CP)</span>
+                  <span class="gem-ratio-label" data-i18n="opt_ratio_cp_lbl">Apport Combat Power (CP)</span>
                   <div class="gem-ratio-val" id="dispGemTotalCp">+209 CP</div>
                   <div class="gem-ratio-sub" id="dispGemCpDelta">+0 CP vs profil actuel</div>
                 </div>
@@ -1632,10 +1632,10 @@
                     <div class="gem-skill-row secondary-gems">
                       <div class="gem-skill-info">
                         <div class="gem-skill-title-row">
-                          <strong class="gem-skill-name">7 Gemmes Secondaires (Dégâts / Cooldown)</strong>
+                          <strong class="gem-skill-name" data-i18n="opt_dps_gem_sec_title">7 Gemmes Secondaires (Dégâts / Cooldown)</strong>
                           <span class="gem-tag utility">7 Slots Restants</span>
                         </div>
-                        <div class="gem-skill-sub">Sorts de remplissage, compteurs, mobilité et utilitaires</div>
+                        <div class="gem-skill-sub" data-i18n="opt_dps_gem_sec_desc">Sorts de remplissage, compteurs, mobilité et utilitaires</div>
                       </div>
                       <div class="gem-skill-control">
                         <label for="gemLvl_dpsOther" data-i18n="opt_gem_avg_lbl">Niveau Moyen :</label>
@@ -1658,7 +1658,7 @@
                     <div class="gem-ratio-card highlight">
                       <span class="gem-ratio-label" data-i18n="opt_ratio_burst_gain">Multiplicateur Burst Majeur</span>
                       <div class="gem-ratio-val" id="dispDpsGemBurstGain">+36.0%</div>
-                      <div class="gem-ratio-sub">Sur votre plus gros sort</div>
+                      <div class="gem-ratio-sub" data-i18n="opt_ratio_burst_sub">Sur votre plus gros sort</div>
                     </div>
 
                     <div class="gem-ratio-card">
@@ -1670,11 +1670,11 @@
                     <div class="gem-ratio-card">
                       <span class="gem-ratio-label" data-i18n="opt_ratio_avg_cd">Réduction CD Moyenne</span>
                       <div class="gem-ratio-val" id="dispDpsGemAvgCd">-20.0%</div>
-                      <div class="gem-ratio-sub">Vitesse de rotation du cycle</div>
+                      <div class="gem-ratio-sub" data-i18n="opt_ratio_cd_sub">Vitesse de rotation du cycle</div>
                     </div>
 
                     <div class="gem-ratio-card highlight-gold">
-                      <span class="gem-ratio-label">Apport Combat Power (CP)</span>
+                      <span class="gem-ratio-label" data-i18n="opt_ratio_cp_lbl">Apport Combat Power (CP)</span>
                       <div class="gem-ratio-val" id="dispDpsGemTotalCp">+312 CP</div>
                       <div class="gem-ratio-sub" id="dispDpsGemCpDelta">+0 CP vs profil actuel</div>
                     </div>
@@ -1700,11 +1700,11 @@
             <div class="opt-toggles-row">
               <label class="toggle-chip">
                 <input type="checkbox" id="optKarmaEnlight" checked>
-                <span>Karma Illumination (Rang 6)</span>
+                <span data-i18n="opt_karma_enl6">Karma Illumination (Rang 6)</span>
               </label>
               <label class="toggle-chip">
                 <input type="checkbox" id="optKarmaEvo" checked>
-                <span>Karma Évolution (Rang 6)</span>
+                <span data-i18n="opt_karma_evo6">Karma Évolution (Rang 6)</span>
               </label>
               <label class="toggle-chip">
                 <input type="checkbox" id="optArkGrid" checked>
@@ -1925,7 +1925,7 @@
               </div>
 
               <div class="cutting-section-title" style="margin-top: 12px;">
-                <span>3. Tirage Obtenu au 2ᵉ Cut (Ligne 2 - Optionnel)</span>
+                <span data-i18n="cut_step3_title">3. Résultat Obtenu au 2ᵉ Cut (Ligne 2 - Optionnel)</span>
               </div>
 
               <div class="form-group">
@@ -2066,7 +2066,7 @@
           <div style="background: rgba(232, 230, 220, 0.06); border: 1px solid rgba(232, 230, 220, 0.2); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
             <strong data-i18n="canon_analysis_title">Analyse de la formule officielle :</strong>
             <ul style="margin-left: 20px; margin-top: 6px;">
-              <li data-i18n="canon_analysis_dps">Pour les <strong>DPS</strong>, le CP est le produit pur de la Base d'Attaque (<code>MainStat × Puissance Arme / 6</code>) par l'ensemble des multiplicateurs de dégâts.</li>
+              <li data-i18n="canon_analysis_dps">Pour les <strong data-i18n="role_dps">DPS</strong>, le CP est le produit pur de la Base d'Attaque (<code>MainStat × Puissance Arme / 6</code>) par l'ensemble des multiplicateurs de dégâts.</li>
               <li data-i18n="canon_analysis_sup">Pour les <strong>Supports</strong>, le CP additionne directement le <strong>Buff Power</strong> (puissance des buffs PA d'équipe) et le <strong>Heal/Shield Power</strong> (taille des boucliers et soins basée sur les Max HP).</li>
               <li data-i18n="canon_analysis_delta">L'écart résiduel de 1 à 2% entre le jeu et le site s'explique par les <strong>Festins de guilde/forteresse</strong> (+10k HP / +5k Arme), la <strong>nourriture active</strong> (+3 000 AP) et les sous-niveaux d'avancement d'Ark Grid.</li>
             </ul>
@@ -2124,7 +2124,7 @@
               <!-- Statut Sync Agent -->
               <div class="agent-status-pill checking" id="raidAgentStatusPill">
                 <span class="agent-dot"></span>
-                <span id="raidAgentStatusText">Connexion Agent...</span>
+                <span id="raidAgentStatusText" data-i18n="raid_agent_checking">Connexion Agent...</span>
               </div>
 
               <button type="button" class="btn-refresh-raids" id="btnRefreshRaidsSync" title="Actualiser la synchronisation">
@@ -2395,7 +2395,7 @@
     <!-- Pied de page -->
     <footer class="app-footer">
       <div class="footer-left">
-        <span>Lost Ark Tier 4 • Calibré d'après les logs & profils réels de <strong data-i18n="canon_badge">lostark.bible</strong></span>
+        <span data-i18n="footer_left">Lost Ark Tier 4 • Calibré d'après les logs & profils réels de <strong data-i18n="canon_badge">lostark.bible</strong></span>
       </div>
       <div class="footer-right">
         <span data-i18n="footer_right">Formule actualisée Support (42.5% AP / 32.5% ID / 25% Brand) & DPS</span>
@@ -2504,7 +2504,7 @@
                 <strong id="oauthUsername" style="color: #8CC084; font-size: 14px;" data-i18n="modal_status_connected">Connecté</strong>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button type="button" id="btnOAuthRefresh" style="background: rgba(232, 230, 220,0.06); border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-main); font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                <button type="button" id="btnOAuthRefresh" style="background: rgba(232, 230, 220,0.06); border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-main); font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;" data-i18n="raid_btn_sync">
                   Actualiser
                 </button>
                 <button type="button" id="btnOAuthLogout" style="background: none; border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-dim); font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_logout">Déconnexion</button>
@@ -2683,7 +2683,7 @@
 
       <div class="modal-body" style="padding: 22px;">
         <p style="font-size: 14px; line-height: 1.5; color: var(--text-main); margin-bottom: 16px;" data-i18n="welcome_modal_intro">
-          Entrez le <strong>pseudo</strong> de votre personnage pour charger instantanément ses statistiques, son affinage et son roster depuis <strong>lostark.bible</strong> :
+          Entrez le <strong>pseudo</strong> de votre personnage pour charger instantanément ses statistiques, son affinage et son roster depuis <strong data-i18n="canon_badge">lostark.bible</strong> :
         </p>
 
         <div class="modal-input-row" style="margin-bottom: 12px;">
@@ -2724,13 +2724,13 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=8.2"></script>
+  <script src="i18n.js?v=8.4"></script>
   <script src="data.js?v=1.2"></script>
   <script src="bracelet-data.js?v=1.0"></script>
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=42.1"></script>
+  <script src="calculator.js?v=43.1"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>
