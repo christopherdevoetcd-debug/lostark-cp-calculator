@@ -1474,7 +1474,7 @@
     }
 
     if (dom.simEstimatedGold) {
-      dom.simEstimatedGold.innerHTML = totalSimGold > 0 ? `${formatNumber(totalSimGold)} g <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">(Market Value)</span><br><span style="font-size:14px; color:#ffb13b;">${formatNumber(totalRawGold)} g</span> <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">(Raw Gold only)</span>` : '0 g';
+      dom.simEstimatedGold.innerHTML = totalSimGold > 0 ? `${formatNumber(totalSimGold)} g <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">(Market Value)</span><br><span style="font-size:15px; color:#ffb13b;">${formatNumber(totalRawGold)} g</span> <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">(Raw Gold only)</span>` : '0 g';
     }
 
     if (dom.simGoldPerCp) {
@@ -3027,8 +3027,8 @@
         const nbName = nextBestTrans.name || nextBest.name;
         const nbComment = nextBestTrans.comment || nextBest.comment;
         dom.effNextBestDesc.innerHTML = isEn
-          ? `<strong>${nbName}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:12.5px;"><em>${nbComment}</em></span>`
-          : `<strong>${nextBest.name}</strong> (${nextBest.gainText}) pour un coût estimé de <strong>${formatNumber(nextBest.cost)} gold</strong>, soit un ratio de rentabilité de <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:12.5px;"><em>${nextBest.comment}</em></span>`;
+          ? `<strong>${nbName}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nbComment}</em></span>`
+          : `<strong>${nextBest.name}</strong> (${nextBest.gainText}) pour un coût estimé de <strong>${formatNumber(nextBest.cost)} gold</strong>, soit un ratio de rentabilité de <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nextBest.comment}</em></span>`;
       } else {
         dom.effNextBestDesc.innerHTML = isEn
           ? `All major T4 milestones in this table are done.`
@@ -3048,7 +3048,7 @@
         const itemTierLabel = isEn 
           ? item.tierLabel.replace('Rang S+', 'Tier S+').replace('Rang S', 'Tier S').replace('Rang A', 'Tier A').replace('Rang B', 'Tier B').replace('Rang C', 'Tier C').replace('Piège à Gold', 'Gold Trap').replace('Luxe Extrême', 'Extreme Luxury')
           : item.tierLabel;
-        const acquiredBadge = acquired ? (isEn ? ' <span style="font-size:10px; color:var(--accent-green); font-weight:700;">[ACQUIRED]</span>' : ' <span style="font-size:10px; color:var(--accent-green); font-weight:700;">[ACQUIS]</span>') : '';
+        const acquiredBadge = acquired ? (isEn ? ' <span style="font-size:11px; color:var(--accent-green); font-weight:700;">[ACQUIRED]</span>' : ' <span style="font-size:11px; color:var(--accent-green); font-weight:700;">[ACQUIS]</span>') : '';
 
         rowsHtml += `
           <tr class="eff-row ${isTop ? 'top-pick' : ''}">
@@ -3648,7 +3648,7 @@
     if (dom.advBraceLinesList) {
       let html = '';
       if (diag.usefulPerks.length === 0 && diag.deadStats.length === 0 && diag.baseStats.length === 0) {
-        html = `<div style="font-size:12px; color:var(--text-dim); padding:6px 0;">${isEn ? 'Standard baseline bracelet.' : 'Bracelet de base standard.'}</div>`;
+        html = `<div style="font-size:13px; color:var(--text-dim); padding:6px 0;">${isEn ? 'Standard baseline bracelet.' : 'Bracelet de base standard.'}</div>`;
       } else {
         diag.usefulPerks.forEach(u => {
           const cleanLbl = formatBraceletLine(u.label, isEn);
@@ -3664,7 +3664,7 @@
           html += `
             <div class="bracelet-item-pill dead">
               <span><strong style="color:#E07A63;">${escapeHtml(cleanLbl)}</strong></span>
-              <span class="pill-mult" style="color:#E07A63; font-size:11px;">${isEn ? 'Dead stat (0% CP)' : 'Stat morte (0% CP)'}</span>
+              <span class="pill-mult" style="color:#E07A63; font-size:12px;">${isEn ? 'Dead stat (0% CP)' : 'Stat morte (0% CP)'}</span>
             </div>
           `;
         });
@@ -3673,7 +3673,7 @@
           html += `
             <div class="bracelet-item-pill stat">
               <span>${escapeHtml(cleanLbl)}</span>
-              <span style="color:var(--text-muted); font-size:11px;">${escapeHtml(b.val)}</span>
+              <span style="color:var(--text-muted); font-size:12px;">${escapeHtml(b.val)}</span>
             </div>
           `;
         });
@@ -4173,11 +4173,15 @@
         ? (isEn ? 'per 0.01% Ally Buff' : 'par 0.01% Buff Allié')
         : (isEn ? 'per 1% Dmg' : 'par 1% Dégâts');
     }
-    if (dom.gpdThRate) dom.gpdThRate.textContent = isSupport ? 'Gold / 0.01%' : 'Gold / 1%';
+    if (dom.gpdThRate) {
+      dom.gpdThRate.textContent = isSupport
+        ? (isEn ? 'Gold / 0.01%' : 'Or / 0,01 %')
+        : (isEn ? 'Gold / 1%' : 'Or / 1 %');
+    }
     if (dom.gpdTableTitle) {
       dom.gpdTableTitle.textContent = isEn
-        ? `Global Progression Steps Ranked by Efficiency (Gold / ${isSupport ? '0.01%' : '1%'})`
-        : `Classement Global des Paliers par Rentabilité (Gold / ${isSupport ? '0.01%' : '1%'})`;
+        ? `Ranked by efficiency (gold / ${isSupport ? '0.01% buff' : '1% damage'})`
+        : `Classement par rentabilité (or / ${isSupport ? '0,01 % de buff' : '1 % de dégâts'})`;
     }
 
     // 1. Highlight Banner (Next Upgrade)
@@ -4187,7 +4191,7 @@
       if (dom.gpdNextContext) dom.gpdNextContext.textContent = `${isEn ? 'Current:' : 'Actuel :'} ${best.whatItReads}`;
       if (dom.gpdNextRate) dom.gpdNextRate.textContent = `${formatNumber(best.rate)} g`;
       if (dom.gpdNextGain) {
-        dom.gpdNextGain.textContent = `${formatNumber(Math.round(best.cost / 1000))}k g ${isEn ? 'for' : 'pour'} +${best.dmgGain.toFixed(2)}% (+${best.cpGain} CP)`;
+        dom.gpdNextGain.textContent = `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} % · +${best.cpGain} CP`;
       }
     }
 
@@ -4219,48 +4223,49 @@
       if (dom.gpdPlanSummary) dom.gpdPlanSummary.style.display = 'none';
     }
 
-    // 3. Render Master Table
+    // 3. Render Master Table (Ledger : tableau dense, barre log du ratio, rang par luminosité)
     if (dom.gpdMasterTableBody) {
+      const rates = masterData.map(r => r.rate).filter(r => r > 0);
+      const logLo = Math.log(Math.min(...rates));
+      const logHi = Math.log(Math.max(...rates));
+      const barPct = (rate) => (logHi > logLo ? 6 + 94 * (Math.log(rate) - logLo) / (logHi - logLo) : 50).toFixed(1);
       let rowsHtml = '';
       masterData.forEach((row, idx) => {
         const isChosen = chosenIds.has(row.id);
         const planIdx = advisorState.planItems.findIndex(x => x.id === row.id);
         const trClass = isChosen ? 'gpd-row plan-selected' : 'gpd-row';
+        // Le rang est toujours évalué sur l'or par 1 % (le ratio support est affiché par 0,01 %)
+        const tier = getTierFromRatio(isSupport ? row.rate * 100 : row.rate);
 
         let statusBadge = '';
         if (goal !== 'all') {
-          if (isChosen) {
-            statusBadge = `<span class="gpd-status-badge in-plan">${isEn ? `In Plan (#${planIdx + 1})` : `Dans le Plan (#${planIdx + 1})`}</span>`;
-          } else {
-            statusBadge = `<span class="gpd-status-badge normal">${isEn ? 'Standby' : 'En attente'}</span>`;
-          }
-        } else {
-          if (idx === 0) {
-            statusBadge = `<span class="gpd-status-badge best-deal">${isEn ? 'Best Deal' : 'Recommandé'}</span>`;
-          } else {
-            statusBadge = `<span class="gpd-status-badge normal">${isEn ? 'Standard' : 'Palier'}</span>`;
-          }
+          statusBadge = isChosen
+            ? `<span class="gpd-status-badge in-plan">${isEn ? `Plan #${planIdx + 1}` : `Plan n° ${planIdx + 1}`}</span>`
+            : '';
+        } else if (idx === 0) {
+          statusBadge = `<span class="gpd-status-badge best-deal">${isEn ? 'Best ratio' : 'Meilleur ratio'}</span>`;
         }
 
         rowsHtml += `
           <tr class="${trClass}">
+            <td class="col-rank">${idx + 1}</td>
             <td>
               <div class="gpd-system-cell">
-                <span class="gpd-system-icon">${row.icon}</span>
                 <span class="gpd-system-title">${row.system}</span>
+                <span class="gpd-read-text">${row.whatItReads}</span>
               </div>
             </td>
-            <td><span class="gpd-read-text">${row.whatItReads}</span></td>
-            <td><span class="gpd-rung-badge">${row.wherePutsYou}</span></td>
-            <td><span class="gpd-step-muted">${row.lastStep} <br><small style="color:#E0A43A;">(${row.lastRate})</small></span></td>
-            <td>
-              <div class="gpd-next-step-cell">
-                <span class="gpd-next-step-name">${row.nextStep}</span>
-                <span class="gpd-next-step-details">${formatNumber(Math.round(row.cost / 1000))}k g • +${row.dmgGain.toFixed(2)}%</span>
+            <td><span class="gpd-next-step-name">${row.nextStep}</span></td>
+            <td class="col-num">${formatNumber(row.cost)}</td>
+            <td class="col-num gpd-gain-val">+${row.dmgGain.toFixed(2)} %</td>
+            <td class="col-num col-rate">
+              <div class="gpd-rate-cell">
+                <span class="gpd-rate-bar"><span style="width: ${barPct(row.rate)}%"></span></span>
+                <span class="gpd-rate-val">${formatNumber(row.rate)}</span>
               </div>
             </td>
-            <td><span class="gpd-rate-val">${formatNumber(row.rate)} g</span></td>
-            <td><span class="gpd-gain-val">+${row.cpGain} CP</span></td>
+            <td class="col-num gpd-cp-val">+${row.cpGain}</td>
+            <td class="col-num"><span class="gpd-tier tier-${tier}">${GPD_TIER_LABELS[tier].replace('Rang ', '')}</span></td>
             <td>${statusBadge}</td>
           </tr>
         `;
@@ -5531,10 +5536,10 @@
         let subNote = '';
         if (isQualSupport) {
           subNote = isEn
-            ? `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">+28.5% solo personal damage, but 0% transferred to allies (excluded from Buff Power formula).</div>`
-            : `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">+28.5% dégâts solo perso, mais 0% transféré aux alliés (exclu de la formule de Buff Power).</div>`;
+            ? `<div style="font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">+28.5% solo personal damage, but 0% transferred to allies (excluded from Buff Power formula).</div>`
+            : `<div style="font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">+28.5% dégâts solo perso, mais 0% transféré aux alliés (exclu de la formule de Buff Power).</div>`;
         } else if (it.note) {
-          subNote = `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">${it.note}</div>`;
+          subNote = `<div style="font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">${it.note}</div>`;
         }
 
         let displayType = it.type;
@@ -6744,7 +6749,7 @@
     currentOAuthRosters = rosters;
     if (!dom.oauthRosterList) return;
     if (rosters.length === 0) {
-      dom.oauthRosterList.innerHTML = `<div style="font-size:12px; color:var(--text-dim);">Aucun roster ou personnage synchronisé.</div>`;
+      dom.oauthRosterList.innerHTML = `<div style="font-size:13px; color:var(--text-dim);">Aucun roster ou personnage synchronisé.</div>`;
       return;
     }
 
@@ -6755,7 +6760,7 @@
       const region = escapeHtml(rawRegion);
       const characters = r.characters || r.characterList || r.chars || [];
 
-      html += `<div style="font-size: 11px; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; margin-top: 6px;">
+      html += `<div style="font-size: 12px; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; margin-top: 6px;">
         ${serverName} (${region}) :
       </div>`;
 
@@ -6769,14 +6774,14 @@
         html += `
           <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); border: 1px solid rgba(232, 230, 220,0.06); border-radius: 6px; padding: 6px 10px; margin-top: 4px;">
             <div>
-              <strong style="color: var(--text-main); font-size: 13px;">${charName}</strong>
-              <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">${charClass} • ${ilvl > 0 ? ilvl.toFixed(1) : ''} iLvl</span>
+              <strong style="color: var(--text-main); font-size: 14px;">${charName}</strong>
+              <span style="font-size: 13px; color: var(--text-muted); margin-left: 6px;">${charClass} • ${ilvl > 0 ? ilvl.toFixed(1) : ''} iLvl</span>
             </div>
             <div style="display: flex; gap: 6px;">
-              <button type="button" class="btn-add-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(140, 192, 132, 0.15); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+              <button type="button" class="btn-add-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(140, 192, 132, 0.15); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
                 + Ajouter
               </button>
-              <button type="button" class="btn-load-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(232, 230, 220, 0.15); border: 1px solid rgba(232, 230, 220, 0.4); color: #E0A43A; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+              <button type="button" class="btn-load-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(232, 230, 220, 0.15); border: 1px solid rgba(232, 230, 220, 0.4); color: #E0A43A; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
                 Charger
               </button>
             </div>
@@ -6994,20 +6999,20 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <img class="user-roster-avatar" src="${avatarSrc}" data-fallback="${classIconSrc}" onerror="this.onerror=null; this.src=this.getAttribute('data-fallback');" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #121310; border: 1px solid rgba(232, 230, 220,0.2);">
             <div>
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #E8E6DC;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #E8E6DC;">
                 <img class="chip-class-sigil" src="${classIconSrc}" alt="${safeClass}" title="${safeClass}">
                 <span>${safeName}</span>
               </div>
-              <div style="font-size: 11px; color: var(--text-dim);">
+              <div style="font-size: 12px; color: var(--text-dim);">
                 ${safeClass} • ${(c.ilvl || 1750).toFixed(1)} iLvl • ${formatNumber(c.cp || 0)} CP
               </div>
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" class="btn-select-roster-char" data-id="${cId}" style="background: rgba(232, 230, 220,0.15); border: 1px solid rgba(232, 230, 220,0.4); color: #E0A43A; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+            <button type="button" class="btn-select-roster-char" data-id="${cId}" style="background: rgba(232, 230, 220,0.15); border: 1px solid rgba(232, 230, 220,0.4); color: #E0A43A; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
               Charger
             </button>
-            <button type="button" class="btn-delete-roster-char" data-id="${cId}" style="background: rgba(224, 122, 99,0.15); border: 1px solid rgba(224, 122, 99,0.4); color: #E07A63; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+            <button type="button" class="btn-delete-roster-char" data-id="${cId}" style="background: rgba(224, 122, 99,0.15); border: 1px solid rgba(224, 122, 99,0.4); color: #E07A63; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
              
             </button>
           </div>
@@ -12251,7 +12256,7 @@
         <td><strong>${isEn ? 'Combat Stats (Crit/Spec/Swift)' : 'Stats de Combat (Crit / Spé / Rap)'}</strong></td>
         <td>${lineCps.pCombatLines.length > 0 ? lineCps.pCombatLines.map(l => escapeHtml(l.text)).join(' & ') : (isEn ? 'None (0 pt)' : 'Aucune (0 pt)')}</td>
         <td>${lineCps.tCombatLines.length > 0 ? lineCps.tCombatLines.map(l => escapeHtml(l.text)).join(' & ') : (isEn ? 'None (0 pt)' : 'Aucune (0 pt)')}</td>
-        <td class="col-cp-gain" style="color:var(--text-muted);">= 0 CP <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Combat Stats row' : 'Comptabilisé dans Stats de Combat'})</em></td>
+        <td class="col-cp-gain" style="color:var(--text-muted);">= 0 CP <em style="font-size:11px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Combat Stats row' : 'Comptabilisé dans Stats de Combat'})</em></td>
       </tr>
       <tr>
         <td><strong>${isEn ? 'Main Stat' : 'Statistique Principale'} (${getMainStatName(pClassName, isEn)})</strong></td>
@@ -12259,8 +12264,8 @@
         <td>${lineCps.tMainLine ? escapeHtml(lineCps.tMainLine.text) : '—'}</td>
         <td class="col-cp-gain" style="${lineCps.mainDiff < 0 ? 'color:#9CB4C6;' : 'color:var(--text-muted);'}">
           ${lineCps.mainDiff < 0 
-            ? `+${Math.abs(lineCps.mainDiff).toLocaleString('fr-FR')} ${isEn ? 'Player Lead' : 'Avance Joueur'} <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>` 
-            : `= 0 CP <em style="font-size:10px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>`}
+            ? `+${Math.abs(lineCps.mainDiff).toLocaleString('fr-FR')} ${isEn ? 'Player Lead' : 'Avance Joueur'} <em style="font-size:11px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>` 
+            : `= 0 CP <em style="font-size:11px; font-weight:normal; display:block;">(${isEn ? 'Tracked in Base AP row' : 'Comptabilisé dans Attaque Base'})</em>`}
         </td>
       </tr>
     `;
@@ -12270,10 +12275,10 @@
       const icon = pair.tP.rollTier === 'passif' ? '' : '';
       const playerDesc = pair.pP 
         ? escapeHtml(pair.pP.text) 
-        : (pair.defLine ? `${escapeHtml(pair.defLine.text)} <em style="font-size:10.5px; color:var(--text-muted);">(${isEn ? 'Survival 0% Buff CP' : 'Survie 0% Buff CP'})</em>` : (isEn ? 'Empty Slot' : 'Emplacement Libre'));
+        : (pair.defLine ? `${escapeHtml(pair.defLine.text)} <em style="font-size:12px; color:var(--text-muted);">(${isEn ? 'Survival 0% Buff CP' : 'Survie 0% Buff CP'})</em>` : (isEn ? 'Empty Slot' : 'Emplacement Libre'));
       const targetDesc = escapeHtml(pair.tP.text);
       const cpText = pair.cp > 0 
-        ? `<strong style="color:#8CC084;">+${pair.cp} CP</strong> <em style="font-size:10.5px; font-weight:normal; display:block; color:#8CC084;">(+${pair.gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'})</em>` 
+        ? `<strong style="color:#8CC084;">+${pair.cp} CP</strong> <em style="font-size:12px; font-weight:normal; display:block; color:#8CC084;">(+${pair.gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'})</em>` 
         : `<span style="color:var(--text-muted);">= 0 CP (${isEn ? 'BiS Parity' : 'Parité BiS'})</span>`;
 
       tableRowsHtml += `
@@ -13221,7 +13226,7 @@
 
         <!-- 4 Leviers & Facteurs d'Écart -->
         <div style="margin-top: 14px;">
-          <div style="font-size:13px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <div style="font-size:14px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <span></span> <span>${isEn ? 'Where does this +' + cpImpact + ' CP difference come from?' : 'D\'où vient cette différence de +' + cpImpact + ' CP ?'}</span>
           </div>
           <div class="stats-factor-grid">
@@ -13885,7 +13890,7 @@
 
         <!-- 3 Raisons de l'écart de points -->
         <div style="margin-top: 14px;">
-          <div style="font-size:13px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <div style="font-size:14px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <span></span> <span>${isEn ? 'Why does the reference profile have +' + deltaPts + ' more Combat Stat points?' : 'Pourquoi la référence a-t-elle +' + deltaPts + ' points de Combat Stats en plus ?'}</span>
           </div>
           <div class="stats-factor-grid">
@@ -13980,7 +13985,7 @@
           <tr>
             <td>
               <strong>${isEn ? 'Engraving Choice' : 'Choix de Gravure'}</strong>
-              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
                 ${isEn ? 'Alternative T4 Relic Engraving' : 'Gravure Relique T4 différente'}
               </div>
             </td>
@@ -14008,7 +14013,7 @@
           <tr>
             <td>
               <strong>${escapeHtml(t.name)}</strong>
-              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
                 ${isEn ? 'Stone nodes & base relic roll' : 'Nœuds de pierre & palier relique'}
               </div>
             </td>
@@ -14475,13 +14480,13 @@
             </div>
             <div class="acc-lines-list">
               <div class="acc-line-badge high">
-                <span><strong>${escapeHtml(p.order.specificName || p.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + p.groupLabel : 'Ordre ' + p.groupLabel} • ${p.order.grade} ${p.order.points}P)</span></span>
+                <span><strong>${escapeHtml(p.order.specificName || p.order.name)}</strong> <span style="font-size:12px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + p.groupLabel : 'Ordre ' + p.groupLabel} • ${p.order.grade} ${p.order.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${p.order.bonusPct.toFixed(2)}%</span>
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span><strong>${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + p.groupLabel : 'Chaos ' + p.groupLabel} • ${p.chaos.grade} ${p.chaos.points}P)</span></span>
+                <span><strong>${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong> <span style="font-size:12px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + p.groupLabel : 'Chaos ' + p.groupLabel} • ${p.chaos.grade} ${p.chaos.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${p.chaos.bonusPct.toFixed(2)}%</span>
                 </div>
@@ -14508,14 +14513,14 @@
             </div>
             <div class="acc-lines-list">
               <div class="acc-line-badge high">
-                <span><strong>${escapeHtml(t.order.specificName || t.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + t.groupLabel : 'Ordre ' + t.groupLabel} • ${t.order.grade} ${t.order.points}P)</span></span>
+                <span><strong>${escapeHtml(t.order.specificName || t.order.name)}</strong> <span style="font-size:12px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + t.groupLabel : 'Ordre ' + t.groupLabel} • ${t.order.grade} ${t.order.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${t.order.bonusPct.toFixed(2)}%</span>
                   ${deltaOrder > 0.05 ? `<span class="line-cp-pill">+${deltaOrder.toFixed(2)}%</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span><strong>${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + t.groupLabel : 'Chaos ' + t.groupLabel} • ${t.chaos.grade} ${t.chaos.points}P)</span></span>
+                <span><strong>${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong> <span style="font-size:12px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + t.groupLabel : 'Chaos ' + t.groupLabel} • ${t.chaos.grade} ${t.chaos.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${t.chaos.bonusPct.toFixed(2)}%</span>
                   ${deltaChaos > 0.05 ? `<span class="line-cp-pill">+${deltaChaos.toFixed(2)}%</span>` : ''}
@@ -14549,15 +14554,15 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>${isEn ? `Order ${p.groupLabel} Core` : `Cœur d'Ordre ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'}</span></td>
-                <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.order.specificName || p.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.order.grade} ${isEn ? 'Tier' : 'Palier'} ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</span></td>
-                <td><strong style="color:#8CC084; font-size:12.5px;">${escapeHtml(t.order.specificName || t.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.order.grade} ${isEn ? 'Tier' : 'Palier'} ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong>${isEn ? `Order ${p.groupLabel} Core` : `Cœur d'Ordre ${p.groupLabel}`}</strong><br><span style="font-size:12px; color:var(--text-muted);">${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'}</span></td>
+                <td><strong style="color:var(--text-primary); font-size:14px;">${escapeHtml(p.order.specificName || p.order.name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${p.order.grade} ${isEn ? 'Tier' : 'Palier'} ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong style="color:#8CC084; font-size:14px;">${escapeHtml(t.order.specificName || t.order.name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${t.order.grade} ${isEn ? 'Tier' : 'Palier'} ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaOrder >= 0 ? `+${deltaOrder.toFixed(2)}%` : `${deltaOrder.toFixed(2)}%`}</td>
               </tr>
               <tr>
-                <td><strong>${isEn ? `Chaos ${p.groupLabel} Core` : `Cœur de Chaos ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'}</span></td>
-                <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</span></td>
-                <td><strong style="color:#8CC084; font-size:12.5px;">${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong>${isEn ? `Chaos ${p.groupLabel} Core` : `Cœur de Chaos ${p.groupLabel}`}</strong><br><span style="font-size:12px; color:var(--text-muted);">${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'}</span></td>
+                <td><strong style="color:var(--text-primary); font-size:14px;">${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${p.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</span></td>
+                <td><strong style="color:#8CC084; font-size:14px;">${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong><br><span style="font-size:12px; color:var(--text-muted);">${t.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaChaos >= 0 ? `+${deltaChaos.toFixed(2)}%` : `${deltaChaos.toFixed(2)}%`}</td>
               </tr>
               <tr>
@@ -14854,14 +14859,14 @@
         benchmarkState.isAutoFetching = true;
         heroCard.innerHTML = `
           <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
-            <div style="font-size: 36px; margin-bottom: 12px;"></div>
-            <div style="font-size: 17px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
+            <div style="font-size: 40px; margin-bottom: 12px;"></div>
+            <div style="font-size: 19px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
               ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
             </div>
-            <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
+            <div style="font-size: 15px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
               ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(140, 192, 132, 0.12); border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(140, 192, 132, 0.12); border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;">
               <span>${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
             </div>
           </div>
@@ -14891,16 +14896,16 @@
       // État d'invitation à la recherche (NON BLOQUANT, interactif)
       heroCard.innerHTML = `
         <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
-          <div style="font-size: 36px; margin-bottom: 12px;"></div>
-          <div style="font-size: 17px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
+          <div style="font-size: 40px; margin-bottom: 12px;"></div>
+          <div style="font-size: 19px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
             ${isEn ? 'No Benchmark Profile Selected' : 'Aucun Profil de Référence Sélectionné'}
           </div>
-          <div style="font-size: 13.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
+          <div style="font-size: 15px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
             ${isEn
               ? `To benchmark your <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), enter any player name or lostark.bible profile link in the search bar below.`
               : `Pour comparer votre <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), saisissez le pseudo d'un joueur ou un lien lostark.bible dans la barre de recherche ci-dessous.`}
           </div>
-          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232, 230, 220, 0.12); border: 1px solid rgba(232, 230, 220, 0.3); color: #E0A43A; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232, 230, 220, 0.12); border: 1px solid rgba(232, 230, 220, 0.3); color: #E0A43A; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;">
             <span>${isEn ? '100% Live lostark.bible profiles supported' : 'Profils 100% LIVE lostark.bible supportés'}</span>
           </div>
         </div>
@@ -15048,7 +15053,7 @@
               <img src="${pAvatar}" alt="${escapeHtml(player.name)}" loading="eager" onerror="this.onerror=null; this.src='images/classes/paladin.png';">
             </div>
             <div class="bench-char-info">
-              <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#E0A43A;">${t('bench_card_player_title')}</span>
+              <span style="font-size:12px; text-transform:uppercase; font-weight:700; color:#E0A43A;">${t('bench_card_player_title')}</span>
               <div class="bench-char-name-row">
                 <span class="bench-char-name">${escapeHtml(player.name)}</span>
                 <span class="bench-char-ilvl">${(player.ilvl || 1700).toFixed(2)}</span>
@@ -15061,7 +15066,7 @@
           <div class="bench-cp-box">
             <div>
               <div class="bench-cp-label">Combat Power</div>
-              <div style="font-size:11px; color:var(--text-muted);">${isEn ? 'Observed in-game (Raid)' : 'Relevé en jeu (Raid)'}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${isEn ? 'Observed in-game (Raid)' : 'Relevé en jeu (Raid)'}</div>
             </div>
             <div class="bench-cp-val">${formatNumber(Math.round(pCp))} CP</div>
           </div>
@@ -15076,14 +15081,14 @@
         <div class="bench-delta-center">
           <span class="bench-vs-pill">VS</span>
           <div class="bench-delta-badge">
-            <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#9A978A;">${t('bench_delta_title')}</span>
+            <span style="font-size:12px; font-weight:700; text-transform:uppercase; color:#A29F92;">${t('bench_delta_title')}</span>
             <span class="bench-delta-val">${isTargetAhead ? '+' : ''}${formatNumber(deltaCp)} CP</span>
             <span class="bench-delta-pct">${isTargetAhead ? '+' : ''}${deltaPct}% ${isEn ? 'performance gap' : 'de performance'}</span>
           </div>
           <div class="bench-delta-bar-container">
             <div class="bench-delta-bar-fill" style="width: ${Math.min(100, Math.max(10, Math.round((pCp / tCp) * 100)))}%;"></div>
           </div>
-          <span style="font-size:11px; color:var(--text-muted);">${t('bench_same_ilvl_note')} (±${Math.abs(Math.round(target.ilvl - player.ilvl))} iLvl)</span>
+          <span style="font-size:12px; color:var(--text-muted);">${t('bench_same_ilvl_note')} (±${Math.abs(Math.round(target.ilvl - player.ilvl))} iLvl)</span>
         </div>
 
         <!-- Benchmark Référence -->
@@ -15094,10 +15099,10 @@
             </div>
             <div class="bench-char-info">
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#8CC084;">${t('bench_card_target_title')}</span>
+                <span style="font-size:12px; text-transform:uppercase; font-weight:700; color:#8CC084;">${t('bench_card_target_title')}</span>
                 ${target.isLive 
-                  ? `<span style="background: rgba(140, 192, 132, 0.2); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">LIVE lostark.bible</span>` 
-                  : `<span style="background: rgba(232, 230, 220, 0.2); border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
+                  ? `<span style="background: rgba(140, 192, 132, 0.2); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">LIVE lostark.bible</span>` 
+                  : `<span style="background: rgba(232, 230, 220, 0.2); border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
                 }
               </div>
               <div class="bench-char-name-row">
@@ -15112,7 +15117,7 @@
           <div class="bench-cp-box">
             <div>
               <div class="bench-cp-label">Combat Power</div>
-              <div style="font-size:11px; color:var(--text-muted);">${target.isLive ? (isEn ? 'Raid Preset (lostark.bible)' : 'Profil de Raid (lostark.bible)') : (isEn ? 'Calibrated Target (Progression)' : 'Palier de Progression Calibré')}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${target.isLive ? (isEn ? 'Raid Preset (lostark.bible)' : 'Profil de Raid (lostark.bible)') : (isEn ? 'Calibrated Target (Progression)' : 'Palier de Progression Calibré')}</div>
             </div>
             <div class="bench-cp-val">${formatNumber(Math.round(tCp))} CP</div>
           </div>
@@ -15120,7 +15125,7 @@
           <div class="bench-pills-row">
             <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
             ${target.isLive && target.bibleUrl
-              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">${t('bench_view_bible')}</a>`
+              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:13px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">${t('bench_view_bible')}</a>`
               : `<span class="bench-pill" style="margin-left:auto; background:rgba(232, 230, 220,0.15); border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
             }
           </div>
@@ -15143,9 +15148,9 @@
       if (activeGaps.length === 0) {
         gapsGrid.innerHTML = `
           <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px;">
-            <span style="font-size: 28px;"></span>
+            <span style="font-size: 31px;"></span>
             <h4 style="margin: 8px 0 4px 0; color: #8CC084;">${isEn ? 'Parity or ahead' : 'Parité ou avance'}</h4>
-            <p style="font-size: 13px; color: var(--text-muted); margin: 0;">${isEn ? 'All your equipment systems are equal or superior to this reference benchmark.' : 'Tous vos systèmes d\'équipement sont équivalents ou supérieurs à ce profil de référence.'}</p>
+            <p style="font-size: 14px; color: var(--text-muted); margin: 0;">${isEn ? 'All your equipment systems are equal or superior to this reference benchmark.' : 'Tous vos systèmes d\'équipement sont équivalents ou supérieurs à ce profil de référence.'}</p>
           </div>
         `;
       } else {
@@ -15517,16 +15522,16 @@
           <tr class="benchmark-table-total-row">
             <td colspan="4" style="padding: 12px 16px; font-weight: 700; color: #E8E6DC;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:16px;"></span>
+                <span style="font-size:18px;"></span>
                 <div>
                   <span>${isEn ? 'Sum of Improvement Levers (Gross Deficit)' : 'Total Brut des Leviers d\'Amélioration (Retards Stuff)'}</span>
-                  <div style="font-size:11px; font-weight:400; color:var(--text-muted); margin-top:2px;">
+                  <div style="font-size:12px; font-weight:400; color:var(--text-muted); margin-top:2px;">
                     ${isEn ? 'Arithmetic sum of all positive CP gains in the table above' : 'Somme arithmétique de tous les gains positifs individuels du tableau ci-dessus'}
                   </div>
                 </div>
               </div>
             </td>
-            <td class="col-cp" style="font-family:var(--font-mono); font-weight:800; font-size:14px; color:#8CC084; padding: 12px 16px;">
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:800; font-size:15px; color:#8CC084; padding: 12px 16px;">
               +${formatNumber(totalPositiveTableCp)} CP
             </td>
             <td style="padding: 12px 16px;">
@@ -15537,16 +15542,16 @@
             <tr class="benchmark-table-lead-row">
               <td colspan="4" style="padding: 10px 16px; font-weight: 600; color: #B5C7D4;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-size:15px;"></span>
+                  <span style="font-size:17px;"></span>
                   <div>
                     <span>${isEn ? 'Your Compensating Advantages (Equipments Ahead)' : 'Vos Avances Compensatoires (Équipements où vous surpassez la cible)'}</span>
-                    <div style="font-size:11px; font-weight:400; color:var(--text-muted); margin-top:2px;">
+                    <div style="font-size:12px; font-weight:400; color:var(--text-muted); margin-top:2px;">
                       ${isEn ? 'Directly cushions and offsets your equipment deficits' : 'Amortit et compense directement vos retards d\'équipements'}
                     </div>
                   </div>
                 </div>
               </td>
-              <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; font-size:13px; color:#9CB4C6; padding: 10px 16px;">
+              <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; font-size:14px; color:#9CB4C6; padding: 10px 16px;">
                 -${formatNumber(totalPlayerLeadTableCp)} CP (${isEn ? 'Lead' : 'Avance'})
               </td>
               <td style="padding: 10px 16px;">
@@ -15557,10 +15562,10 @@
           <tr class="benchmark-table-net-row">
             <td colspan="4" style="padding: 14px 16px; font-weight: 800; color: #E0A43A;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:18px;"></span>
+                <span style="font-size:20px;"></span>
                 <div>
                   <span>${isEn ? 'Observed In-Game Net Gap (lostark.bible Score in Raid)' : 'Écart Réel Net In-Game (Score relevé en Raid sur lostark.bible)'}</span>
-                  <div style="font-size:11.5px; font-weight:400; color:var(--text-muted); margin-top:3px; line-height:1.4;">
+                  <div style="font-size:13px; font-weight:400; color:var(--text-muted); margin-top:3px; line-height:1.4;">
                     ${isEn
                       ? `Formula: <strong>Target CP (${formatNumber(Math.round(target.cp || 0))}) &minus; Your CP (${formatNumber(Math.round(player.cp || 0))}) = ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP</strong>. Reflects Lost Ark\'s compound multiplicative formula (each individual line shows its isolated linear gain).`
                       : `Formule : <strong>Cible (${formatNumber(Math.round(target.cp || 0))} CP) &minus; Vous (${formatNumber(Math.round(player.cp || 0))} CP) = ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP</strong>. Intègre la formule multiplicative croisée du jeu (chaque ligne isole son gain linéaire individuel).`
@@ -15569,7 +15574,7 @@
                 </div>
               </div>
             </td>
-            <td class="col-cp" style="font-family:var(--font-mono); font-weight:900; font-size:16px; color:#E0A43A; padding: 14px 16px;">
+            <td class="col-cp" style="font-family:var(--font-mono); font-weight:900; font-size:18px; color:#E0A43A; padding: 14px 16px;">
               ${directCpGap >= 0 ? '+' : ''}${formatNumber(directCpGap)} CP
             </td>
             <td style="padding: 14px 16px;">

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20.1">
+  <link rel="stylesheet" href="style.css?v=21.1">
 </head>
 <body>
   <div class="app-container">
@@ -307,10 +307,10 @@
 
             <!-- Mode de calcul : Affinage Pur vs Évolution Globale -->
             <div style="display: flex; gap: 6px; margin-bottom: 14px;" id="predModeToggle">
-              <button type="button" class="role-btn active" id="btnPredModeHoning" style="flex: 1; padding: 6px 10px; font-size: 11.5px; border-radius: 4px; text-align: center;">
+              <button type="button" class="role-btn active" id="btnPredModeHoning" style="flex: 1; padding: 6px 10px; font-size: 13px; border-radius: 4px; text-align: center;">
                 <span data-i18n="pred_mode_honing">Affinage Pur (Stuff Seul)</span>
               </button>
-              <button type="button" class="role-btn" id="btnPredModeGlobal" style="flex: 1; padding: 6px 10px; font-size: 11.5px; border-radius: 4px; text-align: center;">
+              <button type="button" class="role-btn" id="btnPredModeGlobal" style="flex: 1; padding: 6px 10px; font-size: 13px; border-radius: 4px; text-align: center;">
                 <span data-i18n="pred_mode_global">Évolution Globale (Endgame)</span>
               </button>
             </div>
@@ -390,7 +390,7 @@
             <!-- Bannière Highlight : Prochaine Amélioration Rentable -->
             <div class="gpd-next-banner" id="gpdNextBanner">
               <div class="gpd-next-left">
-                <span class="gpd-next-tag" data-i18n="gpd_upgrade_next_lbl">Upgrade Suivant Recommandé :</span>
+                <span class="gpd-next-tag" data-i18n="gpd_upgrade_next_lbl">Meilleur ratio</span>
                 <strong class="gpd-next-system" id="gpdNextSystem">Grille d'Ark — Taille Épiques ➔ A-</strong>
                 <span class="gpd-next-context" id="gpdNextContext">Actuel : B+ (moyenne des 24 gemmes)</span>
               </div>
@@ -406,9 +406,9 @@
             <!-- Barre de Contrôles & Filtres d'Objectifs CP -->
             <div class="gpd-filter-bar">
               <div class="gpd-filter-left">
-                <span class="filter-label" data-i18n="gpd_filter_goal_lbl">Filtrer par Objectif :</span>
+                <span class="filter-label" data-i18n="gpd_filter_goal_lbl">Objectif</span>
                 <div class="gpd-goal-buttons" id="gpdGoalButtons">
-                  <button type="button" class="btn-goal-pill active" data-goal="all">Tous (Vue Globale)</button>
+                  <button type="button" class="btn-goal-pill active" data-goal="all">Tous</button>
                   <button type="button" class="btn-goal-pill" data-goal="100">+100 CP</button>
                   <button type="button" class="btn-goal-pill" data-goal="200">+200 CP</button>
                   <button type="button" class="btn-goal-pill" data-goal="300">+300 CP</button>
@@ -437,7 +437,7 @@
           <div class="card gpd-table-card">
             <div class="card-header">
               <div>
-                <h3 id="gpdTableTitle" data-i18n="gpd_table_title">Classement Global des Paliers par Rentabilité (Gold / 1%)</h3>
+                <h3 id="gpdTableTitle" data-i18n="gpd_table_title">Classement par rentabilité</h3>
                 <p class="subtitle" data-i18n="gpd_table_sub">
                   Trié du palier le plus rentable au plus cher. Un palier sélectionné dans votre objectif est mis en évidence.
                 </p>
@@ -448,13 +448,14 @@
               <table class="gpd-master-table" id="gpdMasterTable">
                 <thead>
                   <tr>
+                    <th class="col-rank" data-i18n="gpd_th_rank">#</th>
                     <th data-i18n="gpd_th_system">Système</th>
-                    <th data-i18n="gpd_th_read">Lecture Actuelle</th>
-                    <th data-i18n="gpd_th_current">Palier Actuel</th>
-                    <th data-i18n="gpd_th_last">Dernier Palier</th>
-                    <th data-i18n="gpd_th_next">Prochain Palier (À Acheter)</th>
-                    <th id="gpdThRate" data-i18n="gpd_th_rate">Gold / 1%</th>
-                    <th data-i18n="gpd_th_cpgain">Gain CP</th>
+                    <th data-i18n="gpd_th_next">Étape</th>
+                    <th class="col-num" data-i18n="gpd_th_cost">Coût (g)</th>
+                    <th class="col-num" data-i18n="gpd_th_gain">Gain</th>
+                    <th class="col-num col-rate" id="gpdThRate" data-i18n="gpd_th_rate">Or / 1 %</th>
+                    <th class="col-num" data-i18n="gpd_th_cpgain">+CP</th>
+                    <th class="col-num" data-i18n="gpd_th_tier">Rang</th>
                     <th data-i18n="gpd_th_status">Statut</th>
                   </tr>
                 </thead>
@@ -927,7 +928,7 @@
               <div>
                 <span class="badge-t4-special">MODÈLE MATHÉMATIQUE ARK GRID (LOSEII.COM)</span>
                 <h2 data-i18n="astro_header_title">Évaluateur & Grader de Gemmes Astrales (Astrogem Grader T4)</h2>
-                <p class="subtitle" style="margin-top: 4px; font-size: 13px; color: var(--text-muted);" data-i18n="astro_subtitle">Notez instantanément votre gemme astrale (0 à 100+), son rang (S+ à F), son gain réel en % dégâts ou buff groupe, et sa viabilité pour compléter les cœurs à 17 points de votre Grille d'Ark.</p>
+                <p class="subtitle" style="margin-top: 4px; font-size: 14px; color: var(--text-muted);" data-i18n="astro_subtitle">Notez instantanément votre gemme astrale (0 à 100+), son rang (S+ à F), son gain réel en % dégâts ou buff groupe, et sa viabilité pour compléter les cœurs à 17 points de votre Grille d'Ark.</p>
               </div>
               <div class="eff-badge-container">
                 <span class="model-badge" id="astroRoleBadge">Support T4 (Buff Groupe)</span>
@@ -957,7 +958,7 @@
                   </div>
                   <input type="range" id="astroWpLevel" min="1" max="5" step="1" value="5">
                   <div class="gem-cost-badge-row" style="margin-top: 6px;">
-                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_eff_cost_lbl">Coût effectif dans le cœur :</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" data-i18n="astro_eff_cost_lbl">Coût effectif dans le cœur :</span>
                     <span class="gem-effective-cost optimal" id="dispAstroEffectiveCost">Coût 3 (Opti 17 pts)</span>
                   </div>
                 </div>
@@ -968,7 +969,7 @@
                     <span id="dispAstroOrderLevel" style="font-weight: 700; color: #CFCBBD;">Niveau 5</span>
                   </div>
                   <input type="range" id="astroOrderLevel" min="1" max="5" step="1" value="5">
-                  <span style="font-size: 11px; color: var(--text-muted);" data-i18n="astro_order_sub">Multiplicateur direct au-dessus du plancher de 17 points (+0.16% par point).</span>
+                  <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_order_sub">Multiplicateur direct au-dessus du plancher de 17 points (+0.16% par point).</span>
                 </div>
 
                 <div class="astrogem-section-title" style="margin-top: 8px;">
@@ -980,7 +981,7 @@
                   <label for="astroEffect1" data-i18n="astro_eff1_label">Ligne 3 (Effet 1) :</label>
                   <select id="astroEffect1" class="clean-select"></select>
                   <div class="label-row" style="display: flex; justify-content: space-between; margin-top: 6px;">
-                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_eff1_lvl_lbl">Niveau de l'Effet 1 :</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" data-i18n="astro_eff1_lvl_lbl">Niveau de l'Effet 1 :</span>
                     <span id="dispAstroEff1Level" style="font-weight: 700; color: #E0A43A;">Niv. 5</span>
                   </div>
                   <input type="range" id="astroEff1Level" min="1" max="5" step="1" value="5">
@@ -991,7 +992,7 @@
                   <label for="astroEffect2" data-i18n="astro_eff2_label">Ligne 4 (Effet 2) :</label>
                   <select id="astroEffect2" class="clean-select"></select>
                   <div class="label-row" style="display: flex; justify-content: space-between; margin-top: 6px;">
-                    <span style="font-size: 12px; color: var(--text-muted);" data-i18n="astro_eff2_lvl_lbl">Niveau de l'Effet 2 :</span>
+                    <span style="font-size: 13px; color: var(--text-muted);" data-i18n="astro_eff2_lvl_lbl">Niveau de l'Effet 2 :</span>
                     <span id="dispAstroEff2Level" style="font-weight: 700; color: #E0A43A;">Niv. 5</span>
                   </div>
                   <input type="range" id="astroEff2Level" min="1" max="5" step="1" value="5">
@@ -1005,7 +1006,7 @@
                   <div class="gem-score-main">
                     <span class="gem-score-label" data-i18n="astro_grade_label">Grade Global Loseii</span>
                     <div class="gem-score-number" id="astroGradeVal">98.5 <span class="denom">/ 100</span></div>
-                    <span style="font-size: 11px; color: #CFCBBD; font-weight: 600;" id="astroRainbowLabel">Rainbow Roll (True Perfect)</span>
+                    <span style="font-size: 12px; color: #CFCBBD; font-weight: 600;" id="astroRainbowLabel">Rainbow Roll (True Perfect)</span>
                   </div>
                   <div class="gem-rank-display">
                     <span class="gem-rank-pill rank-s-plus" id="astroRankPill">S+</span>
@@ -1863,7 +1864,7 @@
             <div>
               <span class="badge-t4-special" data-i18n="cut_badge">Modèle Bellman DP (loseii.com)</span>
               <h2 data-i18n="cut_title">Conseiller & Assistant de Taillage d'Accessoires T4 (Stop-Loss EV)</h2>
-              <p class="subtitle" style="margin-top: 4px; font-size: 13px; color: var(--text-muted);" data-i18n="cut_subtitle">
+              <p class="subtitle" style="margin-top: 4px; font-size: 14px; color: var(--text-muted);" data-i18n="cut_subtitle">
                 Déterminez instantanément après le 1ᵉʳ ou 2ᵉ cut si votre bijou brut a une espérance de gain nette positive (EV &gt; 0) justifiant de payer les 1 200 g suivants, ou s'il faut stopper immédiatement pour arrêter de brûler de l'or.
               </p>
             </div>
@@ -2019,7 +2020,7 @@
           <div class="card-header">
             <div>
               <h2 data-i18n="canon_title">Moteur Mathématique Canonique T4 (Smilegate & lostark.bible)</h2>
-              <p class="subtitle" style="margin-top: 4px; font-size: 13px; color: var(--text-muted);" data-i18n="canon_subtitle">
+              <p class="subtitle" style="margin-top: 4px; font-size: 14px; color: var(--text-muted);" data-i18n="canon_subtitle">
                 Décomposition exacte décompilée : Combat Power = Base Value × ∏ (1 + Multiplicateurs) / 100
               </p>
             </div>
@@ -2062,7 +2063,7 @@
           </div>
 
           <!-- Explication technique -->
-          <div style="background: rgba(232, 230, 220, 0.06); border: 1px solid rgba(232, 230, 220, 0.2); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+          <div style="background: rgba(232, 230, 220, 0.06); border: 1px solid rgba(232, 230, 220, 0.2); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
             <strong data-i18n="canon_analysis_title">Analyse de la formule officielle :</strong>
             <ul style="margin-left: 20px; margin-top: 6px;">
               <li data-i18n="canon_analysis_dps">Pour les <strong>DPS</strong>, le CP est le produit pur de la Base d'Attaque (<code>MainStat × Puissance Arme / 6</code>) par l'ensemble des multiplicateurs de dégâts.</li>
@@ -2412,45 +2413,45 @@
         <h2 data-i18n="help_title">Comment utiliser l'outil ?</h2>
         <p data-i18n="help_subtitle">Le site regroupe 8 modules puissants pour optimiser votre personnage.</p>
       </div>
-      <div class="modal-body" style="color: var(--text-dim); line-height: 1.5; font-size: 14px; max-height: 65vh; overflow-y: auto;">
+      <div class="modal-body" style="color: var(--text-dim); line-height: 1.5; font-size: 15px; max-height: 65vh; overflow-y: auto;">
         <p style="margin-bottom: 16px;" data-i18n="help_intro">Voici un aperçu des différents modules à votre disposition :</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E0A43A; font-size: 13px;">Importation</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_import">Chargez votre équipement, gemmes et Ark Passive depuis lostark.bible. (Point de départ)</div>
+            <strong style="color: #E0A43A; font-size: 14px;">Importation</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_import">Chargez votre équipement, gemmes et Ark Passive depuis lostark.bible. (Point de départ)</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #CFCBBD; font-size: 13px;">Benchmark & Comparator</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_benchmark">Comparez votre build aux meilleurs joueurs pour voir quoi améliorer.</div>
+            <strong style="color: #CFCBBD; font-size: 14px;">Benchmark & Comparator</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_benchmark">Comparez votre build aux meilleurs joueurs pour voir quoi améliorer.</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E07A63; font-size: 13px;">Quick Predictor</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_predictor">Estimez votre gain global de Combat Power en fonction d'un iLvl cible.</div>
+            <strong style="color: #E07A63; font-size: 14px;">Quick Predictor</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_predictor">Estimez votre gain global de Combat Power en fonction d'un iLvl cible.</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E0A43A; font-size: 13px;">Smart Advisor</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_advisor">Trouvez les améliorations les plus rentables et optimisez votre budget.</div>
+            <strong style="color: #E0A43A; font-size: 14px;">Smart Advisor</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_advisor">Trouvez les améliorations les plus rentables et optimisez votre budget.</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #4ade80; font-size: 13px;">Piece-by-Piece Honing</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_honing">Simulez le coût exact de l'affinage de chaque pièce au forgeron.</div>
+            <strong style="color: #4ade80; font-size: 14px;">Piece-by-Piece Honing</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_honing">Simulez le coût exact de l'affinage de chaque pièce au forgeron.</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #f472b6; font-size: 13px;">Ark Passive Simulator</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_ark">Testez différentes combinaisons de points (Evolution, Enlightenment, Leap).</div>
+            <strong style="color: #f472b6; font-size: 14px;">Ark Passive Simulator</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_ark">Testez différentes combinaisons de points (Evolution, Enlightenment, Leap).</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #9CB4C6; font-size: 13px;">T4 Optimization</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_opti">Ajustez virtuellement vos gemmes, bijoux et effets de set pour voir l'impact.</div>
+            <strong style="color: #9CB4C6; font-size: 14px;">T4 Optimization</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_opti">Ajustez virtuellement vos gemmes, bijoux et effets de set pour voir l'impact.</div>
           </div>
           <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E0A43A; font-size: 13px;">Raids & Gold Tracker</strong>
-            <div style="font-size: 12px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_raid">Suivez vos revenus en gold de la semaine via l'agent local.</div>
+            <strong style="color: #E0A43A; font-size: 14px;">Raids & Gold Tracker</strong>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_raid">Suivez vos revenus en gold de la semaine via l'agent local.</div>
           </div>
         </div>
 
-        <div style="padding: 12px; background: rgba(232, 230, 220,0.03); border-radius: 8px; font-size: 13px; text-align: center;">
+        <div style="padding: 12px; background: rgba(232, 230, 220,0.03); border-radius: 8px; font-size: 14px; text-align: center;">
           <em data-i18n="help_tip">Toutes vos modifications dans les onglets (Gemmes, Ark Passive, Affinage) mettent à jour votre Combat Power en temps réel.</em>
         </div>
       </div>
@@ -2473,26 +2474,26 @@
         <div class="oauth-section" id="oauthSection">
           <!-- État non connecté -->
           <div id="oauthDisconnectedView" style="display: block;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
               <span style="color: var(--text-muted); font-weight: 600;" data-i18n="modal_oauth_client">Client OAuth :</span>
               <div style="display: flex; gap: 4px;" id="oauthEnvToggle">
-                <button type="button" id="btnOAuthEnvProd" class="role-btn active" style="padding: 3px 10px; font-size: 11px; border-radius: 4px;" data-i18n="modal_env_prod">Production</button>
-                <button type="button" id="btnOAuthEnvDev" class="role-btn" style="padding: 3px 10px; font-size: 11px; border-radius: 4px;" data-i18n="modal_env_dev">Développement</button>
+                <button type="button" id="btnOAuthEnvProd" class="role-btn active" style="padding: 3px 10px; font-size: 12px; border-radius: 4px;" data-i18n="modal_env_prod">Production</button>
+                <button type="button" id="btnOAuthEnvDev" class="role-btn" style="padding: 3px 10px; font-size: 12px; border-radius: 4px;" data-i18n="modal_env_dev">Développement</button>
               </div>
             </div>
 
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(232, 230, 220,0.08); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(232, 230, 220,0.08); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
               <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 8px;">
                 <span style="color: var(--text-muted);">URI : </span>
                 <code id="oauthRedirectUriPreview" style="color: var(--accent-gold); font-family: monospace;">https://lostark.nevercry-prox.com/</code>
               </div>
-              <button type="button" id="btnCopyRedirectUri" style="background: rgba(232, 230, 220,0.15); border: 1px solid rgba(232, 230, 220,0.3); color: #E0A43A; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;" data-i18n="modal_btn_copy">Copier</button>
+              <button type="button" id="btnCopyRedirectUri" style="background: rgba(232, 230, 220,0.15); border: 1px solid rgba(232, 230, 220,0.3); color: #E0A43A; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;" data-i18n="modal_btn_copy">Copier</button>
             </div>
 
-            <button type="button" class="btn-primary" id="btnOAuthLogin" style="width: 100%; justify-content: center; padding: 12px 16px; background: #E0A43A; border: 1px solid #E0A43A; color: #0E0F0C; font-size: 14px; font-weight: 600;">
-              <span style="font-size: 16px;"></span> <strong data-i18n="modal_btn_login">Se connecter avec lostark.bible</strong>
+            <button type="button" class="btn-primary" id="btnOAuthLogin" style="width: 100%; justify-content: center; padding: 12px 16px; background: #E0A43A; border: 1px solid #E0A43A; color: #0E0F0C; font-size: 15px; font-weight: 600;">
+              <span style="font-size: 18px;"></span> <strong data-i18n="modal_btn_login">Se connecter avec lostark.bible</strong>
             </button>
-            <p style="font-size: 11.5px; color: var(--text-muted); text-align: center; margin-top: 6px;" data-i18n="modal_oauth_helper">OAuth 2.0 PKCE officiel • Synchronisation instantanée de votre Roster et de vos logs</p>
+            <p style="font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 6px;" data-i18n="modal_oauth_helper">OAuth 2.0 PKCE officiel • Synchronisation instantanée de votre Roster et de vos logs</p>
           </div>
 
           <!-- État connecté -->
@@ -2500,17 +2501,17 @@
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #8CC084;"></span>
-                <strong id="oauthUsername" style="color: #8CC084; font-size: 13px;" data-i18n="modal_status_connected">Connecté</strong>
+                <strong id="oauthUsername" style="color: #8CC084; font-size: 14px;" data-i18n="modal_status_connected">Connecté</strong>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button type="button" id="btnOAuthRefresh" style="background: rgba(232, 230, 220,0.06); border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-main); font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                <button type="button" id="btnOAuthRefresh" style="background: rgba(232, 230, 220,0.06); border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-main); font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
                   Actualiser
                 </button>
-                <button type="button" id="btnOAuthLogout" style="background: none; border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-dim); font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_logout">Déconnexion</button>
+                <button type="button" id="btnOAuthLogout" style="background: none; border: 1px solid rgba(232, 230, 220,0.15); color: var(--text-dim); font-size: 12px; padding: 4px 10px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_logout">Déconnexion</button>
               </div>
             </div>
 
-            <button type="button" class="btn-primary" id="btnOAuthSyncAllRoster" style="width: 100%; justify-content: center; padding: 10px 14px; margin-bottom: 10px; background: #1B1C16; border: 1px solid #45463C; color: #E8E6DC; font-size: 13px;">
+            <button type="button" class="btn-primary" id="btnOAuthSyncAllRoster" style="width: 100%; justify-content: center; padding: 10px 14px; margin-bottom: 10px; background: #1B1C16; border: 1px solid #45463C; color: #E8E6DC; font-size: 14px;">
               <span data-i18n="modal_btn_sync_roster">Tout synchroniser dans Mon Roster (Top 6)</span>
             </button>
 
@@ -2522,13 +2523,13 @@
 
         <div style="display: flex; align-items: center; gap: 10px; margin: 6px 0;">
           <div style="flex: 1; height: 1px; background: rgba(232, 230, 220,0.08);"></div>
-          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">ou ajout direct par pseudo</span>
+          <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">ou ajout direct par pseudo</span>
           <div style="flex: 1; height: 1px; background: rgba(232, 230, 220,0.08);"></div>
         </div>
 
         <div class="modal-input-row">
           <div style="flex: 1;">
-            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="modal_region_lbl">Région</label>
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="modal_region_lbl">Région</label>
             <select id="importRegion">
               <option value="CE" selected>Europe Central (CE)</option>
               <option value="NAW">North America West (NAW)</option>
@@ -2537,14 +2538,14 @@
             </select>
           </div>
           <div style="flex: 2;">
-            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nom du Personnage</label>
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nom du Personnage</label>
             <input type="text" id="importCharName" placeholder="Ex: Siwilpal, MonPerso..." value="">
           </div>
         </div>
 
         <div style="margin-top: 6px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
           <input type="checkbox" id="chkAutoAddToRoster" checked style="cursor: pointer; width: 15px; height: 15px;">
-          <label for="chkAutoAddToRoster" style="font-size: 12px; color: var(--text-muted); cursor: pointer;">
+          <label for="chkAutoAddToRoster" style="font-size: 13px; color: var(--text-muted); cursor: pointer;">
             Ajouter et sauvegarder automatiquement dans <strong>Mon Roster</strong>
           </label>
         </div>
@@ -2558,14 +2559,14 @@
         <!-- Section Gestion de Mon Roster personnel -->
         <div class="user-roster-manager-section" id="userRosterManagerSection" style="display: none; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(232, 230, 220,0.08);">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">
+            <span style="font-size: 13px; font-weight: 700; color: var(--text-main);">
               Personnages dans Mon Roster (<span id="modalRosterCount">0</span>) :
             </span>
             <div style="display: flex; gap: 6px;">
-              <button type="button" id="btnRefreshAllUserRoster" data-i18n="btn_refresh_all_roster" style="background: rgba(232, 230, 220,0.12); border: 1px solid rgba(232, 230, 220,0.3); color: #E0A43A; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
+              <button type="button" id="btnRefreshAllUserRoster" data-i18n="btn_refresh_all_roster" style="background: rgba(232, 230, 220,0.12); border: 1px solid rgba(232, 230, 220,0.3); color: #E0A43A; font-size: 12px; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
                 Tout réactualiser
               </button>
-              <button type="button" id="btnClearUserRoster" style="background: rgba(224, 122, 99,0.12); border: 1px solid rgba(224, 122, 99,0.3); color: #E07A63; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_clear_roster">Réinitialiser</button>
+              <button type="button" id="btnClearUserRoster" style="background: rgba(224, 122, 99,0.12); border: 1px solid rgba(224, 122, 99,0.3); color: #E07A63; font-size: 12px; padding: 3px 8px; border-radius: 4px; cursor: pointer;" data-i18n="modal_btn_clear_roster">Réinitialiser</button>
             </div>
           </div>
           <div id="modalUserRosterList" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
@@ -2573,7 +2574,7 @@
           </div>
         </div>
 
-        <details style="font-size: 12px; color: var(--text-muted); cursor: pointer; margin-top: 10px;">
+        <details style="font-size: 13px; color: var(--text-muted); cursor: pointer; margin-top: 10px;">
           <summary style="font-weight: 600; color: var(--text-main); margin-bottom: 8px;">Option manuelle : Import JSON brut ou Bearer Token</summary>
           <p style="margin-bottom: 8px;">Si le navigateur bloque la requête directe (CORS/Cloudflare), tu peux coller ici le JSON brut de <code>https://lostark.bible/character/CE/TON_PERSO/__data.json</code> ou ton Bearer Token :</p>
           <textarea id="importJsonDirect" rows="4" placeholder="Colle le JSON ou Bearer Token uwo_... ici"></textarea>
@@ -2583,7 +2584,7 @@
         </details>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-primary" id="btnCloseImportModalFooter" data-i18n="modal_btn_close" style="padding: 9px 24px; font-weight: 700; font-size: 13px;">✓ OK / Fermer</button>
+        <button type="button" class="btn-primary" id="btnCloseImportModalFooter" data-i18n="modal_btn_close" style="padding: 9px 24px; font-weight: 700; font-size: 14px;">✓ OK / Fermer</button>
       </div>
     </div>
   </div>
@@ -2596,7 +2597,7 @@
         <button type="button" class="modal-close-btn" id="btnCloseAgentModal">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 14px 0; line-height: 1.5;" data-i18n="agent_modal_subtitle">
+        <p style="font-size: 14px; color: var(--text-muted); margin: 0 0 14px 0; line-height: 1.5;" data-i18n="agent_modal_subtitle">
           Synchronisez automatiquement vos clears de raids et vos gains de golds depuis LOA Logs en temps réel.
         </p>
 
@@ -2649,10 +2650,10 @@
 
         <!-- Reassurance & Confidentialité -->
         <div class="agent-notice-box">
-          <span style="font-size: 16px;"></span>
+          <span style="font-size: 18px;"></span>
           <div>
             <strong style="color: #4ade80;" data-i18n="agent_privacy_notice">100% Local & Privé : L'agent s'exécute exclusivement sur votre propre PC (http://127.0.0.1:4848). Vos identifiants et combats ne transitent jamais sur internet.</strong>
-            <div style="font-size: 11px; color: #9A978A; margin-top: 4px;" data-i18n="agent_compatibility_notice">
+            <div style="font-size: 12px; color: #A29F92; margin-top: 4px;" data-i18n="agent_compatibility_notice">
               Compatible avec LOA Logs / Lost Ark Logs (%LOCALAPPDATA%\LOA Logs\encounters.db).
             </div>
           </div>
@@ -2669,10 +2670,10 @@
     <div class="modal-container welcome-modal-box">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 24px;"></span>
+          <span style="font-size: 26px;"></span>
           <div>
             <h3 data-i18n="welcome_modal_title">Bienvenue sur Lost Ark CP & Optimizer T4</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 0;" data-i18n="welcome_modal_sub">
+            <p style="font-size: 13px; color: var(--text-muted); margin: 0;" data-i18n="welcome_modal_sub">
               Analysez votre personnage et calculez votre Combat Power réel en quelques clics
             </p>
           </div>
@@ -2681,13 +2682,13 @@
       </div>
 
       <div class="modal-body" style="padding: 22px;">
-        <p style="font-size: 13px; line-height: 1.5; color: var(--text-main); margin-bottom: 16px;" data-i18n="welcome_modal_intro">
+        <p style="font-size: 14px; line-height: 1.5; color: var(--text-main); margin-bottom: 16px;" data-i18n="welcome_modal_intro">
           Entrez le <strong>pseudo</strong> de votre personnage pour charger instantanément ses statistiques, son affinage et son roster depuis <strong>lostark.bible</strong> :
         </p>
 
         <div class="modal-input-row" style="margin-bottom: 12px;">
           <div style="flex: 1;">
-            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="modal_region_lbl">Région</label>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="modal_region_lbl">Région</label>
             <select id="welcomeRegion">
               <option value="CE" selected>Europe Central (CE)</option>
               <option value="NAW">North America West (NAW)</option>
@@ -2696,13 +2697,13 @@
             </select>
           </div>
           <div style="flex: 2;">
-            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="welcome_char_name_lbl">Pseudo du Personnage</label>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="welcome_char_name_lbl">Pseudo du Personnage</label>
             <input type="text" id="welcomeCharName" placeholder="Ex: Àlphâ, Frieedhof, Siwilpal..." autofocus>
           </div>
         </div>
 
 
-        <button type="button" class="btn-primary" id="btnWelcomeFetch" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; font-weight: 700;">
+        <button type="button" class="btn-primary" id="btnWelcomeFetch" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px; font-weight: 700;">
           <span data-i18n="welcome_btn_fetch">Charger mon personnage</span>
         </button>
 
@@ -2710,12 +2711,12 @@
 
         <div style="display: flex; align-items: center; gap: 10px; margin: 18px 0 14px;">
           <div style="flex: 1; height: 1px; background: rgba(232, 230, 220,0.08);"></div>
-          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="welcome_or_label">ou découvrez l'outil</span>
+          <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="welcome_or_label">ou découvrez l'outil</span>
           <div style="flex: 1; height: 1px; background: rgba(232, 230, 220,0.08);"></div>
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" class="btn-secondary" id="btnWelcomeDemo" style="flex: 1; justify-content: center; padding: 9px; font-size: 12px;">
+          <button type="button" class="btn-secondary" id="btnWelcomeDemo" style="flex: 1; justify-content: center; padding: 9px; font-size: 13px;">
             <span data-i18n="welcome_btn_demo">Explorer en mode Démo</span>
           </button>
         </div>
@@ -2723,13 +2724,13 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=8.1"></script>
+  <script src="i18n.js?v=8.2"></script>
   <script src="data.js?v=1.2"></script>
   <script src="bracelet-data.js?v=1.0"></script>
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=41.1"></script>
+  <script src="calculator.js?v=42.1"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>
