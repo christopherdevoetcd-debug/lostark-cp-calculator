@@ -2579,13 +2579,151 @@
     updateCuttingAdvisorView();
   }
 
+
+  function getDynamicGpdTable(charObj, role, isEn) {
+    if (!charObj) return EUC_EFFICIENCY_DATA[role] || EUC_EFFICIENCY_DATA.support;
+    const isSupport = role === 'support';
+    const sys = extractPlayerSystems(charObj, isSupport);
+    
+    let dynTable = [];
+    
+    // 1. Weapon Honing
+    let wLvl = sys.weapon.wLvl || 12;
+    if (wLvl < 25) {
+      const dmgGain = 1.22; // approx from prompt for weapon
+      const costRaw = HONING_COSTS.weapon[wLvl + 1] || 150000;
+      const totalCost = costRaw * 30; // approx including mats
+      const ratio = Math.round(totalCost / dmgGain);
+      dynTable.push({
+        id: 'dyn_weapon',
+        name: isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
+        sub: isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
+        gainText: `+${dmgGain.toFixed(2)}% DPS`,
+        gainVal: dmgGain,
+        cost: totalCost,
+        ratioText: formatNumber(ratio) + ' g',
+        ratioVal: ratio,
+        tier: getTierFromRatio(ratio)
+      });
+    }
+
+    // 2. Armor Honing
+    let aLvl = Math.floor(sys.armors.avgArmor || 12);
+    if (aLvl < 25) {
+      const dmgGain = isSupport ? 1.50 : 1.08; // 1.08% from prompt for armors
+      const costRaw = (HONING_COSTS.armor[aLvl + 1] || 25000) * 5;
+      const totalCost = costRaw * 22;
+      const ratio = Math.round(totalCost / dmgGain);
+      dynTable.push({
+        id: 'dyn_armor',
+        name: isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
+        sub: isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,
+        gainText: `+${dmgGain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'}`,
+        gainVal: dmgGain,
+        cost: totalCost,
+        ratioText: formatNumber(ratio) + ' g',
+        ratioVal: ratio,
+        tier: getTierFromRatio(ratio)
+      });
+    }
+
+    // 3. Gems
+    let gDesc = sys.gems.label || '';
+    let currentGemLvl = 7;
+    if (gDesc.includes('10')) currentGemLvl = 10;
+    else if (gDesc.includes('9')) currentGemLvl = 9;
+    else if (gDesc.includes('8')) currentGemLvl = 8;
+    
+    if (currentGemLvl < 10) {
+      const gain = currentGemLvl === 7 ? 4.83 : (currentGemLvl === 8 ? 4.79 : 4.00);
+      const totalCost = currentGemLvl === 7 ? 3080000 : (currentGemLvl === 8 ? 9240000 : 25000000);
+      const ratio = Math.round(totalCost / gain);
+      dynTable.push({
+        id: 'dyn_gems',
+        name: isEn ? `Skill gems — Level ${currentGemLvl + 1}` : `Gemmes de Compétences — Niv. ${currentGemLvl + 1}`,
+        sub: isEn ? `Full set upgrade` : `Upgrade du set complet`,
+        gainText: `+${gain.toFixed(2)}% DPS`,
+        gainVal: gain,
+        cost: totalCost,
+        ratioText: formatNumber(ratio) + ' g',
+        ratioVal: ratio,
+        tier: getTierFromRatio(ratio)
+      });
+    }
+
+    // 4. Astrogems (Cutting epics to next tier)
+    const astroGain = 1.08;
+    const astroCost = 675000;
+    const astroRatio = 623000;
+    dynTable.push({
+      id: 'dyn_astro',
+      name: isEn ? 'Ark grid — Astrogems' : 'Grille d\'Ark — Astrogemmes',
+      sub: isEn ? 'Cutting epics ➔ Next Tier' : 'Taille d\'épiques ➔ Palier Suivant',
+      gainText: `+${astroGain.toFixed(2)}% DPS`,
+      gainVal: astroGain,
+      cost: astroCost,
+      ratioText: formatNumber(astroRatio) + ' g',
+      ratioVal: astroRatio,
+      tier: getTierFromRatio(astroRatio)
+    });
+
+    // 5. Bracelet
+    const bracGain = 0.77;
+    const bracCost = 271000;
+    const bracRatio = 351000;
+    dynTable.push({
+      id: 'dyn_brac',
+      name: isEn ? 'Bracelet — Next Tier' : 'Bracelet — Palier Supérieur',
+      sub: isEn ? 'Roll a new bracelet campaign' : 'Campagne de reroll complète',
+      gainText: `+${bracGain.toFixed(2)}% DPS`,
+      gainVal: bracGain,
+      cost: bracCost,
+      ratioText: formatNumber(bracRatio) + ' g',
+      ratioVal: bracRatio,
+      tier: getTierFromRatio(bracRatio)
+    });
+
+    // 6. Accessoires
+    const accGain = 0.22;
+    const accCost = 166000;
+    const accRatio = 740000;
+    dynTable.push({
+      id: 'dyn_acc',
+      name: isEn ? 'Earring / Ring Upgrade' : 'Upgrade Bijou',
+      sub: isEn ? 'Replace weakest accessory' : 'Remplacer le bijou le plus faible',
+      gainText: `+${accGain.toFixed(2)}% DPS`,
+      gainVal: accGain,
+      cost: accCost,
+      ratioText: formatNumber(accRatio) + ' g',
+      ratioVal: accRatio,
+      tier: getTierFromRatio(accRatio)
+    });
+
+    // Sort by most efficient (lowest ratio)
+    dynTable.sort((a, b) => a.ratioVal - b.ratioVal);
+    
+    return dynTable;
+  }
+  
+  function getTierFromRatio(ratio) {
+    if (ratio <= 400000) return 's-plus';
+    if (ratio <= 750000) return 's';
+    if (ratio <= 1200000) return 'a';
+    if (ratio <= 2500000) return 'b';
+    return 'c';
+  }
+
   /**
    * Génère et injecte dynamiquement le tableau d'arbitrage EUC (Onglet 3)
    */
   function renderEfficiencyTable() {
     const role = state.role || 'support';
     const isSupport = role === 'support';
-    const list = EUC_EFFICIENCY_DATA[role] || EUC_EFFICIENCY_DATA.support;
+    
+    let list = EUC_EFFICIENCY_DATA[role] || EUC_EFFICIENCY_DATA.support;
+    if (activeCharacterId && state.characters && state.characters[activeCharacterId]) {
+       list = getDynamicGpdTable(state.characters[activeCharacterId], role, isEnLang());
+    }
 
     const isEn = isEnLang();
     if (dom.effRoleBadge) {
@@ -4079,6 +4217,99 @@
     updateOptimizationView();
     updatePredictorView();
     updateActiveCharacterCard(activeCharacterId);
+
+  // === NOUVEL ONGLET MARCHE & FORTERESSE ===
+  function renderMarketTab() {
+    const dealsBody = document.querySelector('#dealsTable tbody');
+    const craftBody = document.querySelector('#craftingTable tbody');
+    if (!dealsBody || !craftBody) return;
+
+    // 1. DEAL FINDER (Mockup basé sur les données de Loseii)
+    const deals = [
+      { item: 'Destruction Stone', spot: 599, fair: 1460, type: 'honing' },
+      { item: 'Honor Leapstone', spot: 130, fair: 270, type: 'honing' },
+      { item: 'Guardian Stone', spot: 299, fair: 600, type: 'honing' },
+      { item: 'Iron Ore', spot: 115, fair: 154, type: 'mat' },
+      { item: 'Ancient Relic', spot: 234, fair: 306, type: 'mat' },
+      { item: 'Destiny Leapstone', spot: 17, fair: 14, type: 'honing' },
+      { item: 'Destiny Guardian Stone', spot: 60, fair: 44, type: 'honing' },
+      { item: 'Honor Shard Pouch (L)', spot: 450, fair: 238, type: 'honing' },
+    ];
+
+    deals.forEach(d => {
+      d.pct = Math.round(((d.spot - d.fair) / d.fair) * 100);
+    });
+    deals.sort((a, b) => a.pct - b.pct);
+
+    let dHtml = '';
+    deals.forEach(d => {
+      const color = d.pct < 0 ? '#10b981' : '#ef4444'; // green if deal, red if overpriced
+      const sign = d.pct > 0 ? '+' : '';
+      dHtml += `
+        <tr>
+          <td>${d.item} <span style="font-size: 0.7em; opacity: 0.6; margin-left: 5px;">(${d.type})</span></td>
+          <td style="font-family: monospace;">${d.spot} g</td>
+          <td style="font-family: monospace; color: #a1a1aa;">${d.fair} g</td>
+          <td style="color: ${color}; font-weight: bold;">${sign}${d.pct}%</td>
+        </tr>
+      `;
+    });
+    dealsBody.innerHTML = dHtml;
+
+    // 2. CRAFTING CALCULATOR
+    // Lecture des inputs
+    const costRed = parseFloat(document.getElementById('shCostRed')?.value || 0);
+    const timeRed = parseFloat(document.getElementById('shTimeRed')?.value || 0);
+    const gsChance = parseFloat(document.getElementById('shGsChance')?.value || 0);
+
+    const crafts = [
+      { name: 'Superior Oreha Fusion Material', sell: 459, baseCost: 350, matCost: 100, isFusion: true },
+      { name: 'Abidos Fusion Material', sell: 131, baseCost: 90, matCost: 40, isFusion: true },
+      { name: 'Superior Abidos Fusion Material', sell: 153, baseCost: 120, matCost: 35, isFusion: true },
+      { name: 'Dark Grenade', sell: 80, baseCost: 30, matCost: 20, isFusion: false },
+      { name: 'Prime Oreha Fusion Material', sell: 49, baseCost: 45, matCost: 25, isFusion: true }
+    ];
+
+    let cHtml = '';
+    crafts.forEach(c => {
+      // ajustement du craft price selon la reduction forteresse
+      const extraCostRed = c.isFusion ? 10 : 0; // Special (fusion) cost red
+      const extraGs = c.isFusion ? 9 : 0; // Special GS
+      
+      const adjustedGold = Math.floor(c.baseCost * (1 - (costRed + extraCostRed) / 100));
+      const totalCost = c.matCost + adjustedGold;
+      const gsc = 5 * (1 + (gsChance + extraGs) / 100);
+      const ey = 1 * (1 + gsc / 100); // base qty = 1 for simplicity here
+      
+      const tax = Math.ceil(c.sell * 0.05);
+      const netProfit = (ey * (c.sell - tax)) - totalCost;
+      const roi = (netProfit / totalCost) * 100;
+
+      const color = netProfit > 0 ? '#10b981' : '#ef4444';
+      const sign = netProfit > 0 ? '+' : '';
+
+      cHtml += `
+        <tr>
+          <td>${c.name}</td>
+          <td style="color: ${color}; font-weight: bold;">${sign}${netProfit.toFixed(1)} g</td>
+          <td style="color: ${color};">${roi.toFixed(1)}%</td>
+        </tr>
+      `;
+    });
+    
+    // Sort by profit
+    craftBody.innerHTML = cHtml;
+  }
+
+  // Hook event listeners for crafting inputs
+  setTimeout(() => {
+    ['shCostRed', 'shTimeRed', 'shGsChance'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('input', renderMarketTab);
+    });
+    renderMarketTab();
+  }, 1000);
+
 
     if (dom.btnApplyRoadmap) {
       const originalText = dom.btnApplyRoadmap.innerHTML;

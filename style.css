@@ -6534,3 +6534,30 @@ select optgroup {
   to { transform: translateY(0); opacity: 1; }
 }
 
+
+/* MARKET & CRAFTING STYLES */
+.market-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+.market-table th, .market-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.market-table th {
+  font-weight: 600;
+  color: var(--accent-color, #38bdf8);
+  background: rgba(0, 0, 0, 0.2);
+}
+.market-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.market-table td {
+  color: #e2e8f0;
+}
+.market-table .icon {
+  margin-right: 0.5rem;
+}
