@@ -90,43 +90,100 @@
                 <span>🔗</span> <span data-i18n="btn_share_char">Partager</span>
               </button>
             </div>
-            <div class="char-ilvl-container">
-              <span class="ilvl-label" data-i18n="card_ilvl_label">Item Level</span>
-              <span class="char-ilvl-tag" id="charCardIlvl">1750.00</span>
+            <div class="char-top-badges">
+              <div class="char-ilvl-container">
+                <span class="ilvl-label" data-i18n="card_ilvl_label">Item Level</span>
+                <span class="char-ilvl-tag" id="charCardIlvl">1750.00</span>
+              </div>
+              <div class="char-cp-container">
+                <span class="ilvl-label" data-i18n="card_metric_cp">Combat Power</span>
+                <span class="char-cp-header-tag" id="charCardCp">3 368 CP</span>
+              </div>
             </div>
           </div>
 
-          <!-- Grille des 4 métriques clés -->
+          <!-- Grille des 4 Scores d'Équipement & Rentabilité (Style Loseii) -->
           <div class="char-metrics-grid">
-            <div class="char-metric-box metric-cp">
-              <div class="metric-icon">🏆</div>
-              <div class="metric-content">
-                <span class="metric-label" data-i18n="card_metric_cp">Combat Power Réel</span>
-                <strong class="metric-value cp" id="charCardCp">3 368 CP</strong>
+            <!-- Carte 1 : Accessoires T4 -->
+            <div class="char-metric-box score-card score-accessories" id="scoreCardAcc" title="Cliquez pour voir les Accessoires T4">
+              <div class="score-card-header">
+                <div class="score-card-title">
+                  <span class="score-icon">💍</span>
+                  <span data-i18n="card_title_acc">Accessoires T4</span>
+                </div>
+                <span class="score-role-tag" id="scoreAccRoleTag">DPS</span>
+              </div>
+              <div class="score-card-body">
+                <span class="score-grade-badge grade-a" id="scoreAccGrade">A+</span>
+                <div class="score-main-stats">
+                  <div class="score-primary-val" id="scoreAccVal">+24.12%</div>
+                  <div class="score-primary-sub" id="scoreAccSub" data-i18n="score_acc_dmg">Dégâts Exacts</div>
+                </div>
+              </div>
+              <div class="score-card-footer" id="scoreAccDetail">
+                15/15 Rolls • Modèle Multiplicatif
               </div>
             </div>
 
-            <div class="char-metric-box">
-              <div class="metric-icon">⚔️</div>
-              <div class="metric-content">
-                <span class="metric-label" data-i18n="card_metric_weapon">Niveau d'Arme T4</span>
-                <strong class="metric-value" id="charCardWeapon">+17</strong>
+            <!-- Carte 2 : Bracelet T4 -->
+            <div class="char-metric-box score-card score-bracelet" id="scoreCardBracelet" title="Cliquez pour analyser le Bracelet">
+              <div class="score-card-header">
+                <div class="score-card-title">
+                  <span class="score-icon">📿</span>
+                  <span data-i18n="card_title_bracelet">Bracelet T4</span>
+                </div>
+                <span class="score-role-tag" id="scoreBrRoleTag">DPS</span>
+              </div>
+              <div class="score-card-body">
+                <span class="score-grade-badge grade-b" id="scoreBrGrade">B-</span>
+                <div class="score-main-stats">
+                  <div class="score-primary-val" id="scoreBrScore">63.2</div>
+                  <div class="score-primary-sub" id="scoreBrPct">+13.47% Dégâts</div>
+                </div>
+              </div>
+              <div class="score-card-footer" id="scoreBrDetail">
+                Traits & Rolls Décodés
               </div>
             </div>
 
-            <div class="char-metric-box">
-              <div class="metric-icon">🛡️</div>
-              <div class="metric-content">
-                <span class="metric-label" data-i18n="card_metric_armor">Armures T4</span>
-                <strong class="metric-value" id="charCardArmor">+14 / +15</strong>
+            <!-- Carte 3 : Astrogemmes T4 -->
+            <div class="char-metric-box score-card score-astrogems" id="scoreCardAstro" title="Cliquez pour voir les Astrogemmes">
+              <div class="score-card-header">
+                <div class="score-card-title">
+                  <span class="score-icon">💎</span>
+                  <span data-i18n="card_title_astro">Astrogemmes</span>
+                </div>
+                <span class="score-role-tag" id="scoreAgRoleTag">DPS</span>
+              </div>
+              <div class="score-card-body">
+                <span class="score-grade-badge grade-b" id="scoreAgGrade">B+</span>
+                <div class="score-main-stats">
+                  <div class="score-primary-val" id="scoreAgScore">78.0</div>
+                  <div class="score-primary-sub" id="scoreAgPct">+7.92% Grille</div>
+                </div>
+              </div>
+              <div class="score-card-footer" id="scoreAgDetail">
+                24 Gemmes Taillées
               </div>
             </div>
 
-            <div class="char-metric-box metric-adv">
-              <div class="metric-icon">✨</div>
-              <div class="metric-content">
-                <span class="metric-label" data-i18n="card_metric_adv">Affinage Avancé</span>
-                <strong class="metric-value adv" id="charCardAdv">+40</strong>
+            <!-- Carte 4 : Prochain +1% (GPD) -->
+            <div class="char-metric-box score-card score-gpd" id="scoreCardGpd" title="Cliquez pour ouvrir le Smart Advisor / GPD">
+              <div class="score-card-header">
+                <div class="score-card-title">
+                  <span class="score-icon">⚡</span>
+                  <span data-i18n="card_title_gpd">Prochain +1%</span>
+                </div>
+                <span class="score-role-tag gpd-tag" data-i18n="gpd_chart_link">GPD ➔</span>
+              </div>
+              <div class="score-card-body">
+                <div class="score-main-stats gpd-stats">
+                  <div class="score-primary-val gpd-price" id="scoreGpdPrice">623k g</div>
+                  <div class="score-primary-sub" id="scoreGpdPer" data-i18n="score_gpd_per">par 1% Dégâts</div>
+                </div>
+              </div>
+              <div class="score-card-footer gpd-footer" id="scoreGpdDetail">
+                Grille d'Ark — épiques → A-
               </div>
             </div>
           </div>
@@ -136,6 +193,7 @@
             <div class="char-sub-info">
               <span class="sub-pill"><span data-i18n="card_level_prefix">Niveau</span> <strong>70</strong></span>
               <span class="sub-pill" id="charCardRoster">Roster <strong>319</strong></span>
+              <span class="sub-pill" id="charCardGearPill">⚔️ <strong>+17</strong> • 🛡️ <strong>+14/+15</strong> • ✨ <strong>+40</strong></span>
               <span class="sub-pill source-pill" data-i18n="card_source_live">🌐 Source : lostark.bible (Live)</span>
             </div>
           </div>
@@ -2795,7 +2853,8 @@
   <script src="bracelet-data.js?v=1.0"></script>
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
-  <script src="calculator.js?v=38.2"></script>
+  <script src="subrank.js?v=1.0"></script>
+  <script src="calculator.js?v=38.3"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>

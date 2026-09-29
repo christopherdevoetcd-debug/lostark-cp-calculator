@@ -628,7 +628,14 @@ body {
   color: var(--text-dim);
 }
 
-.char-ilvl-container {
+.char-top-badges {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.char-ilvl-container,
+.char-cp-container {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -648,15 +655,167 @@ body {
   font-weight: 900;
   font-family: var(--font-mono);
   color: var(--accent-gold);
-  
   line-height: 1.1;
 }
 
-/* Grille 4 Métriques */
+.char-cp-header-tag {
+  font-size: 22px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  color: var(--support-color, #38bdf8);
+  line-height: 1.1;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+.active-character-card.role-dps .char-cp-header-tag {
+  color: var(--accent-gold, #f59e0b);
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+}
+
+/* Grille 4 Métriques & Scores */
 .char-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+/* Cartes de Score de Profil (Style Loseii) */
+.char-metric-box.score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 10px 13px;
+  background: rgba(18, 24, 38, 0.55);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 10px);
+  gap: 7px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.char-metric-box.score-card:hover {
+  background: rgba(26, 34, 52, 0.85);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.score-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.score-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim, #94a3b8);
+}
+
+.score-icon {
+  font-size: 13px;
+}
+
+.score-role-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.03em;
+}
+
+.score-role-tag.gpd-tag {
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+.score-card-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  font-family: var(--font-mono, monospace);
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* Couleurs Loseii par palier */
+.score-grade-badge.grade-s { background: #0284c7; color: #ffffff; }
+.score-grade-badge.grade-s-plus { background: linear-gradient(135deg, #f59e0b, #ec4899); color: #ffffff; }
+.score-grade-badge.grade-a { background: #7c3aed; color: #ffffff; }
+.score-grade-badge.grade-b { background: #2563eb; color: #ffffff; }
+.score-grade-badge.grade-c { background: #059669; color: #ffffff; }
+.score-grade-badge.grade-d, .score-grade-badge.grade-f { background: #475569; color: #e2e8f0; }
+
+.score-main-stats {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.score-primary-val {
+  font-size: 16px;
+  font-weight: 900;
+  font-family: var(--font-mono, monospace);
+  color: #f8fafc;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.score-primary-val.gpd-price {
+  color: #fbbf24;
+}
+
+.score-primary-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-card-footer {
+  font-size: 10.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.score-card-footer.gpd-footer {
+  color: #38bdf8;
+  font-weight: 600;
 }
 
 .char-metric-box {

@@ -611,8 +611,36 @@
     charCardArmor: document.getElementById('charCardArmor'),
     charCardAdv: document.getElementById('charCardAdv'),
     charCardRoster: document.getElementById('charCardRoster'),
+    charCardGearPill: document.getElementById('charCardGearPill'),
     charImageUploadInput: document.getElementById('charImageUploadInput'),
     btnResetAvatar: document.getElementById('btnResetAvatar'),
+
+    // Cartes de Score de Profil (Loseii Style)
+    scoreCardAcc: document.getElementById('scoreCardAcc'),
+    scoreAccRoleTag: document.getElementById('scoreAccRoleTag'),
+    scoreAccGrade: document.getElementById('scoreAccGrade'),
+    scoreAccVal: document.getElementById('scoreAccVal'),
+    scoreAccSub: document.getElementById('scoreAccSub'),
+    scoreAccDetail: document.getElementById('scoreAccDetail'),
+
+    scoreCardBracelet: document.getElementById('scoreCardBracelet'),
+    scoreBrRoleTag: document.getElementById('scoreBrRoleTag'),
+    scoreBrGrade: document.getElementById('scoreBrGrade'),
+    scoreBrScore: document.getElementById('scoreBrScore'),
+    scoreBrPct: document.getElementById('scoreBrPct'),
+    scoreBrDetail: document.getElementById('scoreBrDetail'),
+
+    scoreCardAstro: document.getElementById('scoreCardAstro'),
+    scoreAgRoleTag: document.getElementById('scoreAgRoleTag'),
+    scoreAgGrade: document.getElementById('scoreAgGrade'),
+    scoreAgScore: document.getElementById('scoreAgScore'),
+    scoreAgPct: document.getElementById('scoreAgPct'),
+    scoreAgDetail: document.getElementById('scoreAgDetail'),
+
+    scoreCardGpd: document.getElementById('scoreCardGpd'),
+    scoreGpdPrice: document.getElementById('scoreGpdPrice'),
+    scoreGpdPer: document.getElementById('scoreGpdPer'),
+    scoreGpdDetail: document.getElementById('scoreGpdDetail'),
 
     // Onglet 3 : Optimisation T4 Arsonistic & Arbitrage EUC
     optSupportControls: document.getElementById('optSupportControls'),
@@ -7035,6 +7063,26 @@
       });
     });
 
+    // Clics interactifs sur les Cartes de Score de Profil (Loseii Style)
+    function navigateToTab(tabId) {
+      if (!dom.tabBtns || !dom.tabPanes) return;
+      dom.tabBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tabId));
+      dom.tabPanes.forEach(p => p.classList.toggle('active', p.id === tabId));
+      if (tabId === 'tab-canonical') renderCanonicalView();
+      if (tabId === 'tab-advisor') renderAdvisorView();
+      if (tabId === 'tab-arkpassive') updateArkPassiveView();
+      if (tabId === 'tab-raidtracker') renderRaidTrackerView();
+      if (tabId === 'tab-benchmark') renderBenchmarkTab();
+      if (tabId === 'tab-optimization') updateOptimizationView();
+      const pane = document.getElementById(tabId);
+      if (pane) pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    if (dom.scoreCardAcc) dom.scoreCardAcc.addEventListener('click', () => navigateToTab('tab-optimization'));
+    if (dom.scoreCardBracelet) dom.scoreCardBracelet.addEventListener('click', () => navigateToTab('tab-optimization'));
+    if (dom.scoreCardAstro) dom.scoreCardAstro.addEventListener('click', () => navigateToTab('tab-optimization'));
+    if (dom.scoreCardGpd) dom.scoreCardGpd.addEventListener('click', () => navigateToTab('tab-advisor'));
+
     function handleCurrentIlvlChange(newIlvl) {
       const prevIlvl = state.currentIlvl;
       const prevTarget = state.targetIlvl;
@@ -7840,6 +7888,257 @@
       chipImg.src = savedCustom || faceSrc;
       chipImg.classList.toggle('ags-fullbody-zoom', isFull && !savedCustom);
       chipImg.onerror = () => { chipImg.src = classIconFallback; };
+    }
+
+    // Mise à jour du pill d'équipement dans le footer (Arme, Armures, Adv Honing)
+    if (dom.charCardGearPill) {
+      const wep = state.gear.weapon || (p.gear && p.gear.weapon) || 17;
+      let armStr = '+18';
+      const g = state.gear || p.gear;
+      if (g) {
+        const armors = [g.head, g.shoulder, g.chest, g.pants, g.gloves].filter(v => v !== undefined);
+        if (armors.length) {
+          const minA = Math.min(...armors);
+          const maxA = Math.max(...armors);
+          armStr = minA === maxA ? `+${minA}` : `+${minA}/+${maxA}`;
+        }
+      }
+      const adv = state.advHoning !== undefined ? state.advHoning : p.advHoning;
+      dom.charCardGearPill.innerHTML = `⚔️ <strong>+${wep}</strong> • 🛡️ <strong>${armStr}</strong> • ✨ <strong>+${adv !== undefined ? adv : 40}</strong>`;
+    }
+
+    // Mise à jour des 4 Cartes de Score de Profil (Loseii Style)
+    updateProfileScoreCards(p, isSupport, isEnLang());
+  }
+
+  function updateProfileScoreCards(p, isSupport, isEn) {
+    if (!p) return;
+    const roleTagText = isSupport ? 'Support' : 'DPS';
+
+    // Rôle tag des cartes
+    if (dom.scoreAccRoleTag) dom.scoreAccRoleTag.textContent = roleTagText;
+    if (dom.scoreBrRoleTag) dom.scoreBrRoleTag.textContent = roleTagText;
+    if (dom.scoreAgRoleTag) dom.scoreAgRoleTag.textContent = roleTagText;
+
+    // --- 1. CARTE ACCESSOIRES ---
+    if (dom.scoreCardAcc) {
+      try {
+        const accEval = evaluateCharacterAccessories(p, isSupport, isEn);
+        const bonusPct = accEval ? (accEval.bonusPct || 0) : (isSupport ? 12.0 : 15.0);
+        let accGrade = 'B';
+        let gradeClass = 'grade-b';
+        if (accEval) {
+          if (accEval.highCount >= 10 && accEval.deadCount === 0) {
+            accGrade = 'S+'; gradeClass = 'grade-s-plus';
+          } else if (accEval.highCount >= 7) {
+            accGrade = 'S'; gradeClass = 'grade-s';
+          } else if (accEval.highCount >= 4) {
+            accGrade = 'A+'; gradeClass = 'grade-a';
+          } else if (accEval.highCount >= 2 || accEval.midCount >= 8) {
+            accGrade = 'A'; gradeClass = 'grade-a';
+          } else if (accEval.midCount >= 4) {
+            accGrade = 'B+'; gradeClass = 'grade-b';
+          } else if (accEval.midCount >= 1) {
+            accGrade = 'B'; gradeClass = 'grade-b';
+          } else {
+            accGrade = 'C'; gradeClass = 'grade-c';
+          }
+        }
+        if (dom.scoreAccGrade) {
+          dom.scoreAccGrade.textContent = accGrade;
+          dom.scoreAccGrade.className = 'score-grade-badge ' + gradeClass;
+        }
+        if (dom.scoreAccVal) {
+          dom.scoreAccVal.textContent = `+${bonusPct.toFixed(2)}%`;
+        }
+        if (dom.scoreAccSub) {
+          dom.scoreAccSub.textContent = isSupport 
+            ? (isEn ? 'Exact Ally Buff' : 'Buff Allié Exact') 
+            : (isEn ? 'Exact Damage' : 'Dégâts Exacts');
+        }
+        if (dom.scoreAccDetail) {
+          if (accEval && (accEval.highCount > 0 || accEval.midCount > 0)) {
+            const hStr = `${accEval.highCount} High`;
+            const mStr = `${accEval.midCount} Mid`;
+            const dStr = accEval.deadCount > 0 ? ` • ${accEval.deadCount} ${isEn ? 'Dead' : 'Morts'}` : '';
+            dom.scoreAccDetail.textContent = `${hStr} • ${mStr}${dStr}`;
+          } else {
+            dom.scoreAccDetail.textContent = isEn ? '15/15 Rolls • Multiplicative' : '15/15 Rolls • Modèle Multiplicatif';
+          }
+        }
+      } catch (err) {
+        console.warn('Error updating acc score card:', err);
+      }
+    }
+
+    // --- 2. CARTE BRACELET ---
+    if (dom.scoreCardBracelet) {
+      try {
+        let brScore = '—';
+        let brGrade = 'B-';
+        let brPct = isSupport ? '+15.00% Buff' : '+10.20% Dmg';
+        let brDetail = isEn ? 'Standard T4 Bracelet' : 'Bracelet T4 Standard';
+        let customBg = null;
+        let customFg = null;
+
+        // Tenter le décodage exact Loseii
+        const brItemObj = (p.bracelet)
+          || (p.loadout && Array.isArray(p.loadout.items) && p.loadout.items.find(i => i.slot === 'bracelet'))
+          || (p.rawProfile && p.rawProfile.loadout && Array.isArray(p.rawProfile.loadout.items) && p.rawProfile.loadout.items.find(i => i.slot === 'bracelet'))
+          || (p.rawProfile && p.rawProfile.rawItems && p.rawProfile.rawItems.find(i => i.slot === 'bracelet'))
+          || null;
+
+        if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brItemObj && brItemObj.data && Array.isArray(brItemObj.data.stats)) {
+          try {
+            const dec = window.Bracelet.decodeBibleBracelet(brItemObj.data.stats);
+            const normProf = window.Bracelet.normalizeProfile({ role: isSupport ? 'support' : 'dps' });
+            const sc = window.Subrank.braceletScore({
+              grade: dec.grade || 'ancient',
+              lines: dec.lines || [],
+              traits: dec.traits || {},
+              profile: normProf
+            });
+            if (sc && sc.band) {
+              brGrade = sc.band.key;
+              brScore = sc.score.toFixed(1);
+              brPct = `+${sc.damagePct.toFixed(2)}% ${isSupport ? (isEn ? 'Buff' : 'Buff') : (isEn ? 'Dmg' : 'Dégâts')}`;
+              customBg = sc.band.bg;
+              customFg = sc.band.fg;
+
+              const traitParts = [];
+              if (dec.traits) {
+                for (const [tk, tv] of Object.entries(dec.traits)) {
+                  traitParts.push(`${tk.slice(0, 3)} ${tv}`);
+                }
+              }
+              const traitStr = traitParts.join(' / ');
+              const linesCount = (dec.lines || []).length;
+              brDetail = traitStr ? `${traitStr} • ${linesCount} lines` : (isEn ? `${linesCount} effect lines` : `${linesCount} lignes d'effets`);
+            }
+          } catch (e) {
+            console.warn('Subrank score failed, fallback to diag:', e);
+          }
+        }
+
+        // Fallback avec evaluateBracelet
+        if (brScore === '—') {
+          const brDiag = evaluateBracelet(p, isEn);
+          if (brDiag) {
+            brGrade = brDiag.tier === 's' ? 'S' : (brDiag.tier === 'a' ? 'A' : (brDiag.tier === 'b' ? 'B' : 'C'));
+            brScore = brDiag.efficiency ? (brDiag.efficiency * 5).toFixed(1) : '60.0';
+            brPct = `+${(brDiag.efficiency || 10).toFixed(2)}% ${isSupport ? 'Buff' : (isEn ? 'Dmg' : 'Dégâts')}`;
+            brDetail = brDiag.ratingDesc || (isEn ? 'Transitional Setup' : 'Rolls de transition');
+          }
+        }
+
+        if (dom.scoreBrGrade) {
+          dom.scoreBrGrade.textContent = brGrade;
+          if (customBg) {
+            dom.scoreBrGrade.className = 'score-grade-badge';
+            dom.scoreBrGrade.style.backgroundColor = customBg;
+            dom.scoreBrGrade.style.color = customFg || '#ffffff';
+          } else {
+            dom.scoreBrGrade.style.backgroundColor = '';
+            dom.scoreBrGrade.style.color = '';
+            dom.scoreBrGrade.className = 'score-grade-badge ' + (brGrade.startsWith('S') ? 'grade-s' : (brGrade.startsWith('A') ? 'grade-a' : 'grade-b'));
+          }
+        }
+        if (dom.scoreBrScore) dom.scoreBrScore.textContent = brScore;
+        if (dom.scoreBrPct) dom.scoreBrPct.textContent = brPct;
+        if (dom.scoreBrDetail) dom.scoreBrDetail.textContent = brDetail;
+      } catch (err) {
+        console.warn('Error updating bracelet score card:', err);
+      }
+    }
+
+    // --- 3. CARTE ASTROGEMMES ---
+    if (dom.scoreCardAstro) {
+      try {
+        let astroBonusPct = 0;
+        const allBpParts = (p.rawProfile && p.rawProfile.battlePoint && Array.isArray(p.rawProfile.battlePoint.parts))
+          ? p.rawProfile.battlePoint.parts
+          : [];
+        const bpParts = (p.astrogems && p.astrogems.length > 0)
+          ? p.astrogems
+          : (allBpParts.length > 0 ? allBpParts.filter(x => x.type === 31 || x.type === 32) : []);
+        if (Array.isArray(bpParts) && bpParts.length > 0) {
+          const sumVal = bpParts.reduce((s, x) => s + (('value' in x ? x.value : x.min) || 0), 0);
+          astroBonusPct = Number((sumVal / 100).toFixed(2));
+        }
+        if (!astroBonusPct) {
+          astroBonusPct = isSupport ? 3.50 : 7.92;
+        }
+
+        // Modèle Loseii pour les astrogemmes : 60 (C-) à 96.1 (S+)
+        // ~7.92% de dégâts correspond à la note 78.0 (B+)
+        const calcGrade = Math.min(99.9, Math.max(50.0, 60.0 + (astroBonusPct / 12.0) * 36.1));
+        const agScoreStr = calcGrade.toFixed(1);
+
+        const ladder = [
+          ["S+", 96.1, "grade-s-plus", "#f59e0b"],
+          ["S", 93.3, "grade-s", "#0284c7"],
+          ["S-", 90.0, "grade-s", "#0284c7"],
+          ["A+", 86.7, "grade-a", "#7c3aed"],
+          ["A", 83.3, "grade-a", "#7c3aed"],
+          ["A-", 80.0, "grade-a", "#7c3aed"],
+          ["B+", 76.7, "grade-b", "#2563eb"],
+          ["B", 73.3, "grade-b", "#2563eb"],
+          ["B-", 70.0, "grade-b", "#2563eb"],
+          ["C+", 66.7, "grade-c", "#059669"],
+          ["C", 63.3, "grade-c", "#059669"],
+          ["C-", 60.0, "grade-c", "#059669"],
+          ["D", 50.0, "grade-d", "#475569"]
+        ];
+
+        let agLetter = "B+";
+        let agClass = "grade-b";
+        let agColor = "#2563eb";
+        for (const [r, cut, cls, col] of ladder) {
+          if (calcGrade >= cut) {
+            agLetter = r;
+            agClass = cls;
+            agColor = col;
+            break;
+          }
+        }
+
+        if (dom.scoreAgGrade) {
+          dom.scoreAgGrade.textContent = agLetter;
+          dom.scoreAgGrade.className = 'score-grade-badge ' + agClass;
+          dom.scoreAgGrade.style.backgroundColor = agColor;
+          dom.scoreAgGrade.style.color = '#ffffff';
+        }
+        if (dom.scoreAgScore) dom.scoreAgScore.textContent = agScoreStr;
+        if (dom.scoreAgPct) {
+          dom.scoreAgPct.textContent = `+${astroBonusPct.toFixed(2)}% ${isSupport ? (isEn ? 'Party Buff' : 'Buff Groupe') : (isEn ? 'Grid Dmg' : 'Grille Dmg')}`;
+        }
+        if (dom.scoreAgDetail) {
+          dom.scoreAgDetail.textContent = isEn ? '24 Cut Gems • Ark Grid' : '24 Gemmes Taillées • Grille d\'Ark';
+        }
+      } catch (err) {
+        console.warn('Error updating astrogems score card:', err);
+      }
+    }
+
+    // --- 4. CARTE PROCHAIN +1% (GPD) ---
+    if (dom.scoreCardGpd) {
+      try {
+        const dynGpd = getDynamicGpdTable(p, p.role || state.role, isEn);
+        if (dynGpd && dynGpd.length > 0) {
+          const best = dynGpd[0];
+          if (dom.scoreGpdPrice) dom.scoreGpdPrice.textContent = best.ratioText;
+          if (dom.scoreGpdPer) {
+            dom.scoreGpdPer.textContent = isSupport
+              ? (isEn ? 'per 0.01% Ally Buff' : 'par 0.01% Buff Allié')
+              : (isEn ? 'per 1% Damage' : 'par 1% Dégâts');
+          }
+          if (dom.scoreGpdDetail) {
+            dom.scoreGpdDetail.textContent = `${best.name} (${best.gainText})`;
+          }
+        }
+      } catch (err) {
+        console.warn('Error updating gpd score card:', err);
+      }
     }
   }
 
