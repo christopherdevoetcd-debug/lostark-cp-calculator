@@ -2907,31 +2907,16 @@
     pushRow('dyn_brac',
       isEn ? 'Bracelet — Next Tier' : 'Bracelet — Palier Supérieur',
       isEn ? 'Roll a new bracelet campaign' : 'Campagne de reroll complète',
-      0.77, 271000,
+      0.77, BRACELET_REROLL_COST,
       isEn ? 'Full bracelet reroll campaign.' : 'Campagne complète de reroll de bracelet.');
 
     // 7. Accessoires : remplacer le bijou dont le remplacement rapporte le plus (= le plus faible)
     const accEval = evaluateCharacterAccessories(charObj, isSupport, isEn);
     if (accEval.slotLines) {
-      const lineSet = isSupport ? ACC_TARGET_LINES.support : ACC_TARGET_LINES.dps;
-      const curAccPct = computeAccessoryLinesBonus(ACC_SLOTS.flatMap(s => accEval.slotLines[s] || []), isSupport);
-      let weakest = null;
-      ACC_SLOTS.forEach(slot => {
-        const kind = slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring');
-        const target = lineSet[kind].map(([key, amount]) => ({ key, amount }));
-        const others = ACC_SLOTS.filter(s => s !== slot).flatMap(s => accEval.slotLines[s] || []);
-        const nextAccPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
-        const gain = ((1 + nextAccPct / 100) / (1 + curAccPct / 100) - 1) * 100;
-        if (!weakest || gain > weakest.gain) weakest = { slot, gain };
-      });
+      const weakest = findWeakestAccessoryUpgrade(accEval.slotLines, isSupport);
+      const curAccPct = weakest ? weakest.curPct : 0;
       if (weakest && weakest.gain > 0) {
-        const slotNames = {
-          neck: isEn ? 'Necklace' : 'Collier',
-          ear1: isEn ? 'Earring #1' : 'Boucle d\'oreille #1',
-          ear2: isEn ? 'Earring #2' : 'Boucle d\'oreille #2',
-          finger1: isEn ? 'Ring #1' : 'Anneau #1',
-          finger2: isEn ? 'Ring #2' : 'Anneau #2'
-        };
+        const slotNames = accessorySlotNames(isEn);
         pushRow('dyn_acc',
           isEn ? `Accessory Upgrade — ${slotNames[weakest.slot]}` : `Upgrade Bijou — ${slotNames[weakest.slot]}`,
           isEn ? 'Weakest accessory ➔ 2 High main lines' : 'Bijou le plus faible ➔ 2 lignes principales High',
@@ -3354,6 +3339,51 @@
     }
   }
 
+  // Noms de perks et d'effets de bracelet T4 (BIBLE_BRACELET_PERKS) : français ➔ anglais.
+  // Appliquée du terme le plus long au plus court (« Dégâts Critiques » avant « Dégâts Crit »).
+  const BRACELET_TERMS_EN = [
+    ["Ovation / Vulnérabilité Crit", 'Cheers / Crit Vulnerability'],
+    ["Poignard / Faiblesse", 'Dagger / Weakness'],
+    ["Exposition Crit", 'Expose Crit'],
+    ["Puissance d'Arme Cumulable", 'Stacking Weapon Power'],
+    ["Protection & Soins d'Allié", 'Ally Protection & Healing'],
+    ["Vitesse d'Attaque & Déplacement", 'Attack & Move Speed'],
+    ["Rechargement Esquive / Relèvement", 'Dodge / Stand-up Recharge'],
+    ["Réduction Dégâts Monstres Inférieurs", 'Damage Reduction vs Lesser Monsters'],
+    ["Dégâts Monstres Inférieurs", 'Damage vs Lesser Monsters'],
+    ["Immunité Paralysie / Repoussement", 'Paralysis / Push Immunity'],
+    ["Compétences Non Directionnelles", 'Non-Directional Skills'],
+    ["Attaque par l'Arrière", 'Back Attack'],
+    ["Attaque Frontale", 'Front Attack'],
+    ["Dégâts Sortants / Neutralisation", 'Outgoing Damage / Neutralization'],
+    ["Dégâts Sortants", 'Outgoing Damage'],
+    ["Dégâts Additionnels", 'Additional Damage'],
+    ["Dégâts Coup Crit", 'Crit Hit Dmg'],
+    ["Dégâts Critiques", 'Crit Damage'],
+    ["Dégâts Crit", 'Crit Dmg'],
+    ["Taux Critique", 'Crit Rate'],
+    ["Résistance Crit", 'Crit Resistance'],
+    ["Puissance d'Arme", 'Weapon Power'],
+    ["AP Allié", 'Ally AP'],
+    ['Précision', 'Precision'],
+    ['Marteau', 'Hammer'],
+    ['Coinçage', 'Wedge'],
+    ['Ferveur', 'Fervor'],
+    ['Embuscade', 'Ambush'],
+    ['Ardeur', 'Ardor'],
+    ['Poignard', 'Dagger'],
+    ['Faiblesse', 'Weakness'],
+    ['Ovation', 'Cheers'],
+    ['Démons', 'Demons'],
+    ['& Vitesse', '& Speed']
+  ].sort((a, b) => b[0].length - a[0].length);
+
+  function translateBraceletTerms(str) {
+    let res = str;
+    for (const [fr, en] of BRACELET_TERMS_EN) res = res.split(fr).join(en);
+    return res;
+  }
+
   function formatBraceletLine(lbl, isEn = false) {
     if (!lbl) return '';
     let res = lbl.replace(/^Bracelet Ancien\s*—\s*/i, '').replace(/^Ancient Bracelet\s*—\s*/i, '');
@@ -3379,32 +3409,13 @@
              .replace(/Ferveur\s*\(Dégâts Sortants\s*\+?([45]\.?[0-9]*)%\)(?!.*Cooldown)/i, 'Ferveur (Dégâts Sortants +$1% & Cooldown +2%)');
 
     if (!isEn) return res;
+    res = translateBraceletTerms(res);
+    // Termes génériques propres aux lignes de bracelet (stats, défenses)
     const map = [
       ['Défense Magique', 'Magical Defense'],
       ['Défense Physique', 'Physical Defense'],
-      ['Compétences Non Directionnelles', 'Non-Directional Skills'],
-      ['Attaque par l\'Arrière', 'Back Attack'],
-      ['Attaque Frontale', 'Front Attack'],
-      ['Marteau', 'Hammer'],
-      ['Précision', 'Precision'],
-      ['Taux Critique', 'Crit Rate'],
-      ['Dégâts Critiques', 'Crit Damage'],
-      ['Dégâts Coup Crit', 'Crit Hit Dmg'],
-      ['Dégâts Crit', 'Crit Dmg'],
-      ['Dégâts Sortants', 'Outgoing Damage'],
-      ['Dégâts Additionnels', 'Additional Damage'],
-      ['Démons', 'Demons'],
-      ['Ferveur', 'Fervor'],
-      ['Coinçage', 'Wedge'],
-      ['Poignard / Faiblesse', 'Dagger / Weakness'],
-      ['Poignard', 'Dagger'],
-      ['Faiblesse', 'Weakness'],
-      ['Ovation / Vulnérabilité Crit', 'Cheers / Crit Vulnerability'],
-      ['Ovation', 'Cheers'],
-      ['Exposition Crit', 'Expose Crit'],
-      ['AP Allié', 'Ally AP'],
       ['Défense -', 'Defense -'],
-      ['Dégâts Crit -', 'Crit Dmg -'],
+      ['Défense', 'Defense'],
       ['Rapidité', 'Swiftness'],
       ['Spécialisation', 'Specialization'],
       ['Critique', 'Crit'],
@@ -9554,6 +9565,11 @@
       .replace(/\bChevalière de Lumière\b/gi, 'Knight of Light')
       .replace(/\bLibératrice\b/gi, 'Liberator');
 
+
+    // 99. Noms de perks de bracelet restés en français (libellés du Benchmark)
+    res = translateBraceletTerms(res)
+      .replace(/\bRelique\b/g, 'Relic')
+      .replace(/\bAncien\b/g, 'Ancient');
     return res;
   }
 
@@ -9743,6 +9759,8 @@
   const ACC_REF_BASE_AP_PCT = 0.125;
   // Coût (gold) estimé d'un bijou de remplacement
   const ACC_UPGRADE_COST = 166000;
+  // Coût (gold) d'une campagne complète de reroll de bracelet
+  const BRACELET_REROLL_COST = 271000;
   const ACC_SLOTS = ['neck', 'ear1', 'ear2', 'finger1', 'finger2'];
   // Bijou cible d'un remplacement : 2 lignes principales du rôle en High + PA d'arme plate Mid
   const ACC_TARGET_LINES = {
@@ -9823,6 +9841,33 @@
     });
     const mult = Object.keys(pools).reduce((m, k) => m * (1 + pools[k] * slopes[k] / 100), 1);
     return (mult - 1) * 100;
+  }
+
+  // Bijou dont le remplacement par ACC_TARGET_LINES rapporte le plus (gain relatif en %)
+  function findWeakestAccessoryUpgrade(slotLines, isSupport) {
+    if (!slotLines) return null;
+    const lineSet = isSupport ? ACC_TARGET_LINES.support : ACC_TARGET_LINES.dps;
+    const curPct = computeAccessoryLinesBonus(ACC_SLOTS.flatMap(s => slotLines[s] || []), isSupport);
+    let weakest = null;
+    ACC_SLOTS.forEach(slot => {
+      const kind = slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring');
+      const target = lineSet[kind].map(([key, amount]) => ({ key, amount }));
+      const others = ACC_SLOTS.filter(s => s !== slot).flatMap(s => slotLines[s] || []);
+      const nextPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
+      const gain = ((1 + nextPct / 100) / (1 + curPct / 100) - 1) * 100;
+      if (!weakest || gain > weakest.gain) weakest = { slot, gain, curPct, nextPct };
+    });
+    return weakest;
+  }
+
+  function accessorySlotNames(isEn) {
+    return {
+      neck: isEn ? 'Necklace' : 'Collier',
+      ear1: isEn ? 'Earring #1' : 'Boucle d\'oreille #1',
+      ear2: isEn ? 'Earring #2' : 'Boucle d\'oreille #2',
+      finger1: isEn ? 'Ring #1' : 'Anneau #1',
+      finger2: isEn ? 'Ring #2' : 'Anneau #2'
+    };
   }
 
   function decodeAccessoryStat(st, slot, isSupport, isEn) {
@@ -10550,6 +10595,9 @@
 
   function resolveTargetSystems(target, isEn = false) {
     if (!target) return {};
+    // Référence générée : ses systèmes sont exactement ceux qui ont servi à calculer son CP.
+    // Les garde-fous ci-dessous (profils réels mal lus) les rendraient incohérents avec l'en-tête.
+    if (target.isDynamic && target.systems) return JSON.parse(JSON.stringify(target.systems));
     let sys = {};
 
     // Si le target possède déjà des systems calculés fidèlement (live ou benchmark), on les préserve en priorité
@@ -10707,28 +10755,12 @@
     return Math.round(astrogemsNeeded * costPerGoodAstrogem);
   }
 
-  
-  function computeAccessoriesUpgradeCost(player, target) {
-    if (!player || !target) return 45000;
-    const isSupport = player.role === 'support' || (player.role !== 'dps' && ['paladin', 'bard', 'artist', 'holyknight', 'valkyrie', 'yinyangshi'].some(s => (player.className||'').toLowerCase().includes(s)));
-    const pAcc = evaluateCharacterAccessories(player, isSupport);
-    const tAcc = evaluateCharacterAccessories(target, isSupport);
-    
-    let cost = 0;
-    let missingHigh = tAcc.highCount - pAcc.highCount;
-    let missingMid = tAcc.midCount - pAcc.midCount;
-    
-    if (missingHigh > 0) {
-        cost += missingHigh * 600000;
-    } else if (missingHigh < 0) {
-        missingMid += missingHigh * 2;
-    }
-    
-    if (missingMid > 0) {
-        cost += missingMid * 45000;
-    }
-    
-    return cost > 0 ? cost : 45000;
+  // Écart de CP d'un système entre joueur (p) et référence (t) : les systèmes se multiplient,
+  // donc l'écart est le gain relatif (1 + t) / (1 + p) − 1 appliqué au CP du joueur.
+  // Positif : la référence est devant ; négatif : le joueur est devant.
+  function systemGapCp(pPct, tPct, cp) {
+    const base = cp && cp > 1000 ? cp : 3800;
+    return base * ((1 + (tPct || 0) / 100) / (1 + (pPct || 0) / 100) - 1);
   }
 
   function computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn) {
@@ -10737,13 +10769,13 @@
     const isSupport = player.role === 'support';
     const gaps = [];
 
-    // Cœurs : points manquants jusqu'à 17 sur les cœurs Ordre + Chaos du groupe
-    // (sans données de cœur pour le groupe : forfait historique de 3 points manquants)
+    // Cœurs : un point par cœur lu, comme le palier cible de generateDynamicBenchmark (max 20)
+    // (sans données de cœur pour le groupe : forfait historique de 3 points)
     const coreSlots = getArkGridStatus(player).slots || {};
     const coreGroupCost = (orderKey, chaosKey) => {
       const pts = [orderKey, chaosKey].map(k => coreSlots[k] || 0);
       if (pts.every(v => v === 0)) return 3 * ARK_CORE_COST_PER_POINT;
-      return pts.filter(v => v > 0 && v < 17).reduce((sum, v) => sum + (17 - v) * ARK_CORE_COST_PER_POINT, 0);
+      return pts.filter(v => v > 0 && v < 20).length * ARK_CORE_COST_PER_POINT;
     };
     // Affinage : coût attendu de chaque palier jusqu'au niveau de la référence (1 palier si inconnu)
     const honingPathCost = (piece, fromLvl, toLvl, pieces) => {
@@ -10763,10 +10795,10 @@
       { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderMoon', 'chaosMoon') },
       { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderStar', 'chaosStar') },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: computeAstrogemUpgradeCost(pSys, tSys) },
-      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: computeAccessoriesUpgradeCost(player, target) },
+      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: ACC_UPGRADE_COST },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '', cost: 125000 },
-      { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: 30000 },
+      { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: BRACELET_REROLL_COST },
       { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '', cost: computeGemUpgradeCost(player, target) },
       { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '', cost: honingPathCost('armor', pArmors.effAvgArmor !== undefined ? pArmors.effAvgArmor : (pArmors.avgArmor || 12), tArmors.effAvgArmor, 5) },
       { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 75000 },
@@ -10778,12 +10810,11 @@
       { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '', cost: 70000 }
     ];
 
-    const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
-
     systemMeta.forEach(m => {
       const p = pSys[m.key] || { bonusPct: 0, label: '' };
       const t = tSys[m.key] || { bonusPct: 0, label: '' };
       const delta = Number((t.bonusPct - p.bonusPct).toFixed(2));
+      const gapCp = systemGapCp(p.bonusPct, t.bonusPct, player.cp);
 
       let tLabel = t.label || '';
       let pLabel = p.label || '';
@@ -10793,7 +10824,7 @@
       }
 
       if (delta > 0.05) {
-        const gainCp = Math.round(delta * cpPerPct);
+        const gainCp = Math.round(gapCp);
         gaps.push({
           icon: m.icon,
           key: m.key,
@@ -10808,7 +10839,7 @@
           priority: delta > 1.0 ? 'high' : 'med'
         });
       } else if (delta < -0.15) {
-        const gainCp = Math.round(Math.abs(delta) * cpPerPct);
+        const gainCp = Math.round(-gapCp);
         gaps.push({
           icon: m.icon,
           key: m.key,
@@ -10898,39 +10929,55 @@
     // 1. Extraction fidèle des systèmes actuels du joueur
     const pSys = extractPlayerSystems(playerChar, isEn);
 
-    // Extraction des niveaux d'affinage réels du joueur
-    const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
-    const gear = playerChar.gear || (canon && canon.gear) || { weapon: 19, head: 19, chest: 19, pants: 19, shoulder: 19, gloves: 19 };
-    const wLvl = gear.weapon !== undefined ? gear.weapon : 19;
-    const avgArmor = Math.round(((gear.head || 19) + (gear.chest || 19) + (gear.pants || 19) + (gear.shoulder || 19) + (gear.gloves || 19)) / 5);
+    // 2. Palier cible = ton profil + 1 étape sur chaque système, avec les mêmes formules que extractPlayerSystems
+    // 2a. Arme : +1 niveau réel (Serka inclus via le niveau effectif), même bonus par niveau que le moteur
+    const pW = pSys.weapon || {};
+    const wRaw = pW.wLvl !== undefined ? pW.wLvl : 19;
+    const wEff = pW.effWLvl !== undefined ? pW.effWLvl : wRaw;
+    const wStep = wRaw < 25 ? 1 : 0;
+    const tWeaponBonus = Number(((pW.bonusPct || 0) + wStep * WEAPON_HONING_BONUS_PER_LVL).toFixed(2));
+    const qualTxt = pW.quality !== undefined ? (isEn ? ` (Quality ${pW.quality})` : ` (Qualité ${pW.quality})`) : '';
+    const tWeaponLabel = pW.isSerka
+      ? (isEn ? `T4 Serka Weapon +${wRaw + wStep} (Eq. +${wEff + wStep})${qualTxt}` : `Arme Serka T4 +${wRaw + wStep} (Éq. +${wEff + wStep})${qualTxt}`)
+      : (isEn ? `T4 Weapon +${wRaw + wStep}${qualTxt}` : `Arme T4 +${wRaw + wStep}${qualTxt}`);
 
-    // 2. Modélisation dynamique du palier cible
-    // 2a. Arme T4 : +1 palier d'affinage (max 25)
-    const tWLvl = Math.min(25, wLvl + 1);
-    const tWeaponBonus = Number((30.10 + (tWLvl - 19) * 2.15).toFixed(2));
-    const tWeaponLabel = isEn ? `T4 Weapon +${tWLvl} (Quality 98+)` : `Arme T4 +${tWLvl} (Qualité 98+)`;
+    // 2b. Armures : +1 niveau moyen réel
+    const pA = pSys.armors || {};
+    const aRaw = pA.avgArmor !== undefined ? pA.avgArmor : 19;
+    const aEff = pA.effAvgArmor !== undefined ? pA.effAvgArmor : aRaw;
+    const aStep = aRaw < 25 ? 1 : 0;
+    const aPerLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
+    const tArmorBonus = Number(((pA.bonusPct || 0) + aStep * aPerLvl).toFixed(2));
+    const tArmorLabel = pA.isSerka
+      ? (isEn ? `T4 Serka Armor Avg +${aRaw + aStep} (Eq. +${aEff + aStep})` : `Armures Serka T4 Moyenne +${aRaw + aStep} (Éq. +${aEff + aStep})`)
+      : (isEn ? `T4 Armors Avg +${aRaw + aStep}` : `Armures T4 Moyenne +${aRaw + aStep}`);
 
-    // 2b. Armures T4 : +1 palier moyen d'affinage (max 25)
-    const tAvgArmor = Math.min(25, avgArmor + 1);
-    const tArmorBonus = isSupport 
-      ? Number((12.00 + (tAvgArmor - 12) * 1.50).toFixed(2)) 
-      : Number((8.00 + (tAvgArmor - 12) * 1.37).toFixed(2));
-    const tArmorLabel = isEn ? `T4 Armors Avg +${tAvgArmor}` : `Armures T4 Moyenne +${tAvgArmor}`;
-
-    // 2c. Accessoires T4 : +0.80% à +1.20% (up to 15.20%)
+    // 2c. Accessoires : ton bijou le plus faible remplacé (même modèle que le GPD)
     const pAcc = (pSys.accessories && pSys.accessories.bonusPct) || 13.50;
-    const tAcc = Math.max(pAcc, Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2))));
-    const tAccLabel = isEn ? "3 High Rolls Weapon Atk / Supp Dmg (Optimized)" : "3 Rolls High Atk Arme / Dégâts Supp (Optimisés)";
+    const accEval = evaluateCharacterAccessories(playerChar, isSupport, isEn);
+    const weakestAcc = accEval && accEval.slotLines ? findWeakestAccessoryUpgrade(accEval.slotLines, isSupport) : null;
+    let tAcc = pAcc;
+    let tAccLabel = isEn ? 'Same as yours' : 'Identique au vôtre';
+    if (weakestAcc && weakestAcc.gain > 0) {
+      tAcc = Number((((1 + pAcc / 100) * (1 + weakestAcc.gain / 100) - 1) * 100).toFixed(2));
+      const slotName = accessorySlotNames(isEn)[weakestAcc.slot];
+      tAccLabel = isEn ? `${slotName} replaced ➔ 2 High main lines` : `${slotName} remplacé ➔ 2 lignes principales High`;
+    } else if (!accEval || !accEval.slotLines) {
+      // Pas de lignes lisibles : ancienne estimation par paliers, jamais sous le joueur
+      tAcc = Math.max(pAcc, Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2))));
+      tAccLabel = isEn ? '3 High Rolls Weapon Atk / Supp Dmg (Optimized)' : '3 Rolls High Atk Arme / Dégâts Supp (Optimisés)';
+    }
 
-    // 2d. Bracelet T4 : +0.80% (up to 12.00%)
+    // 2d. Bracelet : +0.80 % jusqu'à 12 %, jamais sous le joueur
     const pBrac = (pSys.bracelet && pSys.bracelet.bonusPct) || 10.20;
-    const tBrac = Math.min(12.00, Number((pBrac + 0.80).toFixed(2)));
-    const tBracLabel = isEn ? "Relic (Circularity + High Dmg/Buff Perk)" : "Relique (Circulaire + Passif Dégâts/Buff High)";
+    const tBrac = pBrac >= 12.00 ? pBrac : Math.min(12.00, Number((pBrac + 0.80).toFixed(2)));
+    const tBracLabel = pBrac >= 12.00
+      ? (isEn ? 'Same as yours' : 'Identique au vôtre')
+      : (isEn ? 'Relic (Circularity + High Dmg/Buff Perk)' : 'Relique (Circulaire + Passif Dégâts/Buff High)');
 
-    // 2e. Astrogemmes : +0.80% (up to 5.50% / 6.80%)
+    // 2e. Astrogemmes : +0.80 % jusqu'au plafond, jamais sous le joueur
     const pAstro = (pSys.arkGridAstrogems && pSys.arkGridAstrogems.bonusPct) || (isSupport ? 3.50 : 4.80);
-    const tAstro = Math.min(isSupport ? 5.50 : 6.80, Number((pAstro + 0.80).toFixed(2)));
+    const tAstro = Math.max(pAstro, Math.min(isSupport ? 5.50 : 6.80, Number((pAstro + 0.80).toFixed(2))));
     const tAstroLabel = isEn ? `Astrogems (+${tAstro.toFixed(2)}% Substats)` : `Astrogemmes (+${tAstro.toFixed(2)}% Sous-stats Grille)`;
 
     // 2f. Gemmes T4
@@ -10950,21 +10997,28 @@
       gemDesc = playerGemSummary;
     }
 
-    // 2g. Cœurs Ark Grid (Sun, Moon, Star)
-    const pSun = (pSys.arkGridSun && pSys.arkGridSun.bonusPct) || 0;
-    const baseSun = isSupport ? 7.00 : 10.50;
-    const tSun = pSun < baseSun ? baseSun : Number((pSun + (isSupport ? 0.80 : 1.20)).toFixed(2));
-    const tSunLabel = isEn ? `Relic Tier 18P (Sun Cores: +${tSun.toFixed(2)}%)` : `Relique Palier 18P (Cœurs Soleil : +${tSun.toFixed(2)}%)`;
-
-    const pMoon = (pSys.arkGridMoon && pSys.arkGridMoon.bonusPct) || 0;
-    const baseMoon = isSupport ? 7.00 : 10.50;
-    const tMoon = pMoon < baseMoon ? baseMoon : Number((pMoon + (isSupport ? 0.80 : 1.20)).toFixed(2));
-    const tMoonLabel = isEn ? `Relic Tier 18P (Moon Cores: +${tMoon.toFixed(2)}%)` : `Relique Palier 18P (Cœurs Lune : +${tMoon.toFixed(2)}%)`;
-
-    const pStar = (pSys.arkGridStar && pSys.arkGridStar.bonusPct) || 0;
-    const baseStar = isSupport ? 5.00 : 8.15;
-    const tStar = pStar < baseStar ? baseStar : Number((pStar + (isSupport ? 0.60 : 0.90)).toFixed(2));
-    const tStarLabel = isEn ? `Relic Tier 18P (Star Cores: +${tStar.toFixed(2)}%)` : `Relique Palier 18P (Cœurs Étoile : +${tStar.toFixed(2)}%)`;
+    // 2g. Cœurs Ark Grid : chaque cœur lu passe au palier suivant (max 20 points)
+    const coreSlots = getArkGridStatus(playerChar).slots || {};
+    const coreTarget = (group, pPct, nameFr, nameEn) => {
+      const defs = ARK_CORE_DEFS.filter(d => d.key.endsWith(group));
+      let ratio = 1;
+      const steps = [];
+      defs.forEach(d => {
+        const pts = coreSlots[d.key] || 0;
+        if (pts <= 0) return;
+        const next = Math.min(20, pts + 1);
+        ratio *= (1 + getArkGridCoreBonus(d.prefix, next, isSupport, false) / 100) / (1 + getArkGridCoreBonus(d.prefix, pts, isSupport, false) / 100);
+        steps.push(`${isEn ? d.en.split(' ')[0] : d.fr.split(' ')[0]} ${next}P`);
+      });
+      if (!steps.length || ratio <= 1) {
+        return { label: isEn ? 'Same as yours' : 'Identique au vôtre', bonusPct: pPct };
+      }
+      const bonusPct = Number((((1 + pPct / 100) * ratio - 1) * 100).toFixed(2));
+      return { label: isEn ? `${nameEn}: ${steps.join(', ')} (+${bonusPct.toFixed(2)}%)` : `${nameFr} : ${steps.join(', ')} (+${bonusPct.toFixed(2)}%)`, bonusPct };
+    };
+    const tSunSys = coreTarget('Sun', (pSys.arkGridSun && pSys.arkGridSun.bonusPct) || 0, 'Cœurs Soleil', 'Sun Cores');
+    const tMoonSys = coreTarget('Moon', (pSys.arkGridMoon && pSys.arkGridMoon.bonusPct) || 0, 'Cœurs Lune', 'Moon Cores');
+    const tStarSys = coreTarget('Star', (pSys.arkGridStar && pSys.arkGridStar.bonusPct) || 0, 'Cœurs Étoile', 'Star Cores');
 
     // 2h. Systèmes à Parité / Endgame Standards
     const tEvo = Math.max(21.00, (pSys.arkEvolution && pSys.arkEvolution.bonusPct) || 21.00);
@@ -10985,9 +11039,9 @@
       arkEvolution: { label: isEn ? '140 Evolution Pts' : '140 Pts Évolution', bonusPct: tEvo },
       arkEnlightenment: { label: isEn ? '101 Enlightenment Pts' : '101 Pts Illumination', bonusPct: tEnl },
       arkLeap: { label: isEn ? '70 Leap Pts' : '70 Pts Saut', bonusPct: tLeap },
-      arkGridSun: { label: tSunLabel, bonusPct: tSun },
-      arkGridMoon: { label: tMoonLabel, bonusPct: tMoon },
-      arkGridStar: { label: tStarLabel, bonusPct: tStar },
+      arkGridSun: tSunSys,
+      arkGridMoon: tMoonSys,
+      arkGridStar: tStarSys,
       arkGridAstrogems: { label: tAstroLabel, bonusPct: tAstro },
       weapon: { label: tWeaponLabel, bonusPct: Number(tWeaponBonus.toFixed(2)) },
       armors: { label: tArmorLabel, bonusPct: Number(tArmorBonus.toFixed(2)) },
@@ -11000,20 +11054,14 @@
       karma: { label: isEn ? "Evolution Karma Rank 6" : "Karma Évolution Rang 6", bonusPct: tKarma }
     };
 
-    // 3. Calcul de l'écart CP exact (Total Gap = Somme exacte des gains individuels des systèmes)
-    const cpPerPct = (pCp && pCp > 1000) ? (pCp / 100) : 38;
-    let totalGapCp = 0;
+    // 3. CP de la cible : les systèmes se multiplient, donc CP cible = CP joueur × Π (1 + t) / (1 + p)
+    let cpRatio = 1;
     Object.keys(tSys).forEach(k => {
       const pVal = (pSys[k] && pSys[k].bonusPct) || 0;
       const tVal = (tSys[k] && tSys[k].bonusPct) || 0;
-      const d = Number((tVal - pVal).toFixed(2));
-      if (d > 0.01) {
-        totalGapCp += Math.round(d * cpPerPct);
-      }
+      cpRatio *= (1 + tVal / 100) / (1 + pVal / 100);
     });
-
-    const safeGap = Math.max(220, Math.min(480, totalGapCp));
-    const targetCp = pCp + safeGap;
+    const targetCp = Math.round(pCp * cpRatio);
     const stepIlvl = Number((pIlvl + (pIlvl >= 1770 ? 2.5 : 5.0)).toFixed(2));
     const dynamicBenchName = isEn 
       ? `${normClass} (T4 Benchmark • Target Step)` 
@@ -14635,150 +14683,62 @@
     const tCp = Number(target.cp || 0);
     const netGap = Math.round(tCp - pCp);
 
-    const positiveGaps = (gaps || []).filter(g => g.gainCp > 0 && g.priority !== 'player_lead');
-    const playerLeadGaps = (gaps || []).filter(g => g.priority === 'player_lead');
-
-    // Priorité aux totaux calculés sur l'ensemble réel des lignes du tableau comparatif
-    const totalPositiveCp = (tableStats && tableStats.totalPositiveCp !== undefined)
+    // Totaux réels des lignes du tableau (sinon, ceux du diagnostic)
+    const lagCp = (tableStats && tableStats.totalPositiveCp !== undefined)
       ? tableStats.totalPositiveCp
-      : positiveGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
-
-    const totalPlayerLeadCp = (tableStats && tableStats.totalPlayerLeadCp !== undefined)
+      : (gaps || []).filter(g => g.gainCp > 0 && g.priority !== 'player_lead').reduce((s, g) => s + (g.gainCp || 0), 0);
+    const leadCp = (tableStats && tableStats.totalPlayerLeadCp !== undefined)
       ? tableStats.totalPlayerLeadCp
-      : playerLeadGaps.reduce((s, g) => s + (g.gainCp || 0), 0);
+      : (gaps || []).filter(g => g.priority === 'player_lead').reduce((s, g) => s + (g.gainCp || 0), 0);
+    const modelGap = lagCp - leadCp;
+    const residual = netGap - modelGap;
+    const signed = (v) => `${v > 0 ? '+' : (v < 0 ? '−' : '')}${formatNumber(Math.abs(v))} CP`;
 
-    const sortedLeads = [...playerLeadGaps].sort((a, b) => (b.gainCp || 0) - (a.gainCp || 0));
-    const topLeadTitle = (tableStats && tableStats.topLeadTitle)
-      ? tableStats.topLeadTitle
-      : (sortedLeads[0] ? sortedLeads[0].title.replace(/\(Player Advantage\)/i, '').replace(/\(Avantage Joueur\)/i, '').trim() : (isEn ? 'Equipment' : 'Équipement'));
-
-    // Cas 1 : L'adversaire mène globalement (netGap > 0) et le joueur possède une avance sur l'arme ou un équipement
-    if (totalPlayerLeadCp > 0 && netGap > 0) {
-      const grossDeficit = Math.max(totalPositiveCp, netGap + totalPlayerLeadCp);
-      const leadTitle = topLeadTitle;
-
-      return `
-        <div class="cp-reconciliation-card">
-          <div class="reconciliation-top">
-            <div class="reconciliation-title">
-              <span class="reconciliation-icon"></span>
-              <strong>${isEn ? 'Combat Power Math Reconciliation (Net Balance)' : 'Bilan Mathématique du Combat Power (Équilibre Net)'}</strong>
-            </div>
-            <span class="reconciliation-tag">
-              ${isEn ? 'Formula & Transparency' : 'Formule & Transparence'}
-            </span>
-          </div>
-
-          <div class="reconciliation-equation">
-            <div class="eq-box gross-deficit">
-              <div class="eq-box-label">${isEn ? 'Gross Equipment Deficit' : 'Retard Brut Équipements'}</div>
-              <div class="eq-box-val">+${formatNumber(grossDeficit)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Compounded Equipment Deficit' : 'Retard brut cumulé des systèmes'}</div>
-            </div>
-
-            <div class="eq-operator">−</div>
-
-            <div class="eq-box player-lead">
-              <div class="eq-box-label">${isEn ? 'Your Advantage (' + escapeHtml(leadTitle) + ')' : 'Votre Avance (' + escapeHtml(leadTitle) + ')'}</div>
-              <div class="eq-box-val">+${formatNumber(totalPlayerLeadCp)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Direct Compensation' : 'Compense ' + formatNumber(totalPlayerLeadCp) + ' CP de retard'}</div>
-            </div>
-
-            <div class="eq-operator">=</div>
-
-            <div class="eq-box net-gap">
-              <div class="eq-box-label">${isEn ? 'Observed In-Game Gap' : 'Écart Réel Net In-Game'}</div>
-              <div class="eq-box-val">+${formatNumber(netGap)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Net Difference (lostark.bible)' : 'Score affiché en Raid'}</div>
-            </div>
-          </div>
-
-          <div class="reconciliation-explanation">
-            <span class="info-bulb"></span>
-            <span>
-              ${isEn
-                ? `<strong>Why doesn't the simple sum of levers (+${formatNumber(totalPositiveCp)} CP) equal the exact +${formatNumber(netGap)} CP header?</strong> Each table row calculates its isolated linear improvement lever. In reality, your gross compounded deficit of <strong>+${formatNumber(grossDeficit)} CP</strong> across lagging equipment is directly cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP lead)</strong>: <code>+${formatNumber(grossDeficit)} CP &minus; ${formatNumber(totalPlayerLeadCp)} CP = +${formatNumber(netGap)} CP</code>. Lost Ark\'s compound multiplicative formula (where systems multiply with each other) calibrates the final in-raid gap to exactly <strong>+${formatNumber(netGap)} CP</strong>.`
-                : `<strong>Pourquoi la simple somme des leviers (+${formatNumber(totalPositiveCp)} CP) ne fait pas exactement +${formatNumber(netGap)} CP ?</strong> Chaque ligne du tableau calcule son gain linéaire isolé. En réalité, votre retard brut combiné de <strong>+${formatNumber(grossDeficit)} CP</strong> sur vos équipements en retard est directement amorti par votre <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP d'avance)</strong> : <code>+${formatNumber(grossDeficit)} CP &minus; ${formatNumber(totalPlayerLeadCp)} CP = +${formatNumber(netGap)} CP</code>. La formule multiplicative croisée de Lost Ark (compounding) équilibre l'écart net exact relevé en raid à <strong>+${formatNumber(netGap)} CP</strong>.`
-              }
-            </span>
-          </div>
-        </div>
-      `;
+    let explanation;
+    if (target.isDynamic) {
+      explanation = isEn
+        ? `The reference is built from your own profile, one step ahead on each system. Each table row is that system's relative gain on its own; the header multiplies them together, which is why the rows and the header differ by ${formatNumber(Math.abs(residual))} CP.`
+        : `La référence est construite à partir de ton propre profil, avec une étape d'avance sur chaque système. Chaque ligne du tableau est le gain relatif de ce système pris seul ; l'en-tête les multiplie entre eux, d'où l'écart de ${formatNumber(Math.abs(residual))} CP entre les lignes et l'en-tête.`;
+    } else {
+      explanation = isEn
+        ? `The rows model a ${signed(modelGap)} gap; the real profiles differ by ${signed(netGap)}. The remaining ${signed(residual)} comes from what the model does not read (roster level, cards, pets, potions…) and from the way systems multiply together.`
+        : `Les lignes modélisent un écart de ${signed(modelGap)} ; les vrais profils diffèrent de ${signed(netGap)}. Les ${signed(residual)} restants viennent de ce que le modèle ne lit pas (niveau de roster, cartes, familiers, potions…) et de la multiplication des systèmes entre eux.`;
     }
 
-    // Cas 2 : L'adversaire mène et le joueur n'a pas d'avance compensatoire
-    if (netGap > 0) {
-      const baseSynergies = Math.max(0, netGap - totalPositiveCp);
-
-      return `
-        <div class="cp-reconciliation-card">
-          <div class="reconciliation-top">
-            <div class="reconciliation-title">
-              <span class="reconciliation-icon"></span>
-              <strong>${isEn ? 'Combat Power Math Reconciliation (Net Balance)' : 'Bilan Mathématique du Combat Power (Équilibre Net)'}</strong>
-            </div>
-            <span class="reconciliation-tag">
-              ${isEn ? 'Formula & Transparency' : 'Formule & Transparence'}
-            </span>
-          </div>
-
-          <div class="reconciliation-equation">
-            <div class="eq-box gross-deficit">
-              <div class="eq-box-label">${isEn ? 'Identified Equipment Gaps' : 'Écarts Équipements Identifiés'}</div>
-              <div class="eq-box-val">+${formatNumber(totalPositiveCp)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Sum of all lagging systems in table' : 'Somme des systèmes en retard dans le tableau'}</div>
-            </div>
-
-            <div class="eq-operator">+</div>
-
-            <div class="eq-box player-lead" style="border-color: rgba(154, 151, 138, 0.3);">
-              <div class="eq-box-label">${isEn ? 'Base Stats & Synergies' : 'Stats de Base & Synergies'}</div>
-              <div class="eq-box-val" style="color: #CFCBBD;">+${formatNumber(baseSynergies)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Main Stat & Compounding' : 'Stat Principale & Multiplicateurs'}</div>
-            </div>
-
-            <div class="eq-operator">=</div>
-
-            <div class="eq-box net-gap">
-              <div class="eq-box-label">${isEn ? 'Observed In-Game Gap' : 'Écart Réel Net In-Game'}</div>
-              <div class="eq-box-val">+${formatNumber(netGap)} CP</div>
-              <div class="eq-box-sub">${isEn ? 'Net Difference (lostark.bible)' : 'Score affiché en Raid'}</div>
-            </div>
-          </div>
-
-          <div class="reconciliation-explanation">
-            <span class="info-bulb"></span>
-            <span>
-              ${isEn
-                ? `<strong>Transparent breakdown:</strong> The identified equipment levers account for <strong>+${formatNumber(totalPositiveCp)} CP</strong>. The remaining <strong>+${formatNumber(baseSynergies)} CP</strong> comes from Base Main Stat differences (potions, roster level) and Lost Ark's multiplicative compounding formula.`
-                : `<strong>Décomposition transparente :</strong> Les leviers d'équipement identifiés représentent <strong>+${formatNumber(totalPositiveCp)} CP</strong>. Le reliquat de <strong>+${formatNumber(baseSynergies)} CP</strong> provient des écarts de Stat Principale brute (potions, niveau de roster) et des multiplicateurs croisés (compounding) de Lost Ark.`
-              }
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // Cas 3 : Le joueur est en avance
     return `
       <div class="cp-reconciliation-card">
         <div class="reconciliation-top">
           <div class="reconciliation-title">
-            <span class="reconciliation-icon"></span>
-            <strong>${isEn ? 'Combat Power Math Reconciliation' : 'Bilan Mathématique du Combat Power'}</strong>
+            <strong>${isEn ? 'Combat Power balance' : 'Bilan du Combat Power'}</strong>
           </div>
-          <span class="reconciliation-tag" style="background: rgba(140, 192, 132, 0.15); color: #8CC084; border-color: rgba(140, 192, 132, 0.35);">
-            ${isEn ? 'Player Advantage' : 'Avantage Joueur'}
-          </span>
         </div>
+
+        <div class="reconciliation-equation">
+          <div class="eq-box gross-deficit">
+            <div class="eq-box-label">${isEn ? 'Behind (sum of rows)' : 'Retards (somme des lignes)'}</div>
+            <div class="eq-box-val">+${formatNumber(lagCp)} CP</div>
+            <div class="eq-box-sub">${isEn ? 'Systems where the reference is ahead' : 'Systèmes où la référence est devant'}</div>
+          </div>
+
+          <div class="eq-operator">−</div>
+
+          <div class="eq-box player-lead">
+            <div class="eq-box-label">${isEn ? 'Ahead (sum of rows)' : 'Avances (somme des lignes)'}</div>
+            <div class="eq-box-val">${formatNumber(leadCp)} CP</div>
+            <div class="eq-box-sub">${isEn ? 'Systems where you are ahead' : 'Systèmes où tu es devant'}</div>
+          </div>
+
+          <div class="eq-operator">=</div>
+
+          <div class="eq-box net-gap">
+            <div class="eq-box-label">${isEn ? 'Model balance' : 'Solde du modèle'}</div>
+            <div class="eq-box-val">${signed(modelGap)}</div>
+            <div class="eq-box-sub">${isEn ? `Header gap: ${signed(netGap)}` : `Écart affiché : ${signed(netGap)}`}</div>
+          </div>
+        </div>
+
         <div class="reconciliation-explanation">
-          <span class="info-bulb"></span>
-          <span>
-            ${isEn
-              ? `Your character holds a solid net advantage of <strong>+${formatNumber(Math.abs(netGap))} CP</strong> over the benchmark target. Your overall systems outperform the reference profile.`
-              : `Votre personnage conserve une solide avance nette de <strong>+${formatNumber(Math.abs(netGap))} CP</strong> sur le profil de référence. Vos systèmes globaux surpassent la cible.`
-            }
-          </span>
+          <span>${explanation}</span>
         </div>
       </div>
     `;
@@ -15297,8 +15257,9 @@
           ? 'delta-badge-pos' 
           : (delta < -0.01 ? 'delta-badge-neg' : 'delta-badge-neutral');
 
-        const cpImpact = delta > 0.01 ? Math.round(delta * cpPerPct) : 0;
-        const playerLeadCp = delta < -0.01 ? Math.round(Math.abs(delta) * cpPerPct) : 0;
+        const rowGapCp = systemGapCp(pItem.bonusPct, tItem.bonusPct, player.cp);
+        const cpImpact = delta > 0.01 ? Math.round(rowGapCp) : 0;
+        const playerLeadCp = delta < -0.01 ? Math.round(-rowGapCp) : 0;
 
         if (cpImpact > 0) {
           totalPositiveTableCp += cpImpact;
