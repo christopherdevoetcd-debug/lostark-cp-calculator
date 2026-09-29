@@ -7988,14 +7988,34 @@
           || (p.rawProfile && p.rawProfile.rawItems && p.rawProfile.rawItems.find(i => i.slot === 'bracelet'))
           || null;
 
-        if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brItemObj && brItemObj.data && Array.isArray(brItemObj.data.stats)) {
+        const brStats = (brItemObj && brItemObj.data && Array.isArray(brItemObj.data.stats) && brItemObj.data.stats)
+          || (p.rawProfile && p.rawProfile.bracelet && Array.isArray(p.rawProfile.bracelet.stats) && p.rawProfile.bracelet.stats)
+          || (p.bracelet && Array.isArray(p.bracelet.stats) && p.bracelet.stats)
+          || null;
+
+        if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brStats) {
           try {
-            const dec = window.Bracelet.decodeBibleBracelet(brItemObj.data.stats);
+            const TRAIT_TO_APP = { crit: "crit", spec: "spec", swiftness: "swift" };
+            const dec = window.Bracelet.decodeBibleBracelet(brStats);
+            const traits = { crit: 0, spec: 0, swift: 0 };
+            const lines = [];
+            const traitParts = [];
+            for (let i = 0; i < (dec.lines || []).length; i++) {
+              const l = dec.lines[i];
+              const key = TRAIT_TO_APP[l.family];
+              if (l.cat === "trait" && key) {
+                traits[key] = l.value;
+                const traitName = key === "swift" ? "Swift" : (key === "spec" ? "Spec" : "Crit");
+                traitParts.push(`${traitName} ${l.value}`);
+              } else {
+                lines.push(l);
+              }
+            }
             const normProf = window.Bracelet.normalizeProfile({ role: isSupport ? 'support' : 'dps' });
             const sc = window.Subrank.braceletScore({
               grade: dec.grade || 'ancient',
-              lines: dec.lines || [],
-              traits: dec.traits || {},
+              lines: lines,
+              traits: traits,
               profile: normProf
             });
             if (sc && sc.band) {
@@ -8005,14 +8025,8 @@
               customBg = sc.band.bg;
               customFg = sc.band.fg;
 
-              const traitParts = [];
-              if (dec.traits) {
-                for (const [tk, tv] of Object.entries(dec.traits)) {
-                  traitParts.push(`${tk.slice(0, 3)} ${tv}`);
-                }
-              }
               const traitStr = traitParts.join(' / ');
-              const linesCount = (dec.lines || []).length;
+              const linesCount = lines.length;
               brDetail = traitStr ? `${traitStr} • ${linesCount} lines` : (isEn ? `${linesCount} effect lines` : `${linesCount} lignes d'effets`);
             }
           } catch (e) {
