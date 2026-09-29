@@ -1366,12 +1366,12 @@
     } else {
       if (pred.mode === 'honing') {
         msg = isEn
-          ? `🔨 <strong>Pure Honing Gain (Gear Only):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) grants approx. <strong>+${formatNumber(pred.diffCp)} CP</strong> (realistic efficiency of <strong>${pred.slope} CP / iLvl</strong>). Strictly corresponds to upgrading your 6 gear pieces at the blacksmith (Weapon & Armors without changing gems or accessories).`
-          : `🔨 <strong>Gain d'Affinage Pur (Stuff Seul) :</strong> Passer de <strong>${currentIlvl.toFixed(2)}</strong> à <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) confère environ <strong>+${formatNumber(pred.diffCp)} CP</strong> (efficacité réaliste de <strong>${pred.slope} CP / iLvl</strong>). Ce calcul correspond strictement à l'augmentation de tes 6 pièces chez le forgeron (Arme & Armures sans changer de gemmes ni d'accessoires).`;
+          ? `<strong>Pure Honing Gain (Gear Only):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) grants approx. <strong>+${formatNumber(pred.diffCp)} CP</strong> (realistic efficiency of <strong>${pred.slope} CP / iLvl</strong>). Strictly corresponds to upgrading your 6 gear pieces at the blacksmith (Weapon & Armors without changing gems or accessories).`
+          : `<strong>Gain d'Affinage Pur (Stuff Seul) :</strong> Passer de <strong>${currentIlvl.toFixed(2)}</strong> à <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) confère environ <strong>+${formatNumber(pred.diffCp)} CP</strong> (efficacité réaliste de <strong>${pred.slope} CP / iLvl</strong>). Ce calcul correspond strictement à l'augmentation de tes 6 pièces chez le forgeron (Arme & Armures sans changer de gemmes ni d'accessoires).`;
       } else {
         msg = isEn
-          ? `🌟 <strong>Overall Build Projection (Endgame T4):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) projects your character toward <strong>${formatNumber(pred.predictedCp)} CP</strong> (+${formatNumber(pred.diffCp)} CP). <em>Note: This global projection assumes parallel progression (Lvl. 9/10 Gems, T4 Karma, and Relic Engravings).</em>`
-          : `🌟 <strong>Projection de Build Global (Endgame T4) :</strong> Passer de <strong>${currentIlvl.toFixed(2)}</strong> à <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) projette ton personnage vers <strong>${formatNumber(pred.predictedCp)} CP</strong> (+${formatNumber(pred.diffCp)} CP). <em>Note : Cette projection globale suppose que tu fasses évoluer ton build en parallèle (montée des Gemmes Niv. 9/10, Karma T4 et Gravures Reliques).</em>`;
+          ? `<strong>Overall Build Projection (Endgame T4):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) projects your character toward <strong>${formatNumber(pred.predictedCp)} CP</strong> (+${formatNumber(pred.diffCp)} CP). <em>Note: This global projection assumes parallel progression (Lvl. 9/10 Gems, T4 Karma, and Relic Engravings).</em>`
+          : `<strong>Projection de Build Global (Endgame T4) :</strong> Passer de <strong>${currentIlvl.toFixed(2)}</strong> à <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) projette ton personnage vers <strong>${formatNumber(pred.predictedCp)} CP</strong> (+${formatNumber(pred.diffCp)} CP). <em>Note : Cette projection globale suppose que tu fasses évoluer ton build en parallèle (montée des Gemmes Niv. 9/10, Karma T4 et Gravures Reliques).</em>`;
       }
     }
 
@@ -1536,7 +1536,7 @@
     if (diffCp > 0 && totalSimGold > 0) {
       const goldPerCp = Math.round(totalSimGold / diffCp);
       simPrefix = `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(232, 230, 220,0.1); color: var(--accent-gold);">
-        📊 <strong>${isEn ? 'Simulation Summary' : 'Bilan Simulation'} :</strong> +${formatNumber(diffCp)} CP ${isEn ? 'for' : 'pour'} ~${formatNumber(totalSimGold)} gold (${isEn ? 'ratio' : 'ratio'} : <strong>${formatNumber(goldPerCp)} g / CP</strong>).
+        <strong>${isEn ? 'Simulation Summary' : 'Bilan Simulation'} :</strong> +${formatNumber(diffCp)} CP ${isEn ? 'for' : 'pour'} ~${formatNumber(totalSimGold)} gold (${isEn ? 'ratio' : 'ratio'} : <strong>${formatNumber(goldPerCp)} g / CP</strong>).
       </div>`;
     }
 
@@ -1551,18 +1551,18 @@
           : `${simPrefix}Ton arme est déjà à un très haut niveau (+${g.weapon}). Pour optimiser tes golds, monter en priorité ton <strong>Torse (+${g.chest})</strong> et <strong>Pantalon (+${g.pants})</strong> à <strong>+18 / +19</strong> sera le plus rentable en Force / MainStat.`;
       } else if (g.weapon >= 23) {
         advice = isEn
-          ? `${simPrefix}Elite weapon tier <strong>+${g.weapon}</strong>! At this level, each tap (+24, +25) delivers massive Weapon Power gains (~<strong>+60 to +75 CP per tap</strong>), but at high cost. Ensure your armors are all at +18/+19 to balance your base.`
-          : `${simPrefix}Arme d'élite <strong>+${g.weapon}</strong> ! À ce niveau, chaque palier (+24, +25) apporte des augmentations majeures de Puissance d'Arme (~<strong>+60 à +75 CP par tap</strong>), mais à coût extrême. Assure-toi que tes armures soient toutes à +18/+19 pour consolider ta base.`;
+          ? `${simPrefix}Weapon at <strong>+${g.weapon}</strong>. At this level, each tap (+24, +25) adds large Weapon Power gains (~<strong>+60 to +75 CP per tap</strong>), but at high cost. Ensure your armors are all at +18/+19 to balance your base.`
+          : `${simPrefix}Arme à <strong>+${g.weapon}</strong>. À ce niveau, chaque palier (+24, +25) apporte de fortes hausses de Puissance d'Arme (~<strong>+60 à +75 CP par tap</strong>), mais à un coût très élevé. Assure-toi que tes armures soient toutes à +18/+19 pour consolider ta base.`;
       } else {
         advice = isEn
-          ? `${simPrefix}Excellent honing distribution (+${g.weapon} weapon, armors +${Math.min(g.head, g.chest, g.pants)}). Continue elevating remaining armors evenly toward +18 / +20.`
-          : `${simPrefix}Excellente répartition d'affinage (+${g.weapon} arme, armures +${Math.min(g.head, g.chest, g.pants)}). Continue d'élever uniformément tes armures vers +18 / +20.`;
+          ? `${simPrefix}Balanced honing distribution (+${g.weapon} weapon, armors +${Math.min(g.head, g.chest, g.pants)}). Continue elevating remaining armors evenly toward +18 / +20.`
+          : `${simPrefix}Répartition d'affinage équilibrée (+${g.weapon} arme, armures +${Math.min(g.head, g.chest, g.pants)}). Continue d'élever uniformément tes armures vers +18 / +20.`;
       }
     } else {
       if (g.chest < 16 || g.pants < 16) {
         advice = isEn
-          ? `${simPrefix}As a Support, your <strong>Chest (+${g.chest})</strong> and <strong>Pants (+${g.pants})</strong> are vital for Vitality and MainStat scaling your Shields and Heals. Hone them to +16 / +18 as priority!`
-          : `${simPrefix}En Support, le <strong>Torse (+${g.chest})</strong> et le <strong>Pantalon (+${g.pants})</strong> sont vitaux pour la Vitalité et la Force qui augmentent tes Shields et Soins. Monte-les en priorité à +16 / +18 !`;
+          ? `${simPrefix}As a Support, your <strong>Chest (+${g.chest})</strong> and <strong>Pants (+${g.pants})</strong> are vital for Vitality and MainStat scaling your Shields and Heals. Hone them to +16 / +18 first.`
+          : `${simPrefix}En Support, le <strong>Torse (+${g.chest})</strong> et le <strong>Pantalon (+${g.pants})</strong> sont vitaux pour la Vitalité et la Force qui augmentent tes Shields et Soins. Monte-les en priorité à +16 / +18.`;
       } else if (g.weapon < 18) {
         advice = isEn
           ? `${simPrefix}Pushing your <strong>Weapon (+${g.weapon})</strong> to +18 (+29 CP, ~56k gold) will strongly increase your base Attack Power, directly strengthening the attack buff granted to allies.`
@@ -1635,11 +1635,11 @@
 
   const SUPPORT_CLASS_SKILLS = {
     paladin: {
-      s1: { name: 'Bénédiction Céleste', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 30s', tag: '⚠️ Bottleneck AP #1' },
+      s1: { name: 'Bénédiction Céleste', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 30s', tag: 'Bottleneck AP #1' },
       s2: { name: 'Colère Divine', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s', tag: 'Buff PA #2' },
       s3: { name: 'Foi Sacrée / Choc Lumineux', sub: 'Brand Power (+10% dégâts subis) • Durée : 6.0s • Base CD : 8s', tag: 'Marque Alliés' },
       s4: { name: 'Protection Sacrée', sub: 'Shield & Divine Wave • Base CD : 30s • Génère de la True Gauge pour l\'Aura', tag: 'Bouclier & True Gauge' },
-      advisorTitle: '💡 Recommandation Gemmes Support Paladin (All-In-One Guide 2026) :',
+      advisorTitle: 'Recommandation Gemmes Support Paladin (All-In-One Guide 2026) :',
       advisorText: 'Votre configuration actuelle (Bénédiction Céleste Niv. 8 + Colère Divine Niv. 8) assure un temps de rechargement sous les 16.0 secondes, garantissant un uptime d\'AP théorique à 100%. <strong>Priorité d\'upgrade :</strong> Si vous investissez dans une gemme Niveau 9, montez exclusivement <em>Bénédiction Céleste</em> pour sécuriser la rotation même en cas d\'interruption. Monter <em>Colère Divine</em> au niveau 9 n\'apporte que du CP brut mais aucun gain d\'uptime effectif.',
       baseCdHb: 30,
       baseCdWog: 22,
@@ -1647,36 +1647,36 @@
       baseCdHp: 30
     },
     bard: {
-      s1: { name: 'Mélodie Céleste (Heavenly Tune)', sub: 'Buff PA Groupe (+16% PA + 8% AP) + Vitesse • Durée : 8.0s • Base CD : 30s', tag: '⚠️ Bottleneck AP #1' },
+      s1: { name: 'Mélodie Céleste (Heavenly Tune)', sub: 'Buff PA Groupe (+16% PA + 8% AP) + Vitesse • Durée : 8.0s • Base CD : 30s', tag: 'Bottleneck AP #1' },
       s2: { name: 'Vibration Sonore (Sonic Vibration)', sub: 'Buff PA Groupe de zone • Durée : 6.0s • Base CD : 24s', tag: 'Buff PA #2' },
       s3: { name: 'Harpe Sonore / Stigma (Sound Shock)', sub: 'Brand Power (+10% dégâts subis) • Durée : 4-6s • Base CD : 8s', tag: 'Marque Alliés' },
       s4: { name: 'Rhapsodie du Vent / Mur de Son', sub: 'Bouclier Réactif & Génération de Bulles de Sérénade', tag: 'Bouclier & Sérénade' },
-      advisorTitle: '💡 Recommandation Gemmes Support Barde (Meta 2026) :',
-      advisorText: 'Priorité absolue à <em>Mélodie Céleste</em> Niv. 9/10 pour réduire le bottleneck d\'uptime de buff d\'Attaque et assurer la synergie de vitesse d\'attaque du groupe de raid.',
+      advisorTitle: 'Recommandation Gemmes Support Barde (Meta 2026) :',
+      advisorText: 'Priorité à <em>Mélodie Céleste</em> Niv. 9/10 pour réduire le bottleneck d\'uptime de buff d\'Attaque et assurer la synergie de vitesse d\'attaque du groupe de raid.',
       baseCdHb: 30,
       baseCdWog: 24,
       baseCdBrand: 8,
       baseCdHp: 28
     },
     artist: {
-      s1: { name: 'Lever de Soleil (Sunsketch)', sub: 'Buff PA Groupe (+16% PA + 8% AP) + Réduction Dégâts • Durée : 8.0s • Base CD : 27s', tag: '⚠️ Bottleneck AP #1' },
+      s1: { name: 'Lever de Soleil (Sunsketch)', sub: 'Buff PA Groupe (+16% PA + 8% AP) + Réduction Dégâts • Durée : 8.0s • Base CD : 27s', tag: 'Bottleneck AP #1' },
       s2: { name: 'Puits de Lumière (Sun Well)', sub: 'Buff PA Groupe de zone • Durée : 6.0s • Base CD : 24s', tag: 'Buff PA #2' },
       s3: { name: 'Orchidée (Drawing Orchids)', sub: 'Brand Power (+10% dégâts subis) • Durée : 8.0s • Base CD : 8s', tag: 'Marque Alliés' },
       s4: { name: 'Trémie / Porte dimensionnelle', sub: 'Bouclier Réactif & Génération d\'Harmonie', tag: 'Bouclier & Harmonie' },
-      advisorTitle: '💡 Recommandation Gemmes Support Artiste (Meta 2026) :',
-      advisorText: 'Priorité absolue à <em>Lever de Soleil</em> Niv. 9/10 pour sécuriser l\'alternance de buff PA avec <em>Puits de Lumière</em> sans le moindre temps mort.',
+      advisorTitle: 'Recommandation Gemmes Support Artiste (Meta 2026) :',
+      advisorText: 'Priorité à <em>Lever de Soleil</em> Niv. 9/10 pour sécuriser l\'alternance de buff PA avec <em>Puits de Lumière</em> sans le moindre temps mort.',
       baseCdHb: 27,
       baseCdWog: 24,
       baseCdBrand: 8,
       baseCdHp: 26
     },
     valkyrie: {
-      s1: { name: 'Bénédiction Lumineuse (Light Blessing)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 28s', tag: '⚠️ Bottleneck AP #1' },
+      s1: { name: 'Bénédiction Lumineuse (Light Blessing)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 28s', tag: 'Bottleneck AP #1' },
       s2: { name: 'Épée de Justice (Sword of Justice)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s', tag: 'Buff PA #2' },
       s3: { name: 'Châtiment Sacré (Holy Smite)', sub: 'Brand Power (+10% dégâts subis) • Durée : 8.0s • Base CD : 8s', tag: 'Marque Alliés' },
       s4: { name: 'Sanctuaire de Grâce (Grace Sanctuary)', sub: 'Bouclier Réactif & Génération de Foi', tag: 'Bouclier & Jauge de Foi' },
-      advisorTitle: '💡 Recommandation Gemmes Support Valkyrie (Knight of Light) :',
-      advisorText: 'Priorité absolue à <em>Bénédiction Lumineuse</em> Niv. 8/9 pour sécuriser le temps de recharge et garantir 100% d\'uptime de buff PA allié.',
+      advisorTitle: 'Recommandation Gemmes Support Valkyrie (Knight of Light) :',
+      advisorText: 'Priorité à <em>Bénédiction Lumineuse</em> Niv. 8/9 pour sécuriser le temps de recharge et garantir 100% d\'uptime de buff PA allié.',
       baseCdHb: 28,
       baseCdWog: 22,
       baseCdBrand: 8,
@@ -1686,54 +1686,54 @@
 
   const DPS_CLASS_SKILLS = {
     shadowhunter: {
-      s1: { name: 'Massacre Sanglant (Blood Massacre)', sub: 'Top Burst Démoniaque #1 • ~35% du DPS', tag: '🔥 Burst #1' },
-      s2: { name: 'Faucheuse Cruelle (Cruel Cutter)', sub: 'Compétence Majeure Démoniaque #2 • ~25% du DPS', tag: '⚡ Burst #2' },
-      s3: { name: 'Éruption Démoniaque (Demonic Ruin)', sub: 'Compétence Finition #3 • ~15% du DPS', tag: '⚔️ Burst #3' },
-      s4: { name: 'Tranche Démoniaque (Demonic Slash)', sub: 'Mobilité & Synergie de Cycle • Réduction CD', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Massacre Sanglant (Blood Massacre)', sub: 'Top Burst Démoniaque #1 • ~35% du DPS', tag: 'Burst #1' },
+      s2: { name: 'Faucheuse Cruelle (Cruel Cutter)', sub: 'Compétence Majeure Démoniaque #2 • ~25% du DPS', tag: 'Burst #2' },
+      s3: { name: 'Éruption Démoniaque (Demonic Ruin)', sub: 'Compétence Finition #3 • ~15% du DPS', tag: 'Burst #3' },
+      s4: { name: 'Tranche Démoniaque (Demonic Slash)', sub: 'Mobilité & Synergie de Cycle • Réduction CD', tag: 'Cooldown Pivot' }
     },
     souleater: {
-      s1: { name: 'Moisson des Âmes (Vestige)', sub: 'Top Dégâts Faucheuse / Mort #1 • ~35% du DPS', tag: '🔥 Burst #1' },
-      s2: { name: 'Faux Spectrale (Guillotine Reaper)', sub: 'Compétence Rose Majeure #2 • ~26% du DPS', tag: '⚡ Burst #2' },
-      s3: { name: 'Épine Mortelle (Lethal Spinning)', sub: 'Compétence d\'Entaille Mortelle • ~18% du DPS', tag: '⚔️ Burst #3' },
-      s4: { name: 'Pas Fantomatique (Lunatic Edge)', sub: 'Mobilité & Réduction CD de Cycle', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Moisson des Âmes (Vestige)', sub: 'Top Dégâts Faucheuse / Mort #1 • ~35% du DPS', tag: 'Burst #1' },
+      s2: { name: 'Faux Spectrale (Guillotine Reaper)', sub: 'Compétence Rose Majeure #2 • ~26% du DPS', tag: 'Burst #2' },
+      s3: { name: 'Épine Mortelle (Lethal Spinning)', sub: 'Compétence d\'Entaille Mortelle • ~18% du DPS', tag: 'Burst #3' },
+      s4: { name: 'Pas Fantomatique (Lunatic Edge)', sub: 'Mobilité & Réduction CD de Cycle', tag: 'Cooldown Pivot' }
     },
     slayer: {
-      s1: { name: 'Lame Brutale (Brutal Impact)', sub: 'Top Dégâts Furie #1 • ~35% du DPS', tag: '🔥 Furie #1' },
-      s2: { name: 'Épée Volcanique (Volcanic Eruption)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: '⚡ Furie #2' },
-      s3: { name: 'Lame Guillotine (Guillotine)', sub: 'Finition de Burst • ~20% du DPS', tag: '⚔️ Furie #3' },
-      s4: { name: 'Fureur Sauvage (Wild Stomp)', sub: 'Synergie de Groupe & Jauge de Furie', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Lame Brutale (Brutal Impact)', sub: 'Top Dégâts Furie #1 • ~35% du DPS', tag: 'Furie #1' },
+      s2: { name: 'Épée Volcanique (Volcanic Eruption)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: 'Furie #2' },
+      s3: { name: 'Lame Guillotine (Guillotine)', sub: 'Finition de Burst • ~20% du DPS', tag: 'Furie #3' },
+      s4: { name: 'Fureur Sauvage (Wild Stomp)', sub: 'Synergie de Groupe & Jauge de Furie', tag: 'Cooldown Pivot' }
     },
     breaker: {
-      s1: { name: 'Coup de Poing Destructeur (Buster Surge)', sub: 'Top Dégâts Poing / Asura #1 • ~38% du DPS', tag: '🔥 Burst #1' },
-      s2: { name: 'Poing d\'Asura (Asura Destruction)', sub: 'Rafale Dévastatrice #2 • ~30% du DPS', tag: '⚡ Burst #2' },
-      s3: { name: 'Frappe Céleste (Falling Star)', sub: 'Impact Lourd & Neutralisation • ~18% du DPS', tag: '⚔️ Burst #3' },
-      s4: { name: 'Frappe Éclair (Lightning Palm)', sub: 'Mobilité & Rotation Fluide • Réduction CD', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Coup de Poing Destructeur (Buster Surge)', sub: 'Top Dégâts Poing / Asura #1 • ~38% du DPS', tag: 'Burst #1' },
+      s2: { name: 'Poing d\'Asura (Asura Destruction)', sub: 'Rafale Dévastatrice #2 • ~30% du DPS', tag: 'Burst #2' },
+      s3: { name: 'Frappe Céleste (Falling Star)', sub: 'Impact Lourd & Neutralisation • ~18% du DPS', tag: 'Burst #3' },
+      s4: { name: 'Frappe Éclair (Lightning Palm)', sub: 'Mobilité & Rotation Fluide • Réduction CD', tag: 'Cooldown Pivot' }
     },
     destroyer: {
-      s1: { name: 'Frappe Sismique (Seismic Hammer)', sub: 'Top Dégâts Libération #1 • ~38% du DPS', tag: '🔥 Burst #1' },
-      s2: { name: 'Mangeur Parfait (Perfect Swing)', sub: 'Coup Massif Libération #2 • ~32% du DPS', tag: '⚡ Burst #2' },
-      s3: { name: 'Vague de Terre (Earth Eater)', sub: 'Compétence Neutralisation & Dégâts', tag: '⚔️ Burst #3' },
-      s4: { name: 'Saut Endurant (Endure Pain)', sub: 'Génération de Noyaux & Super Armure', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Frappe Sismique (Seismic Hammer)', sub: 'Top Dégâts Libération #1 • ~38% du DPS', tag: 'Burst #1' },
+      s2: { name: 'Mangeur Parfait (Perfect Swing)', sub: 'Coup Massif Libération #2 • ~32% du DPS', tag: 'Burst #2' },
+      s3: { name: 'Vague de Terre (Earth Eater)', sub: 'Compétence Neutralisation & Dégâts', tag: 'Burst #3' },
+      s4: { name: 'Saut Endurant (Endure Pain)', sub: 'Génération de Noyaux & Super Armure', tag: 'Cooldown Pivot' }
     },
     reaper: {
-      s1: { name: 'Rage Rouge (Rage Spear)', sub: 'Top Attaque Chaos / Trébuchement #1', tag: '🔥 Burst #1' },
-      s2: { name: 'Moisson Lumineuse (Glowing Brand)', sub: 'Compétence d\'Ombre Majeure #2', tag: '⚡ Burst #2' },
-      s3: { name: 'Vortex de Danse (Dance of Fury)', sub: 'Attaque Finale de Burst', tag: '⚔️ Burst #3' },
-      s4: { name: 'Ombre de Cauchemar (Nightmare)', sub: 'Téléportation & Maintien de Synergie', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Rage Rouge (Rage Spear)', sub: 'Top Attaque Chaos / Trébuchement #1', tag: 'Burst #1' },
+      s2: { name: 'Moisson Lumineuse (Glowing Brand)', sub: 'Compétence d\'Ombre Majeure #2', tag: 'Burst #2' },
+      s3: { name: 'Vortex de Danse (Dance of Fury)', sub: 'Attaque Finale de Burst', tag: 'Burst #3' },
+      s4: { name: 'Ombre de Cauchemar (Nightmare)', sub: 'Téléportation & Maintien de Synergie', tag: 'Cooldown Pivot' }
     },
     valkyrie: {
-      s1: { name: 'Épée de Jugement (Judgment Sword)', sub: 'Top Dégâts Libératrice #1 • ~35% du DPS', tag: '🔥 Burst #1' },
-      s2: { name: 'Rayon Céleste (Celestial Beam)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: '⚡ Burst #2' },
-      s3: { name: 'Lame d\'Espoir (Blade of Hope)', sub: 'Finition de Burst • ~20% du DPS', tag: '⚔️ Burst #3' },
-      s4: { name: 'Élan Sacré (Holy Rush)', sub: 'Mobilité & Réduction CD de Rotation', tag: '🔄 Cooldown Pivot' }
+      s1: { name: 'Épée de Jugement (Judgment Sword)', sub: 'Top Dégâts Libératrice #1 • ~35% du DPS', tag: 'Burst #1' },
+      s2: { name: 'Rayon Céleste (Celestial Beam)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: 'Burst #2' },
+      s3: { name: 'Lame d\'Espoir (Blade of Hope)', sub: 'Finition de Burst • ~20% du DPS', tag: 'Burst #3' },
+      s4: { name: 'Élan Sacré (Holy Rush)', sub: 'Mobilité & Réduction CD de Rotation', tag: 'Cooldown Pivot' }
     }
   };
   DPS_CLASS_SKILLS.demonic = DPS_CLASS_SKILLS.shadowhunter;
   DPS_CLASS_SKILLS.generic = {
-    s1: { name: 'Compétence Majeure #1 (Top Burst #1)', sub: 'Top Dégâts T4 #1 • ~35% du DPS', tag: '🔥 Burst #1' },
-    s2: { name: 'Compétence Majeure #2 (Core Rotation #2)', sub: 'Compétence Principale #2 • ~25% du DPS', tag: '⚡ Burst #2' },
-    s3: { name: 'Compétence Majeure #3 (Burst Finisher #3)', sub: 'Compétence Finition #3 • ~15% du DPS', tag: '⚔️ Burst #3' },
-    s4: { name: 'Compétence Utilitaire (Utility & CDR)', sub: 'Mobilité & Synergie de Cycle • Réduction CD', tag: '🔄 Cooldown Pivot' }
+    s1: { name: 'Compétence Majeure #1 (Top Burst #1)', sub: 'Top Dégâts T4 #1 • ~35% du DPS', tag: 'Burst #1' },
+    s2: { name: 'Compétence Majeure #2 (Core Rotation #2)', sub: 'Compétence Principale #2 • ~25% du DPS', tag: 'Burst #2' },
+    s3: { name: 'Compétence Majeure #3 (Burst Finisher #3)', sub: 'Compétence Finition #3 • ~15% du DPS', tag: 'Burst #3' },
+    s4: { name: 'Compétence Utilitaire (Utility & CDR)', sub: 'Mobilité & Synergie de Cycle • Réduction CD', tag: 'Cooldown Pivot' }
   };
 
   const perSkillGemsState = {
@@ -1837,7 +1837,7 @@
     const isEnGems = isEnLang();
     if (dom.dispSuppSkill1Name) dom.dispSuppSkill1Name.textContent = isEnGems ? 'Heavenly Blessing' : suppData.s1.name;
     if (dom.dispSuppSkill1Sub) dom.dispSuppSkill1Sub.textContent = isEnGems ? 'Party AP Buff (+16% PA + 8% AP) • Duration: 8.0s • Base CD: 30s' : suppData.s1.sub;
-    if (dom.dispSuppSkill1Tag) dom.dispSuppSkill1Tag.textContent = isEnGems ? '⚠️ AP Bottleneck #1' : suppData.s1.tag;
+    if (dom.dispSuppSkill1Tag) dom.dispSuppSkill1Tag.textContent = isEnGems ? 'AP Bottleneck #1' : suppData.s1.tag;
 
     if (dom.dispSuppSkill2Name) dom.dispSuppSkill2Name.textContent = isEnGems ? 'Wrath of God' : suppData.s2.name;
     if (dom.dispSuppSkill2Sub) dom.dispSuppSkill2Sub.textContent = isEnGems ? 'Party AP Buff (+16% PA + 8% AP) • Duration: 8.0s • Base CD: 22s' : suppData.s2.sub;
@@ -1851,7 +1851,7 @@
     if (dom.dispSuppSkill4Sub) dom.dispSuppSkill4Sub.textContent = isEnGems ? 'Shield & Divine Wave • Base CD: 30s • Generates True Gauge for Aura' : suppData.s4.sub;
     if (dom.dispSuppSkill4Tag) dom.dispSuppSkill4Tag.textContent = isEnGems ? 'Shield & True Gauge' : suppData.s4.tag;
 
-    if (dom.dispSuppAdvisorTitle) dom.dispSuppAdvisorTitle.textContent = isEnGems ? '💡 Paladin Support Gem Recommendation (All-In-One Guide 2026):' : suppData.advisorTitle;
+    if (dom.dispSuppAdvisorTitle) dom.dispSuppAdvisorTitle.textContent = isEnGems ? 'Paladin Support Gem Recommendation (All-In-One Guide 2026):' : suppData.advisorTitle;
 
     const res = calcPerSkillGems();
 
@@ -1865,10 +1865,10 @@
     if (dom.dispCd_hb) dom.dispCd_hb.textContent = `${res.hbCd.toFixed(1)}s CD`;
     if (dom.dispStatus_hb) {
       if (res.hbGap <= 0.05) {
-        dom.dispStatus_hb.textContent = '✅ Gapless';
+        dom.dispStatus_hb.textContent = 'Gapless';
         dom.dispStatus_hb.className = 'gem-metric-status ok';
       } else {
-        dom.dispStatus_hb.textContent = isEn ? `⚠️ Gap: ${res.hbGap.toFixed(1)}s` : `⚠️ Trou : ${res.hbGap.toFixed(1)}s`;
+        dom.dispStatus_hb.textContent = isEn ? `Gap: ${res.hbGap.toFixed(1)}s` : `Trou : ${res.hbGap.toFixed(1)}s`;
         dom.dispStatus_hb.className = 'gem-metric-status warn';
       }
     }
@@ -1876,16 +1876,16 @@
     if (dom.dispCd_wog) dom.dispCd_wog.textContent = `${res.wogCd.toFixed(1)}s CD`;
     if (dom.dispStatus_wog) {
       dom.dispStatus_wog.textContent = res.wogCd <= 16.0 
-        ? (isEn ? '✅ Guaranteed Uptime' : '✅ Uptime Garanti') 
-        : (isEn ? '⚠️ Misalignment' : '⚠️ Décalage');
+        ? (isEn ? 'Guaranteed Uptime' : 'Uptime Garanti') 
+        : (isEn ? 'Misalignment' : 'Décalage');
       dom.dispStatus_wog.className = res.wogCd <= 16.0 ? 'gem-metric-status ok' : 'gem-metric-status warn';
     }
 
     if (dom.dispCd_brand) dom.dispCd_brand.textContent = `${res.brandCd.toFixed(1)}s CD`;
     if (dom.dispStatus_brand) {
       dom.dispStatus_brand.textContent = res.brandCd <= 6.0 
-        ? (isEn ? '✅ 100% Brand' : '✅ 100% Marque') 
-        : (isEn ? '⚠️ Misalignment' : '⚠️ Décalage');
+        ? (isEn ? '100% Brand' : '100% Marque') 
+        : (isEn ? 'Misalignment' : 'Décalage');
       dom.dispStatus_brand.className = res.brandCd <= 6.0 ? 'gem-metric-status ok' : 'gem-metric-status warn';
     }
 
@@ -1907,17 +1907,17 @@
       if (classKey === 'paladin') {
         if (isEn) {
           if (perSkillGemsState.hbLvl >= 9 && perSkillGemsState.wogLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '🌟 <strong>Optimal Paladin Setup:</strong> Both major Attack buffs are covered at Level 9+. <em>Heavenly Blessings</em> has a safety margin of over 1.8s against boss knockbacks and movement.';
+            dom.gemAdvisorText.innerHTML = '<strong>Optimal Paladin Setup:</strong> Both major Attack buffs are covered at Level 9+. <em>Heavenly Blessings</em> has a safety margin of over 1.8s against boss knockbacks and movement.';
           } else if (perSkillGemsState.hbLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '✅ <strong>Goal Reached:</strong> Your <em>Heavenly Blessings</em> is at Level 9 (-22% CD), guaranteeing a smooth 100% AP rotation even in raid conditions. Raising <em>Wrath of God</em> to Level 9 gives raw CP, but uptime is already secured.';
+            dom.gemAdvisorText.innerHTML = '<strong>Goal Reached:</strong> Your <em>Heavenly Blessings</em> is at Level 9 (-22% CD), guaranteeing a smooth 100% AP rotation even in raid conditions. Raising <em>Wrath of God</em> to Level 9 gives raw CP, but uptime is already secured.';
           } else {
             dom.gemAdvisorText.innerHTML = 'Your current setup (Heavenly Blessings Lvl. 8 + Wrath of God Lvl. 8) keeps cooldowns under 16.0s, ensuring a theoretical 100% AP uptime. <strong>Upgrade Priority:</strong> Upgrade exclusively <em>Heavenly Blessings</em> to Level 9 to secure buff uptime in actual raids.';
           }
         } else {
           if (perSkillGemsState.hbLvl >= 9 && perSkillGemsState.wogLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '🌟 <strong>Configuration Paladin Optimale :</strong> Vos 2 buffs d\'Attaque majeurs sont couverts au niveau 9+. <em>Bénédiction Céleste</em> dispose d\'une marge de sécurité de plus de 1.8s contre les déplacements et interruptions de boss.';
+            dom.gemAdvisorText.innerHTML = '<strong>Configuration Paladin Optimale :</strong> Vos 2 buffs d\'Attaque majeurs sont couverts au niveau 9+. <em>Bénédiction Céleste</em> dispose d\'une marge de sécurité de plus de 1.8s contre les déplacements et interruptions de boss.';
           } else if (perSkillGemsState.hbLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '✅ <strong>Objectif Atteint :</strong> Votre <em>Bénédiction Céleste</em> est au Niveau 9 (-22% CD), garantissant une rotation fluide à 100% d\'AP même en situation réelle. Monter <em>Colère Divine</em> au niveau 9 apportera du CP brut mais l\'uptime est déjà sécurisé.';
+            dom.gemAdvisorText.innerHTML = '<strong>Objectif Atteint :</strong> Votre <em>Bénédiction Céleste</em> est au Niveau 9 (-22% CD), garantissant une rotation fluide à 100% d\'AP même en situation réelle. Monter <em>Colère Divine</em> au niveau 9 apportera du CP brut mais l\'uptime est déjà sécurisé.';
           } else {
             dom.gemAdvisorText.innerHTML = 'Votre configuration actuelle (Bénédiction Céleste Niv. 8 + Colère Divine Niv. 8) assure un temps de rechargement sous les 16.0 secondes, garantissant un uptime d\'AP théorique à 100%. <strong>Priorité d\'upgrade :</strong> Monter exclusivement <em>Bénédiction Céleste</em> au niveau 9 pour sécuriser le buff en situation réelle de raid.';
           }
@@ -1942,19 +1942,19 @@
     }
     if (dom.dispDpsSkill1Name) dom.dispDpsSkill1Name.textContent = formatDpsSkillName(skills.s1.name);
     if (dom.dispDpsSkill1Sub) dom.dispDpsSkill1Sub.textContent = isEnDps ? 'T4 Major Damage Gem • Maximized Burst' : skills.s1.sub;
-    if (dom.dispDpsSkill1Tag) dom.dispDpsSkill1Tag.textContent = isEnDps ? '🔥 Top Burst #1' : skills.s1.tag;
+    if (dom.dispDpsSkill1Tag) dom.dispDpsSkill1Tag.textContent = isEnDps ? 'Top Burst #1' : skills.s1.tag;
 
     if (dom.dispDpsSkill2Name) dom.dispDpsSkill2Name.textContent = formatDpsSkillName(skills.s2.name);
     if (dom.dispDpsSkill2Sub) dom.dispDpsSkill2Sub.textContent = isEnDps ? 'T4 Major Damage Gem • Core Rotation' : skills.s2.sub;
-    if (dom.dispDpsSkill2Tag) dom.dispDpsSkill2Tag.textContent = isEnDps ? '⚡ Burst #2' : skills.s2.tag;
+    if (dom.dispDpsSkill2Tag) dom.dispDpsSkill2Tag.textContent = isEnDps ? 'Burst #2' : skills.s2.tag;
 
     if (dom.dispDpsSkill3Name) dom.dispDpsSkill3Name.textContent = formatDpsSkillName(skills.s3.name);
     if (dom.dispDpsSkill3Sub) dom.dispDpsSkill3Sub.textContent = isEnDps ? 'T4 Damage Gem • Cycle Finisher' : skills.s3.sub;
-    if (dom.dispDpsSkill3Tag) dom.dispDpsSkill3Tag.textContent = isEnDps ? '⚔️ Burst #3' : skills.s3.tag;
+    if (dom.dispDpsSkill3Tag) dom.dispDpsSkill3Tag.textContent = isEnDps ? 'Burst #3' : skills.s3.tag;
 
     if (dom.dispDpsCdName) dom.dispDpsCdName.textContent = formatDpsSkillName(skills.s4.name);
     if (dom.dispDpsCdSub) dom.dispDpsCdSub.textContent = isEnDps ? 'Cooldown Reduction • Burst Alignment' : skills.s4.sub;
-    if (dom.dispDpsCdTag) dom.dispDpsCdTag.textContent = isEnDps ? '🔄 Rotation Pivot' : skills.s4.tag;
+    if (dom.dispDpsCdTag) dom.dispDpsCdTag.textContent = isEnDps ? 'Rotation Pivot' : skills.s4.tag;
 
     // Valeurs de gemmes
     const dmgMap = { 7: 32, 8: 36, 9: 40, 10: 44 };
@@ -2014,9 +2014,9 @@
       const s1Short = skills.s1.name.split('(')[0].trim();
       const s2Short = skills.s2.name.split('(')[0].trim();
       if (perSkillGemsState.dps1Lvl >= 9 && perSkillGemsState.dps2Lvl >= 9) {
-        dom.gemDpsAdvisorText.innerHTML = `🌟 <strong>Configuration DPS Haut de Gamme :</strong> Vos 2 compétences de burst majeures (<em>${s1Short}</em> et <em>${s2Short}</em>) sont équipées en gemmes Niveau 9/10 (+40%/+44%), garantissant le meilleur multiplicateur de dégâts par gold investi.`;
+        dom.gemDpsAdvisorText.innerHTML = `<strong>Configuration DPS :</strong> Vos 2 compétences de burst majeures (<em>${s1Short}</em> et <em>${s2Short}</em>) sont équipées en gemmes Niveau 9/10 (+40%/+44%), garantissant le meilleur multiplicateur de dégâts par gold investi.`;
       } else {
-        dom.gemDpsAdvisorText.innerHTML = `💡 <strong>Priorité Stratégique DPS :</strong> Montez en priorité la gemme de <em>${s1Short}</em> au Niveau 9 (+40% Dégâts). C'est votre compétence la plus rentable du cycle de combat.`;
+        dom.gemDpsAdvisorText.innerHTML = `<strong>Priorité Stratégique DPS :</strong> Montez en priorité la gemme de <em>${s1Short}</em> au Niveau 9 (+40% Dégâts). C'est votre compétence la plus rentable du cycle de combat.`;
       }
     }
   }
@@ -2240,22 +2240,22 @@
     let nextCost = 1200;
     let explanation = '';
     let bannerClass = 'stop';
-    let icon = '🔴';
+    let icon = '';
 
     const isEn = isEnLang();
     if (!cut2Done) {
       // Décision après le 1er Cut
       if (cut1Tier === 'high' && cut1Type === 'primary') {
-        decision = isEn ? 'CONTINUE (IMMINENT JACKPOT)' : 'CONTINUER (JACKPOT IMMINENT)';
-        subtitle = isEn ? 'Massive expected gain (EV >> 0). Paying 1,200g is highly profitable!' : 'Espérance de gain massive (EV >> 0). Payer 1 200 g est hautement rentable !';
+        decision = isEn ? 'CONTINUE (HIGH ON PRIMARY)' : 'CONTINUER (HIGH SUR LIGNE PRIMAIRE)';
+        subtitle = isEn ? 'Positive expected value (EV >> 0): the 1,200 g cut pays off.' : 'Espérance positive (EV >> 0) : le cut à 1 200 g est rentable.';
         ev = Math.round((m.hh * pHigh * 2 + m.hm * pMid * 2 + m.hl * pLow * 2) * qMult - (CUT_COST * 2));
         estimatedMarketVal = Math.round(m.hm * qMult);
         probSuccess = '3.70%';
         bannerClass = 'jackpot';
-        icon = '⭐';
+        icon = '';
         explanation = isEn 
-          ? `OUTSTANDING first cut (Primary Line Tier High). You have a very solid combined probability of obtaining a mythical High/High or High/Mid piece. With the ${quintile.toUpperCase()} quintile effect, projected market value net of pheon tax is ~ ${estimatedMarketVal.toLocaleString()} g. Net mathematical expected value is +${ev.toLocaleString()} g. Proceed without hesitation!`
-          : `Premier cut EXCEPTIONNEL (Ligne Primaire Tier High). Vous avez une probabilité cumulée très solide de sortir un bijou mythique High/High ou High/Mid. Avec l'effet du quintile (${quintile.toUpperCase()}), la valeur marchande projetée nette de taxe phéons est d'environ ${estimatedMarketVal.toLocaleString()} g. L'espérance mathématique nette de taillage s'élève à +${ev.toLocaleString()} g. Poursuivez sans hésiter !`;
+          ? `First cut: Tier High on a primary line. Good combined odds of a High/High or High/Mid piece. With the ${quintile.toUpperCase()} quintile effect, projected market value net of pheon tax is ~ ${estimatedMarketVal.toLocaleString()} g. Net mathematical expected value is +${ev.toLocaleString()} g. Continue.`
+          : `Premier cut : Tier High sur une ligne primaire. Bonne probabilité cumulée d'obtenir un bijou High/High ou High/Mid. Avec l'effet du quintile (${quintile.toUpperCase()}), la valeur marchande projetée nette de taxe phéons est d'environ ${estimatedMarketVal.toLocaleString()} g. L'espérance mathématique nette de taillage s'élève à +${ev.toLocaleString()} g. Continuez.`;
       } else if (cut1Tier === 'mid' && cut1Type === 'primary') {
         decision = isEn ? 'CONTINUE CUTTING' : 'CONTINUER À TAILLER';
         subtitle = isEn ? 'Positive net expected value (EV > 0). Paying 1,200g is mathematically profitable.' : 'Espérance de gain nette positive (EV > 0). Payer 1 200 g est mathématiquement rentable.';
@@ -2263,7 +2263,7 @@
         estimatedMarketVal = Math.round(m.mm * qMult);
         probSuccess = '3.70%';
         bannerClass = 'continue';
-        icon = '🟢';
+        icon = '';
         explanation = isEn
           ? `Successful first cut (Primary Line Tier Mid). High chance of finalizing a quality sellable or equippable piece (High/Mid or Mid/Mid). Residual net EV is positive (+${ev.toLocaleString()} g net). Bellman Recommendation: Pay the 2nd cut for 1,200 g.`
           : `Premier cut réussi (Ligne Primaire Tier Mid). Vous avez de grandes chances de finaliser une pièce vendable ou équipable de qualité (High/Mid ou Mid/Mid). L'EV nette résiduelle est positive (+${ev.toLocaleString()} g net). Recommandation Bellman : Payez le 2ᵉ cut à 1 200 g.`;
@@ -2274,7 +2274,7 @@
         estimatedMarketVal = 0;
         probSuccess = '0.70%';
         bannerClass = 'stop';
-        icon = '🔴';
+        icon = '';
         explanation = isEn
           ? `First cut in Tier Low on primary line. Even with a High or Mid tier on the next cut, the piece will have capped value (High/Low or Mid/Low) failing to cover cumulative cutting costs (2,400g remaining) and the 60k gold pheon resale tax. Cut your losses and dismantle for powders.`
           : `Premier cut en Tier Low sur la ligne primaire. Même si vous touchez un Tier High ou Mid au cut suivant, la pièce aura une valeur bridée (High/Low ou Mid/Low) qui ne couvrira pas le coût cumulé du taillage (2 400 g restants) et les 60k g de taxe phéons à la revente. Arrêtez les frais et recyclez le bijou pour récupérer vos poudres.`;
@@ -2285,7 +2285,7 @@
         estimatedMarketVal = 0;
         probSuccess = '0.00%';
         bannerClass = 'stop';
-        icon = '⛔';
+        icon = '';
         explanation = isEn
           ? `The first cut missed a useful major primary line. Spending an additional 1,200g is statistically a dead loss according to the Loseii Bellman model. Dismantle immediately.`
           : `Le premier cut n'a pas touché une ligne primaire majeure utile. Dépenser 1 200 g supplémentaires est statistiquement une perte sèche d'après le modèle Loseii. Le bijou ne pourra jamais rentabiliser l'investissement. Recyclez-le immédiatement.`;
@@ -2298,26 +2298,26 @@
 
       if (hasHighPrimary) {
         decision = isEn ? 'FINALIZE 3RD CUT' : 'FINALISER LE 3ᵉ CUT';
-        subtitle = isEn ? 'High Tier secured on primary line! Take the final cut.' : 'Tier High sécurisé sur ligne primaire ! Tentez le coup final.';
+        subtitle = isEn ? 'Tier High secured on a primary line. Take the final cut.' : 'Tier High sécurisé sur une ligne primaire. Tentez le dernier cut.';
         ev = Math.round(m.hl * qMult - CUT_COST);
         estimatedMarketVal = Math.round(m.hm * qMult);
         probSuccess = '3.70%';
         bannerClass = 'jackpot';
-        icon = '⭐';
+        icon = '';
         explanation = isEn
-          ? `You secured at least one Tier High on a primary line. Only one cut left at 1,200g to unlock High/High or a useful 3rd line (Flat AP / HP). Net profit is strongly guaranteed, finalize the piece!`
-          : `Vous avez sécurisé au moins un Tier High sur une ligne primaire. Il ne reste qu'un seul cut à 1 200 g pour tenter de débloquer le tier High/High ou une 3ᵉ ligne utile (Flat AP / HP). La rentabilité est largement assurée, finalisez le bijou !`;
+          ? `You secured at least one Tier High on a primary line. Only one cut left at 1,200g to unlock High/High or a useful 3rd line (Flat AP / HP). Expected value is positive: finalize the piece.`
+          : `Vous avez sécurisé au moins un Tier High sur une ligne primaire. Il ne reste qu'un seul cut à 1 200 g pour tenter de débloquer le tier High/High ou une 3ᵉ ligne utile (Flat AP / HP). L'espérance est positive : finalisez le bijou.`;
       } else if (hasMidPrimary1 && hasMidPrimary2) {
         decision = isEn ? 'FINALIZE 3RD CUT (GUARANTEED MID/MID)' : 'FINALISER LE 3ᵉ CUT (MID/MID SÉCURISÉ)';
-        subtitle = isEn ? 'Excellent Mid/Mid piece guaranteed. Item is already profitable and equippable.' : 'Excellente pièce Mid/Mid garantie. Le bijou est déjà rentable et équipable.';
+        subtitle = isEn ? 'Mid/Mid secured. The piece is already sellable and equippable.' : 'Mid/Mid sécurisé. Le bijou est déjà vendable et équipable.';
         ev = Math.round(m.mm * qMult - CUT_COST);
         estimatedMarketVal = Math.round(m.mm * qMult);
         probSuccess = '100%';
         bannerClass = 'continue';
-        icon = '🟢';
+        icon = '';
         explanation = isEn
-          ? `Excellent Mid/Mid piece guaranteed on your two primary lines! Sellable immediately on the market or equippable for your T4 roster. Finalize the 3rd cut to target the 3rd bonus line (Flat Weapon Power or Vitality).`
-          : `Excellente pièce Mid/Mid garantie sur vos deux lignes primaires ! La pièce est directement vendable au marché ou équipable pour votre roster T4. Finalisez le 3ᵉ cut pour chercher la 3ᵉ ligne bonus (Puissance d'Arme flat ou Vitalité).`;
+          ? `Mid/Mid secured on both primary lines. Sellable immediately on the market or equippable for your T4 roster. Finalize the 3rd cut to target the 3rd bonus line (Flat Weapon Power or Vitality).`
+          : `Mid/Mid sécurisé sur les deux lignes primaires. La pièce est directement vendable au marché ou équipable pour votre roster T4. Finalisez le 3ᵉ cut pour chercher la 3ᵉ ligne bonus (Puissance d'Arme flat ou Vitalité).`;
       } else if (hasMidPrimary1 || hasMidPrimary2) {
         const secondaryUseful = (cut1Type === 'flat' || cut1Type === 'hp' || cut2Type === 'flat' || cut2Type === 'hp') && (cut1Tier !== 'none' && cut2Tier !== 'none');
         if (secondaryUseful) {
@@ -2327,7 +2327,7 @@
           estimatedMarketVal = Math.round(m.ml * qMult);
           probSuccess = '22.2%';
           bannerClass = 'continue';
-          icon = '🟢';
+          icon = '';
           explanation = isEn
             ? `You secured a Mid primary line supplemented by a useful flat line. The 3rd cut at 1,200g can unlock an extra synergy for a small cost.`
             : `Vous avez sécurisé une ligne primaire Mid complétée par une ligne flat utile. Le 3ᵉ cut à 1 200 g peut débloquer une synergie supplémentaire pour un coût modique.`;
@@ -2338,7 +2338,7 @@
           estimatedMarketVal = 0;
           probSuccess = '0.70%';
           bannerClass = 'stop';
-          icon = '🔴';
+          icon = '';
           explanation = isEn
             ? `After 2 cuts, only one Mid line is present without viable secondary synergy. Paying 1,200g more has a negligible chance to rescue the piece. Dismantle the accessory.`
             : `Après 2 cuts, une seule ligne Mid est présente sans accompagnement viable. Payer 1 200 g de plus n'a qu'une probabilité infime de sauver la pièce. Recyclez le bijou.`;
@@ -2350,7 +2350,7 @@
         estimatedMarketVal = 0;
         probSuccess = '0.00%';
         bannerClass = 'stop';
-        icon = '⛔';
+        icon = '';
         explanation = isEn
           ? `After 2 cuts, no viable Mid/Mid or High primary combination is possible. Do not pay 1,200g for the 3rd cut. Sell or dismantle immediately.`
           : `Après 2 cuts, aucune combinaison primaire Mid/Mid ou High n'est possible. Ne payez surtout pas les 1 200 g du 3ᵉ cut. Vendez au marchand ou recyclez en poudres.`;
@@ -2612,20 +2612,20 @@
 
       if (state.opt.supBracePerk !== 'crit_ap') {
         advice = isEn
-          ? `💡 The bracelet roll <strong>Ally Crit Rate + Ally Attack Power</strong> is the strongest raid damage multiplier (+2.43% damage for the entire raid). Prioritize this line above all else!`
-          : `💡 Le roll bracelet <strong>Taux Critique Alliés + PA Alliés</strong> est le plus gros multiplicateur de puissance de raid (+2.43% dégâts pour tout le raid). Vise cette ligne en priorité absolue !`;
+          ? `The bracelet roll <strong>Ally Crit Rate + Ally Attack Power</strong> is the largest raid multiplier (+2.43% damage for the whole raid). Target it first.`
+          : `Le roll bracelet <strong>Taux Critique Alliés + PA Alliés</strong> est le plus gros multiplicateur de raid (+2.43 % de dégâts pour tout le raid). Vise-la en premier.`;
       } else if (state.opt.supBrand !== 'high') {
         advice = isEn
-          ? `💡 The <strong>Brand Power High (+8%)</strong> line is essential to maximize brand uptime and grants +0.70% net team buff.`
-          : `💡 La ligne <strong>Brand Power High (+8%)</strong> est essentielle pour maximiser l'uptime de ta marque et apporte +0.70% de buff net à l'équipe.`;
+          ? `The <strong>Brand Power High (+8%)</strong> line is essential to maximize brand uptime and grants +0.70% net team buff.`
+          : `La ligne <strong>Brand Power High (+8%)</strong> est essentielle pour maximiser l'uptime de ta marque et apporte +0.70% de buff net à l'équipe.`;
       } else if (state.opt.gemsDeck === 'lvl7') {
         advice = isEn
-          ? `💡 Upgrading your gem deck to <strong>Level 8 (+28.35 CP per gem)</strong> will grant over 310 CP and boost your buff power by +1.25%.`
-          : `💡 Passer ton deck de gemmes en <strong>Niv. 8 (+28.35 CP par gemme)</strong> te fera franchir plus de 310 CP et renforcera de +1.25% la puissance de tes buffs.`;
+          ? `Upgrading your gem deck to <strong>Level 8 (+28.35 CP per gem)</strong> will grant over 310 CP and boost your buff power by +1.25%.`
+          : `Passer ton deck de gemmes en <strong>Niv. 8 (+28.35 CP par gemme)</strong> te fera franchir plus de 310 CP et renforcera de +1.25% la puissance de tes buffs.`;
       } else {
         advice = isEn
-          ? `🌟 High-end Support setup calibrated to Arsonistic! Your raid multipliers and gem deck maximize total damage contribution for your party.`
-          : `🌟 Configuration Support haut de gamme calibrée Arsonistic ! Tes multiplicateurs de raid et ton deck de gemmes maximisent l'apport de dégâts pour tout ton groupe.`;
+          ? `No priority upgrade left in this model: raid multipliers and gem deck are at their best values.`
+          : `Aucune amélioration prioritaire dans ce modèle : multiplicateurs de raid et deck de gemmes à leurs meilleures valeurs.`;
       }
 
     } else {
@@ -2662,20 +2662,20 @@
 
       if (state.opt.dpsBracePerk !== 'crit_cdmg') {
         advice = isEn
-          ? `⚔️ The bracelet roll <strong>Crit Rate +5% & Crit Hit Dmg +1.5%</strong> is the highest performing roll in the game (+5.45% direct DPS gain on the Arsonistic sheet).`
-          : `⚔️ Le roll de bracelet <strong>Crit Rate +5% & Crit Hit Dmg +1.5%</strong> est le roll le plus performant du jeu (+5.45% de gain DPS direct sur la feuille Arsonistic).`;
+          ? `The bracelet roll <strong>Crit Rate +5% & Crit Hit Dmg +1.5%</strong> is the highest performing roll in the game (+5.45% direct DPS gain on the Arsonistic sheet).`
+          : `Le roll de bracelet <strong>Crit Rate +5% & Crit Hit Dmg +1.5%</strong> est le roll le plus performant du jeu (+5.45% de gain DPS direct sur la feuille Arsonistic).`;
       } else if (state.opt.dpsAddDmg !== 'high' || state.opt.dpsOutDmg !== 'high') {
         advice = isEn
-          ? `⚔️ Accessory lines <strong>Additional Damage High (+2.6%)</strong> and <strong>Outgoing Damage High (+2.0%)</strong> each represent approximately +2% net DPS.`
-          : `⚔️ Les lignes d'accessoires <strong>Additional Damage High (+2.6%)</strong> et <strong>Outgoing Damage High (+2.0%)</strong> représentent chacune environ +2% de DPS net.`;
+          ? `Accessory lines <strong>Additional Damage High (+2.6%)</strong> and <strong>Outgoing Damage High (+2.0%)</strong> each represent approximately +2% net DPS.`
+          : `Les lignes d'accessoires <strong>Additional Damage High (+2.6%)</strong> et <strong>Outgoing Damage High (+2.0%)</strong> représentent chacune environ +2% de DPS net.`;
       } else if (state.opt.gemsDeck === 'lvl8') {
         advice = isEn
-          ? `⚔️ Upgrading major gems on your core skills to <strong>Level 9 / 10</strong> is the next threshold to push past 5000+ CP.`
-          : `⚔️ Monter les gemmes majeures de tes compétences principales vers <strong>Niv. 9 / 10</strong> est le prochain palier pour franchir les 5000+ CP.`;
+          ? `Upgrading major gems on your core skills to <strong>Level 9 / 10</strong> is the next threshold to push past 5000+ CP.`
+          : `Monter les gemmes majeures de tes compétences principales vers <strong>Niv. 9 / 10</strong> est le prochain palier pour franchir les 5000+ CP.`;
       } else {
         advice = isEn
-          ? `🔥 Optimal DPS build! Multiplicative multipliers harmonized for maximum personal DPS.`
-          : `🔥 Configuration DPS optimale ! Multiplicateurs multiplicatifs harmonisés pour un DPS personnel maximal.`;
+          ? `No priority upgrade left in this model: accessory, bracelet and gem lines are at their best values.`
+          : `Aucune amélioration prioritaire dans ce modèle : lignes d'accessoires, bracelet et gemmes à leurs meilleures valeurs.`;
       }
     }
 
@@ -2992,9 +2992,9 @@
     }
 
     const EFF_TRANS_EN = {
-      acc_wp_mid: { name: 'T4 Accessory: Weapon AP % Line (Mid Roll)', sub: 'Ancient Accessory • +1.8% Weapon Power', comment: 'Absolute ROI: accessible basic roll for a direct party AP buff boost.' },
+      acc_wp_mid: { name: 'T4 Accessory: Weapon AP % Line (Mid Roll)', sub: 'Ancient Accessory • +1.8% Weapon Power', comment: 'Best ROI: accessible basic roll for a direct party AP buff boost.' },
       ark_grid_order_sun_17: { name: 'Ark Grid: Solar Order 17 Points', sub: 'Ark Grid Tree • Solar Order Node', comment: 'Best Ark Grid investment: +1.13% direct buff for ~81k gold.' },
-      ark_grid_order_moon_17: { name: 'Ark Grid: Lunar Order 17 Points', sub: 'Ark Grid Tree • Lunar Order Node', comment: 'Direct complement to Solar Order, exceptional cost-efficiency ratio.' },
+      ark_grid_order_moon_17: { name: 'Ark Grid: Lunar Order 17 Points', sub: 'Ark Grid Tree • Lunar Order Node', comment: 'Direct complement to Solar Order, very good cost-efficiency ratio.' },
       ark_grid_chaos_moon_17: { name: 'Ark Grid: Lunar Chaos (Brand) 17P', sub: 'Ark Grid Tree • Brand Specialization', comment: 'Increases party Brand Power debuff effectiveness.' },
       ark_grid_chaos_star_17: { name: 'Ark Grid: Stellar Chaos (Weapon) 17P', sub: 'Ark Grid Tree • Weapon Power Node', comment: 'Weapon power transmitted to allies at a very good cost.' },
       weapon_18: { name: 'Standard Honing: Weapon +17 ➔ +18', sub: 'T4 Honing • Aegir Weapon', comment: 'Key weapon milestone (+29 CP and +0.32% Buff) for a moderate 56k gold cost.' },
@@ -3009,11 +3009,11 @@
       weapon_20: { name: 'Standard Honing: Weapon +19 ➔ +20', sub: 'T4 Honing • Aegir Weapon', comment: 'Success rate drops drastically, cost per tap doubled.' },
       gem_atk_9_10: { name: 'T4 Damage/AP Gem: Lv. 9 ➔ Lv. 10', sub: '1x Lv. 10 Endgame T4 Gem', comment: '2.4 Million gold for only +0.14% buff. Worst ROI ratio in the game for support.' },
       stone_9_7: { name: '9/7 Ability Stone (Full Pheons)', sub: 'Repeated 9/7 stone cutting attempts', comment: 'Astronomical cost (~12M gold on average) for minimal support gain.' },
-      dps_acc_mid_low: { name: 'T4 Accessories: 5x Mid-Low Rolls', sub: 'Set of 5 Ancient T4 Accessories', comment: 'First milestone of ancient accessories: massive +6.4% DPS gain for under 10k gold.' },
-      dps_acc_high: { name: 'T4 Accessories: 5x High First Line Rolls', sub: 'Ancient Set • High Primary Line', comment: 'Excellent investment to personal DPS ratio.' },
+      dps_acc_mid_low: { name: 'T4 Accessories: 5x Mid-Low Rolls', sub: 'Set of 5 Ancient T4 Accessories', comment: 'First milestone of ancient accessories: +6.4% DPS for under 10k gold.' },
+      dps_acc_high: { name: 'T4 Accessories: 5x High First Line Rolls', sub: 'Ancient Set • High Primary Line', comment: 'Good gold-to-DPS ratio.' },
       dps_weapon_18: { name: 'Standard Honing: Weapon +17 ➔ +18', sub: 'T4 Honing • Aegir Weapon', comment: 'Direct +1.4% DPS gain and major Weapon Power boost.' },
       dps_karma_enlight_6: { name: 'Karma Enlightenment: Ranks 0 ➔ 6', sub: 'Ark Passive Karma DPS System', comment: 'Unlocks major class enlightenment nodes (+4.67% net DPS).' },
-      dps_ark_grid_order_17: { name: 'Ark Grid: Order (Sun+Moon+Star) 17P', sub: 'Full 17-Point Ark Grid Tree', comment: 'The single biggest absolute damage boost in the game: +20.8% DPS for ~890k gold.' },
+      dps_ark_grid_order_17: { name: 'Ark Grid: Order (Sun+Moon+Star) 17P', sub: 'Full 17-Point Ark Grid Tree', comment: 'Largest single damage gain in this table: +20.8% DPS for ~890k gold.' },
       dps_weapon_19: { name: 'Standard Honing: Weapon +18 ➔ +19', sub: 'T4 Honing • Aegir Weapon', comment: 'Weapon continuity before the +20 wall.' },
       dps_weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed power without rng failure using full materials.' }
     };
@@ -3027,12 +3027,12 @@
         const nbName = nextBestTrans.name || nextBest.name;
         const nbComment = nextBestTrans.comment || nextBest.comment;
         dom.effNextBestDesc.innerHTML = isEn
-          ? `<strong>${nbName}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:12.5px;">💡 <em>${nbComment}</em></span>`
-          : `<strong>${nextBest.name}</strong> (${nextBest.gainText}) pour un coût estimé de <strong>${formatNumber(nextBest.cost)} gold</strong>, soit un ratio de rentabilité de <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:12.5px;">💡 <em>${nextBest.comment}</em></span>`;
+          ? `<strong>${nbName}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:12.5px;"><em>${nbComment}</em></span>`
+          : `<strong>${nextBest.name}</strong> (${nextBest.gainText}) pour un coût estimé de <strong>${formatNumber(nextBest.cost)} gold</strong>, soit un ratio de rentabilité de <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:12.5px;"><em>${nextBest.comment}</em></span>`;
       } else {
         dom.effNextBestDesc.innerHTML = isEn
-          ? `🌟 <strong>Congratulations!</strong> You have completed all major milestones of the T4 matrix.`
-          : `🌟 <strong>Félicitations !</strong> Tu as déjà validé tous les paliers majeurs de la matrice T4.`;
+          ? `All major T4 milestones in this table are done.`
+          : `Tous les paliers majeurs de ce tableau sont validés.`;
       }
     }
 
@@ -3055,7 +3055,7 @@
             <td class="col-rank">${idx + 1}</td>
             <td class="col-name">
               <div>
-                ${isTop ? '⭐ ' : ''}<strong>${itemName}</strong>
+                ${isTop ? '' : ''}<strong>${itemName}</strong>
                 ${acquiredBadge}
               </div>
               <span class="eff-subtext">${itemSub}</span>
@@ -3480,13 +3480,13 @@
     if (isSupport) {
       if (efficiency >= 22.0) {
         tier = 's';
-        tierLabel = isEn ? 'Tier S • God Tier' : 'Tier S • God Tier';
+        tierLabel = isEn ? 'Tier S • Best in slot' : 'Rang S • Meilleur possible';
         badgeClass = 'god';
-        ratingDesc = isEn ? 'Endgame BiS bracelet (3-4 perfect raid perks)' : 'Bracelet ultime quasi-imbattable (3-4 rolls parfaits)';
+        ratingDesc = isEn ? 'Endgame BiS bracelet (3-4 max-value raid perks)' : 'Bracelet BiS endgame (3-4 rolls de raid au max)';
         potentialGainCp = 0;
       } else if (efficiency >= 16.0) {
         tier = 'a';
-        tierLabel = isEn ? 'Tier A • Great' : 'Tier A • Excellent';
+        tierLabel = isEn ? 'Tier A • Strong' : 'Rang A • Très bon';
         badgeClass = 'great';
         ratingDesc = isEn ? 'Solid endgame roll (2 major BiS ally AP perks)' : 'Très solide pour l\'endgame (2 rolls BiS majeurs)';
         potentialGainCp = Math.round(currentCp * 0.025);
@@ -3507,13 +3507,13 @@
       // DPS
       if (efficiency >= 12.0 && deadStats.length === 0) {
         tier = 's';
-        tierLabel = isEn ? 'Tier S • God Tier' : 'Tier S • God Tier';
+        tierLabel = isEn ? 'Tier S • Best in slot' : 'Rang S • Meilleur possible';
         badgeClass = 'god';
-        ratingDesc = isEn ? 'Endgame BiS bracelet (3-4 perfect damage rolls)' : 'Bracelet ultime quasi-imbattable (3-4 rolls parfaits)';
+        ratingDesc = isEn ? 'Endgame BiS bracelet (3-4 max-value damage rolls)' : 'Bracelet BiS endgame (3-4 rolls de dégâts au max)';
         potentialGainCp = 0;
       } else if (efficiency >= 9.2 && deadStats.length === 0) {
         tier = 'a';
-        tierLabel = isEn ? 'Tier A • Great' : 'Tier A • Excellent';
+        tierLabel = isEn ? 'Tier A • Strong' : 'Rang A • Très bon';
         badgeClass = 'great';
         ratingDesc = isEn ? 'Solid endgame roll (2 major BiS damage perks)' : 'Très solide pour l\'endgame (2 rolls BiS majeurs)';
         potentialGainCp = Math.round(currentCp * 0.025);
@@ -3654,7 +3654,7 @@
           const cleanLbl = formatBraceletLine(u.label, isEn);
           html += `
             <div class="bracelet-item-pill useful">
-              <span>✅ <strong>${escapeHtml(cleanLbl)}</strong></span>
+              <span><strong>${escapeHtml(cleanLbl)}</strong></span>
               <span class="pill-mult" style="color:#8CC084; font-weight:700;">+${u.mult.toFixed(2)}%</span>
             </div>
           `;
@@ -3663,7 +3663,7 @@
           const cleanLbl = formatBraceletLine(d.label, isEn);
           html += `
             <div class="bracelet-item-pill dead">
-              <span>⚠️ <strong style="color:#E07A63;">${escapeHtml(cleanLbl)}</strong></span>
+              <span><strong style="color:#E07A63;">${escapeHtml(cleanLbl)}</strong></span>
               <span class="pill-mult" style="color:#E07A63; font-size:11px;">${isEn ? 'Dead stat (0% CP)' : 'Stat morte (0% CP)'}</span>
             </div>
           `;
@@ -3672,7 +3672,7 @@
           const cleanLbl = formatBraceletLine(b.label, isEn);
           html += `
             <div class="bracelet-item-pill stat">
-              <span>🔹 ${escapeHtml(cleanLbl)}</span>
+              <span>${escapeHtml(cleanLbl)}</span>
               <span style="color:var(--text-muted); font-size:11px;">${escapeHtml(b.val)}</span>
             </div>
           `;
@@ -3686,7 +3686,7 @@
       diag.targets.forEach(t => {
         html += `
           <div class="bracelet-target-pill">
-            <span class="target-name">🎯 ${escapeHtml(t.name)}</span>
+            <span class="target-name">${escapeHtml(t.name)}</span>
             <span class="target-gain">${escapeHtml(t.gain)}</span>
           </div>
         `;
@@ -3832,7 +3832,7 @@
     const rows = [
       {
         id: 'grid_epics',
-        icon: '☀️',
+        icon: '',
         system: isEn ? 'Ark grid — cutting epics' : 'Grille d\'Ark — Taille d\'épiques',
         whatItReads: agRead,
         wherePutsYou: agWhere,
@@ -3846,7 +3846,7 @@
       },
       {
         id: 'karma_enl',
-        icon: '⚡',
+        icon: '',
         system: isEn ? 'Karma Enlightenment' : 'Karma Éclairage',
         whatItReads: karmaRead,
         wherePutsYou: karmaWhere,
@@ -3860,7 +3860,7 @@
       },
       {
         id: 'bracelet',
-        icon: '📿',
+        icon: '',
         system: isEn ? 'Bracelet' : 'Bracelet',
         whatItReads: brRead,
         wherePutsYou: brWhere,
@@ -3874,7 +3874,7 @@
       },
       {
         id: 'grid_rares',
-        icon: '✨',
+        icon: '',
         system: isEn ? 'Ark grid — cutting rares' : 'Grille d\'Ark — Taille de rares',
         whatItReads: raresRead,
         wherePutsYou: raresWhere,
@@ -3888,7 +3888,7 @@
       },
       {
         id: 'ability_stone',
-        icon: '🪨',
+        icon: '',
         system: isEn ? 'Ability stone' : 'Pierre de capacité',
         whatItReads: stoneRead,
         wherePutsYou: stoneWhere,
@@ -3918,7 +3918,7 @@
       const m = d.meta || {};
       if (d.id === 'dyn_weapon') {
         rows.push(dynToMaster(d, {
-          icon: '⚔️',
+          icon: '',
           system: isEn ? 'Weapon honing' : 'Affinage Arme',
           whatItReads: isEn ? `+${m.from} T4 Weapon` : `+${m.from} Arme T4`,
           wherePutsYou: `+${m.from}`,
@@ -3930,7 +3930,7 @@
         }));
       } else if (d.id === 'dyn_armor') {
         rows.push(dynToMaster(d, {
-          icon: '🛡️',
+          icon: '',
           system: isEn ? 'Armors honing' : 'Affinage Armures',
           whatItReads: isEn ? `+${m.from} all pieces` : `+${m.from} toutes pièces`,
           wherePutsYou: `+${m.from}`,
@@ -3943,7 +3943,7 @@
       } else if (d.id.startsWith('dyn_gems_')) {
         const mix = [10, 9, 8, 7].filter(l => m.counts[l] > 0).map(l => `${m.counts[l]}× ${lvlWord} ${l}`).join(', ');
         rows.push(dynToMaster(d, {
-          icon: '💎',
+          icon: '',
           system: isEn ? 'Skill gems' : 'Gemmes de compétences',
           whatItReads: mix,
           wherePutsYou: `${m.n}/${m.total} ${lvlWord} ${m.lvl}`,
@@ -3955,7 +3955,7 @@
         }));
       } else if (d.id.startsWith('dyn_core_')) {
         rows.push(dynToMaster(d, {
-          icon: m.key.endsWith('Sun') ? '☀️' : (m.key.endsWith('Moon') ? '🌙' : '⭐'),
+          icon: m.key.endsWith('Sun') ? '' : (m.key.endsWith('Moon') ? '' : ''),
           system: isEn ? `Ark grid — ${m.label} core` : `Grille d'Ark — Cœur ${m.label}`,
           whatItReads: `${m.pts} pts`,
           wherePutsYou: `${m.pts}P`,
@@ -3965,7 +3965,7 @@
         }));
       } else if (d.id === 'dyn_acc') {
         rows.push(dynToMaster(d, {
-          icon: '💍',
+          icon: '',
           system: isEn ? `Accessory — ${m.slotName}` : `Bijou — ${m.slotName}`,
           whatItReads: isEn ? `Accessories +${m.curPct.toFixed(2)}% ${unit}` : `Bijoux +${m.curPct.toFixed(2)}% ${unit}`,
           wherePutsYou: isEn ? 'Weakest piece' : 'Pièce la plus faible',
@@ -4012,11 +4012,11 @@
       || [];
 
     const slotConfigs = [
-      { slot: 'neck', name: isEn ? 'Necklace' : 'Collier', icon: '📿', fallbackLadder: 'mid/high · no flat · low stat' },
-      { slot: 'ear1', name: isEn ? 'Earring 1' : 'Boucle d\'oreille 1', icon: '👂', fallbackLadder: 'mid/high · no flat' },
-      { slot: 'ear2', name: isEn ? 'Earring 2' : 'Boucle d\'oreille 2', icon: '👂', fallbackLadder: 'mid/high · no flat · low stat' },
-      { slot: 'finger1', name: isEn ? 'Ring 1' : 'Anneau 1', icon: '💍', fallbackLadder: 'high/mid · no flat · mid stat' },
-      { slot: 'finger2', name: isEn ? 'Ring 2' : 'Anneau 2', icon: '💍', fallbackLadder: 'high/mid · no flat · mid stat' }
+      { slot: 'neck', name: isEn ? 'Necklace' : 'Collier', icon: '', fallbackLadder: 'mid/high · no flat · low stat' },
+      { slot: 'ear1', name: isEn ? 'Earring 1' : 'Boucle d\'oreille 1', icon: '', fallbackLadder: 'mid/high · no flat' },
+      { slot: 'ear2', name: isEn ? 'Earring 2' : 'Boucle d\'oreille 2', icon: '', fallbackLadder: 'mid/high · no flat · low stat' },
+      { slot: 'finger1', name: isEn ? 'Ring 1' : 'Anneau 1', icon: '', fallbackLadder: 'high/mid · no flat · mid stat' },
+      { slot: 'finger2', name: isEn ? 'Ring 2' : 'Anneau 2', icon: '', fallbackLadder: 'high/mid · no flat · mid stat' }
     ];
 
     const result = [];
@@ -4108,7 +4108,7 @@
           if (l.cat === "trait" && key) {
             traits[key] = l.value;
             const tName = key === "swift" ? (isEn ? "Swiftness" : "Rapidité") : (key === "spec" ? (isEn ? "Specialization" : "Spécialisation") : (isEn ? "Crit" : "Critique"));
-            brLines.push({ text: `🔹 ${tName} +${l.value}`, tier: 'trait', tierLabel: 'Combat Stat' });
+            brLines.push({ text: `${tName} +${l.value}`, tier: 'trait', tierLabel: 'Combat Stat' });
           } else {
             const isDead = isDeadStat(l.name || l.desc, isSupport);
             brLines.push({
@@ -4144,7 +4144,7 @@
 
     result.push({
       name: isEn ? 'T4 Bracelet' : 'Bracelet T4',
-      icon: '📿',
+      icon: '',
       ladder: brLadder,
       lines: brLines
     });
@@ -4230,13 +4230,13 @@
         let statusBadge = '';
         if (goal !== 'all') {
           if (isChosen) {
-            statusBadge = `<span class="gpd-status-badge in-plan">${isEn ? `✅ In Plan (#${planIdx + 1})` : `✅ Dans le Plan (#${planIdx + 1})`}</span>`;
+            statusBadge = `<span class="gpd-status-badge in-plan">${isEn ? `In Plan (#${planIdx + 1})` : `Dans le Plan (#${planIdx + 1})`}</span>`;
           } else {
             statusBadge = `<span class="gpd-status-badge normal">${isEn ? 'Standby' : 'En attente'}</span>`;
           }
         } else {
           if (idx === 0) {
-            statusBadge = `<span class="gpd-status-badge best-deal">${isEn ? '⭐ Best Deal' : '⭐ Recommandé'}</span>`;
+            statusBadge = `<span class="gpd-status-badge best-deal">${isEn ? 'Best Deal' : 'Recommandé'}</span>`;
           } else {
             statusBadge = `<span class="gpd-status-badge normal">${isEn ? 'Standard' : 'Palier'}</span>`;
           }
@@ -4319,7 +4319,7 @@
     updatePredictorView();
     updateActiveCharacterCard(activeCharacterId);
 
-    showToast(isEnLang() ? 'Plan applied to Simulator!' : 'Plan appliqué au Simulateur !');
+    showToast(isEnLang() ? 'Plan applied to Simulator.' : 'Plan appliqué au Simulateur.');
   }
 
   function initAdvisorEvents() {
@@ -4372,8 +4372,8 @@
     return {
       name: char ? (char.className || 'DPS') : 'DPS',
       specs: [
-        { id: 'generic_spec_1', name: isSupport ? '🛡️ Spécialisation Support' : '⚔️ Spécialisation Burst DPS', nameEn: isSupport ? '🛡️ Support Spec' : '⚔️ Burst DPS Spec', role: isSupport ? 'support' : 'dps' },
-        { id: 'generic_spec_2', name: isSupport ? '⚔️ Spécialisation DPS Secondaire' : '⚔️ Spécialisation DPS Continu', nameEn: isSupport ? '⚔️ Secondary DPS Spec' : '⚔️ Sustained DPS Spec', role: 'dps' }
+        { id: 'generic_spec_1', name: isSupport ? 'Spécialisation Support' : 'Spécialisation Burst DPS', nameEn: isSupport ? 'Support Spec' : 'Burst DPS Spec', role: isSupport ? 'support' : 'dps' },
+        { id: 'generic_spec_2', name: isSupport ? 'Spécialisation DPS Secondaire' : 'Spécialisation DPS Continu', nameEn: isSupport ? 'Secondary DPS Spec' : 'Sustained DPS Spec', role: 'dps' }
       ]
     };
   }
@@ -4632,15 +4632,15 @@
           : `Votre configuration Ark Passive est optimisée pour le raid Tier 4. Les 100+ points d'Éclairage débloquent le plein potentiel du multiplicateur d'identité de soutien (+25% bonus de groupe) et l'Évolution max amplifie l'AP de base transférée au groupe.`;
       } else {
         analysis = isEn
-          ? `High-end DPS configuration. The Heavy Strike node paired with 100+ Enlightenment points delivers optimal burst on class engraving and T4 defense penetration.`
-          : `Configuration DPS haut de gamme. Le nœud de Frappe Lourde couplé aux 100+ points d'Éclairage offre le burst optimal sur la gravure de classe et la pénétration de défense T4.`;
+          ? `Strong DPS configuration. The Heavy Strike node paired with 100+ Enlightenment points gives the best burst on class engraving and T4 defense penetration.`
+          : `Configuration DPS solide. Le nœud de Frappe Lourde couplé aux 100+ points d'Éclairage donne le meilleur burst sur la gravure de classe et la pénétration de défense T4.`;
       }
     } else if (totalAllocated >= 260) {
       efficiency = isEn ? 'Tier S (Advanced)' : 'Rang S (Avancé)';
       efficiencyAdvice = isEn ? 'Tier 3/4 active, close to ceiling' : 'Palier 3/4 actif, proche du plafond';
       analysis = isEn
-        ? `Excellent distribution. To reach Tier S+, prioritize acquiring the 2 T4 class Relic Books to unlock Tier IV Enlightenment (+10 pts) without sacrificing the Evolution tree.`
-        : `Excellente répartition. Pour atteindre le palier S+, priorisez l'acquisition des 2 Livres Reliques T4 de classe pour débloquer le palier IV d'Éclairage (+10 pts) sans sacrifier l'arbre d'Évolution.`;
+        ? `Good distribution. To reach Tier S+, prioritize acquiring the 2 T4 class Relic Books to unlock Tier IV Enlightenment (+10 pts) without sacrificing the Evolution tree.`
+        : `Bonne répartition. Pour atteindre le palier S+, priorisez l'acquisition des 2 Livres Reliques T4 de classe pour débloquer le palier IV d'Éclairage (+10 pts) sans sacrifier l'arbre d'Évolution.`;
     } else if (totalAllocated >= 200) {
       efficiency = isEn ? 'Tier A (Standard T4)' : 'Rang A (Standard T4)';
       efficiencyAdvice = isEn ? 'Tiers II/III active' : 'Paliers II/III actifs';
@@ -5018,7 +5018,7 @@
         updateActiveCharacterCard(activeCharacterId);
 
         const origHtml = dom.btnApplyArkToSim.innerHTML;
-        dom.btnApplyArkToSim.innerHTML = `<span>✅ CP Injecté (${formatNumber(newCp)} CP) !</span>`;
+        dom.btnApplyArkToSim.innerHTML = `<span>CP Injecté (${formatNumber(newCp)} CP).</span>`;
         setTimeout(() => { dom.btnApplyArkToSim.innerHTML = origHtml; }, 2000);
       });
     }
@@ -5150,20 +5150,20 @@
     let explanation = '';
     if (grade >= 96) {
       explanation = isEn
-        ? `🌟 Absolute endgame masterpiece (Tier ${rank}, ${rarity})! With an effective cost of ${effectiveCost} point(s) and optimized major lines, this gem is a top-tier asset to maximize Ark Grid major passives.`
-        : `🌟 Pièce d'exception absolue (Rang ${rank}, ${rarity}) ! Avec un coût effectif de ${effectiveCost} point(s) et des lignes majeures optimisées, cette gemme est un joyau endgame pour maximiser les passifs majeurs de l'Ark Grid.`;
+        ? `Top grade (Tier ${rank}, ${rarity}). With an effective cost of ${effectiveCost} point(s) and optimized major lines, this gem is worth keeping to maximize Ark Grid major passives.`
+        : `Note maximale (Rang ${rank}, ${rarity}). Avec un coût effectif de ${effectiveCost} point(s) et des lignes majeures optimisées, cette gemme est à garder pour maximiser les passifs majeurs de l'Ark Grid.`;
     } else if (grade >= 80) {
       explanation = isEn
-        ? `💎 Excellent Relic gem (Tier ${rank}). Powerful synergies and its effective cost (${effectiveCost} pts) seamlessly fit into the 17-point core grid.`
-        : `💎 Excellente gemme Relique (Rang ${rank}). Les synergies sont puissantes et son coût effectif (${effectiveCost} pts) s'intègre parfaitement dans la grille 17 points.`;
+        ? `Strong Relic gem (Tier ${rank}). Powerful synergies and its effective cost (${effectiveCost} pts) seamlessly fit into the 17-point core grid.`
+        : `Gemme Relique solide (Rang ${rank}). Les synergies sont puissantes et son coût effectif (${effectiveCost} pts) s'intègre parfaitement dans la grille 17 points.`;
     } else if (grade >= 65) {
       explanation = isEn
-        ? `🟢 Viable transition gem (Tier ${rank}). Usable temporarily while waiting for a Relic drop with higher secondary roll values.`
-        : `🟢 Gemme de transition viable (Rang ${rank}). Utilisable temporairement en attendant un tirage Relique avec de meilleurs jets d'effets secondaires.`;
+        ? `Viable transition gem (Tier ${rank}). Usable temporarily while waiting for a Relic drop with higher secondary roll values.`
+        : `Gemme de transition viable (Rang ${rank}). Utilisable temporairement en attendant un tirage Relique avec de meilleurs jets d'effets secondaires.`;
     } else {
       explanation = isEn
-        ? `♻️ Sub-optimal gem below efficiency thresholds (Tier ${rank}, Sum ${levelSum}). Effective cost of ${effectiveCost} is too heavy. Recommendation: Save as 3-gem fusion fodder or recycle.`
-        : `♻️ Gemme en dessous des seuils de rentabilité (Rang ${rank}, Somme ${levelSum}). Coût effectif de ${effectiveCost} trop lourd. Recommandation : Conserver pour la fusion de 3 gemmes (fodder) ou recycler.`;
+        ? `Sub-optimal gem below efficiency thresholds (Tier ${rank}, Sum ${levelSum}). Effective cost of ${effectiveCost} is too heavy. Recommendation: Save as 3-gem fusion fodder or recycle.`
+        : `Gemme en dessous des seuils de rentabilité (Rang ${rank}, Somme ${levelSum}). Coût effectif de ${effectiveCost} trop lourd. Recommandation : Conserver pour la fusion de 3 gemmes (fodder) ou recycler.`;
     }
 
     return {
@@ -5531,8 +5531,8 @@
         let subNote = '';
         if (isQualSupport) {
           subNote = isEn
-            ? `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">💡 +28.5% solo personal damage, but 0% transferred to allies (excluded from Buff Power formula).</div>`
-            : `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">💡 +28.5% dégâts solo perso, mais 0% transféré aux alliés (exclu de la formule de Buff Power).</div>`;
+            ? `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">+28.5% solo personal damage, but 0% transferred to allies (excluded from Buff Power formula).</div>`
+            : `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">+28.5% dégâts solo perso, mais 0% transféré aux alliés (exclu de la formule de Buff Power).</div>`;
         } else if (it.note) {
           subNote = `<div style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">${it.note}</div>`;
         }
@@ -5720,7 +5720,7 @@
                   mult: multStr,
                   type: isSupport ? 'Buff Power' : 'DPS Net',
                   badge: 'gear',
-                  note: pDesc ? `💡 ${pDesc}` : null
+                  note: pDesc ? `${pDesc}` : null
                 });
               } else {
                 const statInfo = BIBLE_STAT_MAP[sIndex] || null;
@@ -5738,7 +5738,7 @@
                   mult: multStr,
                   type: isSupport ? 'Buff Power' : 'DPS Net',
                   badge: 'gear',
-                  note: partVal === 0 ? `💡 Stat brute de ${statName.toLowerCase()} déjà intégrée directement dans ${dest} en tête de liste.` : null
+                  note: partVal === 0 ? `Stat brute de ${statName.toLowerCase()} déjà intégrée directement dans ${dest} en tête de liste.` : null
                 });
               }
             });
@@ -5756,7 +5756,7 @@
                 mult: multStr,
                 type: isSupport ? 'Buff Power' : 'DPS Net',
                 badge: 'gear',
-                note: perk ? `💡 ${perk.desc}` : null
+                note: perk ? `${perk.desc}` : null
               });
             });
           }
@@ -5801,7 +5801,7 @@
         rawVal = `Qualité ${p.quality}`;
         badge = 'gear';
         if (isSupport && val === 0) {
-          note = "💡 Bonus de dégâts solo perso : 0% transféré aux alliés (exclu du Buff Power).";
+          note = "Bonus de dégâts solo perso : 0% transféré aux alliés (exclu du Buff Power).";
         }
       } else if (p.type === 5) {
         cat = 'Ark Passive';
@@ -5828,8 +5828,8 @@
         badge = 'passive';
         if (val === 0 || (isSupport && val < 50)) {
           note = isSupport
-            ? "💡 Dégâts de bond solo perso : exclu du Buff Power en Support."
-            : "💡 Progression de niveau de bond de karma.";
+            ? "Dégâts de bond solo perso : exclu du Buff Power en Support."
+            : "Progression de niveau de bond de karma.";
         }
       } else if (p.type === 10 || p.type === 11 || (p.grade && p.grade.includes('engrave'))) {
         cat = 'Gravures';
@@ -5868,7 +5868,7 @@
         else if (sIndex === 621000000 || sIndex === 621000001 || sIndex === 621000002 || (sType === 4 && p.type === 17)) {
           const pct = sIndex === 621000002 ? '2.00' : (sIndex === 621000001 ? '1.20' : '0.55');
           statDesc = `Dégâts infligés (+${pct}%)`;
-          note = `💡 Effet passif Collier T4 : Outgoing Damage +${pct}%.`;
+          note = `Effet passif Collier T4 : Outgoing Damage +${pct}%.`;
         }
         else if (sType === 50) statDesc = `Soins aux Membres du Groupe (+${(sVal / 100).toFixed(2)}%)`;
         else if (sType === 51) statDesc = `Boucliers aux Membres du Groupe (+${(sVal / 100).toFixed(2)}%)`;
@@ -5876,7 +5876,7 @@
         else if (sType === 59 || sIndex === 16000001) statDesc = `Effet Augmentation Dégâts d'Allié (+${(sVal / 100).toFixed(2)}%)`;
         else if (typeof BIBLE_ACCESSORY_PASSIVES !== 'undefined' && BIBLE_ACCESSORY_PASSIVES[sIndex]) {
           statDesc = BIBLE_ACCESSORY_PASSIVES[sIndex].name;
-          note = `💡 ${BIBLE_ACCESSORY_PASSIVES[sIndex].desc}`;
+          note = `${BIBLE_ACCESSORY_PASSIVES[sIndex].desc}`;
         }
         else if (sVal > 0) statDesc = `Ligne Affinée (+${(sVal / 100).toFixed(2)}%)`;
         else statDesc = "Ligne d'Affinage";
@@ -5887,11 +5887,11 @@
 
         if (p.affectsBaseStats && val === 0) {
           if (sIndex === 151 || sIndex === 152) {
-            note = "💡 La Puissance d'Arme augmente directement votre Attaque de Base & Base Val en tête de liste. Elle est à +0.00% ici pour éviter un double comptage.";
+            note = "La Puissance d'Arme augmente directement votre Attaque de Base & Base Val en tête de liste. Elle est à +0.00% ici pour éviter un double comptage.";
           } else {
             note = (isSupport && (sIndex === 74 || sIndex === 76 || sIndex === 50))
-              ? "💡 Stat solo perso : non transférée aux alliés en Support (exclue du Buff Power)."
-              : "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou les PV Max en tête de liste.";
+              ? "Stat solo perso : non transférée aux alliés en Support (exclue du Buff Power)."
+              : "Stat brute déjà agrégée directement dans l'Attaque de Base ou les PV Max en tête de liste.";
           }
         }
       } else if (p.type === 22 || (p.id && p.id.toString().startsWith('650'))) {
@@ -5917,7 +5917,7 @@
           ? `+${(p.min / 100).toFixed(2)}% ~ +${(p.max / 100).toFixed(2)}%`
           : `+${(val / 100).toFixed(2)}%`;
         badge = 'passive';
-        note = "💡 Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%).";
+        note = "Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%).";
       } else if (p.type === 29 || p.type === 30 || p.points) {
         cat = 'Grille d\'Ark';
         let coreName = (typeof BIBLE_CORES !== 'undefined' && BIBLE_CORES[p.id]) || null;
@@ -5965,11 +5965,11 @@
 
             let note = null;
             if (bpPart && partVal > 0) {
-              note = `💡 Effet in-game : +${inGameVal}% ${def.fr} (cumul des astrogemmes). Multiplicateur Smilegate CP : +${multVal}% ${isSupport ? 'Buff Power' : 'DPS Net'}.`;
+              note = `Effet in-game : +${inGameVal}% ${def.fr} (cumul des astrogemmes). Multiplicateur Smilegate CP : +${multVal}% ${isSupport ? 'Buff Power' : 'DPS Net'}.`;
             } else {
               note = isSupport
-                ? `💡 Stat brute ${def.fr.toLowerCase()} solo perso (+${inGameVal}%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point).`
-                : `💡 Stat support (+${inGameVal}%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point).`;
+                ? `Stat brute ${def.fr.toLowerCase()} solo perso (+${inGameVal}%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point).`
+                : `Stat support (+${inGameVal}%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point).`;
             }
 
             items.push({
@@ -6217,7 +6217,7 @@
     if (statusEl) {
       statusEl.className = 'modal-status info';
       statusEl.style.display = 'block';
-      statusEl.innerHTML = `⏳ Interrogation de <strong>${escapeHtml(cleanName)} (${escapeHtml(region.toUpperCase())})</strong> en cours...`;
+      statusEl.innerHTML = `Interrogation de <strong>${escapeHtml(cleanName)} (${escapeHtml(region.toUpperCase())})</strong> en cours...`;
     }
 
     const reg = region.toUpperCase();
@@ -6247,9 +6247,9 @@
       console.warn('fetchBibleProfile error:', err);
       if (statusEl) {
         statusEl.className = 'modal-status error';
-        statusEl.innerHTML = `⚠️ <strong>Impossible d'interroger lostark.bible pour ${escapeHtml(cleanName)} :</strong><br>
+        statusEl.innerHTML = `<strong>Impossible d'interroger lostark.bible pour ${escapeHtml(cleanName)} :</strong><br>
         1. Vérifiez l'orthographe exacte du pseudo et la région (${escapeHtml(reg)}).<br>
-        2. Option de secours : ouvrez <a href="${escapeHtml(directUrl)}" target="_blank" rel="noopener noreferrer" style="color:#E8E6DC; text-decoration:underline;">ce lien</a>, copiez tout le texte JSON et collez-le dans <strong>Option manuelle</strong> ci-dessous !`;
+        2. Option de secours : ouvrez <a href="${escapeHtml(directUrl)}" target="_blank" rel="noopener noreferrer" style="color:#E8E6DC; text-decoration:underline;">ce lien</a>, copiez tout le texte JSON et collez-le dans <strong>Option manuelle</strong> ci-dessous.`;
       }
       return null;
     }
@@ -6277,7 +6277,7 @@
     if (!profile) {
       if (statusEl) {
         statusEl.className = 'modal-status error';
-        statusEl.textContent = '❌ Données de profil introuvables ou format de raid invalide.';
+        statusEl.textContent = 'Données de profil introuvables ou format de raid invalide.';
       }
       return null;
     }
@@ -6366,7 +6366,7 @@
 
     if (statusEl) {
       statusEl.className = 'modal-status success';
-      statusEl.innerHTML = `✅ <strong>${escapeHtml(charObj.name)}</strong> (${escapeHtml(charObj.className)} ${charObj.ilvl.toFixed(1)}) chargé avec succès !<br>
+      statusEl.innerHTML = `<strong>${escapeHtml(charObj.name)}</strong> (${escapeHtml(charObj.className)} ${charObj.ilvl.toFixed(1)}) chargé avec succès.<br>
       Combat Power : <strong>${formatNumber(charObj.cp)} CP</strong> • Portrait officiel Lost Ark lié.`;
     }
 
@@ -6543,7 +6543,7 @@
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status info';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = '⏳ Redirection vers lostark.bible...';
+        dom.importStatus.textContent = 'Redirection vers lostark.bible...';
       }
 
       window.location.href = `${OAUTH_CONFIG.authUrl}?${params.toString()}`;
@@ -6552,7 +6552,7 @@
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status error';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = `❌ Impossible d'initialiser OAuth : ${err.message}`;
+        dom.importStatus.textContent = `Impossible d'initialiser OAuth : ${err.message}`;
       }
     }
   }
@@ -6572,7 +6572,7 @@
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status error';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = `❌ Autorisation lostark.bible refusée : ${errDesc}`;
+        dom.importStatus.textContent = `Autorisation lostark.bible refusée : ${errDesc}`;
       }
       if (dom.importModal) dom.importModal.classList.add('active');
       return;
@@ -6597,7 +6597,7 @@
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status info';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = '⏳ Échange du code d\'autorisation OAuth en cours...';
+        dom.importStatus.textContent = 'Échange du code d\'autorisation OAuth en cours...';
         if (dom.importModal) dom.importModal.classList.add('active');
       }
 
@@ -6630,7 +6630,7 @@
         if (dom.importStatus) {
           dom.importStatus.className = 'modal-status success';
           dom.importStatus.style.display = 'block';
-          dom.importStatus.textContent = '✅ Connexion OAuth 2.0 réussie ! Chargement de vos rosters...';
+          dom.importStatus.textContent = 'Connexion OAuth 2.0 réussie. Chargement de vos rosters…';
         }
 
         await fetchOAuthUserData(data.access_token);
@@ -6643,7 +6643,7 @@
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status error';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = `❌ Échec de la connexion OAuth : ${err.message}`;
+        dom.importStatus.textContent = `Échec de la connexion OAuth : ${err.message}`;
       }
     }
   }
@@ -6680,7 +6680,7 @@
         if (dom.importStatus) {
           dom.importStatus.className = 'modal-status error';
           dom.importStatus.style.display = 'block';
-          dom.importStatus.textContent = '❌ Session OAuth expirée ou invalide. Veuillez vous reconnecter avec lostark.bible.';
+          dom.importStatus.textContent = 'Session OAuth expirée ou invalide. Veuillez vous reconnecter avec lostark.bible.';
         }
         return;
       }
@@ -6698,7 +6698,7 @@
         if (dom.importStatus) {
           dom.importStatus.className = 'modal-status error';
           dom.importStatus.style.display = 'block';
-          dom.importStatus.textContent = `❌ Session OAuth invalide (${userData?.error_description || userData?.error || 'HTTP ' + userRes.status}). Reconnexion requise.`;
+          dom.importStatus.textContent = `Session OAuth invalide (${userData?.error_description || userData?.error || 'HTTP ' + userRes.status}). Reconnexion requise.`;
         }
         return;
       }
@@ -6732,7 +6732,7 @@
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status error';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = `❌ Erreur de communication OAuth : ${e.message}`;
+        dom.importStatus.textContent = `Erreur de communication OAuth : ${e.message}`;
       }
     }
   }
@@ -6756,7 +6756,7 @@
       const characters = r.characters || r.characterList || r.chars || [];
 
       html += `<div style="font-size: 11px; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; margin-top: 6px;">
-        🏛️ ${serverName} (${region}) :
+        ${serverName} (${region}) :
       </div>`;
 
       characters.forEach(c => {
@@ -6774,7 +6774,7 @@
             </div>
             <div style="display: flex; gap: 6px;">
               <button type="button" class="btn-add-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(140, 192, 132, 0.15); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
-                ➕ Ajouter
+                + Ajouter
               </button>
               <button type="button" class="btn-load-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(232, 230, 220, 0.15); border: 1px solid rgba(232, 230, 220, 0.4); color: #E0A43A; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
                 Charger
@@ -6813,7 +6813,7 @@
     if (statusEl) {
       statusEl.className = 'modal-status info';
       statusEl.style.display = 'block';
-      statusEl.innerHTML = `⏳ Préparation de la synchronisation de votre Roster...`;
+      statusEl.innerHTML = `Préparation de la synchronisation de votre Roster...`;
     }
 
     const rosters = extractRostersList(rostersRaw);
@@ -6841,7 +6841,7 @@
     if (topChars.length === 0) {
       if (statusEl) {
         statusEl.className = 'modal-status error';
-        statusEl.textContent = '❌ Aucun personnage trouvé dans vos données lostark.bible.';
+        statusEl.textContent = 'Aucun personnage trouvé dans vos données lostark.bible.';
       }
       return;
     }
@@ -6850,7 +6850,7 @@
     for (let i = 0; i < topChars.length; i++) {
       const tc = topChars[i];
       if (statusEl) {
-        statusEl.innerHTML = `⏳ Synchronisation (${i + 1}/${topChars.length}) : <strong>${escapeHtml(tc.name)}</strong> (${tc.ilvl.toFixed(1)})...`;
+        statusEl.innerHTML = `Synchronisation (${i + 1}/${topChars.length}) : <strong>${escapeHtml(tc.name)}</strong> (${tc.ilvl.toFixed(1)})...`;
       }
       try {
         const charObj = await fetchBibleProfile(tc.region, tc.name, false);
@@ -6871,7 +6871,7 @@
 
       if (statusEl) {
         statusEl.className = 'modal-status success';
-        statusEl.innerHTML = `🎉 <strong>Roster synchronisé avec succès !</strong><br>
+        statusEl.innerHTML = `<strong>Roster synchronisé avec succès.</strong><br>
         Vos ${importedList.length} personnages sont disponibles dans la barre du haut avec leurs images officielles.`;
       }
     }
@@ -6920,7 +6920,7 @@
     if (dom.importStatus) {
       dom.importStatus.className = 'modal-status info';
       dom.importStatus.style.display = 'block';
-      dom.importStatus.textContent = 'ℹ️ Roster personnel réinitialisé. Affichage du Roster Démo.';
+      dom.importStatus.textContent = 'Roster personnel réinitialisé. Affichage du Roster Démo.';
     }
   }
 
@@ -6931,12 +6931,12 @@
     if (statusEl) {
       statusEl.className = 'modal-status info';
       statusEl.style.display = 'block';
-      statusEl.innerHTML = `⏳ Réactualisation de vos ${list.length} personnages...`;
+      statusEl.innerHTML = `Réactualisation de vos ${list.length} personnages...`;
     }
 
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
-      if (statusEl) statusEl.innerHTML = `⏳ Réactualisation (${i + 1}/${list.length}) : <strong>${escapeHtml(c.name)}</strong>...`;
+      if (statusEl) statusEl.innerHTML = `Réactualisation (${i + 1}/${list.length}) : <strong>${escapeHtml(c.name)}</strong>...`;
       try {
         const updated = await fetchBibleProfile(c.region || 'CE', c.name, false);
         if (updated) {
@@ -6955,7 +6955,7 @@
 
     if (statusEl) {
       statusEl.className = 'modal-status success';
-      statusEl.innerHTML = `✅ Vos ${list.length} personnages ont été mis à jour avec succès !`;
+      statusEl.innerHTML = `Vos ${list.length} personnages ont été mis à jour avec succès.`;
     }
   }
 
@@ -7008,7 +7008,7 @@
               Charger
             </button>
             <button type="button" class="btn-delete-roster-char" data-id="${cId}" style="background: rgba(224, 122, 99,0.15); border: 1px solid rgba(224, 122, 99,0.4); color: #E07A63; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
-              🗑️
+             
             </button>
           </div>
         </div>
@@ -7510,7 +7510,7 @@
           if (dom.importStatus) {
             dom.importStatus.className = 'modal-status error';
             dom.importStatus.style.display = 'block';
-            dom.importStatus.textContent = '⚠️ Veuillez renseigner le pseudo de votre personnage.';
+            dom.importStatus.textContent = 'Veuillez renseigner le pseudo de votre personnage.';
           }
           return;
         }
@@ -7530,7 +7530,7 @@
         } catch (e) {
           if (dom.importStatus) {
             dom.importStatus.className = 'modal-status error';
-            dom.importStatus.textContent = '❌ Format JSON invalide. Assure-toi de copier l\'intégralité du texte.';
+            dom.importStatus.textContent = 'Format JSON invalide. Assure-toi de copier l\'intégralité du texte.';
           }
         }
       });
@@ -7556,8 +7556,8 @@
         const uri = getOAuthRedirectUri();
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(uri).then(() => {
-            btnCopyUri.textContent = '✅ Copié !';
-            setTimeout(() => { btnCopyUri.textContent = '📋 Copier'; }, 2000);
+            btnCopyUri.textContent = 'Copié.';
+            setTimeout(() => { btnCopyUri.textContent = 'Copier'; }, 2000);
           });
         }
       });
@@ -7609,7 +7609,7 @@
         const shareUrl = `${window.location.origin}${window.location.pathname}?char=${encodeURIComponent(curName)}`;
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(shareUrl).then(() => {
-            showToast(`🔗 Lien direct copié : ${shareUrl}`);
+            showToast(`Lien direct copié : ${shareUrl}`);
           }).catch(() => {
             prompt('Copiez ce lien :', shareUrl);
           });
@@ -7636,7 +7636,7 @@
       toast.className = 'app-toast';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = `<span>✨</span> <span>${escapeHtml(msg)}</span>`;
+    toast.innerHTML = `<span></span> <span>${escapeHtml(msg)}</span>`;
     toast.style.display = 'flex';
     clearTimeout(toast._timeout);
     toast._timeout = setTimeout(() => {
@@ -7654,7 +7654,7 @@
     const welcomeModal = document.getElementById('welcomeModal');
     if (welcomeModal) welcomeModal.classList.remove('active');
     const t = (window.i18n && window.i18n.t) || (k => k);
-    showToast(t('toast_nevercry_restored') || 'Roster Neevercry (6 personnages) restauré avec succès !');
+    showToast(t('toast_nevercry_restored') || 'Roster Neevercry (6 personnages) restauré avec succès.');
   }
 
   function initWelcomeModal() {
@@ -7678,7 +7678,7 @@
     if (btnDemo) {
       btnDemo.addEventListener('click', () => {
         closeModal();
-        showToast('Mode Démonstration actif. Importez votre personnage à tout moment avec le bouton en haut !');
+        showToast('Mode Démonstration actif. Importez votre personnage à tout moment avec le bouton en haut.');
       });
     }
 
@@ -7705,7 +7705,7 @@
           if (statusEl) {
             statusEl.className = 'modal-status error';
             statusEl.style.display = 'block';
-            statusEl.textContent = '⚠️ Veuillez renseigner le pseudo de votre personnage.';
+            statusEl.textContent = 'Veuillez renseigner le pseudo de votre personnage.';
           }
           return;
         }
@@ -7713,18 +7713,18 @@
         if (statusEl) {
           statusEl.className = 'modal-status info';
           statusEl.style.display = 'block';
-          statusEl.innerHTML = `⏳ Recherche de <strong>${escapeHtml(name)} (${escapeHtml(region)})</strong> sur lostark.bible...`;
+          statusEl.innerHTML = `Recherche de <strong>${escapeHtml(name)} (${escapeHtml(region)})</strong> sur lostark.bible...`;
         }
 
         const loaded = await fetchBibleProfile(region, name, true);
         if (loaded) {
           closeModal();
-          showToast(`✅ ${loaded.name} (${loaded.className} ${loaded.ilvl.toFixed(1)}) importé avec succès !`);
+          showToast(`${loaded.name} (${loaded.className} ${loaded.ilvl.toFixed(1)}) importé avec succès.`);
         } else {
           if (statusEl) {
             statusEl.className = 'modal-status error';
             statusEl.style.display = 'block';
-            statusEl.innerHTML = `⚠️ Personnage <strong>${escapeHtml(name)}</strong> introuvable sur lostark.bible (${escapeHtml(region)}). Vérifiez l'orthographe ou essayez une suggestion.`;
+            statusEl.innerHTML = `Personnage <strong>${escapeHtml(name)}</strong> introuvable sur lostark.bible (${escapeHtml(region)}). Vérifiez l'orthographe ou essayez une suggestion.`;
           }
         }
       });
@@ -7753,12 +7753,12 @@
       const existing = getActiveRosterList().find(c => (c.name || '').toLowerCase() === clean.toLowerCase());
       if (existing) {
         loadCharacter(existing);
-        showToast(`Profil ${existing.name} chargé !`);
+        showToast(`Profil ${existing.name} chargé.`);
       } else {
         showToast(`Chargement de ${clean} (${regionParam.toUpperCase()})...`);
         const loaded = await fetchBibleProfile(regionParam, clean, true);
         if (loaded) {
-          showToast(`Personnage ${loaded.name} chargé depuis lostark.bible !`);
+          showToast(`Personnage ${loaded.name} chargé depuis lostark.bible.`);
         }
       }
       return true;
@@ -7931,7 +7931,9 @@
         }
       }
       const adv = state.advHoning !== undefined ? state.advHoning : p.advHoning;
-      dom.charCardGearPill.innerHTML = `⚔️ <strong>+${wep}</strong> • 🛡️ <strong>${armStr}</strong> • ✨ <strong>+${adv !== undefined ? adv : 40}</strong>`;
+      dom.charCardGearPill.innerHTML = isEnLang()
+        ? `Weapon <strong>+${wep}</strong> · Armor <strong>${armStr}</strong> · Adv. <strong>+${adv !== undefined ? adv : 40}</strong>`
+        : `Arme <strong>+${wep}</strong> · Armures <strong>${armStr}</strong> · Avancé <strong>+${adv !== undefined ? adv : 40}</strong>`;
     }
 
     // Mise à jour des 4 Cartes de Score de Profil (Loseii Style)
@@ -8214,8 +8216,8 @@
     }
     if (dom.btnSyncRosterNav) {
       dom.btnSyncRosterNav.innerHTML = activeRosterMode === 'custom' 
-        ? (isEn ? '<span>➕</span> <strong>Add character</strong>' : '<span>➕</span> <strong>Ajouter un perso</strong>') 
-        : (isEn ? '<span>🌐</span> <strong>Sync my Roster</strong>' : '<span>🌐</span> <strong>Synchroniser mon Roster</strong>');
+        ? (isEn ? '<span>+</span> <strong>Add character</strong>' : '<span>+</span> <strong>Ajouter un perso</strong>') 
+        : (isEn ? '<span></span> <strong>Sync my Roster</strong>' : '<span></span> <strong>Synchroniser mon Roster</strong>');
     }
 
     let html = '';
@@ -8848,7 +8850,7 @@
                     ✓
                   </button>
                   <button type="button" class="char-action-btn btn-char-chests-all" data-char="${cKey}" title="${isFr ? 'Acheter ou retirer tous les coffres de ce personnage' : 'Toggle all chests for this character'}">
-                    📦
+                   
                   </button>
                 </div>
                 <div class="char-raid-gold-badge">
@@ -8913,7 +8915,7 @@
                 </div>
 
                 <button type="button" class="chest-toggle-pill ${cr.chest ? 'active' : ''}" data-char="${cKey}" data-raid="${rKey}" title="${t('raid_chest_label').replace('{cost}', (chestCost / 1000).toFixed(1).replace('.0', '') + 'k')}">
-                  <span class="chest-icon">📦</span>
+                  <span class="chest-icon"></span>
                   <span class="chest-cost">-${(chestCost / 1000).toFixed(1).replace('.0', '')}k</span>
                 </button>
               </div>
@@ -10725,23 +10727,23 @@
     const tArmors = tSys.armors || {};
 
     const systemMeta = [
-      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '☀️', cost: coreGroupCost('orderSun', 'chaosSun') },
-      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '🌙', cost: coreGroupCost('orderMoon', 'chaosMoon') },
-      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '⭐', cost: coreGroupCost('orderStar', 'chaosStar') },
-      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: computeAstrogemUpgradeCost(pSys, tSys) },
-      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: computeAccessoriesUpgradeCost(player, target) },
-      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
-      { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
-      { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '🔮', cost: 30000 },
-      { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '⚡', cost: computeGemUpgradeCost(player, target) },
-      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '🛡️', cost: honingPathCost('armor', pArmors.effAvgArmor !== undefined ? pArmors.effAvgArmor : (pArmors.avgArmor || 12), tArmors.effAvgArmor, 5) },
-      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '💪', cost: 75000 },
-      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '📜', cost: 40000 },
-      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '🎯', cost: 50000 },
-      { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '💡', cost: 25000 },
-      { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '🧬', cost: 20000 },
-      { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '🚀', cost: 30000 },
-      { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '☸️', cost: 70000 }
+      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderSun', 'chaosSun') },
+      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderMoon', 'chaosMoon') },
+      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderStar', 'chaosStar') },
+      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: computeAstrogemUpgradeCost(pSys, tSys) },
+      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: computeAccessoriesUpgradeCost(player, target) },
+      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
+      { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '', cost: 125000 },
+      { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: 30000 },
+      { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '', cost: computeGemUpgradeCost(player, target) },
+      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '', cost: honingPathCost('armor', pArmors.effAvgArmor !== undefined ? pArmors.effAvgArmor : (pArmors.avgArmor || 12), tArmors.effAvgArmor, 5) },
+      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 75000 },
+      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '', cost: 40000 },
+      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '', cost: 50000 },
+      { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '', cost: 25000 },
+      { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '', cost: 20000 },
+      { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '', cost: 30000 },
+      { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '', cost: 70000 }
     ];
 
     const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
@@ -11160,11 +11162,11 @@
     }
 
     const slots = [
-      { key: 'neck', name: isEn ? 'Necklace T4' : 'Collier T4', icon: '📿', pLines: [], tLines: [], impactCp: 0, verdict: '' },
-      { key: 'ear1', name: isEn ? 'Earring #1 T4' : "Boucle d'oreille #1 T4", icon: '👂', pLines: [], tLines: [], impactCp: 0, verdict: '' },
-      { key: 'ear2', name: isEn ? 'Earring #2 T4' : "Boucle d'oreille #2 T4", icon: '👂', pLines: [], tLines: [], impactCp: 0, verdict: '' },
-      { key: 'finger1', name: isEn ? 'Ring #1 T4' : 'Anneau #1 T4', icon: '💍', pLines: [], tLines: [], impactCp: 0, verdict: '' },
-      { key: 'finger2', name: isEn ? 'Ring #2 T4' : 'Anneau #2 T4', icon: '💍', pLines: [], tLines: [], impactCp: 0, verdict: '' }
+      { key: 'neck', name: isEn ? 'Necklace T4' : 'Collier T4', icon: '', pLines: [], tLines: [], impactCp: 0, verdict: '' },
+      { key: 'ear1', name: isEn ? 'Earring #1 T4' : "Boucle d'oreille #1 T4", icon: '', pLines: [], tLines: [], impactCp: 0, verdict: '' },
+      { key: 'ear2', name: isEn ? 'Earring #2 T4' : "Boucle d'oreille #2 T4", icon: '', pLines: [], tLines: [], impactCp: 0, verdict: '' },
+      { key: 'finger1', name: isEn ? 'Ring #1 T4' : 'Anneau #1 T4', icon: '', pLines: [], tLines: [], impactCp: 0, verdict: '' },
+      { key: 'finger2', name: isEn ? 'Ring #2 T4' : 'Anneau #2 T4', icon: '', pLines: [], tLines: [], impactCp: 0, verdict: '' }
     ];
 
     // Extraction des lignes affinées réelles du joueur
@@ -11497,7 +11499,7 @@
       let pLinesHtml = '';
       s.pLines.forEach(l => {
         pLinesHtml += `<div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 ')))}${escapeHtml(l.text)}</span>
+          <span>${l.isDead ? '' : (l.rollTier === 'passif' ? '' : (l.rollTier === 'high' ? '' : (l.rollTier === 'mid' ? '' : '')))}${escapeHtml(l.text)}</span>
           <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
         </div>`;
       });
@@ -11505,7 +11507,7 @@
       let tLinesHtml = '';
       s.tLines.forEach(l => {
         tLinesHtml += `<div class="acc-line-badge ${l.rollTier}">
-          <span>${l.rollTier === 'passif' ? '👑 ' : '✨ '}${escapeHtml(l.text)}</span>
+          <span>${l.rollTier === 'passif' ? '' : ''}${escapeHtml(l.text)}</span>
           <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
         </div>`;
       });
@@ -11534,7 +11536,7 @@
           </div>
 
           <div class="acc-piece-verdict">
-            <span>🎯</span>
+            <span></span>
             <span class="verdict-text">${s.verdict}</span>
           </div>
         </div>
@@ -11546,7 +11548,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>💎</span>
+              <span></span>
               <strong>${isEn ? 'Individual T4 Accessories & Polish Lines Breakdown' : 'Détail des 5 Accessoires T4 & Lignes d\'Affinage'}</strong>
             </div>
             <span class="acc-breakdown-tag">${cpImpact > 0 ? `+${cpImpact} CP ${isEn ? 'gap' : 'd\'écart global'}` : (isEn ? 'Optimized parity' : 'Parité optimale')}</span>
@@ -12201,7 +12203,7 @@
 
       return `
         <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          <span>${l.isDead ? '' : (l.rollTier === 'passif' ? '' : (l.rollTier === 'high' ? '' : (l.rollTier === 'fixed' ? '' : (l.rollTier === 'mid' ? '' : ''))))}${escapeHtml(l.text)}</span>
           ${pillHtml}
           <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
         </div>
@@ -12228,7 +12230,7 @@
 
       return `
         <div class="acc-line-badge ${l.rollTier} ${l.isDead ? 'dead' : ''}">
-          <span>${l.isDead ? '⚠️ ' : (l.rollTier === 'passif' ? '👑 ' : (l.rollTier === 'high' ? '✨ ' : (l.rollTier === 'fixed' ? '🔹 ' : (l.rollTier === 'mid' ? '🔹 ' : '📉 '))))}${escapeHtml(l.text)}</span>
+          <span>${l.isDead ? '' : (l.rollTier === 'passif' ? '' : (l.rollTier === 'high' ? '' : (l.rollTier === 'fixed' ? '' : (l.rollTier === 'mid' ? '' : ''))))}${escapeHtml(l.text)}</span>
           ${pillHtml}
           <span class="acc-line-tier-tag">${escapeHtml(l.tierLabel)}</span>
         </div>
@@ -12265,7 +12267,7 @@
 
     lineCps.pairs.forEach((pair) => {
       const familyName = pair.family.charAt(0).toUpperCase() + pair.family.slice(1);
-      const icon = pair.tP.rollTier === 'passif' ? '👑' : '✨';
+      const icon = pair.tP.rollTier === 'passif' ? '' : '';
       const playerDesc = pair.pP 
         ? escapeHtml(pair.pP.text) 
         : (pair.defLine ? `${escapeHtml(pair.defLine.text)} <em style="font-size:10.5px; color:var(--text-muted);">(${isEn ? 'Survival 0% Buff CP' : 'Survie 0% Buff CP'})</em>` : (isEn ? 'Empty Slot' : 'Emplacement Libre'));
@@ -12325,7 +12327,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>🔮</span>
+              <span></span>
               <strong>${isEn ? 'Individual T4 Bracelet & Passive Rolls Breakdown' : 'Détail du Bracelet T4 & Lignes de Passifs'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #CFCBBD;">
@@ -12344,7 +12346,7 @@
           <div class="acc-piece-card bracelet-card player-card ${pHasDead ? 'heavy-gap' : (cpImpact > 0 ? 'has-gap' : 'parity')}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🔮</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${isEn ? 'Your T4 Bracelet' : 'Votre Bracelet T4'}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #CFCBBD; margin-left: 6px;">
                   ${isEn ? 'Ancient / Relic' : 'Relique T4'}
@@ -12370,7 +12372,7 @@
           <div class="acc-piece-card bracelet-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${isEn ? 'Target Reference' : 'Référence Cible'}
@@ -12396,7 +12398,7 @@
         <!-- Tableau Comparatif Détaillé des Gains par Perk / Stat -->
         <div class="bracelet-compare-table-wrap">
           <div class="bracelet-compare-table-title">
-            <span>📊</span>
+            <span></span>
             <strong>${isEn ? 'Individual CP Contribution by Perk & Stat' : 'Décomposition Détaillée des Gains de CP par Statistique & Passif'}</strong>
           </div>
           <table class="bracelet-compare-table">
@@ -12421,7 +12423,7 @@
         </div>
 
         <div class="bracelet-verdict-banner">
-          <span class="verdict-icon">🎯</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             <strong>${isEn ? 'Bracelet Diagnostic & Recommendations:' : 'Diagnostic & Recommandations du Bracelet :'}</strong>
             <span>${verdictText}</span>
@@ -12587,7 +12589,7 @@
         : '';
       return `
         <div class="acc-line-badge high">
-          <span>🔹 ${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
+          <span>${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
           ${leadBadge}
           <span class="acc-line-tier-tag">${isEn ? 'Lvl' : 'Niv.'} ${s.level}</span>
         </div>
@@ -12600,7 +12602,7 @@
       const cpBadge = lineCp > 0 ? `<span class="line-cp-pill">+${lineCp} CP</span>` : '';
       return `
         <div class="acc-line-badge high">
-          <span>🔹 ${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
+          <span>${escapeHtml(s.name)} (+${s.valPct.toFixed(2)}%)</span>
           ${cpBadge}
           <span class="acc-line-tier-tag">${isEn ? 'Lvl' : 'Niv.'} ${s.level}</span>
         </div>
@@ -12623,7 +12625,7 @@
 
       return `
         <tr>
-          <td><strong>🔹 ${escapeHtml(tStat.name)}</strong></td>
+          <td><strong>${escapeHtml(tStat.name)}</strong></td>
           <td>+${pStat.valPct.toFixed(2)}% (${isEn ? 'Lvl' : 'Niv.'} ${pStat.level})</td>
           <td>+${tStat.valPct.toFixed(2)}% (${isEn ? 'Lvl' : 'Niv.'} ${tStat.level})</td>
           <td class="col-cp-gain" style="text-align:right;">${cpCell}</td>
@@ -12662,7 +12664,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>✨</span>
+              <span></span>
               <strong>${isEn ? 'Ark Grid Astrogems & Substats Breakdown' : 'Détail des Astrogemmes & Sous-statistiques d\'Ark Grid'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(224, 164, 58, 0.15); border-color: rgba(224, 164, 58, 0.35); color: #E0A43A;">
@@ -12681,7 +12683,7 @@
           <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">✨</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${isEn ? 'Your Astrogems' : 'Vos Astrogemmes'}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(224, 164, 58, 0.2); color: #F0C77A; margin-left: 6px;">
                   ${isEn ? 'Ark Grid (24 Slots)' : 'Grille d\'Ark (24 Slots)'}
@@ -12703,7 +12705,7 @@
           <div class="acc-piece-card astrogems-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${isEn ? 'Target Reference' : 'Référence Cible'}
@@ -12725,7 +12727,7 @@
         <!-- Tableau Comparatif Détaillé des Gains par Sous-statistique -->
         <div class="astrogems-compare-table-wrap">
           <div class="astrogems-compare-table-title">
-            <span>📊</span>
+            <span></span>
             <strong>${isEn ? 'Individual CP Contribution by Astrogem Substat' : 'Décomposition Détaillée des Gains de CP par Sous-statistique d\'Astrogemme'}</strong>
           </div>
           <table class="astrogems-compare-table">
@@ -12750,7 +12752,7 @@
         </div>
 
         <div class="astrogems-verdict-banner">
-          <span class="verdict-icon">🎯</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             <strong>${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${escapeHtml(verdictText)}</span>
@@ -13059,7 +13061,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>💪</span>
+              <span></span>
               <strong>${isEn ? 'Main Stat & Base Attack Power (Base AP) Breakdown' : 'Détail de la Stat Principale & Puissance d\'Attaque de Base (Base AP)'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(224, 164, 58, 0.15); border-color: rgba(224, 164, 58, 0.35); color: #E0A43A;">
@@ -13075,7 +13077,7 @@
 
         <!-- Bannière Pédagogique : Définition & Formule -->
         <div class="stats-educational-banner baseatk">
-          <span class="edu-icon">💡</span>
+          <span class="edu-icon"></span>
           <div class="edu-content">
             <strong>${isEn ? 'Understanding Main Stat & Base Attack Power (Base AP)' : 'Comprendre la Stat Principale & l\'Attaque de Base (Base AP)'}</strong>
             <div>
@@ -13085,8 +13087,8 @@
               }
               ${isSupport
                 ? (isEn
-                  ? `<strong>For Supports (${escapeHtml(player.className || 'Support')}):</strong> Base AP is <strong>vitally crucial</strong>. Your party attack buffs (<em>Heavenly Blessings</em>, <em>Wrath of God</em>) transfer <strong>15% of your Base AP directly to party members</strong> (on top of a flat +6% Atk Power bonus). A higher Base AP directly makes your DPS teammates hit vastly harder!`
-                  : `<strong>En Support (${escapeHtml(player.className || 'Support')}) :</strong> Le Base AP est <strong>capital</strong>. Vos compétences de buff d'attaque (<em>Bénédiction céleste</em>, <em>Colère de Dieu</em>) transfèrent <strong>15% de votre Attaque de Base directement à vos alliés</strong> (en plus du bonus fixe de +6% de PA). Un Base AP plus élevé augmente directement et massivement la frappe de vos DPS en raid !`)
+                  ? `<strong>For Supports (${escapeHtml(player.className || 'Support')}):</strong> Base AP is <strong>central</strong>. Your party attack buffs (<em>Heavenly Blessings</em>, <em>Wrath of God</em>) transfer <strong>15% of your Base AP directly to party members</strong> (on top of a flat +6% Atk Power bonus). A higher Base AP directly makes your DPS teammates hit harder.`
+                  : `<strong>En Support (${escapeHtml(player.className || 'Support')}) :</strong> Le Base AP est <strong>capital</strong>. Vos compétences de buff d'attaque (<em>Bénédiction céleste</em>, <em>Colère de Dieu</em>) transfèrent <strong>15% de votre Attaque de Base directement à vos alliés</strong> (en plus du bonus fixe de +6% de PA). Un Base AP plus élevé augmente directement les dégâts de vos DPS en raid.`)
                 : (isEn
                   ? `<strong>For DPS Classes:</strong> Base AP is the core scalar for all your skill damage formulas before engravings, set multipliers, and gems are compounded.`
                   : `<strong>En Rôle DPS :</strong> Le Base AP constitue le socle multiplicateur fondamental sur lequel tous les dégâts de vos compétences sont calculés avant les gravures et les gemmes.`)
@@ -13101,7 +13103,7 @@
           <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">👤</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${(player.ilvl || 1750).toFixed(2)} iLvl
@@ -13113,15 +13115,15 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>💪 <strong>${escapeHtml(mainStatName)}</strong></span>
+                <span><strong>${escapeHtml(mainStatName)}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.mainStat)}</span>
               </div>
               <div class="acc-line-badge mid">
-                <span>🗡️ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span><strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.weaponPower)}</span>
               </div>
               <div class="acc-line-badge fixed">
-                <span>⚡ <strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
+                <span><strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.baseAtk)} AP</span>
               </div>
             </div>
@@ -13131,7 +13133,7 @@
           <div class="acc-piece-card astrogems-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${(target && target.ilvl ? target.ilvl.toFixed(2) : '1759.17')} iLvl
@@ -13143,21 +13145,21 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>💪 <strong>${escapeHtml(mainStatName)}</strong></span>
+                <span><strong>${escapeHtml(mainStatName)}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.mainStat)}</span>
                   ${dMainStat > 0 ? `<span class="line-cp-pill">+${formatNumber(dMainStat)}</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span>🗡️ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span><strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.weaponPower)}</span>
                   ${dWp > 0 ? `<span class="line-cp-pill">+${formatNumber(dWp)}</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge fixed">
-                <span>⚡ <strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
+                <span><strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque Base (AP)'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.baseAtk)} AP</span>
                   ${dBaseAtk > 0 ? `<span class="line-cp-pill">+${formatNumber(dBaseAtk)} AP</span>` : ''}
@@ -13170,7 +13172,7 @@
         <!-- Tableau Comparatif Détaillé -->
         <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
           <div class="astrogems-compare-table-title">
-            <span>📊</span>
+            <span></span>
             <strong>${isEn ? 'Mathematical Breakdown: Main Stat & Weapon Power' : 'Décomposition Mathématique : Stat Principale & Puissance d\'Arme'}</strong>
           </div>
           <table class="astrogems-compare-table">
@@ -13184,25 +13186,25 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>💪 ${escapeHtml(mainStatName)}</strong></td>
+                <td><strong>${escapeHtml(mainStatName)}</strong></td>
                 <td>${formatNumber(p.mainStat)}</td>
                 <td>${formatNumber(t.mainStat)}</td>
                 <td class="col-cp-gain">${dMainStat > 0 ? `+${formatNumber(dMainStat)} pts` : `${formatNumber(dMainStat)} pts`}</td>
               </tr>
               <tr>
-                <td><strong>🗡️ ${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></td>
+                <td><strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></td>
                 <td>${formatNumber(p.weaponPower)}</td>
                 <td>${formatNumber(t.weaponPower)}</td>
                 <td class="col-cp-gain">${dWp > 0 ? `+${formatNumber(dWp)} pts` : `${formatNumber(dWp)} pts`}</td>
               </tr>
               <tr>
-                <td><strong>⚡ ${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque de Base'}</strong></td>
+                <td><strong>${isEn ? 'Base Attack Power (AP)' : 'Puissance d\'Attaque de Base'}</strong></td>
                 <td><strong>${formatNumber(p.baseAtk)} AP</strong></td>
                 <td><strong style="color:#8CC084;">${formatNumber(t.baseAtk)} AP</strong></td>
                 <td class="col-cp-gain"><strong>${dBaseAtk > 0 ? `+${formatNumber(dBaseAtk)} AP` : `${formatNumber(dBaseAtk)} AP`}</strong></td>
               </tr>
               <tr>
-                <td><strong>📈 ${isEn ? 'Lost Ark Multiplier Score' : 'Multiplicateur Battre Point'}</strong></td>
+                <td><strong>${isEn ? 'Lost Ark Multiplier Score' : 'Multiplicateur Battre Point'}</strong></td>
                 <td>+${pPct.toFixed(2)}%</td>
                 <td>+${tPct.toFixed(2)}%</td>
                 <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
@@ -13220,23 +13222,23 @@
         <!-- 4 Leviers & Facteurs d'Écart -->
         <div style="margin-top: 14px;">
           <div style="font-size:13px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-            <span>🔍</span> <span>${isEn ? 'Where does this +' + cpImpact + ' CP difference come from?' : 'D\'où vient cette différence de +' + cpImpact + ' CP ?'}</span>
+            <span></span> <span>${isEn ? 'Where does this +' + cpImpact + ' CP difference come from?' : 'D\'où vient cette différence de +' + cpImpact + ' CP ?'}</span>
           </div>
           <div class="stats-factor-grid">
             <div class="stats-factor-card">
-              <strong>🛡️ ${isEn ? 'Armor & Honing ilvl' : 'Affinage & Pièces d\'Armure'}</strong>
-              <span>${isEn ? 'Each T4 gear tier (Head, Chest, Pants, Shoulders, Gloves) gives an exponential jump in Main Stat.' : 'Chaque niveau d\'armure T4 (Torse, Jambes, Épaules, etc.) et affinage avancé apporte une augmentation massive de Force/Dex/Int.'}</span>
+              <strong>${isEn ? 'Armor & Honing ilvl' : 'Affinage & Pièces d\'Armure'}</strong>
+              <span>${isEn ? 'Each T4 gear tier (Head, Chest, Pants, Shoulders, Gloves) gives an exponential jump in Main Stat.' : 'Chaque niveau d\'armure T4 (Torse, Jambes, Épaules, etc.) et affinage avancé apporte une forte augmentation de Force/Dex/Int.'}</span>
             </div>
             <div class="stats-factor-card">
-              <strong>🗡️ ${isEn ? 'Weapon ilvl & Quality' : 'Arme T4 & Qualité'}</strong>
+              <strong>${isEn ? 'Weapon ilvl & Quality' : 'Arme T4 & Qualité'}</strong>
               <span>${isEn ? 'Weapon honing rank and Quality (95-100) are the primary sources of Weapon Power scaling Base AP.' : 'Le niveau d\'affinage d\'arme et une qualité 95-100 sont le moteur principal de la Puissance d\'Arme alimentant le Base AP.'}</span>
             </div>
             <div class="stats-factor-card">
-              <strong>✨ ${isEn ? 'T4 Advanced Honing (+40)' : 'Affinage Avancé T4 (+40)'}</strong>
-              <span>${isEn ? 'Advanced Honing tiers (+10 to +40) inject massive amounts of flat Main Stat and Weapon Power directly into every piece.' : 'Les paliers d\'Affinage Avancé (+10 à +40) injectent directement des bonus massifs de Stat Principale et de Puissance d\'Arme sur chaque pièce.'}</span>
+              <strong>${isEn ? 'T4 Advanced Honing (+40)' : 'Affinage Avancé T4 (+40)'}</strong>
+              <span>${isEn ? 'Advanced Honing tiers (+10 to +40) add large amounts of flat Main Stat and Weapon Power directly into every piece.' : 'Les paliers d\'Affinage Avancé (+10 à +40) injectent directement des bonus massifs de Stat Principale et de Puissance d\'Arme sur chaque pièce.'}</span>
             </div>
             <div class="stats-factor-card">
-              <strong>📜 ${isEn ? 'Roster & Permanent Potions' : 'Potions Codex & Expédition'}</strong>
+              <strong>${isEn ? 'Roster & Permanent Potions' : 'Potions Codex & Expédition'}</strong>
               <span>${isEn ? 'Stat potions from Adventurer\'s Tomes, Una Tasks, and Towers yield ~2,500-4,000 permanent Main Stat.' : 'Les potions permanentes des Tomes d\'Aventurier, Réputations Una et Tours offrent plusieurs milliers de points de Main Stat.'}</span>
             </div>
           </div>
@@ -13244,7 +13246,7 @@
 
         <!-- Recommandation Finale -->
         <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#E0A43A;">
-          <span class="verdict-icon">🎯</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             <strong style="color:#E0A43A;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
@@ -13304,7 +13306,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>🗡️</span>
+              <span></span>
               <strong>${isEn ? 'T4 Weapon Honing, Quality & Gear Tier Breakdown' : 'Détail de l\'Affinage de l\'Arme T4, Qualité & Palier d\'Équipement'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(224, 122, 99, 0.15); border-color: rgba(224, 122, 99, 0.35); color: #E07A63;">
@@ -13320,16 +13322,16 @@
 
         <!-- Bannière Pédagogique : Transfert de Stuff Serka & Décalage d\'Affinage -->
         <div class="stats-educational-banner baseatk" style="border-left-color: #E0A43A;">
-          <span class="edu-icon">💡</span>
+          <span class="edu-icon"></span>
           <div class="edu-content">
             <strong>${isEn ? 'Understanding T4 Weapon Tiers: Aegir (Tier 1) vs Serka (Tier 2)' : 'Comprendre les Paliers d\'Arme T4 : Aegir (Palier 1) vs Serka (Palier 2)'}</strong>
             <div>
               ${isEn
                 ? `The <strong>Serka Shadow Raid</strong> introduces <strong>Tier 2 Advanced Ancient Equipment</strong>. When transferring an Aegir weapon (+20 to +25) to Serka gear, the raw honing number drops by <strong>9 levels</strong>, while preserving and expanding its base item level (+45 base iLvl leap):<br>
-                  • <strong>Serka Weapon +15</strong> has a base item level of <strong>1750 iLvl</strong> (with +40 Adv. Honing), which is mathematically equivalent to an <strong>Aegir Weapon +24</strong>!<br>
+                  • <strong>Serka Weapon +15</strong> has a base item level of <strong>1750 iLvl</strong> (with +40 Adv. Honing), which is mathematically equivalent to an <strong>Aegir Weapon +24</strong>.<br>
                   • A Serka weapon provides a tremendous leap in <strong>Weapon Power (+30,000+ WP)</strong>, directly inflating your Base AP and raid damage.`
                 : `Le <strong>Raid Shadow Serka</strong> introduit le palier d'équipement <strong>T4 Palier 2 (Ancien Avancé)</strong>. Lors du transfert d'une arme Aegir (+20 à +25) vers le stuff Serka, le chiffre brut d'affinage diminue de <strong>9 crans</strong> tout en augmentant la puissance réelle (+45 iLvl de base) :<br>
-                  • Une <strong>Arme Serka +15</strong> atteint un niveau d'objet de <strong>1750 iLvl</strong> (avec Affinage Avancé +40), ce qui équivaut mathématiquement à une arme <strong>Aegir +24</strong> !<br>
+                  • Une <strong>Arme Serka +15</strong> atteint un niveau d'objet de <strong>1750 iLvl</strong> (avec Affinage Avancé +40), ce qui équivaut mathématiquement à une arme <strong>Aegir +24</strong>.<br>
                   • Le passage à l'arme Serka injecte un saut massif de <strong>Puissance d'Arme (+30 000+ WP)</strong>, augmentant exponentiellement votre Attaque de Base et votre Combat Power.`
               }
             </div>
@@ -13342,7 +13344,7 @@
           <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">👤</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${p.ilvlPiece.toFixed(0)} iLvl Arme
@@ -13354,19 +13356,19 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span><strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${pTierLabel}</span>
               </div>
               <div class="acc-line-badge mid">
-                <span>🗡️ <strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
+                <span><strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">+${p.wLvl} ${p.isSerka ? `(Éq. +${p.effWLvl})` : ''}</span>
               </div>
               <div class="acc-line-badge fixed">
-                <span>⭐ <strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
+                <span><strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">Qualité ${p.quality} (+${p.qualityVal.toFixed(2)}% Dégâts)</span>
               </div>
               <div class="acc-line-badge low">
-                <span>⚡ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span><strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.weaponPower)} WP</span>
               </div>
             </div>
@@ -13376,7 +13378,7 @@
           <div class="acc-piece-card astrogems-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${t.ilvlPiece.toFixed(0)} iLvl Arme
@@ -13388,19 +13390,19 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span><strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${tTierLabel}</span>
               </div>
               <div class="acc-line-badge mid">
-                <span>🗡️ <strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
+                <span><strong>${isEn ? 'Honing Rank' : 'Niveau d\'Affinage'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">+${t.wLvl} ${t.isSerka ? `(Éq. +${t.effWLvl})` : ''}</span>
               </div>
               <div class="acc-line-badge fixed">
-                <span>⭐ <strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
+                <span><strong>${isEn ? 'Quality' : 'Qualité d\'Arme'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">Qualité ${t.quality} (+${t.qualityVal.toFixed(2)}% Dégâts)</span>
               </div>
               <div class="acc-line-badge low">
-                <span>⚡ <strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
+                <span><strong>${isEn ? 'Weapon Power' : 'Puissance d\'Arme'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.weaponPower)} WP</span>
               </div>
             </div>
@@ -13420,31 +13422,31 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>🛡️ ${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
+                <td><strong>${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
                 <td>${pTierLabel}</td>
                 <td><strong style="color:#8CC084;">${tTierLabel}</strong></td>
                 <td class="col-cp-gain">${t.isSerka && !p.isSerka ? (isEn ? 'Tier 2 Serka Shift' : 'Transfert Serka Palier 2') : (isEn ? 'Same Tier' : 'Même Palier')}</td>
               </tr>
               <tr>
-                <td><strong>🗡️ ${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
+                <td><strong>${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
                 <td>+${p.effWLvl} ${p.isSerka ? `(Affiché +${p.wLvl})` : ''}</td>
                 <td><strong style="color:#8CC084;">+${t.effWLvl} ${t.isSerka ? `(Affiché +${t.wLvl})` : ''}</strong></td>
                 <td class="col-cp-gain">${dLvl > 0 ? `+${dLvl} crans d'écart` : (dLvl < 0 ? `${dLvl} crans` : '= 0')}</td>
               </tr>
               <tr>
-                <td><strong>⚡ ${isEn ? 'Raw Weapon Power' : 'Puissance d\'Arme Brute'}</strong></td>
+                <td><strong>${isEn ? 'Raw Weapon Power' : 'Puissance d\'Arme Brute'}</strong></td>
                 <td>${formatNumber(p.weaponPower)} WP</td>
                 <td><strong style="color:#8CC084;">${formatNumber(t.weaponPower)} WP</strong></td>
                 <td class="col-cp-gain"><strong>${dWp > 0 ? `+${formatNumber(dWp)} WP` : `${formatNumber(dWp)} WP`}</strong></td>
               </tr>
               <tr>
-                <td><strong>⭐ ${isEn ? 'Weapon Quality Dmg' : 'Dégâts de Qualité'}</strong></td>
+                <td><strong>${isEn ? 'Weapon Quality Dmg' : 'Dégâts de Qualité'}</strong></td>
                 <td>Qualité ${p.quality} (+${p.qualityVal.toFixed(2)}%)</td>
                 <td>Qualité ${t.quality} (+${t.qualityVal.toFixed(2)}%)</td>
                 <td class="col-cp-gain">${(t.qualityVal - p.qualityVal) >= 0 ? `+${(t.qualityVal - p.qualityVal).toFixed(2)}%` : `${(t.qualityVal - p.qualityVal).toFixed(2)}%`}</td>
               </tr>
               <tr>
-                <td><strong>📈 ${isEn ? 'Total Weapon System Score' : 'Score Multiplicateur d\'Arme'}</strong></td>
+                <td><strong>${isEn ? 'Total Weapon System Score' : 'Score Multiplicateur d\'Arme'}</strong></td>
                 <td>+${p.bonusPct.toFixed(2)}%</td>
                 <td><strong style="color:#8CC084;">+${t.bonusPct.toFixed(2)}%</strong></td>
                 <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
@@ -13461,7 +13463,7 @@
 
         <!-- Recommandation Finale -->
         <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#E07A63;">
-          <span class="verdict-icon">🎯</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             <strong style="color:#E07A63;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
@@ -13524,7 +13526,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>🛡️</span>
+              <span></span>
               <strong>${isEn ? 'T4 Armors Honing, Main Stat & Gear Tier Breakdown' : 'Détail de l\'Affinage des Armures T4, Stat Principale & Palier d\'Équipement'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #E0A43A;">
@@ -13540,7 +13542,7 @@
 
         <!-- Bannière Pédagogique : Armures Serka & Stat Principale -->
         <div class="stats-educational-banner baseatk" style="border-left-color: #E0A43A;">
-          <span class="edu-icon">💡</span>
+          <span class="edu-icon"></span>
           <div class="edu-content">
             <strong>${isEn ? 'Understanding T4 Armors: The Bedrock of Your Main Stat' : 'Comprendre les Armures T4 : Le Socle de votre Stat Principale'}</strong>
             <div>
@@ -13562,7 +13564,7 @@
           <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">👤</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${p.ilvlPiece.toFixed(0)} iLvl Armures
@@ -13574,19 +13576,19 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span><strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${pTierLabel}</span>
               </div>
               <div class="acc-line-badge mid">
-                <span>⚔️ <strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
+                <span><strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">+${p.avgArmor} ${p.isSerka ? `(Éq. +${p.effAvgArmor})` : ''}</span>
               </div>
               <div class="acc-line-badge fixed">
-                <span>💪 <strong>${escapeHtml(p.mainStatName)}</strong></span>
+                <span><strong>${escapeHtml(p.mainStatName)}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.mainStat)}</span>
               </div>
               <div class="acc-line-badge low">
-                <span>❤️ <strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
+                <span><strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.maxHp)}</span>
               </div>
             </div>
@@ -13596,7 +13598,7 @@
           <div class="acc-piece-card astrogems-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${t.ilvlPiece.toFixed(0)} iLvl Armures
@@ -13608,19 +13610,19 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>🛡️ <strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
+                <span><strong>${isEn ? 'Gear Tier' : 'Palier de Stuff'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${tTierLabel}</span>
               </div>
               <div class="acc-line-badge mid">
-                <span>⚔️ <strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
+                <span><strong>${isEn ? 'Avg Honing' : 'Affinage Moyen'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">+${t.avgArmor} ${t.isSerka ? `(Éq. +${t.effAvgArmor})` : ''}</span>
               </div>
               <div class="acc-line-badge fixed">
-                <span>💪 <strong>${escapeHtml(t.mainStatName)}</strong></span>
+                <span><strong>${escapeHtml(t.mainStatName)}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.mainStat)}</span>
               </div>
               <div class="acc-line-badge low">
-                <span>❤️ <strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
+                <span><strong>${isEn ? 'Max HP' : 'PV Maximum'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.maxHp)}</span>
               </div>
             </div>
@@ -13640,25 +13642,25 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>🛡️ ${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
+                <td><strong>${isEn ? 'Gear Tier & Set' : 'Palier de Stuff & Set'}</strong></td>
                 <td>${pTierLabel}</td>
                 <td><strong style="color:#8CC084;">${tTierLabel}</strong></td>
                 <td class="col-cp-gain">${t.isSerka && !p.isSerka ? (isEn ? 'Tier 2 Serka Shift' : 'Transfert Serka Palier 2') : (isEn ? 'Same Tier' : 'Même Palier')}</td>
               </tr>
               <tr>
-                <td><strong>⚔️ ${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
+                <td><strong>${isEn ? 'Effective Honing Level' : 'Niveau d\'Affinage Équivalent'}</strong></td>
                 <td>+${p.effAvgArmor} ${p.isSerka ? `(Affiché +${p.avgArmor})` : ''}</td>
                 <td><strong style="color:#8CC084;">+${t.effAvgArmor} ${t.isSerka ? `(Affiché +${t.avgArmor})` : ''}</strong></td>
                 <td class="col-cp-gain">${dLvl > 0 ? `+${dLvl} crans d'écart` : (dLvl < 0 ? `${dLvl} crans` : '= 0')}</td>
               </tr>
               <tr>
-                <td><strong>💪 ${isEn ? 'Main Stat' : 'Stat Principale'} (${escapeHtml(p.mainStatName)})</strong></td>
+                <td><strong>${isEn ? 'Main Stat' : 'Stat Principale'} (${escapeHtml(p.mainStatName)})</strong></td>
                 <td>${formatNumber(p.mainStat)}</td>
                 <td><strong style="color:#8CC084;">${formatNumber(t.mainStat)}</strong></td>
                 <td class="col-cp-gain"><strong>${dMainStat > 0 ? `+${formatNumber(dMainStat)} pts` : `${formatNumber(dMainStat)} pts`}</strong></td>
               </tr>
               <tr>
-                <td><strong>📈 ${isEn ? 'Total Armor System Score' : 'Score Multiplicateur d\'Armure'}</strong></td>
+                <td><strong>${isEn ? 'Total Armor System Score' : 'Score Multiplicateur d\'Armure'}</strong></td>
                 <td>+${p.bonusPct.toFixed(2)}%</td>
                 <td><strong style="color:#8CC084;">+${t.bonusPct.toFixed(2)}%</strong></td>
                 <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
@@ -13675,12 +13677,12 @@
 
         <!-- Recommandation Finale -->
         <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#E0A43A;">
-          <span class="verdict-icon">🎯</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             <strong style="color:#E0A43A;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
-              ? `To bridge this +${cpImpact} CP gap: hone your Aegir armors toward +20 to qualify for the Serka raid transfer, or craft Serka armors (Hard/Nightmare) for massive Main Stat leaps. Completing Advanced Honing (+40) also heavily inflates your defensive and main stat pool.`
-              : `Pour combler ce retard de +${cpImpact} CP : monter vos armures Aegir vers le palier +20 pour préparer le transfert Serka, ou forger les pièces d'armure Serka (Hard/Nightmare) pour débloquer des gains massifs de Stat Principale. Finaliser l'Affinage Avancé (+40) renforce également massivement vos caractéristiques.`}</span>
+              ? `To bridge this +${cpImpact} CP gap: hone your Aegir armors toward +20 to qualify for the Serka raid transfer, or craft Serka armors (Hard/Nightmare) for large Main Stat gains. Completing Advanced Honing (+40) also heavily inflates your defensive and main stat pool.`
+              : `Pour combler ce retard de +${cpImpact} CP : monter vos armures Aegir vers le palier +20 pour préparer le transfert Serka, ou forger les pièces d'armure Serka (Hard/Nightmare) pour débloquer des gains massifs de Stat Principale. Finaliser l'Affinage Avancé (+40) renforce aussi fortement vos caractéristiques.`}</span>
           </div>
         </div>
       </div>
@@ -13704,7 +13706,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>🎯</span>
+              <span></span>
               <strong>${isEn ? 'Combat Stats Breakdown (Crit / Spec / Swiftness)' : 'Détail des Caractéristiques de Combat (Crit / Spé / Rapide)'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(140, 192, 132, 0.15); border-color: rgba(140, 192, 132, 0.35); color: #8CC084;">
@@ -13720,7 +13722,7 @@
 
         <!-- Bannière Pédagogique : Différence essentielle entre Combat Stats et Main Stat -->
         <div class="stats-educational-banner combatstats">
-          <span class="edu-icon">💡</span>
+          <span class="edu-icon"></span>
           <div class="edu-content">
             <strong>${isEn ? 'Crucial Distinction: Combat Stats vs Main Stat' : 'Distinction Fondamentale : Caractéristiques de Combat vs Stat Principale'}</strong>
             <div>
@@ -13728,16 +13730,16 @@
                 ? `<strong>Main Stat (Str/Dex/Int):</strong> Directly increases raw Attack Power and damage scaling.<br>
                    <strong>Combat Stats (Crit/Spec/Swift):</strong> Do NOT increase raw weapon attack; instead, they amplify <strong>mechanical gameplay percentages</strong>:
                    <ul style="margin:6px 0 0 16px; padding:0;">
-                     <li><strong>⚡ Swiftness:</strong> Increases Attack/Move Speed and provides massive <strong>Cooldown Reduction (CDR %)</strong>. For Supports, this is mandatory to sustain 100% uptime on identity auras, shields, and attack buffs.</li>
-                     <li><strong>🔮 Specialization:</strong> Speeds up Identity Gauge gain (Piety for Paladin) and directly scales Identity Aura buff efficiency.</li>
-                     <li><strong>🎯 Crit Rate:</strong> Increases the probability of landing critical strikes (critical for DPS).</li>
+                     <li><strong>Swiftness:</strong> Increases Attack/Move Speed and provides strong <strong>Cooldown Reduction (CDR %)</strong>. For Supports, this is mandatory to sustain 100% uptime on identity auras, shields, and attack buffs.</li>
+                     <li><strong>Specialization:</strong> Speeds up Identity Gauge gain (Piety for Paladin) and directly scales Identity Aura buff efficiency.</li>
+                     <li><strong>Crit Rate:</strong> Increases the probability of landing critical strikes (critical for DPS).</li>
                    </ul>`
                 : `<strong>Stat Principale (Force / Dex / Int) :</strong> Augmente la Puissance d'Attaque brute en points (Base AP).<br>
                    <strong>Caractéristiques de Combat (Crit / Spé / Rapide) :</strong> N'augmentent pas l'attaque brute de l'arme, mais amplifient des <strong>pourcentages mécaniques de gameplay</strong> :
                    <ul style="margin:6px 0 0 16px; padding:0;">
-                     <li><strong>⚡ Rapidité (Swiftness) :</strong> Vitesse d'attaque, vitesse de déplacement, et surtout <strong>Réduction du Temps de Recharge (CDR %)</strong> ! En Support, c'est indispensable pour maintenir 100% d'uptime sur l'Aura de Bénédiction, la marque et les buffs d'attaque.</li>
-                     <li><strong>🔮 Spécialisation (Specialization) :</strong> Accélère le remplissage de la jauge d'identité (Piété pour Paladin) et amplifie le bonus de dégâts accordé par l'Aura.</li>
-                     <li><strong>🎯 Critique (Crit Rate) :</strong> Augmente le taux de coup critique (vital pour les DPS).</li>
+                     <li><strong>Rapidité (Swiftness) :</strong> Vitesse d'attaque, vitesse de déplacement, et surtout <strong>Réduction du Temps de Recharge (CDR %)</strong>. En Support, c'est indispensable pour maintenir 100% d'uptime sur l'Aura de Bénédiction, la marque et les buffs d'attaque.</li>
+                     <li><strong>Spécialisation (Specialization) :</strong> Accélère le remplissage de la jauge d'identité (Piété pour Paladin) et amplifie le bonus de dégâts accordé par l'Aura.</li>
+                     <li><strong>Critique (Crit Rate) :</strong> Augmente le taux de coup critique (vital pour les DPS).</li>
                    </ul>`
               }
             </div>
@@ -13750,7 +13752,7 @@
           <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">👤</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   ${formatNumber(p.totalPts)} pts
@@ -13762,21 +13764,21 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>⚡ <strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
+                <span><strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.swift)} pts</span>
               </div>
               <div class="acc-line-badge mid">
-                <span>🔮 <strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
+                <span><strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.specStat)} pts</span>
               </div>
               ${p.crit > 0 ? `
                 <div class="acc-line-badge low">
-                  <span>🎯 <strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
+                  <span><strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
                   <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.crit)} pts</span>
                 </div>
               ` : ''}
               <div class="acc-line-badge fixed">
-                <span>📊 <strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
+                <span><strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.totalPts)} pts</span>
               </div>
             </div>
@@ -13786,7 +13788,7 @@
           <div class="acc-piece-card astrogems-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${formatNumber(t.totalPts)} pts
@@ -13798,14 +13800,14 @@
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
-                <span>⚡ <strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
+                <span><strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.swift)} pts</span>
                   ${t.swift > p.swift ? `<span class="line-cp-pill">+${t.swift - p.swift}</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span>🔮 <strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
+                <span><strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.specStat)} pts</span>
                   ${t.specStat > p.specStat ? `<span class="line-cp-pill">+${t.specStat - p.specStat}</span>` : ''}
@@ -13813,7 +13815,7 @@
               </div>
               ${t.crit > 0 ? `
                 <div class="acc-line-badge low">
-                  <span>🎯 <strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
+                  <span><strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
                   <div style="display:flex; align-items:center; gap:6px;">
                     <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.crit)} pts</span>
                     ${t.crit > p.crit ? `<span class="line-cp-pill">+${t.crit - p.crit}</span>` : ''}
@@ -13821,7 +13823,7 @@
                 </div>
               ` : ''}
               <div class="acc-line-badge fixed">
-                <span>📊 <strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
+                <span><strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">${formatNumber(t.totalPts)} pts</span>
                   ${deltaPts > 0 ? `<span class="line-cp-pill">+${deltaPts} pts</span>` : ''}
@@ -13834,7 +13836,7 @@
         <!-- Tableau Comparatif Détaillé -->
         <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
           <div class="astrogems-compare-table-title">
-            <span>📊</span>
+            <span></span>
             <strong>${isEn ? 'Comparative Breakdown: Combat Stat Points' : 'Décomposition Détaillée : Points de Caractéristiques de Combat'}</strong>
           </div>
           <table class="astrogems-compare-table">
@@ -13848,25 +13850,25 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>⚡ ${isEn ? 'Swiftness (CDR & Speed)' : 'Rapidité (CDR & Vitesse)'}</strong></td>
+                <td><strong>${isEn ? 'Swiftness (CDR & Speed)' : 'Rapidité (CDR & Vitesse)'}</strong></td>
                 <td>${formatNumber(p.swift)} pts</td>
                 <td>${formatNumber(t.swift)} pts</td>
                 <td class="col-cp-gain">${t.swift >= p.swift ? `+${t.swift - p.swift} pts` : `${t.swift - p.swift} pts`}</td>
               </tr>
               <tr>
-                <td><strong>🔮 ${isEn ? 'Specialization (Identity & Aura)' : 'Spécialisation (Identité & Aura)'}</strong></td>
+                <td><strong>${isEn ? 'Specialization (Identity & Aura)' : 'Spécialisation (Identité & Aura)'}</strong></td>
                 <td>${formatNumber(p.specStat)} pts</td>
                 <td>${formatNumber(t.specStat)} pts</td>
                 <td class="col-cp-gain">${t.specStat >= p.specStat ? `+${t.specStat - p.specStat} pts` : `${t.specStat - p.specStat} pts`}</td>
               </tr>
               <tr>
-                <td><strong>📊 ${isEn ? 'Total Combined Points' : 'Total Points Combinés'}</strong></td>
+                <td><strong>${isEn ? 'Total Combined Points' : 'Total Points Combinés'}</strong></td>
                 <td><strong>${formatNumber(p.totalPts)} pts</strong></td>
                 <td><strong style="color:#8CC084;">${formatNumber(t.totalPts)} pts</strong></td>
                 <td class="col-cp-gain"><strong>${deltaPts > 0 ? `+${deltaPts} pts` : `${deltaPts} pts`}</strong></td>
               </tr>
               <tr>
-                <td><strong>📈 ${isEn ? 'Lost Ark Multiplier Score' : 'Multiplicateur Battre Point'}</strong></td>
+                <td><strong>${isEn ? 'Lost Ark Multiplier Score' : 'Multiplicateur Battre Point'}</strong></td>
                 <td>+${pPct.toFixed(2)}%</td>
                 <td>+${tPct.toFixed(2)}%</td>
                 <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
@@ -13884,19 +13886,19 @@
         <!-- 3 Raisons de l'écart de points -->
         <div style="margin-top: 14px;">
           <div style="font-size:13px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-            <span>🔍</span> <span>${isEn ? 'Why does the reference profile have +' + deltaPts + ' more Combat Stat points?' : 'Pourquoi la référence a-t-elle +' + deltaPts + ' points de Combat Stats en plus ?'}</span>
+            <span></span> <span>${isEn ? 'Why does the reference profile have +' + deltaPts + ' more Combat Stat points?' : 'Pourquoi la référence a-t-elle +' + deltaPts + ' points de Combat Stats en plus ?'}</span>
           </div>
           <div class="stats-factor-grid">
             <div class="stats-factor-card">
-              <strong>💎 ${isEn ? 'T4 Accessory Quality (Neck/Ear/Ring)' : 'Qualité des 5 Bijoux T4 (Collier/Boucles/Anneaux)'}</strong>
-              <span>${isEn ? 'Accessory stats directly scale with Quality (0-100). High quality (90-100) vs mid quality (65-75) yields ~70-110 extra combat stat points across all 5 pieces!' : 'Les stats des bijoux sont indexées sur la Qualité (0-100). Des bijoux qualité 90-100 vs qualité 65-75 apportent ~70 à 110 points de combat stat en plus sur les 5 bijoux !'}</span>
+              <strong>${isEn ? 'T4 Accessory Quality (Neck/Ear/Ring)' : 'Qualité des 5 Bijoux T4 (Collier/Boucles/Anneaux)'}</strong>
+              <span>${isEn ? 'Accessory stats directly scale with Quality (0-100). High quality (90-100) vs mid quality (65-75) yields ~70-110 extra combat stat points across all 5 pieces.' : 'Les stats des bijoux sont indexées sur la Qualité (0-100). Des bijoux qualité 90-100 vs qualité 65-75 apportent ~70 à 110 points de combat stat en plus sur les 5 bijoux.'}</span>
             </div>
             <div class="stats-factor-card">
-              <strong>🔮 ${isEn ? 'T4 Bracelet Stat Rolls' : 'Rolls de Stats sur Bracelet T4'}</strong>
+              <strong>${isEn ? 'T4 Bracelet Stat Rolls' : 'Rolls de Stats sur Bracelet T4'}</strong>
               <span>${isEn ? 'A top-tier bracelet with double high combat stat rolls (+100 to +120 Swift/Spec) provides an immediate +40-60 point lead over a bracelet with mid rolls.' : 'Un bracelet avec double roll de stats de combat élevées (+100 à +120 Rapide/Spé) creuse une avance immédiate de 40 à 60 points sur un bracelet moyen.'}</span>
             </div>
             <div class="stats-factor-card">
-              <strong>📜 ${isEn ? 'Permanent Stat Potions (Codex)' : 'Potions de Combat Permanentes (Codex)'}</strong>
+              <strong>${isEn ? 'Permanent Stat Potions (Codex)' : 'Potions de Combat Permanentes (Codex)'}</strong>
               <span>${isEn ? 'Adventurer\'s Tome completion (80-90% brackets), Giant Hearts, and Una reputations grant ~30-50 permanent combat stat points across your roster.' : 'Les Tomes d\'Aventurier (paliers 80-90%), Cœurs de Géants et réputations offrent ~30 à 50 points de combat stats permanents sur le compte.'}</span>
             </div>
           </div>
@@ -13904,7 +13906,7 @@
 
         <!-- Recommandation Finale -->
         <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#8CC084;">
-          <span class="verdict-icon">🎯</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             <strong style="color:#8CC084;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
             <span>${isEn
@@ -13937,7 +13939,7 @@
     // Badges Joueur
     const pEngsHtml = pEngs.map(e => `
       <div class="acc-line-badge high">
-        <span>📜 <strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
+        <span><strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
         ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(232, 230, 220,0.2); color:#E0A43A;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
       </div>
     `).join('');
@@ -13948,7 +13950,7 @@
       const isDifferentEng = !pMatch;
       return `
         <div class="acc-line-badge high">
-          <span>📜 <strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
+          <span><strong>${escapeHtml(e.name)}</strong> (+${e.valuePct.toFixed(2)}%)</span>
           ${isDifferentEng ? `<span class="line-cp-pill" style="background:rgba(234,179,8,0.2); border-color:rgba(234,179,8,0.4); color:#E0A43A;">${isEn ? 'Diff Engraving' : 'Gravure Différente'}</span>` : ''}
           ${e.stonePoints > 0 ? `<span class="acc-line-tier-tag" style="background:rgba(140, 192, 132,0.2); color:#8CC084;">${isEn ? 'Stone' : 'Pierre'} +${e.stonePoints}</span>` : ''}
         </div>
@@ -13977,7 +13979,7 @@
         diffRows += `
           <tr>
             <td>
-              <strong>⚡ ${isEn ? 'Engraving Choice' : 'Choix de Gravure'}</strong>
+              <strong>${isEn ? 'Engraving Choice' : 'Choix de Gravure'}</strong>
               <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
                 ${isEn ? 'Alternative T4 Relic Engraving' : 'Gravure Relique T4 différente'}
               </div>
@@ -14005,7 +14007,7 @@
         diffRows += `
           <tr>
             <td>
-              <strong>💎 ${escapeHtml(t.name)}</strong>
+              <strong>${escapeHtml(t.name)}</strong>
               <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
                 ${isEn ? 'Stone nodes & base relic roll' : 'Nœuds de pierre & palier relique'}
               </div>
@@ -14024,8 +14026,8 @@
 
     if (hasNexusCase) {
       explanationText = isEn
-        ? `<strong>Why +${cpImpact} CP?</strong> In Lost Ark's Combat Power formula, Engravings are a global multiplicative layer: CP &prop; &prod;(1 + E<sub>i</sub>). For your character (${formatNumber(player.cp || 5587)} CP), <strong>1% overall damage = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• ${escapeHtml(targetName)} gains <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> from running <em>Mass Increase</em> (+19.00%) over <em>Cursed Doll</em> (+17.00%) and <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> from an optimized Relic Stone node distribution.<br>💡 <strong>Theorycrafting Note (Lost Ark Nexus):</strong> Lost Ark Nexus explicitly recommends your setup (<em>Cursed Doll</em>). Although <em>Mass Increase</em> gives +2% raw AP on paper (+${Math.round(2.00 * cpPerPct)} CP on your profile), its -10% attack speed penalty slows down Demonic animations and rotations. Your setup is the optimal choice for real in-raid DPS and fluid gameplay.`
-        : `<strong>Pourquoi autant de CP (+${cpImpact} CP) ?</strong> Dans la formule officielle de Smilegate, les Gravures agissent comme un multiplicateur global multiplicatif : CP &prop; &prod;(1 + E<sub>i</sub>). Pour votre personnage (${formatNumber(player.cp || 5587)} CP), <strong>1% de dégâts bruts = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• ${escapeHtml(targetName)} obtient <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> en jouant <em>Augmentation de Masse</em> (+19.00%) au lieu de <em>Poupée Maudite</em> (+17.00%), plus <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> grâce à la répartition optimisée des nœuds de Pierre Relique.<br>💡 <strong>Note de Theorycrafting (Lost Ark Nexus) :</strong> Le guide officiel <em>Lost Ark Nexus</em> préconise précisément votre configuration (<em>Poupée Maudite</em>). Bien qu'<em>Augmentation de Masse</em> apporte +2% d'AP brute sur le papier (+${Math.round(2.00 * cpPerPct)} CP au score affiché), son malus de -10% de vitesse d'attaque ralentit les animations et le cycle de burst démoniaque. Votre build est le choix optimal en combat réel pour la fluidité et le DPS effectif en raid.`;
+        ? `<strong>Why +${cpImpact} CP?</strong> In Lost Ark's Combat Power formula, Engravings are a global multiplicative layer: CP &prop; &prod;(1 + E<sub>i</sub>). For your character (${formatNumber(player.cp || 5587)} CP), <strong>1% overall damage = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• ${escapeHtml(targetName)} gains <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> from running <em>Mass Increase</em> (+19.00%) over <em>Cursed Doll</em> (+17.00%) and <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> from an optimized Relic Stone node distribution.<br><strong>Theorycrafting Note (Lost Ark Nexus):</strong> Lost Ark Nexus explicitly recommends your setup (<em>Cursed Doll</em>). Although <em>Mass Increase</em> gives +2% raw AP on paper (+${Math.round(2.00 * cpPerPct)} CP on your profile), its -10% attack speed penalty slows down Demonic animations and rotations. Your setup is the optimal choice for real in-raid DPS and fluid gameplay.`
+        : `<strong>Pourquoi autant de CP (+${cpImpact} CP) ?</strong> Dans la formule officielle de Smilegate, les Gravures agissent comme un multiplicateur global multiplicatif : CP &prop; &prod;(1 + E<sub>i</sub>). Pour votre personnage (${formatNumber(player.cp || 5587)} CP), <strong>1% de dégâts bruts = ~${cpPerPct.toFixed(1)} CP</strong>.<br>• ${escapeHtml(targetName)} obtient <strong>+2.00% (+${Math.round(2.00 * cpPerPct)} CP)</strong> en jouant <em>Augmentation de Masse</em> (+19.00%) au lieu de <em>Poupée Maudite</em> (+17.00%), plus <strong>+0.30% (+${Math.round(0.30 * cpPerPct)} CP)</strong> grâce à la répartition optimisée des nœuds de Pierre Relique.<br><strong>Note de Theorycrafting (Lost Ark Nexus) :</strong> Le guide officiel <em>Lost Ark Nexus</em> préconise précisément votre configuration (<em>Poupée Maudite</em>). Bien qu'<em>Augmentation de Masse</em> apporte +2% d'AP brute sur le papier (+${Math.round(2.00 * cpPerPct)} CP au score affiché), son malus de -10% de vitesse d'attaque ralentit les animations et le cycle de burst démoniaque. Votre build est le choix optimal en combat réel pour la fluidité et le DPS effectif en raid.`;
     } else {
       explanationText = isEn
         ? `<strong>Combat Power Impact (+${cpImpact} CP):</strong> In Lost Ark, engravings are strictly multiplicative. Each 1% engraving or ability stone gain contributes ~${cpPerPct.toFixed(1)} CP to your character. Aligning relic node breakpoints and high stone node rolls (+3/+4) bridges this gap.`
@@ -14037,7 +14039,7 @@
         <div class="acc-breakdown-header">
           <div class="acc-breakdown-title-row">
             <div class="acc-breakdown-title">
-              <span>📜</span>
+              <span></span>
               <strong>${isEn ? 'T4 Relic Engravings & Ability Stone Breakdown' : 'Détail des Gravures Reliques T4 & Pierre de Naissance'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #E0A43A;">
@@ -14056,7 +14058,7 @@
           <div class="acc-piece-card astrogems-card player-card ${cpImpact > 0 ? 'has-gap' : 'parity'}">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">👤</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml(player.name || (isEn ? 'Your Character' : 'Votre Personnage'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(232, 230, 220, 0.2); color: #E0A43A; margin-left: 6px;">
                   5 T4 Relic
@@ -14078,7 +14080,7 @@
           <div class="acc-piece-card astrogems-card target-card parity">
             <div class="acc-piece-top">
               <div class="acc-piece-name">
-                <span class="acc-piece-icon">🎯</span>
+                <span class="acc-piece-icon"></span>
                 <strong>${escapeHtml((target && target.name) || (isEn ? 'Benchmark Target' : 'Référence BiS'))}</strong>
                 <span class="acc-line-tier-tag" style="background: rgba(140, 192, 132, 0.2); color: #8CC084; margin-left: 6px;">
                   ${isEn ? 'Target Reference' : 'Référence Cible'}
@@ -14100,7 +14102,7 @@
         <!-- Tableau Comparatif Détaillé des Gravures -->
         <div class="astrogems-compare-table-wrap">
           <div class="astrogems-compare-table-title">
-            <span>📊</span>
+            <span></span>
             <strong>${isEn ? 'Engraving & Stone Delta Breakdown' : 'Décomposition Détaillée de l\'Écart de Gravures & Pierre'}</strong>
           </div>
           <table class="astrogems-compare-table">
@@ -14125,7 +14127,7 @@
         </div>
 
         <div class="astrogems-verdict-banner" style="border-left-color:#E0A43A;">
-          <span class="verdict-icon">💡</span>
+          <span class="verdict-icon"></span>
           <div class="verdict-content">
             ${explanationText}
           </div>
@@ -14407,7 +14409,7 @@
 
     const groupThemes = {
       sun: {
-        icon: '☀️',
+        icon: '',
         color: '#E0A43A',
         nameFr: 'Cœurs Soleil (Ordre & Chaos)',
         nameEn: 'Sun Cores (Order & Chaos)',
@@ -14415,7 +14417,7 @@
         statEn: 'Buff Power (Ally DMG & Base DMG)'
       },
       moon: {
-        icon: '🌙',
+        icon: '',
         color: '#CFCBBD',
         nameFr: 'Cœurs Lune (Ordre & Chaos)',
         nameEn: 'Moon Cores (Order & Chaos)',
@@ -14423,7 +14425,7 @@
         statEn: 'Buff Power (Shields & Heals)'
       },
       star: {
-        icon: '⭐',
+        icon: '',
         color: '#CFCBBD',
         nameFr: 'Cœurs Étoile (Ordre & Chaos)',
         nameEn: 'Star Cores (Order & Chaos)',
@@ -14473,19 +14475,19 @@
             </div>
             <div class="acc-lines-list">
               <div class="acc-line-badge high">
-                <span>☀️ <strong>${escapeHtml(p.order.specificName || p.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + p.groupLabel : 'Ordre ' + p.groupLabel} • ${p.order.grade} ${p.order.points}P)</span></span>
+                <span><strong>${escapeHtml(p.order.specificName || p.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + p.groupLabel : 'Ordre ' + p.groupLabel} • ${p.order.grade} ${p.order.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${p.order.bonusPct.toFixed(2)}%</span>
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span>🌀 <strong>${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + p.groupLabel : 'Chaos ' + p.groupLabel} • ${p.chaos.grade} ${p.chaos.points}P)</span></span>
+                <span><strong>${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + p.groupLabel : 'Chaos ' + p.groupLabel} • ${p.chaos.grade} ${p.chaos.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${p.chaos.bonusPct.toFixed(2)}%</span>
                 </div>
               </div>
               <div class="acc-line-badge fixed">
-                <span>✨ <strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
+                <span><strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700; color:${theme.color};">+${p.totalMult.toFixed(2)}%</span>
                 </div>
@@ -14506,21 +14508,21 @@
             </div>
             <div class="acc-lines-list">
               <div class="acc-line-badge high">
-                <span>☀️ <strong>${escapeHtml(t.order.specificName || t.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + t.groupLabel : 'Ordre ' + t.groupLabel} • ${t.order.grade} ${t.order.points}P)</span></span>
+                <span><strong>${escapeHtml(t.order.specificName || t.order.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Order ' + t.groupLabel : 'Ordre ' + t.groupLabel} • ${t.order.grade} ${t.order.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${t.order.bonusPct.toFixed(2)}%</span>
                   ${deltaOrder > 0.05 ? `<span class="line-cp-pill">+${deltaOrder.toFixed(2)}%</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge mid">
-                <span>🌀 <strong>${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + t.groupLabel : 'Chaos ' + t.groupLabel} • ${t.chaos.grade} ${t.chaos.points}P)</span></span>
+                <span><strong>${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong> <span style="font-size:11px; opacity:0.85; font-weight:normal;">(${isEn ? 'Chaos ' + t.groupLabel : 'Chaos ' + t.groupLabel} • ${t.chaos.grade} ${t.chaos.points}P)</span></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700;">+${t.chaos.bonusPct.toFixed(2)}%</span>
                   ${deltaChaos > 0.05 ? `<span class="line-cp-pill">+${deltaChaos.toFixed(2)}%</span>` : ''}
                 </div>
               </div>
               <div class="acc-line-badge fixed">
-                <span>✨ <strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
+                <span><strong>${isEn ? 'Total Compounded Multiplier' : 'Multiplicateur Total Combiné'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span style="font-family:var(--font-mono); font-weight:700; color:#8CC084;">+${t.totalMult.toFixed(2)}%</span>
                   ${deltaMult > 0.05 ? `<span class="line-cp-pill">+${deltaMult.toFixed(2)}%</span>` : ''}
@@ -14533,7 +14535,7 @@
         <!-- Tableau Comparatif Détaillé -->
         <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
           <div class="astrogems-compare-table-title">
-            <span>📊</span>
+            <span></span>
             <strong>${isEn ? `Comparative Breakdown: ${titleGroup}` : `Décomposition Détaillée : ${titleGroup}`}</strong>
           </div>
           <table class="astrogems-compare-table">
@@ -14547,19 +14549,19 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>☀️ ${isEn ? `Order ${p.groupLabel} Core` : `Cœur d'Ordre ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'}</span></td>
+                <td><strong>${isEn ? `Order ${p.groupLabel} Core` : `Cœur d'Ordre ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Primary Order Core' : 'Cœur d\'Ordre Principal'}</span></td>
                 <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.order.specificName || p.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.order.grade} ${isEn ? 'Tier' : 'Palier'} ${p.order.points}P (+${p.order.bonusPct.toFixed(2)}%)</span></td>
                 <td><strong style="color:#8CC084; font-size:12.5px;">${escapeHtml(t.order.specificName || t.order.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.order.grade} ${isEn ? 'Tier' : 'Palier'} ${t.order.points}P (+${t.order.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaOrder >= 0 ? `+${deltaOrder.toFixed(2)}%` : `${deltaOrder.toFixed(2)}%`}</td>
               </tr>
               <tr>
-                <td><strong>🌀 ${isEn ? `Chaos ${p.groupLabel} Core` : `Cœur de Chaos ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'}</span></td>
+                <td><strong>${isEn ? `Chaos ${p.groupLabel} Core` : `Cœur de Chaos ${p.groupLabel}`}</strong><br><span style="font-size:11px; color:var(--text-muted);">${isEn ? 'Amplifying Chaos Core' : 'Cœur de Chaos Amplificateur'}</span></td>
                 <td><strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(p.chaos.specificName || p.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${p.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${p.chaos.points}P (+${p.chaos.bonusPct.toFixed(2)}%)</span></td>
                 <td><strong style="color:#8CC084; font-size:12.5px;">${escapeHtml(t.chaos.specificName || t.chaos.name)}</strong><br><span style="font-size:11px; color:var(--text-muted);">${t.chaos.grade} ${isEn ? 'Tier' : 'Palier'} ${t.chaos.points}P (+${t.chaos.bonusPct.toFixed(2)}%)</span></td>
                 <td class="col-cp-gain">${deltaChaos >= 0 ? `+${deltaChaos.toFixed(2)}%` : `${deltaChaos.toFixed(2)}%`}</td>
               </tr>
               <tr>
-                <td><strong>✨ ${isEn ? 'Compounded Synergy Multiplier' : 'Synergie Multiplicative Croisée'}</strong></td>
+                <td><strong>${isEn ? 'Compounded Synergy Multiplier' : 'Synergie Multiplicative Croisée'}</strong></td>
                 <td><strong>+${p.totalMult.toFixed(2)}%</strong></td>
                 <td><strong style="color:#8CC084;">+${t.totalMult.toFixed(2)}%</strong></td>
                 <td class="col-cp-gain"><strong>${deltaMult >= 0 ? `+${deltaMult.toFixed(2)}%` : `${deltaMult.toFixed(2)}%`}</strong></td>
@@ -14576,13 +14578,13 @@
 
         <!-- Bannière Explicative & Conseils d'Optimisation -->
         <div class="stats-educational-banner" style="border-left-color: ${theme.color}; margin-top: 14px;">
-          <span class="edu-icon">💡</span>
+          <span class="edu-icon"></span>
           <div class="edu-content">
             <strong>${isEn ? `Why does the reference profile have a +${deltaMult.toFixed(2)}% advantage in ${titleGroup}?` : `Pourquoi la référence a-t-elle une avance de +${deltaMult.toFixed(2)}% sur les ${titleGroup} ?`}</strong>
             <div style="margin-top: 4px;">
               ${isEn
                 ? `1. <strong>Core Point Tiers (20P vs ${p.highestTier}P)</strong>: Reaching <strong>Tier 20P</strong> requires 4 socketed Astrogems with +5 resonance points each (4 &times; 5 = 20 pts). Each tier jump triggers a major milestone multiplier.<br>
-                   2. <strong>Chaos Core Synergy</strong>: The Chaos Core serves as a direct cross-multiplier for your Order Core: <code>(1 + Order) &times; (1 + Chaos) &minus; 1</code>. Improving your Chaos Core from ${p.chaos.points}P to 20P yields a massive leap in effective CP.<br>
+                   2. <strong>Chaos Core Synergy</strong>: The Chaos Core serves as a direct cross-multiplier for your Order Core: <code>(1 + Order) &times; (1 + Chaos) &minus; 1</code>. Improving your Chaos Core from ${p.chaos.points}P to 20P yields a large gain in effective CP.<br>
                    3. <strong>Optimization Tip</strong>: Prioritize cutting and socketing 5-point Astrogems on your lowest core (${p.chaos.points < p.order.points ? (p.chaos.specificName ? `Chaos: ${p.chaos.specificName}` : 'Chaos') : (p.order.specificName ? `Order: ${p.order.specificName}` : 'Order')}) to bridge the <strong>+${cpImpact} CP</strong> gap at optimal gold efficiency.`
                 : `1. <strong>Paliers de Points de Cœur (20P vs ${p.highestTier}P)</strong> : Pour débloquer le <strong>Palier 20P</strong>, il est nécessaire de sertir 4 astrogemmes taillées apportant 5 points de résonance chacune (4 &times; 5 = 20 pts). Chaque palier franchi déclenche un multiplicateur de dégâts/buff accru.<br>
                    2. <strong>Multiplication Croisée Ordre &times; Chaos</strong> : Le Cœur de Chaos multiplie directement le bonus du Cœur d'Ordre : <code>(1 + Ordre) &times; (1 + Chaos) &minus; 1</code>. Faire monter le Cœur de Chaos de ${p.chaos.points}P à 20P génère un gain immédiat de puissance.<br>
@@ -14627,7 +14629,7 @@
         <div class="cp-reconciliation-card">
           <div class="reconciliation-top">
             <div class="reconciliation-title">
-              <span class="reconciliation-icon">⚖️</span>
+              <span class="reconciliation-icon"></span>
               <strong>${isEn ? 'Combat Power Math Reconciliation (Net Balance)' : 'Bilan Mathématique du Combat Power (Équilibre Net)'}</strong>
             </div>
             <span class="reconciliation-tag">
@@ -14660,7 +14662,7 @@
           </div>
 
           <div class="reconciliation-explanation">
-            <span class="info-bulb">💡</span>
+            <span class="info-bulb"></span>
             <span>
               ${isEn
                 ? `<strong>Why doesn't the simple sum of levers (+${formatNumber(totalPositiveCp)} CP) equal the exact +${formatNumber(netGap)} CP header?</strong> Each table row calculates its isolated linear improvement lever. In reality, your gross compounded deficit of <strong>+${formatNumber(grossDeficit)} CP</strong> across lagging equipment is directly cushioned by your superior <strong>${escapeHtml(leadTitle)} (+${formatNumber(totalPlayerLeadCp)} CP lead)</strong>: <code>+${formatNumber(grossDeficit)} CP &minus; ${formatNumber(totalPlayerLeadCp)} CP = +${formatNumber(netGap)} CP</code>. Lost Ark\'s compound multiplicative formula (where systems multiply with each other) calibrates the final in-raid gap to exactly <strong>+${formatNumber(netGap)} CP</strong>.`
@@ -14680,7 +14682,7 @@
         <div class="cp-reconciliation-card">
           <div class="reconciliation-top">
             <div class="reconciliation-title">
-              <span class="reconciliation-icon">⚖️</span>
+              <span class="reconciliation-icon"></span>
               <strong>${isEn ? 'Combat Power Math Reconciliation (Net Balance)' : 'Bilan Mathématique du Combat Power (Équilibre Net)'}</strong>
             </div>
             <span class="reconciliation-tag">
@@ -14713,7 +14715,7 @@
           </div>
 
           <div class="reconciliation-explanation">
-            <span class="info-bulb">💡</span>
+            <span class="info-bulb"></span>
             <span>
               ${isEn
                 ? `<strong>Transparent breakdown:</strong> The identified equipment levers account for <strong>+${formatNumber(totalPositiveCp)} CP</strong>. The remaining <strong>+${formatNumber(baseSynergies)} CP</strong> comes from Base Main Stat differences (potions, roster level) and Lost Ark's multiplicative compounding formula.`
@@ -14730,7 +14732,7 @@
       <div class="cp-reconciliation-card">
         <div class="reconciliation-top">
           <div class="reconciliation-title">
-            <span class="reconciliation-icon">⚖️</span>
+            <span class="reconciliation-icon"></span>
             <strong>${isEn ? 'Combat Power Math Reconciliation' : 'Bilan Mathématique du Combat Power'}</strong>
           </div>
           <span class="reconciliation-tag" style="background: rgba(140, 192, 132, 0.15); color: #8CC084; border-color: rgba(140, 192, 132, 0.35);">
@@ -14738,7 +14740,7 @@
           </span>
         </div>
         <div class="reconciliation-explanation">
-          <span class="info-bulb">✨</span>
+          <span class="info-bulb"></span>
           <span>
             ${isEn
               ? `Your character holds a solid net advantage of <strong>+${formatNumber(Math.abs(netGap))} CP</strong> over the benchmark target. Your overall systems outperform the reference profile.`
@@ -14852,7 +14854,7 @@
         benchmarkState.isAutoFetching = true;
         heroCard.innerHTML = `
           <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
-            <div style="font-size: 36px; margin-bottom: 12px;">⏳</div>
+            <div style="font-size: 36px; margin-bottom: 12px;"></div>
             <div style="font-size: 17px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
               ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
             </div>
@@ -14860,13 +14862,13 @@
               ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
             </div>
             <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(140, 192, 132, 0.12); border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-              <span>🟢 ${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
+              <span>${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
             </div>
           </div>
         `;
         const select = document.getElementById('benchmarkPresetSelect');
         if (select) {
-          select.innerHTML = `<option value="">⏳ ${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
+          select.innerHTML = `<option value="">${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
         }
         searchAndCompareBibleProfile(suggested.name, suggested.region).catch(() => {
           if (!benchmarkState.failedAttempts) benchmarkState.failedAttempts = new Set();
@@ -14889,7 +14891,7 @@
       // État d'invitation à la recherche (NON BLOQUANT, interactif)
       heroCard.innerHTML = `
         <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: rgba(18, 19, 16, 0.6); border-radius: 12px; margin: 16px 0;">
-          <div style="font-size: 36px; margin-bottom: 12px;">🔍</div>
+          <div style="font-size: 36px; margin-bottom: 12px;"></div>
           <div style="font-size: 17px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
             ${isEn ? 'No Benchmark Profile Selected' : 'Aucun Profil de Référence Sélectionné'}
           </div>
@@ -14899,7 +14901,7 @@
               : `Pour comparer votre <strong>${escapeHtml(player.className)}</strong> (${escapeHtml(player.name)}), saisissez le pseudo d'un joueur ou un lien lostark.bible dans la barre de recherche ci-dessous.`}
           </div>
           <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(232, 230, 220, 0.12); border: 1px solid rgba(232, 230, 220, 0.3); color: #E0A43A; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-            <span>🌐 ${isEn ? '100% Live lostark.bible profiles supported' : 'Profils 100% LIVE lostark.bible supportés'}</span>
+            <span>${isEn ? '100% Live lostark.bible profiles supported' : 'Profils 100% LIVE lostark.bible supportés'}</span>
           </div>
         </div>
       `;
@@ -14918,10 +14920,10 @@
           return sRole === pRole;
         });
         if (searchedList.length > 0) {
-          optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
+          optionsHtml += `<optgroup label="${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
           searchedList.forEach(s => {
             optionsHtml += `<option value="${escapeHtml(s.id)}">
-              🌐 ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
+              ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
             </option>`;
           });
           optionsHtml += `</optgroup>`;
@@ -14936,7 +14938,7 @@
           return cRole === pRole;
         });
         if (sameClassRoster.length > 0) {
-          optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
+          optionsHtml += `<optgroup label="${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
           sameClassRoster.forEach(c => {
             const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
             optionsHtml += `<option value="${escapeHtml(rId)}">
@@ -14981,13 +14983,13 @@
         }
       }
       if (searchedList.length > 0) {
-        optionsHtml += `<optgroup label="🌐 ${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
+        optionsHtml += `<optgroup label="${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
         searchedList.forEach(s => {
           const isSel = target && (target.id === s.id);
           const deltaIlvl = s.ilvl - (player.ilvl || 1700);
           const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
           optionsHtml += `<option value="${escapeHtml(s.id)}" ${isSel ? 'selected' : ''}>
-            🌐 ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
+            ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
           </option>`;
         });
         optionsHtml += `</optgroup>`;
@@ -14997,7 +14999,7 @@
       const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
       const sameClassRoster = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id) && normalizeClassName(c.className || '').toLowerCase() === pClass);
       if (sameClassRoster.length > 0) {
-        optionsHtml += `<optgroup label="👥 ${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
+        optionsHtml += `<optgroup label="${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
         sameClassRoster.forEach(c => {
           const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
           const isSel = target && (target.id === rId);
@@ -15011,12 +15013,12 @@
       // 3. Palier Benchmark Calibré T4 (Garantit qu'aucune classe n'est jamais sans profil)
       const dynBench = avail.find(b => b.isDynamic);
       if (dynBench) {
-        optionsHtml += `<optgroup label="🎯 ${isEn ? 'Calibrated T4 Benchmark' : 'Benchmark Calibré T4'}">`;
+        optionsHtml += `<optgroup label="${isEn ? 'Calibrated T4 Benchmark' : 'Benchmark Calibré T4'}">`;
         const isSel = target && (target.id === dynBench.id);
         const deltaIlvl = dynBench.ilvl - (player.ilvl || 1700);
         const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
         optionsHtml += `<option value="${escapeHtml(dynBench.id)}" ${isSel ? 'selected' : ''}>
-          🎯 ${escapeHtml(dynBench.name)} (${dynBench.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(dynBench.cp))} CP)
+          ${escapeHtml(dynBench.name)} (${dynBench.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(dynBench.cp))} CP)
         </option>`;
         optionsHtml += `</optgroup>`;
       }
@@ -15094,8 +15096,8 @@
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:#8CC084;">${t('bench_card_target_title')}</span>
                 ${target.isLive 
-                  ? `<span style="background: rgba(140, 192, 132, 0.2); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🟢 LIVE lostark.bible</span>` 
-                  : `<span style="background: rgba(232, 230, 220, 0.2); border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">🎯 ${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
+                  ? `<span style="background: rgba(140, 192, 132, 0.2); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">LIVE lostark.bible</span>` 
+                  : `<span style="background: rgba(232, 230, 220, 0.2); border: 1px solid rgba(232, 230, 220, 0.4); color: #CFCBBD; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;">${isEn ? 'Calibrated T4 Target' : 'Palier Calibré T4'}</span>`
                 }
               </div>
               <div class="bench-char-name-row">
@@ -15118,8 +15120,8 @@
           <div class="bench-pills-row">
             <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
             ${target.isLive && target.bibleUrl
-              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">🌐 ${t('bench_view_bible')}</a>`
-              : `<span class="bench-pill" style="margin-left:auto; background:rgba(232, 230, 220,0.15); border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">🎯 ${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
+              ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">${t('bench_view_bible')}</a>`
+              : `<span class="bench-pill" style="margin-left:auto; background:rgba(232, 230, 220,0.15); border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
             }
           </div>
         </div>
@@ -15141,8 +15143,8 @@
       if (activeGaps.length === 0) {
         gapsGrid.innerHTML = `
           <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px;">
-            <span style="font-size: 28px;">🏆</span>
-            <h4 style="margin: 8px 0 4px 0; color: #8CC084;">${isEn ? 'Perfect Parity / Ahead' : 'Parfaite Parité / Avance Globale'}</h4>
+            <span style="font-size: 28px;"></span>
+            <h4 style="margin: 8px 0 4px 0; color: #8CC084;">${isEn ? 'Parity or ahead' : 'Parité ou avance'}</h4>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">${isEn ? 'All your equipment systems are equal or superior to this reference benchmark.' : 'Tous vos systèmes d\'équipement sont équivalents ou supérieurs à ce profil de référence.'}</p>
           </div>
         `;
@@ -15163,7 +15165,7 @@
           let rankBadge = `#${impactIdx} IMPACT`;
           let gainText = '+' + g.gainCp + ' CP';
           if (g.priority === 'player_lead') {
-            rankBadge = isEn ? '★ ADVANTAGE' : '★ AVANTAGE';
+            rankBadge = isEn ? 'ADVANTAGE' : 'AVANTAGE';
             gainText = '+' + g.gainCp + ' CP (' + (isEn ? 'Lead' : 'Avance') + ')';
           } else {
             impactIdx++;
@@ -15195,23 +15197,23 @@
     const tableBody = document.getElementById('benchmarkTableBody');
     if (tableBody) {
       const rowsConfig = [
-        { key: 'arkGridSun', name: isEn ? 'Ark Grid: Sun Cores (Order & Chaos)' : 'Ark Grid : Cœurs Soleil (Ordre & Chaos)', icon: '☀️', prio: 'high' },
-        { key: 'arkGridMoon', name: isEn ? 'Ark Grid: Moon Cores (Order & Chaos)' : 'Ark Grid : Cœurs Lune (Ordre & Chaos)', icon: '🌙', prio: 'high' },
-        { key: 'arkGridStar', name: isEn ? 'Ark Grid: Star Cores (Order & Chaos)' : 'Ark Grid : Cœurs Étoile (Ordre & Chaos)', icon: '⭐', prio: 'med' },
-        { key: 'arkGridAstrogems', name: isEn ? 'Ark Grid: Astrogems (Substats)' : 'Ark Grid : Astrogemmes (Sous-stats)', icon: '✨', prio: 'med' },
-        { key: 'accessories', name: isEn ? 'T4 Accessories (Rolls & Lines)' : 'Accessoires T4 (Rolls & Lignes)', icon: '💎', prio: 'high' },
-        { key: 'weapon', name: isEn ? 'T4 Weapon (Honing & Quality)' : 'Arme T4 (Affinage & Qualité)', icon: '🗡️', prio: 'med' },
-        { key: 'advHoning', name: isEn ? 'T4 Advanced Honing' : 'Affinage Avancé T4', icon: '✨', prio: 'equal' },
-        { key: 'bracelet', name: isEn ? 'T4 Bracelet (Stats & Passives)' : 'Bracelet T4 (Stats & Passifs)', icon: '🔮', prio: 'med' },
-        { key: 'gems', name: isEn ? 'T4 Gems (Tiers & DMG)' : 'Gemmes T4 (Niveaux & Dégâts)', icon: '⚡', prio: target.gemTier === 'gem8' ? 'equal' : 'opt' },
-        { key: 'armors', name: isEn ? 'T4 Armors (Chest/Pants/Shoulders)' : 'Armures T4 (Torse/Jambes/Épaules)', icon: '🛡️', prio: 'med' },
-        { key: 'baseAttackStat', name: isEn ? 'Main Stat & Base AP' : 'Stat Principale & Attaque Base', icon: '💪', prio: 'med' },
-        { key: 'engravings', name: isEn ? 'Engravings & Ability Stone' : 'Gravures & Pierre de Naissance', icon: '📜', prio: 'equal' },
-        { key: 'combatStats', name: isEn ? 'Combat Stats (Crit/Spec/Swift)' : 'Stats de Combat (Crit/Spé/Rap)', icon: '🎯', prio: 'equal' },
-        { key: 'arkEvolution', name: isEn ? 'Ark Passive: Evolution (Stats)' : 'Ark Passive : Évolution (Stats)', icon: '🧬', prio: 'med' },
-        { key: 'arkEnlightenment', name: isEn ? 'Ark Passive: Enlightenment (Tree)' : 'Ark Passive : Illumination (Arbre)', icon: '💡', prio: 'med' },
-        { key: 'arkLeap', name: isEn ? 'Ark Passive: Leap (Hyper)' : 'Ark Passive : Saut (Hyper)', icon: '🚀', prio: 'equal' },
-        { key: 'karma', name: isEn ? 'T4 Karma (Evolution Rank 0-6)' : 'Karma T4 (Évolution Rang 0-6)', icon: '☸️', prio: 'equal' }
+        { key: 'arkGridSun', name: isEn ? 'Ark Grid: Sun Cores (Order & Chaos)' : 'Ark Grid : Cœurs Soleil (Ordre & Chaos)', icon: '', prio: 'high' },
+        { key: 'arkGridMoon', name: isEn ? 'Ark Grid: Moon Cores (Order & Chaos)' : 'Ark Grid : Cœurs Lune (Ordre & Chaos)', icon: '', prio: 'high' },
+        { key: 'arkGridStar', name: isEn ? 'Ark Grid: Star Cores (Order & Chaos)' : 'Ark Grid : Cœurs Étoile (Ordre & Chaos)', icon: '', prio: 'med' },
+        { key: 'arkGridAstrogems', name: isEn ? 'Ark Grid: Astrogems (Substats)' : 'Ark Grid : Astrogemmes (Sous-stats)', icon: '', prio: 'med' },
+        { key: 'accessories', name: isEn ? 'T4 Accessories (Rolls & Lines)' : 'Accessoires T4 (Rolls & Lignes)', icon: '', prio: 'high' },
+        { key: 'weapon', name: isEn ? 'T4 Weapon (Honing & Quality)' : 'Arme T4 (Affinage & Qualité)', icon: '', prio: 'med' },
+        { key: 'advHoning', name: isEn ? 'T4 Advanced Honing' : 'Affinage Avancé T4', icon: '', prio: 'equal' },
+        { key: 'bracelet', name: isEn ? 'T4 Bracelet (Stats & Passives)' : 'Bracelet T4 (Stats & Passifs)', icon: '', prio: 'med' },
+        { key: 'gems', name: isEn ? 'T4 Gems (Tiers & DMG)' : 'Gemmes T4 (Niveaux & Dégâts)', icon: '', prio: target.gemTier === 'gem8' ? 'equal' : 'opt' },
+        { key: 'armors', name: isEn ? 'T4 Armors (Chest/Pants/Shoulders)' : 'Armures T4 (Torse/Jambes/Épaules)', icon: '', prio: 'med' },
+        { key: 'baseAttackStat', name: isEn ? 'Main Stat & Base AP' : 'Stat Principale & Attaque Base', icon: '', prio: 'med' },
+        { key: 'engravings', name: isEn ? 'Engravings & Ability Stone' : 'Gravures & Pierre de Naissance', icon: '', prio: 'equal' },
+        { key: 'combatStats', name: isEn ? 'Combat Stats (Crit/Spec/Swift)' : 'Stats de Combat (Crit/Spé/Rap)', icon: '', prio: 'equal' },
+        { key: 'arkEvolution', name: isEn ? 'Ark Passive: Evolution (Stats)' : 'Ark Passive : Évolution (Stats)', icon: '', prio: 'med' },
+        { key: 'arkEnlightenment', name: isEn ? 'Ark Passive: Enlightenment (Tree)' : 'Ark Passive : Illumination (Arbre)', icon: '', prio: 'med' },
+        { key: 'arkLeap', name: isEn ? 'Ark Passive: Leap (Hyper)' : 'Ark Passive : Saut (Hyper)', icon: '', prio: 'equal' },
+        { key: 'karma', name: isEn ? 'T4 Karma (Evolution Rank 0-6)' : 'Karma T4 (Évolution Rang 0-6)', icon: '', prio: 'equal' }
       ];
 
       const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
@@ -15303,67 +15305,67 @@
         if (isAcc) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle" id="btnToggleAccDetails" aria-expanded="false" title="${isEn ? 'Click to inspect individual accessories & lines' : 'Cliquer pour déplier les 5 bijoux et leurs lignes d\'affinage'}">
-              <span class="acc-toggle-icon">➕</span>
+              <span class="acc-toggle-icon">+</span>
             </button>
           `;
         } else if (isBracelet) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-bracelet-toggle" id="btnToggleBraceletDetails" aria-expanded="false" title="${isEn ? 'Click to inspect bracelet rolls & passives' : 'Cliquer pour déplier le bracelet et ses lignes de passifs'}">
-              <span class="bracelet-toggle-icon">➕</span>
+              <span class="bracelet-toggle-icon">+</span>
             </button>
           `;
         } else if (isAstrogems) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-astrogems-toggle" id="btnToggleAstrogemsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect astrogems substats & CP gains' : 'Cliquer pour déplier les sous-statistiques d\'astrogemmes et leurs gains de CP'}">
-              <span class="astrogems-toggle-icon">➕</span>
+              <span class="astrogems-toggle-icon">+</span>
             </button>
           `;
         } else if (isEngravings) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-engravings-toggle" id="btnToggleEngravingsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect engraving choices & ability stone nodes' : 'Cliquer pour comparer les 5 gravures et les nœuds de pierre de naissance'}">
-              <span class="engravings-toggle-icon">➕</span>
+              <span class="engravings-toggle-icon">+</span>
             </button>
           `;
         } else if (isBaseAtk) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-baseatk-toggle" id="btnToggleBaseAtkDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Main Stat, Weapon Power, and Base AP differences' : 'Cliquer pour inspecter la Stat Principale, la Puissance d\'Arme et l\'Attaque de Base'}">
-              <span class="baseatk-toggle-icon">➕</span>
+              <span class="baseatk-toggle-icon">+</span>
             </button>
           `;
         } else if (isCombatStats) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-combatstats-toggle" id="btnToggleCombatStatsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Combat Stats (Crit/Spec/Swift), accessory qualities, and bracelet rolls' : 'Cliquer pour inspecter les Stats de Combat (Crit/Spé/Rapide), la qualité des bijoux et le bracelet'}">
-              <span class="combatstats-toggle-icon">➕</span>
+              <span class="combatstats-toggle-icon">+</span>
             </button>
           `;
         } else if (isArkGridSun) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-arkgridsun-toggle" id="btnToggleArkGridSunDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Sun Cores (Order & Chaos) breakdown' : 'Cliquer pour déplier les Cœurs Soleil (Ordre & Chaos)'}">
-              <span class="arkgridsun-toggle-icon">➕</span>
+              <span class="arkgridsun-toggle-icon">+</span>
             </button>
           `;
         } else if (isArkGridMoon) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-arkgridmoon-toggle" id="btnToggleArkGridMoonDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Moon Cores (Order & Chaos) breakdown' : 'Cliquer pour déplier les Cœurs Lune (Ordre & Chaos)'}">
-              <span class="arkgridmoon-toggle-icon">➕</span>
+              <span class="arkgridmoon-toggle-icon">+</span>
             </button>
           `;
         } else if (isArkGridStar) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-arkgridstar-toggle" id="btnToggleArkGridStarDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Star Cores (Order & Chaos) breakdown' : 'Cliquer pour déplier les Cœurs Étoile (Ordre & Chaos)'}">
-              <span class="arkgridstar-toggle-icon">➕</span>
+              <span class="arkgridstar-toggle-icon">+</span>
             </button>
           `;
         } else if (isWeapon) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-weapon-toggle" id="btnToggleWeaponDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Weapon Honing, Quality & Serka Tier breakdown' : 'Cliquer pour déplier l\'Affinage d\'Arme, la Qualité & le Palier Serka'}">
-              <span class="weapon-toggle-icon">➕</span>
+              <span class="weapon-toggle-icon">+</span>
             </button>
           `;
         } else if (isArmors) {
           toggleBtn = `
             <button type="button" class="btn-acc-toggle btn-armors-toggle" id="btnToggleArmorsDetails" aria-expanded="false" title="${isEn ? 'Click to inspect Armors Honing, Main Stat & Serka Tier breakdown' : 'Cliquer pour déplier l\'Affinage des Armures, la Stat Principale & le Palier Serka'}">
-              <span class="armors-toggle-icon">➕</span>
+              <span class="armors-toggle-icon">+</span>
             </button>
           `;
         }
@@ -15515,7 +15517,7 @@
           <tr class="benchmark-table-total-row">
             <td colspan="4" style="padding: 12px 16px; font-weight: 700; color: #E8E6DC;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:16px;">📈</span>
+                <span style="font-size:16px;"></span>
                 <div>
                   <span>${isEn ? 'Sum of Improvement Levers (Gross Deficit)' : 'Total Brut des Leviers d\'Amélioration (Retards Stuff)'}</span>
                   <div style="font-size:11px; font-weight:400; color:var(--text-muted); margin-top:2px;">
@@ -15535,7 +15537,7 @@
             <tr class="benchmark-table-lead-row">
               <td colspan="4" style="padding: 10px 16px; font-weight: 600; color: #B5C7D4;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-size:15px;">🛡️</span>
+                  <span style="font-size:15px;"></span>
                   <div>
                     <span>${isEn ? 'Your Compensating Advantages (Equipments Ahead)' : 'Vos Avances Compensatoires (Équipements où vous surpassez la cible)'}</span>
                     <div style="font-size:11px; font-weight:400; color:var(--text-muted); margin-top:2px;">
@@ -15555,7 +15557,7 @@
           <tr class="benchmark-table-net-row">
             <td colspan="4" style="padding: 14px 16px; font-weight: 800; color: #E0A43A;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:18px;">⚖️</span>
+                <span style="font-size:18px;"></span>
                 <div>
                   <span>${isEn ? 'Observed In-Game Net Gap (lostark.bible Score in Raid)' : 'Écart Réel Net In-Game (Score relevé en Raid sur lostark.bible)'}</span>
                   <div style="font-size:11.5px; font-weight:400; color:var(--text-muted); margin-top:3px; line-height:1.4;">
@@ -15599,7 +15601,7 @@
           rowAccDet.style.display = isHidden ? 'table-row' : 'none';
           btnAcc.setAttribute('aria-expanded', isHidden);
           const icon = btnAcc.querySelector('.acc-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowAccParent) rowAccParent.classList.toggle('expanded', isHidden);
         };
         btnAcc.addEventListener('click', doToggleAcc);
@@ -15621,7 +15623,7 @@
           rowBraceletDet.style.display = isHidden ? 'table-row' : 'none';
           btnBracelet.setAttribute('aria-expanded', isHidden);
           const icon = btnBracelet.querySelector('.bracelet-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowBraceletParent) rowBraceletParent.classList.toggle('expanded', isHidden);
         };
         btnBracelet.addEventListener('click', doToggleBracelet);
@@ -15643,7 +15645,7 @@
           rowAstrogemsDet.style.display = isHidden ? 'table-row' : 'none';
           btnAstrogems.setAttribute('aria-expanded', isHidden);
           const icon = btnAstrogems.querySelector('.astrogems-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowAstrogemsParent) rowAstrogemsParent.classList.toggle('expanded', isHidden);
         };
         btnAstrogems.addEventListener('click', doToggleAstrogems);
@@ -15665,7 +15667,7 @@
           rowEngDet.style.display = isHidden ? 'table-row' : 'none';
           btnEng.setAttribute('aria-expanded', isHidden);
           const icon = btnEng.querySelector('.engravings-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowEngParent) rowEngParent.classList.toggle('expanded', isHidden);
         };
         btnEng.addEventListener('click', doToggleEng);
@@ -15687,7 +15689,7 @@
           rowBaseAtkDet.style.display = isHidden ? 'table-row' : 'none';
           btnBaseAtk.setAttribute('aria-expanded', isHidden);
           const icon = btnBaseAtk.querySelector('.baseatk-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowBaseAtkParent) rowBaseAtkParent.classList.toggle('expanded', isHidden);
         };
         btnBaseAtk.addEventListener('click', doToggleBaseAtk);
@@ -15709,7 +15711,7 @@
           rowCombatStatsDet.style.display = isHidden ? 'table-row' : 'none';
           btnCombatStats.setAttribute('aria-expanded', isHidden);
           const icon = btnCombatStats.querySelector('.combatstats-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowCombatStatsParent) rowCombatStatsParent.classList.toggle('expanded', isHidden);
         };
         btnCombatStats.addEventListener('click', doToggleCombatStats);
@@ -15731,7 +15733,7 @@
           rowArkGridSunDet.style.display = isHidden ? 'table-row' : 'none';
           btnArkGridSun.setAttribute('aria-expanded', isHidden);
           const icon = btnArkGridSun.querySelector('.arkgridsun-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowArkGridSunParent) rowArkGridSunParent.classList.toggle('expanded', isHidden);
         };
         btnArkGridSun.addEventListener('click', doToggleArkGridSun);
@@ -15753,7 +15755,7 @@
           rowArkGridMoonDet.style.display = isHidden ? 'table-row' : 'none';
           btnArkGridMoon.setAttribute('aria-expanded', isHidden);
           const icon = btnArkGridMoon.querySelector('.arkgridmoon-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowArkGridMoonParent) rowArkGridMoonParent.classList.toggle('expanded', isHidden);
         };
         btnArkGridMoon.addEventListener('click', doToggleArkGridMoon);
@@ -15775,7 +15777,7 @@
           rowArkGridStarDet.style.display = isHidden ? 'table-row' : 'none';
           btnArkGridStar.setAttribute('aria-expanded', isHidden);
           const icon = btnArkGridStar.querySelector('.arkgridstar-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowArkGridStarParent) rowArkGridStarParent.classList.toggle('expanded', isHidden);
         };
         btnArkGridStar.addEventListener('click', doToggleArkGridStar);
@@ -15797,7 +15799,7 @@
           rowWeaponDet.style.display = isHidden ? 'table-row' : 'none';
           btnWeapon.setAttribute('aria-expanded', isHidden);
           const icon = btnWeapon.querySelector('.weapon-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowWeaponParent) rowWeaponParent.classList.toggle('expanded', isHidden);
         };
         btnWeapon.addEventListener('click', doToggleWeapon);
@@ -15819,7 +15821,7 @@
           rowArmorsDet.style.display = isHidden ? 'table-row' : 'none';
           btnArmors.setAttribute('aria-expanded', isHidden);
           const icon = btnArmors.querySelector('.armors-toggle-icon');
-          if (icon) icon.textContent = isHidden ? '➖' : '➕';
+          if (icon) icon.textContent = isHidden ? '−' : '+';
           if (rowArmorsParent) rowArmorsParent.classList.toggle('expanded', isHidden);
         };
         btnArmors.addEventListener('click', doToggleArmors);
@@ -16115,8 +16117,8 @@
       statusEl.className = 'bench-status-msg info';
       statusEl.style.display = 'block';
       statusEl.innerHTML = isEn
-        ? `⏳ Querying live data for <strong>${escapeHtml(cleanName)}</strong> from lostark.bible...`
-        : `⏳ Interrogation directe de <strong>${escapeHtml(cleanName)}</strong> sur lostark.bible (Live)...`;
+        ? `Querying live data for <strong>${escapeHtml(cleanName)}</strong> from lostark.bible...`
+        : `Interrogation directe de <strong>${escapeHtml(cleanName)}</strong> sur lostark.bible (Live)...`;
     }
 
     try {
@@ -16140,8 +16142,8 @@
       if (statusEl) {
         statusEl.className = 'bench-status-msg success';
         statusEl.innerHTML = isEn
-          ? `✅ Live data retrieved from lostark.bible for <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>)!`
-          : `✅ Données récupérées en direct de lostark.bible pour <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>) !`;
+          ? `Live data retrieved from lostark.bible for <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>).`
+          : `Données récupérées en direct de lostark.bible pour <strong>${escapeHtml(liveBench.name)}</strong> (${escapeHtml(liveBench.className)} • ${liveBench.ilvl.toFixed(2)} iLvl • <strong>${formatNumber(Math.round(liveBench.cp))} CP</strong>).`;
         setTimeout(() => {
           if (statusEl) statusEl.style.display = 'none';
         }, 5000);
@@ -16156,8 +16158,8 @@
         statusEl.className = 'bench-status-msg error';
         statusEl.style.display = 'block';
         statusEl.innerHTML = isEn
-          ? `⚠️ <strong>Could not query lostark.bible for "${escapeHtml(cleanName)}":</strong> verify character name spelling or paste full profile URL (e.g. <code>https://lostark.bible/character/CE/...</code>).`
-          : `⚠️ <strong>Impossible d'interroger lostark.bible pour « ${escapeHtml(cleanName)} » :</strong> vérifiez l'orthographe du pseudo ou essayez de coller le lien complet du profil (ex: <code>https://lostark.bible/character/CE/...</code>).`;
+          ? `<strong>Could not query lostark.bible for "${escapeHtml(cleanName)}":</strong> verify character name spelling or paste full profile URL (e.g. <code>https://lostark.bible/character/CE/...</code>).`
+          : `<strong>Impossible d'interroger lostark.bible pour « ${escapeHtml(cleanName)} » :</strong> vérifiez l'orthographe du pseudo ou essayez de coller le lien complet du profil (ex: <code>https://lostark.bible/character/CE/...</code>).`;
       }
       renderBenchmarkTab();
     }

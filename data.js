@@ -660,7 +660,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Bonus de dégâts solo perso : 0% transféré aux alliés (exclu du Buff Power)."
+                "note": "Bonus de dégâts solo perso : 0% transféré aux alliés (exclu du Buff Power)."
             },
             {
                 "cat": "Ark Passive",
@@ -705,7 +705,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "passive",
-                "note": "💡 Dégâts de bond solo perso : exclu du Buff Power en Support."
+                "note": "Dégâts de bond solo perso : exclu du Buff Power en Support."
             },
             {
                 "cat": "Gravures",
@@ -759,7 +759,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -777,7 +777,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -786,7 +786,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Dégâts Critiques solo perso : non transférés aux alliés en Support (exclu du Buff Power)."
+                "note": "Dégâts Critiques solo perso : non transférés aux alliés en Support (exclu du Buff Power)."
             },
             {
                 "cat": "Accessoires",
@@ -795,7 +795,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -840,7 +840,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute de vitalité déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
+                "note": "Stat brute de vitalité déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -849,7 +849,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute de force déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
+                "note": "Stat brute de force déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -858,7 +858,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+9.06%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 On hit, target's Defense -1.8% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
+                "note": "On hit, target's Defense -1.8% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
             },
             {
                 "cat": "Bracelet",
@@ -867,7 +867,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute de spécialisation déjà intégrée directement dans les Stats de Combat en tête de liste."
+                "note": "Stat brute de spécialisation déjà intégrée directement dans les Stats de Combat en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -876,7 +876,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+9.06%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 On hit, target's Crit Damage -3.6% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
+                "note": "On hit, target's Crit Damage -3.6% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
             },
             {
                 "cat": "Gemmes",
@@ -1056,7 +1056,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.00%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +2.10% Amélioration Dégâts Alliés (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.00% Buff Power."
+                "note": "Effet in-game : +2.10% Amélioration Dégâts Alliés (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.00% Buff Power."
             },
             {
                 "cat": "Grille d'Ark",
@@ -1065,7 +1065,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.80%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +5.33% Puissance de Marque (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.80% Buff Power."
+                "note": "Effet in-game : +5.33% Puissance de Marque (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.80% Buff Power."
             },
             {
                 "cat": "Grille d'Ark",
@@ -1074,7 +1074,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.50%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.56% Amélioration AP Allié (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.50% Buff Power."
+                "note": "Effet in-game : +1.56% Amélioration AP Allié (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.50% Buff Power."
             },
             {
                 "cat": "Grille d'Ark",
@@ -1083,7 +1083,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Stat brute puissance d'attaque solo perso (+0.91%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
+                "note": "Stat brute puissance d'attaque solo perso (+0.91%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -1092,7 +1092,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Stat brute dégâts additionnels solo perso (+1.45%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
+                "note": "Stat brute dégâts additionnels solo perso (+1.45%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -1101,7 +1101,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Stat brute dégâts aux boss solo perso (+0.25%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
+                "note": "Stat brute dégâts aux boss solo perso (+0.25%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
             },
             {
                 "cat": "Paradise",
@@ -1812,7 +1812,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -1830,7 +1830,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -1875,7 +1875,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
+                "note": "Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
             },
             {
                 "cat": "Bracelet",
@@ -1884,7 +1884,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de rapidité déjà intégrée directement dans les Stats de Combat en tête de liste."
+                "note": "Stat brute de rapidité déjà intégrée directement dans les Stats de Combat en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -1893,7 +1893,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de défense magique déjà intégrée directement dans la Défense Magique en tête de liste."
+                "note": "Stat brute de défense magique déjà intégrée directement dans la Défense Magique en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -1902,7 +1902,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de spécialisation déjà intégrée directement dans les Stats de Combat en tête de liste."
+                "note": "Stat brute de spécialisation déjà intégrée directement dans les Stats de Combat en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -1911,7 +1911,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+3.50%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Compétences sans direction d'attaque +3.5% (hors compétences d'Éveil)."
+                "note": "Compétences sans direction d'attaque +3.5% (hors compétences d'Éveil)."
             },
             {
                 "cat": "Bracelet",
@@ -1920,7 +1920,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+4.50%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Crit Damage +10%. Crit Hit Damage +1.5%."
+                "note": "Crit Damage +10%. Crit Hit Damage +1.5%."
             },
             {
                 "cat": "Gemmes",
@@ -1956,7 +1956,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00% à +0.77%",
                 "type": "DPS Net",
                 "badge": "passive",
-                "note": "💡 Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
+                "note": "Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -2019,7 +2019,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.26%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.39% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.26% DPS Net."
+                "note": "Effet in-game : +1.39% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.26% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -2028,7 +2028,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.62%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +3.63% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.62% DPS Net."
+                "note": "Effet in-game : +3.63% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.62% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -2037,7 +2037,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.16%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.16% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.16% DPS Net."
+                "note": "Effet in-game : +1.16% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.16% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -2046,7 +2046,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+1.26%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+1.26%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -2055,7 +2055,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+2.66%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+2.66%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Paradise",
@@ -2757,7 +2757,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -2784,7 +2784,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -2793,7 +2793,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -2811,7 +2811,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -2820,7 +2820,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -2838,7 +2838,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
+                "note": "Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
             },
             {
                 "cat": "Bracelet",
@@ -2847,7 +2847,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de rapidité déjà intégrée directement dans les Stats de Combat en tête de liste."
+                "note": "Stat brute de rapidité déjà intégrée directement dans les Stats de Combat en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -2856,7 +2856,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute d'expertise déjà intégrée directement dans les Stats de Combat en tête de liste."
+                "note": "Stat brute d'expertise déjà intégrée directement dans les Stats de Combat en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -2874,7 +2874,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+4.50%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Additional Damage +3.5%. Bonus vs. Demon/Archdemon +2.5%."
+                "note": "Additional Damage +3.5%. Bonus vs. Demon/Archdemon +2.5%."
             },
             {
                 "cat": "Bracelet",
@@ -2883,7 +2883,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+4.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Skill cooldown +2%. Outgoing Damage +5%."
+                "note": "Skill cooldown +2%. Outgoing Damage +5%."
             },
             {
                 "cat": "Gemmes",
@@ -2964,7 +2964,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00% à +0.77%",
                 "type": "DPS Net",
                 "badge": "passive",
-                "note": "💡 Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
+                "note": "Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -3027,7 +3027,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.80%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.98% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.80% DPS Net."
+                "note": "Effet in-game : +1.98% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.80% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -3036,7 +3036,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.57%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +2.18% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.57% DPS Net."
+                "note": "Effet in-game : +2.18% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.57% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -3045,7 +3045,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.08%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +0.08% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.08% DPS Net."
+                "note": "Effet in-game : +0.08% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.08% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -3054,7 +3054,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+1.57%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+1.57%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -3063,7 +3063,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+2.83%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+2.83%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Paradise",
@@ -3783,7 +3783,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -3792,7 +3792,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -3810,7 +3810,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -3828,7 +3828,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
+                "note": "Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
             },
             {
                 "cat": "Bracelet",
@@ -3837,7 +3837,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de rapidité déjà intégrée directement dans les Stats de Combat en tête de liste."
+                "note": "Stat brute de rapidité déjà intégrée directement dans les Stats de Combat en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -3846,7 +3846,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de force déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
+                "note": "Stat brute de force déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -3855,7 +3855,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de puissance d'arme déjà intégrée directement dans l'Attaque de Base en tête de liste."
+                "note": "Stat brute de puissance d'arme déjà intégrée directement dans l'Attaque de Base en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -3873,7 +3873,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+3.50%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Crit Rate +3.4%. Crit Hit Damage +1.5%."
+                "note": "Crit Rate +3.4%. Crit Hit Damage +1.5%."
             },
             {
                 "cat": "Gemmes",
@@ -3999,7 +3999,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00% à +0.77%",
                 "type": "DPS Net",
                 "badge": "passive",
-                "note": "💡 Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
+                "note": "Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -4053,7 +4053,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.96%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.06% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.96% DPS Net."
+                "note": "Effet in-game : +1.06% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.96% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -4062,7 +4062,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.57%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +2.18% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.57% DPS Net."
+                "note": "Effet in-game : +2.18% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.57% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -4071,7 +4071,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.50%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +0.50% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.50% DPS Net."
+                "note": "Effet in-game : +0.50% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.50% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -4080,7 +4080,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+1.68%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+1.68%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -4089,7 +4089,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+5.00%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+5.00%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Paradise",
@@ -4709,7 +4709,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Bonus de dégâts solo perso : 0% transféré aux alliés (exclu du Buff Power)."
+                "note": "Bonus de dégâts solo perso : 0% transféré aux alliés (exclu du Buff Power)."
             },
             {
                 "cat": "Ark Passive",
@@ -4754,7 +4754,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "passive",
-                "note": "💡 Dégâts de bond solo perso : exclu du Buff Power en Support."
+                "note": "Dégâts de bond solo perso : exclu du Buff Power en Support."
             },
             {
                 "cat": "Gravures",
@@ -4817,7 +4817,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -4835,7 +4835,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -4898,7 +4898,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute de vitalité déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
+                "note": "Stat brute de vitalité déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -4907,7 +4907,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 Stat brute de intelligence déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
+                "note": "Stat brute de intelligence déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -4916,7 +4916,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+9.06%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 On hit, target's Crit Resistance -1.8% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
+                "note": "On hit, target's Crit Resistance -1.8% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
             },
             {
                 "cat": "Bracelet",
@@ -4925,7 +4925,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+9.06%",
                 "type": "Buff Power",
                 "badge": "gear",
-                "note": "💡 On hit, target's Defense -1.8% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
+                "note": "On hit, target's Defense -1.8% for 8s. This effect is limited to a single application per party. Ally Atk. Power Enhancement +2%."
             },
             {
                 "cat": "Bracelet",
@@ -4934,7 +4934,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Heal / Shield",
                 "badge": "gear",
-                "note": "💡 Stat brute de PV max déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
+                "note": "Stat brute de PV max déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
             },
             {
                 "cat": "Gemmes",
@@ -5105,7 +5105,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.70%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.78% Amélioration Dégâts Alliés (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.70% Buff Power."
+                "note": "Effet in-game : +1.78% Amélioration Dégâts Alliés (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.70% Buff Power."
             },
             {
                 "cat": "Grille d'Ark",
@@ -5114,7 +5114,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.71%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +5.16% Puissance de Marque (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.71% Buff Power."
+                "note": "Effet in-game : +5.16% Puissance de Marque (cumul des astrogemmes). Multiplicateur Smilegate CP : +2.71% Buff Power."
             },
             {
                 "cat": "Grille d'Ark",
@@ -5123,7 +5123,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.62%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.69% Amélioration AP Allié (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.62% Buff Power."
+                "note": "Effet in-game : +1.69% Amélioration AP Allié (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.62% Buff Power."
             },
             {
                 "cat": "Grille d'Ark",
@@ -5132,7 +5132,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Stat brute puissance d'attaque solo perso (+1.10%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
+                "note": "Stat brute puissance d'attaque solo perso (+1.10%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -5141,7 +5141,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "Buff Power",
                 "badge": "stat",
-                "note": "💡 Stat brute dégâts additionnels solo perso (+1.45%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
+                "note": "Stat brute dégâts additionnels solo perso (+1.45%) : exclue du calcul du Buff Power en Support (Smilegate Battle Point)."
             },
             {
                 "cat": "Paradise",
@@ -5875,7 +5875,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
+                "note": "Stat brute déjà agrégée directement dans l'Attaque de Base ou la Vitalité en tête de liste."
             },
             {
                 "cat": "Accessoires",
@@ -5920,7 +5920,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+2.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
+                "note": "Bonus passif d'accessoire T4 (Rang 3) : Dégâts infligés +2.00% (Outgoing Damage)."
             },
             {
                 "cat": "Bracelet",
@@ -5929,7 +5929,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de vitalité déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
+                "note": "Stat brute de vitalité déjà intégrée directement dans les Points de Vie Maximum (HP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -5938,7 +5938,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Stat brute de force déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
+                "note": "Stat brute de force déjà intégrée directement dans l'Attaque de Base (Base AP) en tête de liste."
             },
             {
                 "cat": "Bracelet",
@@ -5947,7 +5947,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+4.00%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Crit Damage +8.4%. Crit Hit Damage +1.5%."
+                "note": "Crit Damage +8.4%. Crit Hit Damage +1.5%."
             },
             {
                 "cat": "Bracelet",
@@ -5965,7 +5965,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+3.50%",
                 "type": "DPS Net",
                 "badge": "gear",
-                "note": "💡 Additional Damage +2.5%. Bonus vs. Demon/Archdemon +2.5%."
+                "note": "Additional Damage +2.5%. Bonus vs. Demon/Archdemon +2.5%."
             },
             {
                 "cat": "Gemmes",
@@ -6091,7 +6091,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00% à +0.77%",
                 "type": "DPS Net",
                 "badge": "passive",
-                "note": "💡 Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
+                "note": "Roll aléatoire de spécialité du familier (0.4% / 0.7% / 1.0%)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -6154,7 +6154,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.30%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +1.43% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.30% DPS Net."
+                "note": "Effet in-game : +1.43% Puissance d'Attaque (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.30% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -6163,7 +6163,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+1.92%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +2.66% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.92% DPS Net."
+                "note": "Effet in-game : +2.66% Dégâts Additionnels (cumul des astrogemmes). Multiplicateur Smilegate CP : +1.92% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -6172,7 +6172,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.83%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Effet in-game : +0.83% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.83% DPS Net."
+                "note": "Effet in-game : +0.83% Dégâts aux Boss (cumul des astrogemmes). Multiplicateur Smilegate CP : +0.83% DPS Net."
             },
             {
                 "cat": "Grille d'Ark",
@@ -6181,7 +6181,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+1.10%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+1.10%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -6190,7 +6190,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+2.16%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+2.16%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Grille d'Ark",
@@ -6199,7 +6199,7 @@ window.CANONICAL_PRESETS = {
                 "mult": "+0.00%",
                 "type": "DPS Net",
                 "badge": "stat",
-                "note": "💡 Stat support (+0.65%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
+                "note": "Stat support (+0.65%) : non applicable aux dégâts solo en DPS (Smilegate Battle Point)."
             },
             {
                 "cat": "Paradise",
@@ -6281,7 +6281,7 @@ window.RAID_DEFINITIONS = {
       nameKey: 'raid_cathedral',
       fallbackName: 'Horizon Cathedral',
       short: 'Cathedral',
-      icon: '🏛️',
+      icon: '',
       image: 'images/raids/cathedral.webp',
       bosses: 'G1: Archbishop Arcenos • G2: Vanguard of Fanaticism',
       normal: { g1: 13500, g2: 16500, chest1: 2500, chest2: 3500, chest: 6000, total: 30000, ilvl: 1700 },
@@ -6293,7 +6293,7 @@ window.RAID_DEFINITIONS = {
       nameKey: 'raid_serca',
       fallbackName: 'Serca',
       short: 'Serca',
-      icon: '🥀',
+      icon: '',
       image: 'images/raids/serca.webp',
       bosses: 'G1: Witch of Agony, Serca • G2: Corvus Tul Rak',
       normal: { g1: 14000, g2: 21000, chest1: 2500, chest2: 4000, chest: 6500, total: 35000, ilvl: 1710 },
@@ -6305,7 +6305,7 @@ window.RAID_DEFINITIONS = {
       nameKey: 'raid_kazeros',
       fallbackName: 'Final Act: Kazeros',
       short: 'Kazeros',
-      icon: '👑',
+      icon: '',
       image: 'images/raids/kazeros.webp',
       bosses: 'G1: Abyss Lord Kazeros • G2: Archdemon Kazeros',
       normal: { g1: 14000, g2: 26000, chest1: 2500, chest2: 5000, chest: 7500, total: 40000, ilvl: 1710 },
@@ -7922,7 +7922,7 @@ window.EUC_EFFICIENCY_DATA = {
         ratioVal: 395,
         tier: 's-plus',
         tierLabel: 'Rang S+',
-        comment: 'ROI absolu : roll basique très accessible pour un bonus direct de buff PA.',
+        comment: 'Meilleur ROI : roll basique très accessible pour un bonus direct de buff PA.',
         checkAcquired: (st) => st.opt && ['mid', 'high'].includes(st.opt.supWp)
       },
       {
@@ -7950,7 +7950,7 @@ window.EUC_EFFICIENCY_DATA = {
         ratioVal: 729,
         tier: 's-plus',
         tierLabel: 'Rang S+',
-        comment: 'Complément direct de l\'Ordre Soleil, ratio de rentabilité exceptionnel.',
+        comment: 'Complément direct de l\'Ordre Soleil, très bon ratio de rentabilité.',
         checkAcquired: (st) => st.opt ? !!st.opt.arkGrid : (st.currentIlvl >= 1750)
       },
       {
@@ -8177,7 +8177,7 @@ window.EUC_EFFICIENCY_DATA = {
         ratioVal: 12008,
         tier: 's-plus',
         tierLabel: 'Rang S+',
-        comment: 'Excellent ratio investissement / DPS personnel.',
+        comment: 'Bon ratio or / DPS personnel.',
         checkAcquired: (st) => st.opt && (st.opt.dpsAddDmg === 'high' || st.opt.dpsOutDmg === 'high')
       },
       {
@@ -8219,7 +8219,7 @@ window.EUC_EFFICIENCY_DATA = {
         ratioVal: 42947,
         tier: 's',
         tierLabel: 'Rang S',
-        comment: 'Le plus gros boost absolu de dégâts du jeu : +20.8% DPS pour ~890k gold.',
+        comment: 'Plus gros gain de dégâts du tableau : +20.8% DPS pour ~890k gold.',
         checkAcquired: (st) => st.opt ? !!st.opt.arkGrid : (st.currentIlvl >= 1750)
       },
       {
@@ -8471,7 +8471,7 @@ window.EUC_EFFICIENCY_DATA = {
         ratioVal: 368545,
         tier: 'c',
         tierLabel: 'Rang C',
-        comment: 'Palier maximum d\'Aegir, gloire et Puissance d\'Arme ultime.',
+        comment: 'Palier maximum d\'Aegir : Puissance d\'Arme au plafond.',
         checkAcquired: (st) => st.gear && st.gear.weapon >= 25
       },
       {
@@ -8495,183 +8495,183 @@ window.ARK_CLASS_SPECS = {
     shadowhunter: {
       name: 'Shadowhunter',
       specs: [
-        { id: 'demonic_impulse', name: '⚔️ Impulsion Démoniaque (Transfo DPS)', nameEn: '⚔️ Demonic Impulse (Transform DPS)', role: 'dps' },
-        { id: 'perfect_suppression', name: '⚔️ Suppression Parfaite (Humaine DPS)', nameEn: '⚔️ Perfect Suppression (Human DPS)', role: 'dps' }
+        { id: 'demonic_impulse', name: 'Impulsion Démoniaque (Transfo DPS)', nameEn: 'Demonic Impulse (Transform DPS)', role: 'dps' },
+        { id: 'perfect_suppression', name: 'Suppression Parfaite (Humaine DPS)', nameEn: 'Perfect Suppression (Human DPS)', role: 'dps' }
       ]
     },
     souleater: {
       name: 'Souleater',
       specs: [
-        { id: 'full_moon', name: '⚔️ Faucheuse de la Pleine Lune (Burst DPS)', nameEn: '⚔️ Full Moon Harvester (Burst DPS)', role: 'dps' },
-        { id: 'nights_edge', name: '⚔️ Lisière de la Nuit (DPS Continu)', nameEn: '⚔️ Night\'s Edge (Consistent DPS)', role: 'dps' }
+        { id: 'full_moon', name: 'Faucheuse de la Pleine Lune (Burst DPS)', nameEn: 'Full Moon Harvester (Burst DPS)', role: 'dps' },
+        { id: 'nights_edge', name: 'Lisière de la Nuit (DPS Continu)', nameEn: 'Night\'s Edge (Consistent DPS)', role: 'dps' }
       ]
     },
     slayer: {
       name: 'Slayer',
       specs: [
-        { id: 'predator', name: '⚔️ Prédatrice (DPS Continu)', nameEn: '⚔️ Predator (Consistent DPS)', role: 'dps' },
-        { id: 'punisher', name: '⚔️ Punitrice (Burst DPS)', nameEn: '⚔️ Punisher (Burst DPS)', role: 'dps' }
+        { id: 'predator', name: 'Prédatrice (DPS Continu)', nameEn: 'Predator (Consistent DPS)', role: 'dps' },
+        { id: 'punisher', name: 'Punitrice (Burst DPS)', nameEn: 'Punisher (Burst DPS)', role: 'dps' }
       ]
     },
     paladin: {
       name: 'Paladin',
       specs: [
-        { id: 'blessed_aura', name: '🛡️ Bénédiction Sacrée (Aura Bénie / Support)', nameEn: '🛡️ Blessed Aura (Support)', role: 'support' },
-        { id: 'judgment', name: '⚔️ Jugement (Paladin DPS)', nameEn: '⚔️ Judgment (Paladin DPS)', role: 'dps' }
+        { id: 'blessed_aura', name: 'Bénédiction Sacrée (Aura Bénie / Support)', nameEn: 'Blessed Aura (Support)', role: 'support' },
+        { id: 'judgment', name: 'Jugement (Paladin DPS)', nameEn: 'Judgment (Paladin DPS)', role: 'dps' }
       ]
     },
     bard: {
       name: 'Bard',
       specs: [
-        { id: 'desperate_salvation', name: '🛡️ Salut Désespéré (Support)', nameEn: '🛡️ Desperate Salvation (Support)', role: 'support' },
-        { id: 'true_courage', name: '⚔️ Vrai Courage (DPS)', nameEn: '⚔️ True Courage (DPS)', role: 'dps' }
+        { id: 'desperate_salvation', name: 'Salut Désespéré (Support)', nameEn: 'Desperate Salvation (Support)', role: 'support' },
+        { id: 'true_courage', name: 'Vrai Courage (DPS)', nameEn: 'True Courage (DPS)', role: 'dps' }
       ]
     },
     artist: {
       name: 'Artist',
       specs: [
-        { id: 'full_bloom', name: '🛡️ Pleine Floraison (Support)', nameEn: '🛡️ Full Bloom (Support)', role: 'support' },
-        { id: 'recurrence', name: '⚔️ Récurrence (DPS)', nameEn: '⚔️ Recurrence (DPS)', role: 'dps' }
+        { id: 'full_bloom', name: 'Pleine Floraison (Support)', nameEn: 'Full Bloom (Support)', role: 'support' },
+        { id: 'recurrence', name: 'Récurrence (DPS)', nameEn: 'Recurrence (DPS)', role: 'dps' }
       ]
     },
     breaker: {
       name: 'Breaker',
       specs: [
-        { id: 'asura_path', name: '⚔️ Voie d\'Asura (Front Burst)', nameEn: '⚔️ Asura\'s Path (Front Burst)', role: 'dps' },
-        { id: 'brawl_king', name: '⚔️ Roi de la Bagarre (Stance DPS)', nameEn: '⚔️ Brawl King Storm (Stance DPS)', role: 'dps' }
+        { id: 'asura_path', name: 'Voie d\'Asura (Front Burst)', nameEn: 'Asura\'s Path (Front Burst)', role: 'dps' },
+        { id: 'brawl_king', name: 'Roi de la Bagarre (Stance DPS)', nameEn: 'Brawl King Storm (Stance DPS)', role: 'dps' }
       ]
     },
     berserker: {
       name: 'Berserker',
       specs: [
-        { id: 'mayhem', name: '⚔️ Carnage (Mayhem)', nameEn: '⚔️ Mayhem (Fast DPS)', role: 'dps' },
-        { id: 'berserker_technique', name: '⚔️ Technique du Berserker (Burst)', nameEn: '⚔️ Berserker\'s Technique (Burst)', role: 'dps' }
+        { id: 'mayhem', name: 'Carnage (Mayhem)', nameEn: 'Mayhem (Fast DPS)', role: 'dps' },
+        { id: 'berserker_technique', name: 'Technique du Berserker (Burst)', nameEn: 'Berserker\'s Technique (Burst)', role: 'dps' }
       ]
     },
     gunlancer: {
       name: 'Gunlancer',
       specs: [
-        { id: 'combat_readiness', name: '🛡️ Préparation au Combat (Bleu)', nameEn: '🛡️ Combat Readiness (Blue)', role: 'dps' },
-        { id: 'lone_knight', name: '⚔️ Chevalier Solitaire (Rouge Burst)', nameEn: '⚔️ Lone Knight (Red Burst)', role: 'dps' }
+        { id: 'combat_readiness', name: 'Préparation au Combat (Bleu)', nameEn: 'Combat Readiness (Blue)', role: 'dps' },
+        { id: 'lone_knight', name: 'Chevalier Solitaire (Rouge Burst)', nameEn: 'Lone Knight (Red Burst)', role: 'dps' }
       ]
     },
     destroyer: {
       name: 'Destroyer',
       specs: [
-        { id: 'rage_hammer', name: '⚔️ Marteau de Rage (Burst)', nameEn: '⚔️ Rage Hammer (Burst)', role: 'dps' },
-        { id: 'gravity_training', name: '🔨 Entraînement Gravitationnel (Bonk)', nameEn: '🔨 Gravity Training', role: 'dps' }
+        { id: 'rage_hammer', name: 'Marteau de Rage (Burst)', nameEn: 'Rage Hammer (Burst)', role: 'dps' },
+        { id: 'gravity_training', name: 'Entraînement Gravitationnel (Bonk)', nameEn: 'Gravity Training', role: 'dps' }
       ]
     },
     deathblade: {
       name: 'Deathblade',
       specs: [
-        { id: 'surge', name: '⚔️ Déferlement (Surge)', nameEn: '⚔️ Surge (Burst)', role: 'dps' },
-        { id: 'remaining_energy', name: '⚔️ Énergie Résiduelle', nameEn: '⚔️ Remaining Energy', role: 'dps' }
+        { id: 'surge', name: 'Déferlement (Surge)', nameEn: 'Surge (Burst)', role: 'dps' },
+        { id: 'remaining_energy', name: 'Énergie Résiduelle', nameEn: 'Remaining Energy', role: 'dps' }
       ]
     },
     reaper: {
       name: 'Reaper',
       specs: [
-        { id: 'lunar_voice', name: '🌙 Voix Lunaire (Burst)', nameEn: '🌙 Lunar Voice (Burst)', role: 'dps' },
-        { id: 'hunger', name: '🗡️ Faim (Chaos Constant)', nameEn: '🗡️ Hunger (Sustained)', role: 'dps' }
+        { id: 'lunar_voice', name: 'Voix Lunaire (Burst)', nameEn: 'Lunar Voice (Burst)', role: 'dps' },
+        { id: 'hunger', name: 'Faim (Chaos Constant)', nameEn: 'Hunger (Sustained)', role: 'dps' }
       ]
     },
     sorceress: {
       name: 'Sorceress',
       specs: [
-        { id: 'igniter', name: '🔥 Ignition (Burst Météore)', nameEn: '🔥 Igniter (Meteor Burst)', role: 'dps' },
-        { id: 'reflux', name: '❄️ Reflux (Spam Instant)', nameEn: '❄️ Reflux (Instant Cast)', role: 'dps' }
+        { id: 'igniter', name: 'Ignition (Burst Météore)', nameEn: 'Igniter (Meteor Burst)', role: 'dps' },
+        { id: 'reflux', name: 'Reflux (Spam Instant)', nameEn: 'Reflux (Instant Cast)', role: 'dps' }
       ]
     },
     arcanist: {
       name: 'Arcanist',
       specs: [
-        { id: 'empress_grace', name: '🃏 Grâce de l\'Impératrice (Ruin)', nameEn: '🃏 Empress\'s Grace (Ruin)', role: 'dps' },
-        { id: 'order_emperor', name: '🃏 Ordre de l\'Empereur (Normal)', nameEn: '🃏 Order of the Emperor (Normal)', role: 'dps' }
+        { id: 'empress_grace', name: 'Grâce de l\'Impératrice (Ruin)', nameEn: 'Empress\'s Grace (Ruin)', role: 'dps' },
+        { id: 'order_emperor', name: 'Ordre de l\'Empereur (Normal)', nameEn: 'Order of the Emperor (Normal)', role: 'dps' }
       ]
     },
     summoner: {
       name: 'Summoner',
       specs: [
-        { id: 'master_summoner', name: '🔮 Maîtresse Invocatrice (Burst)', nameEn: '🔮 Master Summoner (Burst)', role: 'dps' },
-        { id: 'communication_overflow', name: '🐾 Débordement Invocations', nameEn: '🐾 Communication Overflow (Pets)', role: 'dps' }
+        { id: 'master_summoner', name: 'Maîtresse Invocatrice (Burst)', nameEn: 'Master Summoner (Burst)', role: 'dps' },
+        { id: 'communication_overflow', name: 'Débordement Invocations', nameEn: 'Communication Overflow (Pets)', role: 'dps' }
       ]
     },
     wardancer: {
       name: 'Wardancer',
       specs: [
-        { id: 'first_intention', name: '⚔️ Première Intention (FI)', nameEn: '⚔️ First Intention (FI)', role: 'dps' },
-        { id: 'esoteric_enhancement', name: '🌪️ Renforcement Ésotérique (ESO)', nameEn: '🌪️ Esoteric Skill Enhancement', role: 'dps' }
+        { id: 'first_intention', name: 'Première Intention (FI)', nameEn: 'First Intention (FI)', role: 'dps' },
+        { id: 'esoteric_enhancement', name: 'Renforcement Ésotérique (ESO)', nameEn: 'Esoteric Skill Enhancement', role: 'dps' }
       ]
     },
     scrapper: {
       name: 'Scrapper',
       specs: [
-        { id: 'tai_jutsu', name: '👊 Taijutsu (Vitesse/Stamina)', nameEn: '👊 Ultimate Skill: Taijutsu', role: 'dps' },
-        { id: 'shock_training', name: '💥 Entraînement au Choc (Heavy)', nameEn: '💥 Shock Training (Heavy)', role: 'dps' }
+        { id: 'tai_jutsu', name: 'Taijutsu (Vitesse/Stamina)', nameEn: 'Ultimate Skill: Taijutsu', role: 'dps' },
+        { id: 'shock_training', name: 'Entraînement au Choc (Heavy)', nameEn: 'Shock Training (Heavy)', role: 'dps' }
       ]
     },
     striker: {
       name: 'Striker',
       specs: [
-        { id: 'deathblow', name: '⚔️ Coup Mortel (4 Orbes Burst)', nameEn: '⚔️ Deathblow (4 Orbs Burst)', role: 'dps' },
-        { id: 'esoteric_flurry', name: '🌪️ Rafale Ésotérique (1 Orbe)', nameEn: '🌪️ Esoteric Flurry (1 Orb)', role: 'dps' }
+        { id: 'deathblow', name: 'Coup Mortel (4 Orbes Burst)', nameEn: 'Deathblow (4 Orbs Burst)', role: 'dps' },
+        { id: 'esoteric_flurry', name: 'Rafale Ésotérique (1 Orbe)', nameEn: 'Esoteric Flurry (1 Orb)', role: 'dps' }
       ]
     },
     glaivier: {
       name: 'Glaivier',
       specs: [
-        { id: 'pinnacle', name: '⚔️ Pinacle (Stance Swap)', nameEn: '⚔️ Pinnacle (Stance Swap)', role: 'dps' },
-        { id: 'control', name: '⚔️ Contrôle (Lance Bleue)', nameEn: '⚔️ Control (Blue Stance)', role: 'dps' }
+        { id: 'pinnacle', name: 'Pinacle (Stance Swap)', nameEn: 'Pinnacle (Stance Swap)', role: 'dps' },
+        { id: 'control', name: 'Contrôle (Lance Bleue)', nameEn: 'Control (Blue Stance)', role: 'dps' }
       ]
     },
     deadeye: {
       name: 'Deadeye',
       specs: [
-        { id: 'enhanced_weapon', name: '🎯 Arme Améliorée (Fusil à Pompe)', nameEn: '🎯 Enhanced Weapon (Shotgun)', role: 'dps' },
-        { id: 'pistoleer', name: '🔫 Pistolero (Pistolets Seuls)', nameEn: '🔫 Pistoleer (Pistols Only)', role: 'dps' }
+        { id: 'enhanced_weapon', name: 'Arme Améliorée (Fusil à Pompe)', nameEn: 'Enhanced Weapon (Shotgun)', role: 'dps' },
+        { id: 'pistoleer', name: 'Pistolero (Pistolets Seuls)', nameEn: 'Pistoleer (Pistols Only)', role: 'dps' }
       ]
     },
     gunslinger: {
       name: 'Gunslinger',
       specs: [
-        { id: 'peacemaker', name: '🎯 Pacificatrice (Tri-Armes)', nameEn: '🎯 Peacemaker (Tri-Stance)', role: 'dps' },
-        { id: 'time_to_hunt', name: '⏳ Heure de la Chasse (Sans Pompe)', nameEn: '⏳ Time to Hunt (No Shotgun)', role: 'dps' }
+        { id: 'peacemaker', name: 'Pacificatrice (Tri-Armes)', nameEn: 'Peacemaker (Tri-Stance)', role: 'dps' },
+        { id: 'time_to_hunt', name: 'Heure de la Chasse (Sans Pompe)', nameEn: 'Time to Hunt (No Shotgun)', role: 'dps' }
       ]
     },
     artillerist: {
       name: 'Artillerist',
       specs: [
-        { id: 'barrage_enhancement', name: '🚀 Renforcement de Barrage (Tourelle)', nameEn: '🚀 Barrage Enhancement (Turret)', role: 'dps' },
-        { id: 'firepower_enhancement', name: '💣 Puissance de Feu (Mobilité)', nameEn: '💣 Firepower Enhancement', role: 'dps' }
+        { id: 'barrage_enhancement', name: 'Renforcement de Barrage (Tourelle)', nameEn: 'Barrage Enhancement (Turret)', role: 'dps' },
+        { id: 'firepower_enhancement', name: 'Puissance de Feu (Mobilité)', nameEn: 'Firepower Enhancement', role: 'dps' }
       ]
     },
     sharpshooter: {
       name: 'Sharpshooter',
       specs: [
-        { id: 'death_strike', name: '🏹 Frappe Mortelle (Burst Faucon)', nameEn: '🏹 Death Strike (Hawk Burst)', role: 'dps' },
-        { id: 'loyal_companion', name: '🦅 Compagnon Fidèle (Sustained)', nameEn: '🦅 Loyal Companion (Sustained)', role: 'dps' }
+        { id: 'death_strike', name: 'Frappe Mortelle (Burst Faucon)', nameEn: 'Death Strike (Hawk Burst)', role: 'dps' },
+        { id: 'loyal_companion', name: 'Compagnon Fidèle (Sustained)', nameEn: 'Loyal Companion (Sustained)', role: 'dps' }
       ]
     },
     machinist: {
       name: 'Machinist',
       specs: [
-        { id: 'evolutionary_legacy', name: '🤖 Héritage de l\'Évolution (Ironman)', nameEn: '🤖 Evolutionary Legacy (Ironman)', role: 'dps' },
-        { id: 'arthetinean_skill', name: '🔧 Compétence d\'Arthetine (Drone)', nameEn: '🔧 Arthetinean Skill (Drone)', role: 'dps' }
+        { id: 'evolutionary_legacy', name: 'Héritage de l\'Évolution (Ironman)', nameEn: 'Evolutionary Legacy (Ironman)', role: 'dps' },
+        { id: 'arthetinean_skill', name: 'Compétence d\'Arthetine (Drone)', nameEn: 'Arthetinean Skill (Drone)', role: 'dps' }
       ]
     },
     aeromancer: {
       name: 'Aeromancer',
       specs: [
-        { id: 'wind_fury', name: '🌪️ Fureur du Vent (Parapluie Rapide)', nameEn: '🌪️ Wind Fury (Fast Umbrella)', role: 'dps' },
-        { id: 'drizzle', name: '🌧️ Bruine (Météo/Dégâts Spé)', nameEn: '🌧️ Drizzle (Weather Special)', role: 'dps' }
+        { id: 'wind_fury', name: 'Fureur du Vent (Parapluie Rapide)', nameEn: 'Wind Fury (Fast Umbrella)', role: 'dps' },
+        { id: 'drizzle', name: 'Bruine (Météo/Dégâts Spé)', nameEn: 'Drizzle (Weather Special)', role: 'dps' }
       ]
     },
     dimensionalist: {
       name: 'Dimensionalist',
       specs: [
-        { id: 'time_wielder', name: '⏳ Maître du Temps (Time Wielder / Spé)', nameEn: '⏳ Time Wielder (Spec / Non-Positional)', role: 'dps' },
-        { id: 'space_wielder', name: '🌌 Maître de l\'Espace (Space Wielder / Rap)', nameEn: '🌌 Space Wielder (Swift / Back Attack)', role: 'dps' }
+        { id: 'time_wielder', name: 'Maître du Temps (Time Wielder / Spé)', nameEn: 'Time Wielder (Spec / Non-Positional)', role: 'dps' },
+        { id: 'space_wielder', name: 'Maître de l\'Espace (Space Wielder / Rap)', nameEn: 'Space Wielder (Swift / Back Attack)', role: 'dps' }
       ]
     }
   };;

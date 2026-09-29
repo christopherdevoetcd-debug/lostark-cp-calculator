@@ -265,8 +265,8 @@ body {
 .roster-status-badge {
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  text-transform: none;
+  letter-spacing: 0;
   padding: 2px 7px;
   border-radius: 4px;
   background: rgba(232, 230, 220, 0.06);
@@ -645,9 +645,10 @@ body {
 .ilvl-label {
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
   font-weight: 600;
   color: var(--text-dim);
+  font-family: var(--font-mono);
 }
 
 .char-ilvl-tag {
@@ -718,8 +719,9 @@ body {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-dim, #9A978A);
+  font-family: var(--font-mono);
 }
 
 .score-icon {
@@ -729,13 +731,13 @@ body {
 .score-role-tag {
   font-size: 9.5px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   padding: 1px 6px;
   border-radius: 3px;
   background: rgba(232, 230, 220, 0.06);
   color: #CFCBBD;
   border: 1px solid rgba(232, 230, 220, 0.1);
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
 }
 
 .score-role-tag.support {
@@ -891,6 +893,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-mono);
 }
 
 .metric-value {
@@ -1379,7 +1382,8 @@ select optgroup {
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
 }
 
 .stat-val {
@@ -1749,7 +1753,8 @@ select optgroup {
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
 }
 
 .breakdown-item {
@@ -1869,6 +1874,7 @@ select optgroup {
   color: var(--accent-gold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-family: var(--font-mono);
 }
 
 .eff-rec-desc {
@@ -1901,10 +1907,11 @@ select optgroup {
   font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
 .eff-table td {
@@ -1979,8 +1986,8 @@ select optgroup {
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .prio-badge.s-plus {
@@ -2254,11 +2261,12 @@ select optgroup {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-family: var(--font-mono);
 }
 
 .canon-val {
@@ -2322,7 +2330,7 @@ select optgroup {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 2px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .canon-badge.base { background: rgba(154, 151, 138, 0.15); color: #CFCBBD; }
@@ -2417,6 +2425,7 @@ select optgroup {
   letter-spacing: 0.04em;
   margin-bottom: 8px;
   display: block;
+  font-family: var(--font-mono);
 }
 
 .advisor-mode-toggle {
@@ -2493,6 +2502,7 @@ select optgroup {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-family: var(--font-mono);
 }
 
 .scope-checkboxes {
@@ -2584,6 +2594,7 @@ select optgroup {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .advisor-kpi-card .kpi-value {
@@ -2743,7 +2754,7 @@ select optgroup {
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 2px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .step-tier-badge.s-plus {
@@ -3036,6 +3047,7 @@ select optgroup {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .tree-metric-val {
@@ -3162,8 +3174,8 @@ select optgroup {
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .gem-tag.bottleneck {
@@ -3281,6 +3293,7 @@ select optgroup {
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .gem-ratio-val {
@@ -3330,10 +3343,11 @@ select optgroup {
   font-size: 11.5px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--accent-blue);
   padding-bottom: 4px;
   border-bottom: 1px solid rgba(232, 230, 220, 0.06);
+  font-family: var(--font-mono);
 }
 
 .cutting-decision-banner {
@@ -3417,6 +3431,7 @@ select optgroup {
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .cut-kpi-val {
@@ -3453,6 +3468,7 @@ select optgroup {
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
+  font-family: var(--font-mono);
 }
 
 /* ==========================================================================
@@ -3501,13 +3517,14 @@ select optgroup {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
   color: #CFCBBD;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(232, 230, 220, 0.2);
+  font-family: var(--font-mono);
 }
 
 .gem-cost-badge-row {
@@ -3574,8 +3591,9 @@ select optgroup {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .gem-score-number {
@@ -3605,8 +3623,8 @@ select optgroup {
   font-family: var(--font-mono);
   padding: 4px 16px;
   border-radius: var(--radius-md);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .gem-rank-pill.rank-s-plus {
@@ -3649,7 +3667,7 @@ select optgroup {
 .gem-tier-badge {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
 }
@@ -3703,8 +3721,8 @@ select optgroup {
   border-radius: 3px;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .bracelet-tier-badge.god {
   background: rgba(232, 230, 220, 0.2);
@@ -3809,9 +3827,10 @@ select optgroup {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   color: var(--text-main);
   margin-bottom: 10px;
+  font-family: var(--font-mono);
 }
 
 .bracelet-item-pill {
@@ -4049,12 +4068,12 @@ select optgroup {
 
 .agent-dl-badge {
   font-size: 10px;
-  text-transform: uppercase;
+  text-transform: none;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 3px;
   width: fit-content;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 .agent-dl-card.highlight .agent-dl-badge {
@@ -4191,8 +4210,9 @@ select optgroup {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: #9A978A;
+  font-family: var(--font-mono);
 }
 
 .netgold-digits-row {
@@ -5185,7 +5205,8 @@ select optgroup {
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
 }
 
 .bench-cp-val {
@@ -5319,7 +5340,7 @@ select optgroup {
 .bench-gap-rank {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   color: #E0A43A;
   background: rgba(232, 230, 220, 0.12);
   padding: 2px 6px;
@@ -5463,9 +5484,10 @@ select optgroup {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
   color: #9A978A;
   margin-bottom: 4px;
+  font-family: var(--font-mono);
 }
 
 .eq-box-val {
@@ -5526,9 +5548,10 @@ select optgroup {
   text-align: left;
   font-size: 11.5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
 }
 
 .benchmark-table td {
@@ -6166,7 +6189,8 @@ select optgroup {
   font-size: 10px;
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
 }
 .acc-side-lbl.player {
   color: #E0A43A;
@@ -6221,7 +6245,7 @@ select optgroup {
   font-weight: 700;
   padding: 1px 4px;
   border-radius: 3px;
-  text-transform: uppercase;
+  text-transform: none;
   flex-shrink: 0;
 }
 .acc-line-badge.high .acc-line-tier-tag {
@@ -6365,10 +6389,11 @@ select optgroup {
   padding: 8px 10px;
   font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
   color: #9A978A;
   border-bottom: 1px solid rgba(232, 230, 220, 0.08);
   background: rgba(27, 28, 22, 0.4);
+  font-family: var(--font-mono);
 }
 .bracelet-compare-table td {
   padding: 8px 10px;
@@ -6479,10 +6504,11 @@ select optgroup {
   padding: 8px 10px;
   font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
   color: #9A978A;
   border-bottom: 1px solid rgba(232, 230, 220, 0.08);
   background: rgba(27, 28, 22, 0.4);
+  font-family: var(--font-mono);
 }
 .astrogems-compare-table td {
   padding: 8px 10px;
@@ -6782,8 +6808,8 @@ select optgroup {
 .gpd-next-tag {
   font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  text-transform: none;
+  letter-spacing: 0;
   color: #E0A43A;
 }
 
@@ -6971,10 +6997,11 @@ select optgroup {
   font-weight: 700;
   text-transform: uppercase;
   font-size: 11px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   padding: 12px 14px;
   text-align: left;
   border-bottom: 1px solid rgba(232, 230, 220, 0.08);
+  font-family: var(--font-mono);
 }
 
 .gpd-master-table td, .gpd-pieces-table td {
