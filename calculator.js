@@ -3157,28 +3157,19 @@
     };
     let foundAnyCore = false;
 
-    // A. Extraction universelle depuis les cœurs bruts (arkGridCores)
-    const cores = charObj.arkGridCores 
-      || (charObj.rawProfile && (charObj.rawProfile.arkGridCores || (charObj.rawProfile.loadout && charObj.rawProfile.loadout.arkGridCores)))
-      || (charObj.loadout && charObj.loadout.arkGridCores);
-    if (Array.isArray(cores) && cores.length > 0) {
-      cores.forEach(c => {
-        const idStr = (c.id || '').toString();
-        const base = c.base || 0;
-        const pts = Array.isArray(c.gems) 
-          ? c.gems.reduce((sum, g) => sum + (g.corePoints || 0), 0) 
-          : (c.points || 0);
+    // Type de cœur = préfixe de l'ID (67300 Ordre Soleil … 67312 Chaos Étoile).
+    // Le champ `base` des cœurs bruts n'est PAS le type (10002 peut être un Chaos Étoile) : ne pas s'en servir.
+    const slotOfId = (idStr) => {
+      if (idStr.startsWith('67300')) return 'orderSun';
+      if (idStr.startsWith('67301')) return 'orderMoon';
+      if (idStr.startsWith('67302')) return 'orderStar';
+      if (idStr.startsWith('67310')) return 'chaosSun';
+      if (idStr.startsWith('67311')) return 'chaosMoon';
+      if (idStr.startsWith('67312')) return 'chaosStar';
+      return null;
+    };
 
-        if (base === 10001 || idStr.startsWith('67300')) { slotPts.orderSun = Math.max(slotPts.orderSun, pts); foundAnyCore = true; }
-        else if (base === 10002 || idStr.startsWith('67302')) { slotPts.orderStar = Math.max(slotPts.orderStar, pts); foundAnyCore = true; }
-        else if (base === 10003 || idStr.startsWith('67301')) { slotPts.orderMoon = Math.max(slotPts.orderMoon, pts); foundAnyCore = true; }
-        else if (base === 10004 || idStr.startsWith('67312')) { slotPts.chaosStar = Math.max(slotPts.chaosStar, pts); foundAnyCore = true; }
-        else if (base === 10005 || idStr.startsWith('67310')) { slotPts.chaosSun = Math.max(slotPts.chaosSun, pts); foundAnyCore = true; }
-        else if (base === 10006 || idStr.startsWith('67311')) { slotPts.chaosMoon = Math.max(slotPts.chaosMoon, pts); foundAnyCore = true; }
-      });
-    }
-
-    // B. Extraction universelle depuis battlePoint.parts (type 29 / 30)
+    // A. Points officiels : battlePoint.parts type 29 / 30 (champ `points`)
     const bpParts = (charObj.rawProfile && charObj.rawProfile.battlePoint && charObj.rawProfile.battlePoint.parts)
       || (charObj.battlePoint && charObj.battlePoint.parts)
       || (charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.battlePoint && charObj.rawProfile.loadout.battlePoint.parts)
@@ -3186,14 +3177,27 @@
       || (charObj.loadout && charObj.loadout.battlePoint && charObj.loadout.battlePoint.parts);
     if (Array.isArray(bpParts)) {
       bpParts.filter(p => p.type === 29 || p.type === 30).forEach(p => {
-        const idStr = (p.id || '').toString();
+        const slot = slotOfId((p.id || '').toString());
+        if (!slot) return;
         const pts = p.points || (p.value >= 450 ? 17 : (p.value >= 300 ? 14 : 10));
-        if (idStr.startsWith('67300')) { slotPts.orderSun = Math.max(slotPts.orderSun, pts); foundAnyCore = true; }
-        else if (idStr.startsWith('67302')) { slotPts.orderStar = Math.max(slotPts.orderStar, pts); foundAnyCore = true; }
-        else if (idStr.startsWith('67301')) { slotPts.orderMoon = Math.max(slotPts.orderMoon, pts); foundAnyCore = true; }
-        else if (idStr.startsWith('67312')) { slotPts.chaosStar = Math.max(slotPts.chaosStar, pts); foundAnyCore = true; }
-        else if (idStr.startsWith('67310')) { slotPts.chaosSun = Math.max(slotPts.chaosSun, pts); foundAnyCore = true; }
-        else if (idStr.startsWith('67311')) { slotPts.chaosMoon = Math.max(slotPts.chaosMoon, pts); foundAnyCore = true; }
+        slotPts[slot] = Math.max(slotPts[slot], pts);
+        foundAnyCore = true;
+      });
+    }
+
+    // B. Secours : somme des corePoints des astrogemmes, pour les cœurs absents des parts
+    const cores = charObj.arkGridCores 
+      || (charObj.rawProfile && (charObj.rawProfile.arkGridCores || (charObj.rawProfile.loadout && charObj.rawProfile.loadout.arkGridCores)))
+      || (charObj.loadout && charObj.loadout.arkGridCores);
+    if (Array.isArray(cores) && cores.length > 0) {
+      cores.forEach(c => {
+        const slot = slotOfId((c.id || '').toString());
+        if (!slot || slotPts[slot] > 0) return;
+        const pts = Array.isArray(c.gems) 
+          ? c.gems.reduce((sum, g) => sum + (g.corePoints || 0), 0) 
+          : (c.points || 0);
+        slotPts[slot] = pts;
+        if (pts > 0) foundAnyCore = true;
       });
     }
 
@@ -3381,6 +3385,14 @@
   function translateBraceletTerms(str) {
     let res = str;
     for (const [fr, en] of BRACELET_TERMS_EN) res = res.split(fr).join(en);
+    return res;
+  }
+
+  const BRACELET_TERMS_FR = BRACELET_TERMS_EN.map(([fr, en]) => [en, fr]).sort((a, b) => b[0].length - a[0].length);
+
+  function translateBraceletTermsToFrench(str) {
+    let res = str;
+    for (const [en, fr] of BRACELET_TERMS_FR) res = res.split(en).join(fr);
     return res;
   }
 
@@ -8003,7 +8015,12 @@
         const bonusPct = accEval ? (accEval.bonusPct || 0) : (isSupport ? 12.0 : 15.0);
         let accGrade = 'B';
         let gradeClass = 'grade-b';
-        if (accEval) {
+        if (accEval && accEval.slotLines) {
+          // Lignes lues : note sur la valeur réelle (pentes Arsonistic) rapportée au maximum du rôle
+          const g = accessoryGrade(bonusPct, isSupport);
+          accGrade = g.grade; gradeClass = g.cls;
+        } else if (accEval) {
+          // Presets sans lignes décodables : ancienne note par nombre de lignes
           if (accEval.highCount >= 10 && accEval.deadCount === 0) {
             accGrade = 'S+'; gradeClass = 'grade-s-plus';
           } else if (accEval.highCount >= 7) {
@@ -8037,7 +8054,10 @@
             const hStr = `${accEval.highCount} High`;
             const mStr = `${accEval.midCount} Mid`;
             const dStr = accEval.deadCount > 0 ? ` • ${accEval.deadCount} ${isEn ? 'Dead' : 'Morts'}` : '';
-            dom.scoreAccDetail.textContent = `${hStr} • ${mStr}${dStr}`;
+            const maxStr = accEval.slotLines
+              ? ` • ${Math.round(accessoryGrade(bonusPct, isSupport).ratio * 100)} % ${isEn ? 'of max' : 'du max'}`
+              : '';
+            dom.scoreAccDetail.textContent = `${hStr} • ${mStr}${dStr}${maxStr}`;
           } else {
             dom.scoreAccDetail.textContent = isEn ? '15/15 Rolls • Multiplicative' : '15/15 Rolls • Modèle Multiplicatif';
           }
@@ -8133,6 +8153,18 @@
             dom.scoreBrGrade.className = 'score-grade-badge ' + (brGrade.startsWith('S') ? 'grade-s' : (brGrade.startsWith('A') ? 'grade-a' : 'grade-b'));
           }
         }
+        // Même chiffre que le Benchmark : contribution officielle au CP (battlePoint 19-21).
+        // La note Subrank reste (qualité pour les dégâts) ; son % inclut les traits, d'où le détail séparé.
+        try {
+          const brSys = extractPlayerSystems(p, isEn).bracelet;
+          if (brSys && brSys.fromBattlePoint) {
+            const subrankPct = brPct && brPct !== '—' ? brPct.split(' ')[0] : '';
+            brPct = `+${brSys.bonusPct.toFixed(2)}% CP`;
+            if (subrankPct) {
+              brDetail = `${brDetail ? brDetail + ' • ' : ''}${isEn ? `Subrank ${subrankPct} dmg (traits incl.)` : `Subrank ${subrankPct} dégâts (traits inclus)`}`;
+            }
+          }
+        } catch (e) {}
         if (dom.scoreBrScore) dom.scoreBrScore.textContent = brScore;
         if (dom.scoreBrPct) dom.scoreBrPct.textContent = brPct;
         if (dom.scoreBrDetail) dom.scoreBrDetail.textContent = brDetail;
@@ -9573,6 +9605,201 @@
     return res;
   }
 
+  function formatLostArkFrench(str) {
+    if (!str || typeof str !== 'string') return str || '';
+    let res = str;
+
+    // 1. Gemmes & Tiers
+    res = res
+      .replace(/Full Tier 4 Lv\.\s*10 Gems/gi, 'Full Gemmes 10 T4')
+      .replace(/Full Tier 4 Lv\.\s*9 Gems/gi, 'Full Gemmes 9 T4')
+      .replace(/Full Tier 4 Lv\.\s*8 Gems/gi, 'Full Gemmes 8 T4')
+      .replace(/Full Tier 4 Lv\.\s*7 Gems/gi, 'Full Gemmes 7 T4')
+      .replace(/Mix T4 Gems 8\s*\/\s*9\s*\(5x Lvl 9\)/gi, 'Mix Gemmes 8 / 9 T4 (5x Niv. 9)')
+      .replace(/Tier 4 Lv\.\s*8\/9 Mix/gi, 'Mix Gemmes 8 / 9 T4')
+      .replace(/Tier 4 Lv\.\s*7\/8 Mix/gi, 'Mix Gemmes 7 / 8 T4')
+      .replace(/Full T4 Gems 8/gi, 'Full Gemmes 8 T4')
+      .replace(/Full T4 Gems/gi, 'Full Gemmes T4')
+      .replace(/Tier 4 Gem Mix/gi, 'Mix Gemmes T4')
+      .replace(/Tier 4 Gems/gi, 'Gemmes T4')
+      .replace(/Full Tier 4 Lv\.\s*(\d+) Gems/gi, 'Full Gemmes $1 T4')
+      .replace(/Full Gems/gi, 'Full Gemmes')
+      .replace(/Gems\s*:/gi, 'Gemmes :')
+      .replace(/\bGems\b/gi, 'Gemmes')
+      .replace(/\bLv\.\s*(\d+)/gi, 'Niv. $1')
+      .replace(/\bLevel\s*(\d+)/gi, 'Niv. $1');
+
+    // 2. Équipements & Affinage
+    res = res
+      .replace(/T4 Advanced Honing/gi, 'Affinage Avancé T4')
+      .replace(/Adv\.\s*Honing\s*:/gi, 'Affinage Adv :')
+      .replace(/Adv\.\s*Honing/gi, 'Affinage Adv')
+      .replace(/Advanced Honing \+40/gi, 'Affinage Avancé +40')
+      .replace(/Advanced Honing/gi, 'Affinage Avancé')
+      .replace(/T4 Serka Armor Avg/gi, 'Armures Serka T4 Moyenne')
+      .replace(/T4 Serka Weapon/gi, 'Arme Serka T4')
+      .replace(/T4 Armors Avg/gi, 'Armures T4 Moyenne')
+      .replace(/T4 Armor Avg/gi, 'Armures T4 Moyenne')
+      .replace(/T4 Armor Honing/gi, 'Affinage Armures T4')
+      .replace(/T4 Weapon Honing/gi, 'Affinage Arme T4')
+      .replace(/T4 Armors/gi, 'Armures T4')
+      .replace(/T4 Armor/gi, 'Armure T4')
+      .replace(/T4 Weapon/gi, 'Arme T4')
+      .replace(/\(Eq\.\s*\+(\d+)\)/gi, '(Éq. +$1)')
+      .replace(/Quality\s*(\d+)/gi, 'Qualité $1')
+      .replace(/\bQuality\b/gi, 'Qualité');
+
+    // 3. Transcendance
+    res = res
+      .replace(/Weapon Transcendence R3/gi, 'Transcendance Arme R3')
+      .replace(/Armor Transcendence R3/gi, 'Transcendance Armures R3')
+      .replace(/Weapon Transcendence/gi, 'Transcendance Arme')
+      .replace(/Armor Transcendence/gi, 'Transcendance Armures')
+      .replace(/Transcendence/gi, 'Transcendance');
+
+    // 4. Ark Grid & Cœurs
+    res = res
+      .replace(/Ark Grid:\s*Sun Cores\s*\(Order & Chaos\)/gi, 'Ark Grid : Cœurs Soleil (Ordre & Chaos)')
+      .replace(/Ark Grid:\s*Moon Cores\s*\(Order & Chaos\)/gi, 'Ark Grid : Cœurs Lune (Ordre & Chaos)')
+      .replace(/Ark Grid:\s*Star Cores\s*\(Order & Chaos\)/gi, 'Ark Grid : Cœurs Étoile (Ordre & Chaos)')
+      .replace(/Ark Grid:\s*Sun Cores\s*\(Ancient\/Relic\)/gi, 'Ark Grid : Cœurs Soleil (Ancien/Relique)')
+      .replace(/Ark Grid:\s*Moon Cores\s*\(Ancient\/Relic\)/gi, 'Ark Grid : Cœurs Lune (Ancien/Relique)')
+      .replace(/Ark Grid:\s*Star Cores\s*\(Ancient\/Relic\)/gi, 'Ark Grid : Cœurs Étoile (Ancien/Relique)')
+      .replace(/Sun Cores/gi, 'Cœurs Soleil')
+      .replace(/Moon Cores/gi, 'Cœurs Lune')
+      .replace(/Star Cores/gi, 'Cœurs Étoile')
+      .replace(/Order Sun/gi, 'Ordre Soleil')
+      .replace(/Order Moon/gi, 'Ordre Lune')
+      .replace(/Chaos Star/gi, 'Chaos Étoile')
+      .replace(/\bAncient\/Relic\b/gi, 'Ancien/Relique')
+      .replace(/\bAncient\b/gi, 'Ancien')
+      .replace(/\bRelic\b/gi, 'Relique')
+      .replace(/\bOrder\b/gi, 'Ordre')
+      .replace(/\bChaos\b/gi, 'Chaos')
+      .replace(/\bTier\s*(\d+)P/gi, 'Palier $1P')
+      .replace(/\bTier\s*17P\+/gi, 'Palier 17P+')
+      .replace(/\bTier\b/gi, 'Palier')
+      .replace(/Ark Grid:\s*Astrogems\s*\(Substats\)/gi, 'Ark Grid : Astrogemmes (Sous-stats)')
+      .replace(/\bAstrogems\b/gi, 'Astrogemmes')
+      .replace(/\bAstrogem\b/gi, 'Astrogemme')
+      .replace(/Grid Substats/gi, 'Sous-stats Grille')
+      .replace(/DPS\/Buff Substats/gi, 'Sous-stats Grille')
+      .replace(/Substats/gi, 'Sous-stats Grille')
+      .replace(/140 Evolution Pts/gi, '140 Pts Évolution')
+      .replace(/101 Enlightenment Pts/gi, '101 Pts Illumination')
+      .replace(/70 Leap Pts/gi, '70 Pts Saut')
+      .replace(/Evolution Pts/gi, 'Pts Évolution')
+      .replace(/Enlightenment Pts/gi, 'Pts Illumination')
+      .replace(/Leap Pts/gi, 'Pts Saut')
+      .replace(/Evolution Karma Rank 6/gi, 'Karma Évolution Rang 6')
+      .replace(/Evolution/gi, 'Évolution')
+      .replace(/Enlightenment/gi, 'Illumination')
+      .replace(/Leap/gi, 'Saut')
+      .replace(/Ark Grid/gi, "Grille d'Ark");
+
+    // 5. Gravures & Pierre
+    res = res
+      .replace(/Full T4 Relic Engravings/gi, '5 Gravures Reliques T4')
+      .replace(/T4 Relic Engravings/gi, 'Gravures Reliques T4')
+      .replace(/Relic Engravings/gi, 'Gravures Reliques')
+      .replace(/Equipped Engravings & Stone/gi, 'Gravures Actives & Pierre')
+      .replace(/Target Engravings & Stone/gi, 'Gravures Cible & Pierre')
+      .replace(/Engravings & Ability Stone/gi, 'Gravures & Pierre')
+      .replace(/Alternative Engraving/gi, 'Gravure Différente')
+      .replace(/Engravings/gi, 'Gravures')
+      .replace(/Engraving/gi, 'Gravure')
+      .replace(/Ability Stone/gi, 'Pierre')
+      .replace(/Stone & Relic/gi, 'Pierre & Relique')
+      .replace(/Stone \+(\d+)/gi, 'Pierre +$1')
+      .replace(/\bStone\b/gi, 'Pierre');
+
+    // 6. Stats & Caractéristiques
+    res = res
+      .replace(/Combat Stats/gi, 'Stats de Combat')
+      .replace(/Main Stat & Base AP/gi, 'Stat Principale & Attaque de Base')
+      .replace(/Main Stat/gi, 'Stat Principale')
+      .replace(/Base Attack Power/gi, 'Puissance d\'Attaque de Base')
+      .replace(/Attack Power/gi, 'Puissance d\'Attaque')
+      .replace(/Weapon Power/gi, 'Puissance d\'Arme')
+      .replace(/Additional Damage/gi, 'Dégâts Additionnels')
+      .replace(/Crit Damage/gi, 'Dégâts Critiques')
+      .replace(/Crit Rate/gi, 'Taux Critique')
+      .replace(/Boss Damage/gi, 'Dégâts aux Boss')
+      .replace(/Outgoing Damage/gi, 'Dégâts infligés')
+      .replace(/Max HP/gi, 'Points de Vie Max')
+      .replace(/Max MP/gi, 'Points de Mana Max')
+      .replace(/Swiftness/gi, 'Rapidité')
+      .replace(/Specialization/gi, 'Spécialisation')
+      .replace(/\bCrit\b/gi, 'Critique')
+      .replace(/\bStrength\b/gi, 'Force')
+      .replace(/\bDexterity\b/gi, 'Dextérité')
+      .replace(/\bIntelligence\b/gi, 'Intelligence');
+
+    // 7. Accessoires & Rolls
+    res = res
+      .replace(/replaced ➔ 2 High main lines/gi, 'remplacé ➔ 2 lignes principales High')
+      .replace(/Relic \(Circularity \+ High Dmg\/Buff Perk\)/gi, 'Relique (Circulaire + Passif Dégâts/Buff High)')
+      .replace(/Same as yours/gi, 'Identique au vôtre')
+      .replace(/\bNecklace\b/gi, 'Collier')
+      .replace(/\bEarring\b/gi, 'Boucle d\'oreille')
+      .replace(/\bRing\b/gi, 'Anneau')
+      .replace(/T4 Accessory Lines \(High Rolls\)/gi, 'Lignes d\'Accessoires T4 (High Rolls)')
+      .replace(/T4 Accessory Lines/gi, 'Lignes d\'Accessoires T4')
+      .replace(/Accessoires T4 \(Rolls & Lignes\)/gi, 'Accessoires T4 (Rolls & Lignes)')
+      .replace(/T4 Accessories \(Rolls & Lines\)/gi, 'Accessoires T4 (Rolls & Lignes)')
+      .replace(/T4 Accessories/gi, 'Accessoires T4')
+      .replace(/T4 Bracelet Passives \(Circularity\)/gi, 'Passifs de Bracelet T4 (Circulaire)')
+      .replace(/T4 Bracelet Passives/gi, 'Passifs de Bracelet T4')
+      .replace(/T4 Bracelet \(Stats & Passives\)/gi, 'Bracelet T4 (Stats & Passifs)')
+      .replace(/Full High T4 Rolls/gi, 'Rolls Full High T4')
+      .replace(/T4 High\/Mid Rolls/gi, 'Rolls T4 High/Mid')
+      .replace(/High\/Mid T4 Rolls/gi, 'Rolls High/Mid T4')
+      .replace(/Standard Mid T4 Rolls/gi, 'Rolls Mid T4 (Standard)')
+      .replace(/Mid T4 Rolls/gi, 'Rolls Mid T4')
+      .replace(/T4 Mid Rolls/gi, 'Rolls T4 Moyens')
+      .replace(/T4 Low Rolls/gi, 'Rolls T4 Faibles')
+      .replace(/Early T4 Rolls/gi, 'Rolls T4 Débutants')
+      .replace(/High Rolls/gi, 'Rolls Élevés')
+      .replace(/High Roll/gi, 'Roll Élevé')
+      .replace(/Mid Rolls/gi, 'Rolls Moyens')
+      .replace(/Mid Roll/gi, 'Roll Moyen')
+      .replace(/Low Rolls/gi, 'Rolls Faibles')
+      .replace(/Low Roll/gi, 'Roll Faible')
+      .replace(/Dead Stats/gi, 'Lignes Inutiles')
+      .replace(/Dead Stat/gi, 'Ligne Inutile')
+      .replace(/(\d+)\s*Dead/gi, '$1 Inutiles')
+      .replace(/1\s*Dead/gi, '1 Inutile')
+      .replace(/(\d+)\s*High/gi, '$1 Élevés')
+      .replace(/1\s*High/gi, '1 Élevé')
+      .replace(/(\d+)\s*Mid/gi, '$1 Moyens')
+      .replace(/1\s*Mid/gi, '1 Moyen')
+      .replace(/Circularity/gi, 'Circulaire')
+      .replace(/Rank 3 Perk/gi, 'Passif Rang 3')
+      .replace(/\bPerk\b/gi, 'Passif')
+      .replace(/Line to roll/gi, 'Ligne à affiner')
+      .replace(/To Roll/gi, 'À Affiner');
+
+    // 8. Comparaisons
+    res = res
+      .replace(/on benchmark vs/gi, 'chez la référence contre')
+      .replace(/on benchmark/gi, 'chez la référence')
+      .replace(/on your character/gi, 'chez vous')
+      .replace(/gap of \+/gi, 'écart de +')
+      .replace(/gap of/gi, 'écart de')
+      .replace(/Your advantage:/gi, 'Votre avantage :')
+      .replace(/Player Advantage/gi, 'Avantage Joueur')
+      .replace(/Gross Equipment Deficit/gi, 'Retard Brut Équipements')
+      .replace(/Your Advantage/gi, 'Votre Avance')
+      .replace(/Observed In-Game Gap/gi, 'Écart Réel Net In-Game')
+      .replace(/in your favor!/gi, 'en votre faveur !')
+      .replace(/Guild:/gi, 'Guilde :');
+
+    // 9. Bracelet terms
+    res = translateBraceletTermsToFrench(res);
+
+    return res;
+  }
+
   const benchmarkState = {
     currentTargetId: null,
     customTarget: null,
@@ -9861,6 +10088,27 @@
       if (!weakest || gain > weakest.gain) weakest = { slot, gain, curPct, nextPct };
     });
     return weakest;
+  }
+
+  // Bonus accessoires maximal pour le rôle : les 5 bijoux avec leurs 2 lignes principales High
+  // et la PA d'arme plate au roll High (960). Sert d'échelle à la note des bijoux.
+  function accessoryMaxBonusPct(isSupport) {
+    const lineSet = isSupport ? ACC_TARGET_LINES.support : ACC_TARGET_LINES.dps;
+    const lines = ['neck', 'ear', 'ear', 'ring', 'ring'].flatMap(kind =>
+      lineSet[kind].map(([key, amount]) => ({ key, amount: key === 'wpFlat' ? 960 : amount })));
+    return computeAccessoryLinesBonus(lines, isSupport);
+  }
+
+  // Note des bijoux sur la part du maximum atteinte (et non sur le nombre de lignes High)
+  const ACC_GRADE_BANDS = [
+    [0.95, 'S+', 'grade-s-plus'], [0.88, 'S', 'grade-s'], [0.80, 'A+', 'grade-a'], [0.72, 'A', 'grade-a'],
+    [0.64, 'B+', 'grade-b'], [0.56, 'B', 'grade-b'], [0.48, 'C+', 'grade-c'], [0, 'C', 'grade-c']
+  ];
+
+  function accessoryGrade(bonusPct, isSupport) {
+    const ratio = bonusPct / accessoryMaxBonusPct(isSupport);
+    const band = ACC_GRADE_BANDS.find(([min]) => ratio >= min);
+    return { grade: band[1], cls: band[2], ratio };
   }
 
   function accessorySlotNames(isEn) {
@@ -10415,7 +10663,16 @@
           else if (gradeDigit === 5) hasRelic = true;
         });
         const bonusPct = Number(((mult - 1) * 100).toFixed(2));
-        const ptsStr = maxPoints > 0 ? (isEn ? `Tier ${maxPoints}P` : `Palier ${maxPoints}P`) : (isEn ? 'Tier 17P+' : 'Palier 17P+');
+        // Points de chaque cœur (Ordre puis Chaos), pas seulement le maximum
+        const corePts = prefixes.map((pr, k) => {
+          const part = matching.find(p => (p.id || '').toString().startsWith(pr));
+          if (!part || !part.points) return null;
+          const kind = k === 0 ? (isEn ? 'Order' : 'Ordre') : 'Chaos';
+          return `${kind} ${part.points}P`;
+        }).filter(Boolean);
+        const ptsStr = corePts.length
+          ? corePts.join(' · ')
+          : (maxPoints > 0 ? (isEn ? `Tier ${maxPoints}P` : `Palier ${maxPoints}P`) : (isEn ? 'Tier 17P+' : 'Palier 17P+'));
         const gradeStr = (hasAncient && !hasRelic)
           ? (isEn ? 'Ancient' : 'Ancien')
           : (hasRelic && !hasAncient ? (isEn ? 'Relic' : 'Relique') : (hasAncient ? (isEn ? 'Ancient/Relic' : 'Ancien/Relique') : ''));
@@ -10590,7 +10847,7 @@
       transWeapon: { label: transWeaponLabel, bonusPct: 14.50 },
       transArmor: { label: transArmorLabel, bonusPct: 18.20 },
       accessories: { label: accLabel, bonusPct: accBonusPct },
-      bracelet: { label: braceletLabel, bonusPct: brBonusPct },
+      bracelet: { label: braceletLabel, bonusPct: brBonusPct, fromBattlePoint: hasRealBr },
       gems: { label: gemDesc, bonusPct: gemBonusPct },
       karma: { label: karmaLabel, bonusPct: 3.60 }
     };
@@ -10600,14 +10857,22 @@
     if (!target) return {};
     // Référence générée : ses systèmes sont exactement ceux qui ont servi à calculer son CP.
     // Les garde-fous ci-dessous (profils réels mal lus) les rendraient incohérents avec l'en-tête.
-    if (target.isDynamic && target.systems) return JSON.parse(JSON.stringify(target.systems));
+    if (target.isDynamic && target.systems) {
+      const dynSys = JSON.parse(JSON.stringify(target.systems));
+      for (const [k, v] of Object.entries(dynSys)) {
+        if (v && v.label) {
+          v.label = isEn ? formatLostArkEnglish(v.label) : formatLostArkFrench(v.label);
+        }
+      }
+      return dynSys;
+    }
     let sys = {};
 
-    // Si le target possède déjà des systems calculés fidèlement (live ou benchmark), on les préserve en priorité
-    if (target.systems && Object.keys(target.systems).length > 0) {
-      sys = JSON.parse(JSON.stringify(target.systems));
-    } else if (target.battlePoint || target.rawProfile || target.loadout || target.gear) {
+    // Si le target possède des données réelles de profil, on extrait fidèlement selon la langue demandée
+    if (target.battlePoint || target.rawProfile || target.loadout || target.gear) {
       sys = extractPlayerSystems(target, isEn);
+    } else if (target.systems && Object.keys(target.systems).length > 0) {
+      sys = JSON.parse(JSON.stringify(target.systems));
     } else {
       sys = extractPlayerSystems(target, isEn);
     }
@@ -10708,12 +10973,10 @@
       };
     }
 
-    // Traduction Lost Ark officielle des labels si isEn est vrai
-    if (isEn) {
-      for (const [k, v] of Object.entries(sys)) {
-        if (v && v.label) {
-          v.label = formatLostArkEnglish(v.label);
-        }
+    // Traduction Lost Ark officielle des labels selon la langue demandée
+    for (const [k, v] of Object.entries(sys)) {
+      if (v && v.label) {
+        v.label = isEn ? formatLostArkEnglish(v.label) : formatLostArkFrench(v.label);
       }
     }
 
@@ -10831,6 +11094,9 @@
       if (isEn) {
         tLabel = formatLostArkEnglish(tLabel);
         pLabel = formatLostArkEnglish(pLabel);
+      } else {
+        tLabel = formatLostArkFrench(tLabel);
+        pLabel = formatLostArkFrench(pLabel);
       }
 
       if (delta > 0.05) {
@@ -11819,7 +12085,7 @@
   }
 
   function generateTargetBraceletLines(target, isSupport, isEn) {
-    const tSys = (target && target.systems) || resolveTargetSystems(target, isEn);
+    const tSys = resolveTargetSystems(target, isEn);
     const lbl = (tSys && tSys.bracelet && tSys.bracelet.label) || '';
     const normClass = normalizeClassName(target ? target.className : '') || '';
     const mainStat = getMainStatName(normClass, isEn);
@@ -12581,7 +12847,7 @@
 
     // 3. Fallback profil cible / benchmark si données brutes absentes
     let totalBonusPct = 0;
-    const charSys = (charObj.systems) || resolveTargetSystems(charObj, isEn);
+    const charSys = resolveTargetSystems(charObj, isEn);
     if (charSys && charSys.arkGridAstrogems && typeof charSys.arkGridAstrogems.bonusPct === 'number') {
       totalBonusPct = charSys.arkGridAstrogems.bonusPct;
     } else {
@@ -15120,7 +15386,7 @@
           </div>
 
           <div class="bench-pills-row">
-            <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : (target.gemDesc || 'Full Gemmes 8'))}</strong></span>
+            <span class="bench-pill">${isEn ? 'Gems' : 'Gemmes'} : <strong>${escapeHtml(isEn ? formatLostArkEnglish(target.gemDesc || 'Full Tier 4 Lv. 8 Gems') : formatLostArkFrench(target.gemDesc || 'Full Gemmes 8'))}</strong></span>
             ${target.isLive && target.bibleUrl
               ? `<a href="${target.bibleUrl}" target="_blank" rel="noopener noreferrer" style="font-size:13px; color:#E0A43A; text-decoration:underline; display:flex; align-items:center; gap:4px; margin-left:auto;">${t('bench_view_bible')}</a>`
               : `<span class="bench-pill" style="margin-left:auto; background: transparent; border-color:rgba(232, 230, 220,0.3); color:#CFCBBD;">${isEn ? 'Calibrated Model' : 'Modèle Calibré'}</span>`
@@ -15238,6 +15504,9 @@
         if (isEn) {
           pLabel = formatLostArkEnglish(pLabel);
           tLabel = formatLostArkEnglish(tLabel);
+        } else {
+          pLabel = formatLostArkFrench(pLabel);
+          tLabel = formatLostArkFrench(tLabel);
         }
         const estimatedPair = isEstimatedPair(pRaw, tRaw);
         if (estimatedPair) {
