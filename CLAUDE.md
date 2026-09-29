@@ -1,0 +1,88 @@
+# Lost Ark CP Calculator & Upgrade Advisor (T4)
+
+## 📌 Présentation du Projet
+Application web monopage (SPA) haute performance en **Vanilla JavaScript** (ES6+), sans framework lourd, dédiée à l'analyse, la prédiction et l'optimisation du **Combat Power (CP / Battle Point)** pour Lost Ark Tier 4 (T4).
+Elle s'appuie sur la calibration réelle des courbes de `lostark.bible` et les modèles d'analyse de `loseii.com`.
+
+- **Dépôt local** : `/root/ia-projects/lostark-cp-calculator`
+- **Serveur local Docker** : CT 104 (`192.168.1.104:8080`, container `lostark-cp`, `/opt/lostark-cp/public/`)
+- **Production Cloudflare Pages** : `https://lostark-cp.pages.dev` (branche `master`)
+
+---
+
+## 📂 Cartographie des Fichiers & Rôles
+
+| Fichier | Rôle & Contenu |
+|---|---|
+| `calculator.js` | **Cœur de l'application (~17k lignes)** : Moteur de calcul CP, affinage (honing), simulateur Ark Passive, diagnostic des bracelets, algorithme GPD (Gold Per Damage / Buff), gestion du Roster local, parsing des données JSON `lostark.bible`, exports globaux `window.__*`. |
+| `data.js` | Constantes de jeu, coûts d'affinage T4 (`HONING_COSTS`), XP, bonus des cœurs d'Ark Grid (`getArkGridCoreBonus`), rosters par défaut (`DEFAULT_DEMO_ROSTER`, `NEVERCRY_PRESET_ROSTER`). |
+| `bracelet-model.js` | Modèle mathématique complet de simulation des lignes de bracelet T4 (effets uniques, rolls fixes et combinatoires). |
+| `bracelet-data.js` | Dictionnaire des stats, affixes et tiers de bracelets T4. |
+| `subrank.js` | Système de notation Loseii (grades S+, S, S-, A+, A, A-, B+, B, B-, C+, C, C-, D et percentiles). |
+| `gear-data.js` | Données complémentaires d'équipement et d'affinage avancé (+10, +20, +30, +40). |
+| `i18n.js` | Gestion multilingue dynamique (Français / Anglais). |
+| `index.html` | Structure DOM, modales d'import, grilles de scoring de profil Loseii, onglets de simulation. |
+| `style.css` | Thème sombre haut de gamme, composants de cartes Loseii, pills, badges de rôle. |
+
+---
+
+## 📐 Règles Mathématiques & Mécaniques de Calcul
+
+### 1. Distinction Stricte : DPS vs Support
+Le modèle de calcul change du tout au tout selon le rôle :
+- **DPS** (Shadowhunter, Slayer, Souleater, Breaker, etc.) :
+  - **Métrique clé** : Gain de dégâts nets personnels (% Dégâts sortants, Puissance d'Attaque %, Dégâts additionnels, Taux/Dégâts Critiques).
+  - **GPD (Gold Per Damage)** : Coût en pièces d'or par **+1% de Dégâts** (`per 1% Damage`).
+- **Support** (Paladin, Barde, Artiste, Valkyrie) :
+  - **Métrique clé** : *Buff Power* allié (% Amplification PA d'Allié, % Dégâts Alliés, Puissance de Marque, Vitalité / Points de Vie max pour les boucliers et soins).
+  - **GPD** : Coût en pièces d'or par **+0.01% de Buff Allié** (`per 0.01% Ally Buff`).
+  - **Règle d'or** : Une classe support est TOUJOURS Support avec sa spé par défaut (Blessed Aura, Desperate Salvation, Full Bloom), SAUF si une gravure DPS explicite (`Judgment`, `True Courage`, `Recurrence`) est équipée.
+
+### 2. Décodage du Battle Point Smilegate (`lostark.bible`)
+Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes contiennent `loadout.battlePoint.parts` avec des types stricts :
+- `type 1` : Attaque de base (Stat principale Dex/Str/Int + Puissance d'arme + Base AP).
+- `type 2` : Points de vie max (Vitalité) — crucial pour le calcul du bouclier/soin support.
+- `type 4` : Qualité d'arme (valeur 0 à 100).
+- `types 19, 20, 21` : Bracelet T4 (traits de combat Swift/Spec/Crit + perks).
+- `types 31, 32` : Astrogemmes taillées T4.
+- `type 29 / loadout.arkGridCores` : Cœurs de la Grille d'Ark (Soleil, Lune, Étoile) par paliers 10, 14, 17, 20 points.
+- `types 50, 51, 54, 59` : Lignes d'affinage de bijoux spécifiques Support (50 = Soins, 51 = Boucliers, 54 = Amplification PA allié, 59 = Dégâts alliés). Si le rôle est DPS, ces lignes sont des **Dead Stats** ; si Support, elles sont prioritaires (High/Mid rolls).
+
+### 3. Modèle GPD & Smart Advisor
+- La fonction `getDynamicGpdTable(charObj, role, isEn)` évalue chaque palier d'amélioration possible (Honing arme, Honing armures, Affinage avancé, Gemmes T4, Taillage d'astrogemmes, Cœurs 17pts, Affinage bijoux, Livres de gravure T4).
+- Elle calcule le ratio `Coût en or / Gain net de puissance` et classe les actions par ROI décroissant.
+
+---
+
+## 🛠️ Règles de Développement & Bonnes Pratiques
+
+1. **Intégrité du DOM & Reactivité** :
+   - `calculator.js` référence des éléments du DOM dans l'objet `dom` initialisé au chargement.
+   - Ne jamais supprimer un identifiant DOM sans vérifier toutes ses références dans `calculator.js`.
+   - Toutes les fonctions clés appelées par les gestionnaires d'événements ou inline HTML sont exportées sur `window.__nomDeFonction`.
+2. **Gestion du Cache & Roster** :
+   - Le roster actif de l'utilisateur est stocké dans `localStorage.getItem('lostark_user_roster')`.
+   - `getUserRoster()` guérit automatiquement les rôles obsolètes en appelant `detectCharacterRole(c)`.
+3. **Vérification de Syntaxe avant Déploiement** :
+   - Toujours exécuter `node -c calculator.js` pour s'assurer de l'absence totale d'erreur de parsing JavaScript.
+
+---
+
+## 🚀 Procédure de Déploiement
+
+À chaque modification :
+1. **Incrémenter le cache-busting** dans `index.html` :
+   - `style.css?v=X.Y`
+   - `calculator.js?v=X.Y`
+2. **Synchroniser sur le conteneur Docker local (CT 104)** :
+   ```bash
+   scp *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/ && ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-cp nginx -s reload"
+   ```
+3. **Pousser sur Git (main et master)** :
+   ```bash
+   git commit -am "feat/fix: description des changements" && git push origin main && git push origin main:master
+   ```
+4. **Déployer sur Cloudflare Pages** :
+   ```bash
+   mkdir -p tmp_deploy && cp *.js *.html *.css tmp_deploy/ && cp -r images data tmp_deploy/ && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && npx -y wrangler pages deploy tmp_deploy --project-name lostark-cp --commit-dirty=true --branch master && rm -rf tmp_deploy
+   ```
