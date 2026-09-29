@@ -380,218 +380,128 @@
         </div>
       </section>
 
-      <!-- ONGLET 2 : SMART UPGRADE ADVISOR (PLANIFICATEUR RENTABLE) -->
+      <!-- ONGLET 2 : SMART UPGRADE ADVISOR (GPD & PROGRESSION GLOBALE) -->
       <section class="tab-pane" id="tab-advisor">
         <div class="advisor-container">
-          
-          <!-- Carte En-tête / Contrôles de Planification -->
-          <div class="card advisor-control-card">
+
+          <!-- 1. En-tête Hero & Carte Recommandation Suivante -->
+          <div class="card advisor-hero-card">
             <div class="advisor-header">
               <div class="advisor-title-area">
-                <span class="badge-advisor" data-i18n="adv_badge">✨ ALGORITHME DE RENTABILITÉ EUC</span>
-                <h2 data-i18n="adv_title">Smart Upgrade Advisor — Planificateur Rentable</h2>
-                <p class="subtitle" data-i18n="adv_subtitle">Calcule automatiquement le chemin optimal le moins cher en Gold pour maximiser vos CP et atteindre vos paliers de raid.</p>
-              </div>
-              <div class="advisor-char-pill" id="advisorCharPill">
-                <span class="advisor-char-name" id="advisorCharName" data-i18n="char_active_default">Personnage Actif</span>
-                <span class="advisor-char-stats" id="advisorCharStats">1750.00 iLvl • 3 368 CP</span>
-              </div>
-            </div>
-
-            <!-- Sélection du Mode d'Optimisation -->
-            <div class="advisor-modes-grid">
-              <div class="advisor-mode-option">
-                <label class="advisor-mode-label" data-i18n="adv_mode_label">Mode d'Optimisation :</label>
-                <div class="role-toggle advisor-mode-toggle" id="advisorModeToggle">
-                  <button type="button" class="role-btn active" id="btnAdvisorModeBudget" data-mode="budget" data-i18n="adv_mode_budget_btn">💰 Budget Gold</button>
-                  <button type="button" class="role-btn" id="btnAdvisorModeIlvl" data-mode="ilvl" data-i18n="adv_mode_ilvl_btn">🎯 Objectif iLvl</button>
-                  <button type="button" class="role-btn" id="btnAdvisorModeCp" data-mode="cp" data-i18n="adv_mode_cp_btn">⚡ Objectif CP</button>
-                </div>
-              </div>
-
-              <!-- Champ Dynamique : Budget Gold -->
-              <div class="advisor-input-wrapper" id="advInputBudgetGroup">
-                <div class="label-row">
-                  <label for="advInputBudget" data-i18n="adv_budget_label">Budget en Gold disponible :</label>
-                  <span class="val-display" id="dispAdvisorBudget">500 000 g</span>
-                </div>
-                <div class="advisor-quick-pills" id="advQuickBudgetBtns">
-                  <button type="button" class="btn-action-pill" data-val="100000">100k</button>
-                  <button type="button" class="btn-action-pill" data-val="250000">250k</button>
-                  <button type="button" class="btn-action-pill active" data-val="500000">500k</button>
-                  <button type="button" class="btn-action-pill" data-val="1000000">1M</button>
-                  <button type="button" class="btn-action-pill" data-val="2000000">2M</button>
-                </div>
-                <input type="number" id="advInputBudget" class="clean-number-input" value="500000" min="10000" step="10000">
-              </div>
-
-              <!-- Champ Dynamique : Objectif iLvl -->
-              <div class="advisor-input-wrapper" id="advInputIlvlGroup" style="display: none;">
-                <div class="label-row">
-                  <label for="advInputIlvl" data-i18n="adv_target_ilvl_label">Niveau d'Objet Cible (iLvl) :</label>
-                  <span class="val-display" id="dispAdvisorIlvl">1760.00</span>
-                </div>
-                <div class="advisor-quick-pills" id="advQuickIlvlBtns">
-                  <button type="button" class="btn-action-pill" data-diff="5">+5 iLvl</button>
-                  <button type="button" class="btn-action-pill active" data-diff="10">+10 iLvl</button>
-                  <button type="button" class="btn-action-pill" data-diff="15">+15 iLvl</button>
-                  <button type="button" class="btn-action-pill" data-diff="20">+20 iLvl</button>
-                </div>
-                <input type="number" id="advInputIlvl" class="clean-number-input" value="1760" min="1640" max="1800" step="0.83">
-              </div>
-
-              <!-- Champ Dynamique : Objectif CP -->
-              <div class="advisor-input-wrapper" id="advInputCpGroup" style="display: none;">
-                <div class="label-row">
-                  <label for="advInputCp" data-i18n="adv_target_cp_label">Gain de Combat Power Visé :</label>
-                  <span class="val-display" id="dispAdvisorCp">+300 CP</span>
-                </div>
-                <div class="advisor-quick-pills" id="advQuickCpBtns">
-                  <button type="button" class="btn-action-pill" data-diff="100">+100 CP</button>
-                  <button type="button" class="btn-action-pill" data-diff="200">+200 CP</button>
-                  <button type="button" class="btn-action-pill active" data-diff="300">+300 CP</button>
-                  <button type="button" class="btn-action-pill" data-diff="500">+500 CP</button>
-                  <button type="button" class="btn-action-pill" data-diff="800">+800 CP</button>
-                </div>
-                <input type="number" id="advInputCp" class="clean-number-input" value="300" min="50" max="2000" step="50">
-              </div>
-            </div>
-
-            <!-- Filtres de Catégories d'Amélioration (Scope) -->
-            <div class="advisor-scope-section">
-              <span class="scope-title" data-i18n="adv_scope_title">Catégories autorisées pour le planificateur :</span>
-              <div class="scope-checkboxes">
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeGear" checked>
-                  <span data-i18n="adv_scope_gear">🔨 Affinage T4 (Arme & Armures)</span>
-                </label>
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeAdvHoning" checked>
-                  <span data-i18n="adv_scope_adv">⭐ Affinage Avancé (+10, +20...)</span>
-                </label>
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeGems" checked>
-                  <span data-i18n="adv_scope_gems">💎 Gemmes T4 (Niv. 8, Niv. 9)</span>
-                </label>
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeArkGrid" checked>
-                  <span data-i18n="adv_scope_arkgrid">☀️ Grille d'Ark (Cœurs 17P)</span>
-                </label>
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeAcc" checked>
-                  <span data-i18n="adv_scope_acc">💍 Accessoires Polish (Lignes Arme %)</span>
-                </label>
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeEngravings" checked>
-                  <span data-i18n="adv_scope_books">📜 Gravures Reliques T4 (Livres)</span>
-                </label>
-                <label class="scope-checkbox-label">
-                  <input type="checkbox" id="advScopeBracelet">
-                  <span data-i18n="adv_scope_bracelet">📿 Bracelet T4 (Optionnel - Casino RNG)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Bouton de Calcul -->
-            <div class="advisor-action-row">
-              <button type="button" class="btn-calc-advisor" id="btnRunAdvisor">
-                <span data-i18n="adv_btn_calc">🚀 Calculer la Feuille de Route Optimale</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Carte Synthèse & KPI du Plan -->
-          <div class="advisor-kpi-grid" id="advisorKpiGrid">
-            <div class="advisor-kpi-card highlight-cp">
-              <div class="kpi-label" data-i18n="adv_kpi_total_gain">Gain Total Estimé</div>
-              <div class="kpi-value" id="advResGainCp">+0 CP</div>
-              <div class="kpi-sub" id="advResProjectedCp">CP Projeté : 3 368 CP</div>
-            </div>
-            <div class="advisor-kpi-card highlight-ilvl">
-              <div class="kpi-label" data-i18n="adv_kpi_ilvl_prog">Progression iLvl</div>
-              <div class="kpi-value" id="advResNewIlvl">1750.00</div>
-              <div class="kpi-sub" id="advResDiffIlvl">+0.00 iLvl</div>
-            </div>
-            <div class="advisor-kpi-card highlight-gold">
-              <div class="kpi-label" data-i18n="adv_kpi_total_cost">Coût Total Estimé</div>
-              <div class="kpi-value" id="advResTotalGold">0 g</div>
-              <div class="kpi-sub" id="advResBudgetRemaining">Budget restant : 500 000 g</div>
-            </div>
-            <div class="advisor-kpi-card highlight-roi">
-              <div class="kpi-label" data-i18n="adv_kpi_avg_roi_lbl">Rentabilité Moyenne</div>
-              <div class="kpi-value" id="advResAvgRoi">—</div>
-              <div class="kpi-sub" data-i18n="adv_kpi_avg_roi_sub">Indice coût / gain de CP</div>
-            </div>
-          </div>
-
-          <!-- Carte Diagnostic & Potentiel du Bracelet T4 -->
-          <div class="card advisor-bracelet-card" id="advisorBraceletCard">
-            <div class="card-header bracelet-diag-header">
-              <div class="bracelet-diag-title-area">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span class="step-icon-area" style="font-size: 20px;">📿</span>
-                  <h3 data-i18n="adv_brace_diag_title">Diagnostic & Potentiel du Bracelet T4</h3>
-                  <span class="bracelet-tier-badge good" id="advBraceTierBadge">Tier B • Bon</span>
-                </div>
-                <p class="subtitle" id="advBraceSubtitle" data-i18n="adv_brace_diag_sub">
-                  Évaluation d'efficacité globale, détection des stats mortes et procs BiS cibles pour votre classe.
+                <span class="badge-advisor" data-i18n="adv_badge">✨ ÉCHELLE UNIVERSELLE GPD (GOLD PER DAMAGE)</span>
+                <h2 data-i18n="adv_title">Tableau d'Arbitrage des Améliorations (GPD)</h2>
+                <p class="subtitle" data-i18n="adv_subtitle">
+                  Chaque palier d'amélioration classé par son coût réel par 1% de dégâts sur votre équipement actuel.
                 </p>
               </div>
-              <div class="bracelet-kpi-pill" id="advBraceGainPill">
-                <span class="kpi-tag" data-i18n="adv_brace_potential_gain">Gain potentiel :</span>
-                <strong id="advBraceGainVal">+240 CP</strong>
+              <div class="advisor-char-pill" id="advisorCharPill">
+                <span class="advisor-char-name" id="advisorCharName">Personnage Actif</span>
+                <span class="advisor-char-stats" id="advisorCharStats">1777.50 iLvl • 6 028 CP</span>
               </div>
             </div>
 
-            <div class="bracelet-diag-body">
-              <!-- Barre d'efficacité et score -->
-              <div class="bracelet-score-row">
-                <div class="bracelet-efficiency-meta">
-                  <span class="meta-label" data-i18n="adv_brace_eff_lbl">Efficacité globale estimée :</span>
-                  <strong class="meta-value" id="advBraceEffVal">8.00%</strong>
-                  <span class="meta-rating" id="advBraceRatingDesc">(Correct de transition • 1 stat morte détectée)</span>
+            <!-- Bannière Highlight : Prochaine Amélioration Rentable -->
+            <div class="gpd-next-banner" id="gpdNextBanner">
+              <div class="gpd-next-left">
+                <span class="gpd-next-tag" data-i18n="gpd_upgrade_next_lbl">⚡ Upgrade Suivant Recommandé :</span>
+                <strong class="gpd-next-system" id="gpdNextSystem">Grille d'Ark — Taille Épiques ➔ A-</strong>
+                <span class="gpd-next-context" id="gpdNextContext">Actuel : B+ (moyenne des 24 gemmes)</span>
+              </div>
+              <div class="gpd-next-right">
+                <div class="gpd-next-price-box">
+                  <span class="gpd-next-rate" id="gpdNextRate">623 000 g</span>
+                  <span class="gpd-next-unit" data-i18n="score_gpd_per">par 1% Dégâts</span>
                 </div>
-                <div class="bracelet-progress-track">
-                  <div class="bracelet-progress-bar" id="advBraceProgressBar" style="width: 57%;"></div>
+                <div class="gpd-next-gain-pill" id="gpdNextGain">675k g pour +1.08% (+65 CP)</div>
+              </div>
+            </div>
+
+            <!-- Barre de Contrôles & Filtres d'Objectifs CP -->
+            <div class="gpd-filter-bar">
+              <div class="gpd-filter-left">
+                <span class="filter-label" data-i18n="gpd_filter_goal_lbl">🎯 Filtrer par Objectif :</span>
+                <div class="gpd-goal-buttons" id="gpdGoalButtons">
+                  <button type="button" class="btn-goal-pill active" data-goal="all">🌐 Tous (Vue Globale)</button>
+                  <button type="button" class="btn-goal-pill" data-goal="100">+100 CP</button>
+                  <button type="button" class="btn-goal-pill" data-goal="200">+200 CP</button>
+                  <button type="button" class="btn-goal-pill" data-goal="300">+300 CP</button>
+                  <button type="button" class="btn-goal-pill" data-goal="500">+500 CP</button>
+                </div>
+                <div class="gpd-custom-goal">
+                  <input type="number" id="gpdCustomCpInput" class="clean-number-input compact" placeholder="CP +" min="10" step="50">
                 </div>
               </div>
 
-              <!-- 2 Colonnes : Lignes Actuelles vs Procs Cibles Recommandés -->
-              <div class="bracelet-columns-grid">
-                <!-- Colonne 1 : Analyse des lignes actuelles -->
-                <div class="bracelet-col current-lines-col">
-                  <div class="col-title" data-i18n="adv_brace_col_current">🔍 Lignes équipées sur votre bracelet :</div>
-                  <div class="bracelet-lines-list" id="advBraceLinesList">
-                    <!-- Rempli dynamiquement par calculator.js -->
-                  </div>
+              <!-- Synthèse de Plan (si objectif actif) -->
+              <div class="gpd-plan-summary" id="gpdPlanSummary" style="display: none;">
+                <div class="plan-summary-kpis">
+                  <span class="summary-pill gold" id="planSummaryGold">Coût : 0 g</span>
+                  <span class="summary-pill cp" id="planSummaryCp">Gain : +0 CP</span>
+                  <span class="summary-pill roi" id="planSummaryRoi">0 g / CP</span>
                 </div>
-
-                <!-- Colonne 2 : Procs BiS Recommandés sur mesure -->
-                <div class="bracelet-col bis-targets-col">
-                  <div class="col-title" data-i18n="adv_brace_col_targets">🎯 Procs BiS cibles à viser (Reroll / Achat) :</div>
-                  <div class="bracelet-targets-list" id="advBraceTargetsList">
-                    <!-- Rempli dynamiquement par calculator.js -->
-                  </div>
-                </div>
+                <button type="button" class="btn-apply-plan-compact" id="btnApplyGpdPlan">
+                  <span data-i18n="adv_btn_apply_plan">⚡ Appliquer au Simulateur</span>
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Feuille de Route Détaillée (Timeline / Liste des Étapes) -->
-          <div class="card advisor-roadmap-card">
-            <div class="card-header roadmap-header">
+          <!-- 2. Tableau Général GPD (Progression Table) -->
+          <div class="card gpd-table-card">
+            <div class="card-header">
               <div>
-                <h2 data-i18n="adv_roadmap_title">Feuille de Route Prioritaire (Ordre d'Achat Optimisé)</h2>
-                <p class="subtitle" id="advRoadmapSubtitle" data-i18n="adv_plan_subtitle">Classée par retour sur investissement décroissant pour maximiser votre impact à chaque gold dépensé.</p>
+                <h3 data-i18n="gpd_table_title">Classement Global des Paliers par Rentabilité (Gold / 1%)</h3>
+                <p class="subtitle" data-i18n="gpd_table_sub">
+                  Trié du palier le plus rentable au plus cher. Un palier sélectionné dans votre objectif est mis en évidence.
+                </p>
               </div>
-              <button type="button" class="btn-apply-roadmap" id="btnApplyRoadmap">
-                <span data-i18n="adv_btn_apply_plan">✨ Appliquer ce Plan dans le Simulateur d'Affinage</span>
-              </button>
             </div>
 
-            <!-- Liste des Étapes -->
-            <div class="roadmap-timeline" id="advisorRoadmapList">
-              <!-- Rempli dynamiquement par calculator.js -->
+            <div class="table-responsive">
+              <table class="gpd-master-table" id="gpdMasterTable">
+                <thead>
+                  <tr>
+                    <th data-i18n="gpd_th_system">Système</th>
+                    <th data-i18n="gpd_th_read">Lecture Actuelle</th>
+                    <th data-i18n="gpd_th_current">Palier Actuel</th>
+                    <th data-i18n="gpd_th_last">Dernier Palier</th>
+                    <th data-i18n="gpd_th_next">Prochain Palier (À Acheter)</th>
+                    <th data-i18n="gpd_th_rate">Gold / 1%</th>
+                    <th data-i18n="gpd_th_cpgain">Gain CP</th>
+                    <th data-i18n="gpd_th_status">Statut</th>
+                  </tr>
+                </thead>
+                <tbody id="gpdMasterTableBody">
+                  <!-- Injecté dynamiquement par calculator.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Détail Pièce par Pièce (Piece by piece Breakdown) -->
+          <div class="card gpd-pieces-card">
+            <div class="card-header">
+              <div>
+                <h3 data-i18n="gpd_pieces_title">Détail des Pièces & Accessoires (Piece by piece)</h3>
+                <p class="subtitle" data-i18n="gpd_pieces_sub">
+                  Analyse des rolls et lignes lus sur chacun de vos bijoux et bracelet. Les anneaux et boucles d'oreilles sont évalués sur la pièce la plus faible.
+                </p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="gpd-pieces-table" id="gpdPiecesTable">
+                <thead>
+                  <tr>
+                    <th data-i18n="gpd_th_piece">Pièce</th>
+                    <th data-i18n="gpd_th_piece_ladder">Lecture du Modèle</th>
+                    <th data-i18n="gpd_th_piece_lines">Lignes Présentes</th>
+                  </tr>
+                </thead>
+                <tbody id="gpdPiecesTableBody">
+                  <!-- Injecté dynamiquement par calculator.js -->
+                </tbody>
+              </table>
             </div>
           </div>
 

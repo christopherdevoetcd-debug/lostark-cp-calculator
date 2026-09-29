@@ -868,6 +868,22 @@
     tabAdvisorPane: document.getElementById('tab-advisor'),
     advisorCharName: document.getElementById('advisorCharName'),
     advisorCharStats: document.getElementById('advisorCharStats'),
+    gpdNextBanner: document.getElementById('gpdNextBanner'),
+    gpdNextSystem: document.getElementById('gpdNextSystem'),
+    gpdNextContext: document.getElementById('gpdNextContext'),
+    gpdNextRate: document.getElementById('gpdNextRate'),
+    gpdNextGain: document.getElementById('gpdNextGain'),
+    gpdGoalButtons: document.getElementById('gpdGoalButtons'),
+    gpdCustomCpInput: document.getElementById('gpdCustomCpInput'),
+    gpdPlanSummary: document.getElementById('gpdPlanSummary'),
+    planSummaryGold: document.getElementById('planSummaryGold'),
+    planSummaryCp: document.getElementById('planSummaryCp'),
+    planSummaryRoi: document.getElementById('planSummaryRoi'),
+    btnApplyGpdPlan: document.getElementById('btnApplyGpdPlan'),
+    gpdMasterTable: document.getElementById('gpdMasterTable'),
+    gpdMasterTableBody: document.getElementById('gpdMasterTableBody'),
+    gpdPiecesTable: document.getElementById('gpdPiecesTable'),
+    gpdPiecesTableBody: document.getElementById('gpdPiecesTableBody'),
     btnAdvisorModeBudget: document.getElementById('btnAdvisorModeBudget'),
     btnAdvisorModeIlvl: document.getElementById('btnAdvisorModeIlvl'),
     btnAdvisorModeCp: document.getElementById('btnAdvisorModeCp'),
@@ -4106,138 +4122,622 @@
     };
   }
 
+  function buildMasterGpdData(charObj, isSupport, isEn) {
+    const currentCp = (charObj && (charObj.calculatedScore || charObj.inGameScore)) || state.currentCp || 6028;
+    const sys = (typeof extractPlayerSystems === 'function') ? extractPlayerSystems(charObj, isEn) : {};
+
+    // 1. Ark Grid — cutting epics
+    let agRead = isEn ? 'B+ (mean of 24 epics: 3.51 offensive rolls)' : 'B+ (moyenne des 24 gemmes : 3.51 rolls off.)';
+    let agWhere = 'B+ · 78.5';
+    let agLastStep = isEn ? 'B ➔ B+ (3.5 offensive rolls)' : 'B ➔ B+ (3.5 rolls off.)';
+    let agNextStep = isEn ? '➔ A- (3.75 offensive rolls)' : '➔ A- (3.75 rolls off.)';
+    let agCost = 675000;
+    let agGain = 1.08;
+    let agRate = 623000;
+
+    // 2. Earring (Boucle d'oreille)
+    let earRead = 'mid/high · no flat · low stat';
+    let earWhere = 'A- · 72.8';
+    let earLast = 'mid/mid ➔ mid/high';
+    let earNext = isEn ? '➔ high stat' : '➔ stat élevée';
+    let earCost = 45000;
+    let earGain = 0.05;
+    let earRate = 895000;
+
+    // 3. Necklace (Collier)
+    let neckRead = 'mid/high · no flat · low stat';
+    let neckWhere = 'A- · 74.1';
+    let neckLast = 'mid/mid ➔ mid/high';
+    let neckNext = isEn ? '➔ high stat' : '➔ stat élevée';
+    let neckCost = 2000;
+    let neckGain = 0.002;
+    let neckRate = 1170000;
+
+    // 4. Ring (Anneau)
+    let ringRead = 'high/mid · no flat · mid stat';
+    let ringWhere = 'A · 80.3';
+    let ringLast = 'mid/mid ➔ high/mid';
+    let ringNext = isEn ? '➔ high stat' : '➔ stat élevée';
+    let ringCost = 103000;
+    let ringGain = 0.07;
+    let ringRate = 1480000;
+
+    // 5. Karma Enlightenment (Ark Passive)
+    let karmaLvl = 27;
+    if (sys.apPoints && sys.apPoints.enlightenment) {
+      karmaLvl = Math.round(sys.apPoints.enlightenment / 3.7) || 27;
+    }
+    let karmaRead = isEn ? `Level ${karmaLvl}` : `Niveau ${karmaLvl}`;
+    let karmaWhere = isEn ? `Level ${karmaLvl}` : `Niveau ${karmaLvl}`;
+    let karmaLast = `${karmaLvl - 1} ➔ ${karmaLvl}`;
+    let karmaNext = `${karmaLvl} ➔ ${karmaLvl + 1}`;
+    let karmaCost = 83000;
+    let karmaGain = 0.05;
+    let karmaRate = 1830000;
+
+    // 6. Bracelet
+    let brGrade = 'B-';
+    let brScore = '63.2';
+    let brPct = 13.47;
+    const brStats = (charObj && charObj.bracelet && Array.isArray(charObj.bracelet.stats) && charObj.bracelet.stats)
+      || (charObj && charObj.rawProfile && charObj.rawProfile.bracelet && Array.isArray(charObj.rawProfile.bracelet.stats) && charObj.rawProfile.bracelet.stats)
+      || null;
+
+    if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brStats) {
+      try {
+        const TRAIT_TO_APP = { crit: "crit", spec: "spec", swiftness: "swift" };
+        const dec = window.Bracelet.decodeBibleBracelet(brStats);
+        const traits = { crit: 0, spec: 0, swift: 0 };
+        const lines = [];
+        for (let i = 0; i < (dec.lines || []).length; i++) {
+          const l = dec.lines[i];
+          const key = TRAIT_TO_APP[l.family];
+          if (l.cat === "trait" && key) traits[key] = l.value;
+          else lines.push(l);
+        }
+        const normProf = window.Bracelet.normalizeProfile({ role: isSupport ? 'support' : 'dps' });
+        const sc = window.Subrank.braceletScore({ grade: dec.grade || 'ancient', lines, traits, profile: normProf });
+        if (sc && sc.band) {
+          brGrade = sc.band.key;
+          brScore = sc.score.toFixed(1);
+          brPct = Number(sc.damagePct.toFixed(2));
+        }
+      } catch (e) {}
+    }
+    let brRead = `${brGrade} · ${brScore} · +${brPct}% ${isSupport ? 'buff' : 'dmg'}`;
+    let brWhere = `${brGrade} · ${brScore}`;
+    let brLast = `C+ ➔ ${brGrade} (+12.7% ➔ +${brPct}%)`;
+    let brNext = `➔ B (+14.08% ${isSupport ? 'buff' : 'dmg'})`;
+    let brCost = 1170000;
+    let brGain = 0.61;
+    let brRate = 1920000;
+
+    // 7. Skill gems
+    let gLvl = 8;
+    if (sys.gems && sys.gems.label) {
+      if (sys.gems.label.includes('10')) gLvl = 10;
+      else if (sys.gems.label.includes('9')) gLvl = 9;
+      else if (sys.gems.label.includes('7')) gLvl = 7;
+    }
+    let gemsRead = isEn ? `mean lvl ${gLvl}.0 (all ${gLvl}s)` : `Niv. moyen ${gLvl}.0 (full ${gLvl})`;
+    let gemsWhere = isEn ? `Level ${gLvl}` : `Niveau ${gLvl}`;
+    let gemsLast = `${gLvl - 1} ➔ ${gLvl}`;
+    let gemsNext = `${gLvl} ➔ ${gLvl + 1} (full ${gLvl + 1}s)`;
+    let gemsCost = gLvl === 8 ? 9240000 : (gLvl === 7 ? 3080000 : 27500000);
+    let gemsGain = gLvl === 8 ? 4.79 : (gLvl === 7 ? 4.83 : 3.90);
+    let gemsRate = Math.round(gemsCost / gemsGain);
+
+    // 8. Armors honing
+    let aLvl = Math.round(sys.armors ? (sys.armors.avgArmor || 20) : (state.gear ? state.gear.head || 20 : 20));
+    let armorsRead = isEn ? `+${aLvl} all pieces` : `+${aLvl} toutes pièces`;
+    let armorsWhere = `+${aLvl}`;
+    let armorsLast = `+${aLvl - 1} ➔ +${aLvl}`;
+    let armorsNext = `+${aLvl} ➔ +${aLvl + 1}`;
+    let armorsCost = 2490000;
+    let armorsGain = 1.08;
+    let armorsRate = 2290000;
+
+    // 9. Ark grid — cutting rares
+    let raresRead = isEn ? 'Rare nodes cut' : 'Noeuds rares taillés';
+    let raresWhere = 'B+';
+    let raresLast = 'B ➔ B+';
+    let raresNext = '➔ A-';
+    let raresCost = 3030000;
+    let raresGain = 0.97;
+    let raresRate = 3130000;
+
+    // 10. Weapon honing
+    let wLvl = Math.round(sys.weapon ? (sys.weapon.wLvl || 23) : (state.gear ? state.gear.weapon || 23 : 23));
+    let weaponRead = isEn ? `+${wLvl} T4 Weapon` : `+${wLvl} Arme T4`;
+    let weaponWhere = `+${wLvl}`;
+    let weaponLast = `+${wLvl - 1} ➔ +${wLvl}`;
+    let weaponNext = `+${wLvl} ➔ +${wLvl + 1}`;
+    let weaponCost = 7650000;
+    let weaponGain = 1.22;
+    let weaponRate = 6290000;
+
+    // 11. Ability stone
+    let stoneRead = '9 / 6 / 4';
+    let stoneWhere = isEn ? 'Tier 3 (9-6)' : 'Tier 3 (9-6)';
+    let stoneLast = '9-5 ➔ 9-6';
+    let stoneNext = isEn ? '9-6 ➔ 9-7 (Tier 4)' : '9-6 ➔ 9-7 (Tier 4)';
+    let stoneCost = 14170000;
+    let stoneGain = 1.15;
+    let stoneRate = 12340000;
+
+    const rows = [
+      {
+        id: 'grid_epics',
+        icon: '☀️',
+        system: isEn ? 'Ark grid — cutting epics' : 'Grille d\'Ark — Taille d\'épiques',
+        whatItReads: agRead,
+        wherePutsYou: agWhere,
+        lastStep: agLastStep,
+        lastRate: '412k / 1%',
+        nextStep: agNextStep,
+        cost: agCost,
+        dmgGain: agGain,
+        rate: agRate,
+        category: 'arkGrid'
+      },
+      {
+        id: 'earring',
+        icon: '👂',
+        system: isEn ? 'Earring' : 'Boucle d\'oreille',
+        whatItReads: earRead,
+        wherePutsYou: earWhere,
+        lastStep: earLast,
+        lastRate: '420k / 1%',
+        nextStep: earNext,
+        cost: earCost,
+        dmgGain: earGain,
+        rate: earRate,
+        category: 'acc'
+      },
+      {
+        id: 'necklace',
+        icon: '📿',
+        system: isEn ? 'Necklace' : 'Collier',
+        whatItReads: neckRead,
+        wherePutsYou: neckWhere,
+        lastStep: neckLast,
+        lastRate: '610k / 1%',
+        nextStep: neckNext,
+        cost: neckCost,
+        dmgGain: neckGain,
+        rate: neckRate,
+        category: 'acc'
+      },
+      {
+        id: 'ring',
+        icon: '💍',
+        system: isEn ? 'Ring' : 'Anneau',
+        whatItReads: ringRead,
+        wherePutsYou: ringWhere,
+        lastStep: ringLast,
+        lastRate: '750k / 1%',
+        nextStep: ringNext,
+        cost: ringCost,
+        dmgGain: ringGain,
+        rate: ringRate,
+        category: 'acc'
+      },
+      {
+        id: 'karma_enl',
+        icon: '⚡',
+        system: isEn ? 'Karma Enlightenment' : 'Karma Éclairage',
+        whatItReads: karmaRead,
+        wherePutsYou: karmaWhere,
+        lastStep: karmaLast,
+        lastRate: '1.45M / 1%',
+        nextStep: karmaNext,
+        cost: karmaCost,
+        dmgGain: karmaGain,
+        rate: karmaRate,
+        category: 'arkPassive'
+      },
+      {
+        id: 'bracelet',
+        icon: '📿',
+        system: isEn ? 'Bracelet' : 'Bracelet',
+        whatItReads: brRead,
+        wherePutsYou: brWhere,
+        lastStep: brLast,
+        lastRate: '1.10M / 1%',
+        nextStep: brNext,
+        cost: brCost,
+        dmgGain: brGain,
+        rate: brRate,
+        category: 'bracelet'
+      },
+      {
+        id: 'skill_gems',
+        icon: '💎',
+        system: isEn ? 'Skill gems' : 'Gemmes de compétences',
+        whatItReads: gemsRead,
+        wherePutsYou: gemsWhere,
+        lastStep: gemsLast,
+        lastRate: '1.12M / 1%',
+        nextStep: gemsNext,
+        cost: gemsCost,
+        dmgGain: gemsGain,
+        rate: gemsRate,
+        category: 'gems',
+        applyType: 'gems',
+        targetVal: gLvl + 1
+      },
+      {
+        id: 'armors_honing',
+        icon: '🛡️',
+        system: isEn ? 'Armors honing' : 'Affinage Armures',
+        whatItReads: armorsRead,
+        wherePutsYou: armorsWhere,
+        lastStep: armorsLast,
+        lastRate: '1.75M / 1%',
+        nextStep: armorsNext,
+        cost: armorsCost,
+        dmgGain: armorsGain,
+        rate: armorsRate,
+        category: 'gear',
+        applyType: 'armors',
+        targetVal: aLvl + 1
+      },
+      {
+        id: 'grid_rares',
+        icon: '✨',
+        system: isEn ? 'Ark grid — cutting rares' : 'Grille d\'Ark — Taille de rares',
+        whatItReads: raresRead,
+        wherePutsYou: raresWhere,
+        lastStep: raresLast,
+        lastRate: '2.10M / 1%',
+        nextStep: raresNext,
+        cost: raresCost,
+        dmgGain: raresGain,
+        rate: raresRate,
+        category: 'arkGrid'
+      },
+      {
+        id: 'weapon_honing',
+        icon: '⚔️',
+        system: isEn ? 'Weapon honing' : 'Affinage Arme',
+        whatItReads: weaponRead,
+        wherePutsYou: weaponWhere,
+        lastStep: weaponLast,
+        lastRate: '4.80M / 1%',
+        nextStep: weaponNext,
+        cost: weaponCost,
+        dmgGain: weaponGain,
+        rate: weaponRate,
+        category: 'gear',
+        applyType: 'weapon',
+        targetVal: wLvl + 1
+      },
+      {
+        id: 'ability_stone',
+        icon: '🪨',
+        system: isEn ? 'Ability stone' : 'Pierre de capacité',
+        whatItReads: stoneRead,
+        wherePutsYou: stoneWhere,
+        lastStep: stoneLast,
+        lastRate: '8.50M / 1%',
+        nextStep: stoneNext,
+        cost: stoneCost,
+        dmgGain: stoneGain,
+        rate: stoneRate,
+        category: 'stone'
+      }
+    ];
+
+    rows.forEach(r => {
+      r.cpGain = Math.max(1, Math.round(currentCp * (r.dmgGain / 100)));
+      r.roi = Math.round(r.cost / r.cpGain);
+    });
+
+    rows.sort((a, b) => a.rate - b.rate);
+    return rows;
+  }
+
+  function buildPieceByPieceData(charObj, isSupport, isEn) {
+    if (!charObj) return [];
+    const cKey = (charObj.id || charObj.name || '').toLowerCase().trim();
+    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (charObj.rawProfile ? charObj : null);
+
+    let pAccItems = (charObj && charObj.accessories)
+      || (charObj && charObj.rawProfile && charObj.rawProfile.accessories)
+      || (charObj && charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.items && charObj.rawProfile.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || (charObj && charObj.loadout && charObj.loadout.items && charObj.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || (canon && canon.rawProfile && canon.rawProfile.accessories)
+      || (canon && canon.rawProfile && canon.rawProfile.loadout && canon.rawProfile.loadout.items && canon.rawProfile.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || (canon && canon.loadout && canon.loadout.items && canon.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
+      || [];
+
+    const slotConfigs = [
+      { slot: 'neck', name: isEn ? 'Necklace' : 'Collier', icon: '📿', fallbackLadder: 'mid/high · no flat · low stat' },
+      { slot: 'ear1', name: isEn ? 'Earring 1' : 'Boucle d\'oreille 1', icon: '👂', fallbackLadder: 'mid/high · no flat' },
+      { slot: 'ear2', name: isEn ? 'Earring 2' : 'Boucle d\'oreille 2', icon: '👂', fallbackLadder: 'mid/high · no flat · low stat' },
+      { slot: 'finger1', name: isEn ? 'Ring 1' : 'Anneau 1', icon: '💍', fallbackLadder: 'high/mid · no flat · mid stat' },
+      { slot: 'finger2', name: isEn ? 'Ring 2' : 'Anneau 2', icon: '💍', fallbackLadder: 'high/mid · no flat · mid stat' }
+    ];
+
+    const result = [];
+    const textItems = (charObj.items && Array.isArray(charObj.items))
+      ? charObj.items
+      : ((canon && Array.isArray(canon.items)) ? canon.items : []);
+
+    slotConfigs.forEach(cfg => {
+      const item = (pAccItems && pAccItems.length > 0) ? pAccItems.find(i => i.slot === cfg.slot) : null;
+      let ladderStr = cfg.fallbackLadder;
+      const lines = [];
+
+      if (item && item.data && Array.isArray(item.data.stats)) {
+        const rolls = item.data.stats.filter(st => st.base === false);
+        let highs = 0, mids = 0, lows = 0, deads = 0;
+        rolls.forEach(r => {
+          const dec = decodeAccessoryStat(r, cfg.slot, isSupport, isEn);
+          if (dec.isDead) deads++;
+          else if (dec.rollTier === 'passif' || dec.rollTier === 'high') highs++;
+          else if (dec.rollTier === 'mid') mids++;
+          else lows++;
+
+          lines.push({
+            text: dec.text,
+            tier: dec.isDead ? 'dead' : dec.rollTier,
+            tierLabel: dec.tierLabel
+          });
+        });
+
+        if (rolls.length > 0) {
+          const parts = [];
+          if (highs > 0 && mids > 0) parts.push('high/mid');
+          else if (highs > 0) parts.push('high');
+          else if (mids > 0) parts.push('mid');
+          parts.push('no flat');
+          if (lows > 0) parts.push('low stat');
+          ladderStr = parts.join(' · ');
+        }
+      } else {
+        const pieceKeyword = cfg.slot === 'neck' ? 'collier'
+          : (cfg.slot === 'ear1' ? 'boucle d\'oreille #1'
+          : (cfg.slot === 'ear2' ? 'boucle d\'oreille #2'
+          : (cfg.slot === 'finger1' ? 'anneau #1' : 'anneau #2')));
+
+        const matched = textItems.filter(it => it.cat === 'Accessoires' && (it.label || '').toLowerCase().includes(pieceKeyword));
+        matched.forEach(m => {
+          const lbl = (m.label || '').toLowerCase();
+          const val = m.val || '';
+          let tier = 'mid';
+          if (lbl.includes('soins') || lbl.includes('marque') || lbl.includes('brand') || (lbl.includes('allié') && !isSupport)) {
+            tier = 'dead';
+          } else if (val.includes('+2.00%') || val.includes('+4.00%') || val.includes('+960') || val.includes('+390')) {
+            tier = 'high';
+          } else if (val.includes('+1.60%') || val.includes('+0.95%')) {
+            tier = 'mid';
+          }
+          lines.push({
+            text: m.label.replace(/^.*?—\s*/, ''),
+            tier: tier,
+            tierLabel: tier === 'high' ? (isEn ? 'High Roll' : 'Roll Élevé') : (tier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Dead' : 'Inutile'))
+          });
+        });
+      }
+
+      result.push({
+        name: cfg.name,
+        icon: cfg.icon,
+        ladder: ladderStr,
+        lines: lines
+      });
+    });
+
+    // 6. Bracelet
+    const brLines = [];
+    let brLadder = 'B- · 63.2 · +13.47% damage';
+
+    const brStats = (charObj && charObj.bracelet && Array.isArray(charObj.bracelet.stats) && charObj.bracelet.stats)
+      || (charObj && charObj.rawProfile && charObj.rawProfile.bracelet && Array.isArray(charObj.rawProfile.bracelet.stats) && charObj.rawProfile.bracelet.stats)
+      || null;
+
+    if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brStats) {
+      try {
+        const TRAIT_TO_APP = { crit: "crit", spec: "spec", swiftness: "swift" };
+        const dec = window.Bracelet.decodeBibleBracelet(brStats);
+        const traits = { crit: 0, spec: 0, swift: 0 };
+        for (let i = 0; i < (dec.lines || []).length; i++) {
+          const l = dec.lines[i];
+          const key = TRAIT_TO_APP[l.family];
+          if (l.cat === "trait" && key) {
+            traits[key] = l.value;
+            const tName = key === "swift" ? (isEn ? "Swiftness" : "Rapidité") : (key === "spec" ? (isEn ? "Specialization" : "Spécialisation") : (isEn ? "Crit" : "Critique"));
+            brLines.push({ text: `🔹 ${tName} +${l.value}`, tier: 'trait', tierLabel: 'Combat Stat' });
+          } else {
+            const isDead = isDeadStat(l.name || l.desc, isSupport);
+            brLines.push({
+              text: formatBraceletLine(l.name || l.desc, isEn),
+              tier: isDead ? 'dead' : 'high',
+              tierLabel: isDead ? (isEn ? 'Dead' : 'Inutile') : (isEn ? 'High Roll' : 'Roll Élevé')
+            });
+          }
+        }
+        const normProf = window.Bracelet.normalizeProfile({ role: isSupport ? 'support' : 'dps' });
+        const sc = window.Subrank.braceletScore({ grade: dec.grade || 'ancient', lines: dec.lines.filter(l => l.cat !== 'trait'), traits, profile: normProf });
+        if (sc && sc.band) {
+          brLadder = `${sc.band.key} · ${sc.score.toFixed(1)} · +${sc.damagePct.toFixed(2)}% ${isSupport ? 'buff' : 'dmg'}`;
+        }
+      } catch (e) {}
+    } else {
+      const matched = textItems.filter(it => it.cat === 'Bracelet' || (it.label || '').toLowerCase().includes('bracelet'));
+      matched.forEach(m => {
+        const lbl = (m.label || '').toLowerCase();
+        let tier = 'high';
+        if (lbl.includes('rapidité') || lbl.includes('spécialisation') || lbl.includes('swift') || lbl.includes('spec') || lbl.includes('crit')) {
+          tier = 'trait';
+        } else if (lbl.includes('défense') || lbl.includes('defense') || lbl.includes('mana')) {
+          tier = 'dead';
+        }
+        brLines.push({
+          text: m.label.replace(/^.*?—\s*/, ''),
+          tier: tier,
+          tierLabel: tier === 'trait' ? 'Combat Stat' : (tier === 'dead' ? (isEn ? 'Dead' : 'Inutile') : (isEn ? 'High Roll' : 'Roll Élevé'))
+        });
+      });
+    }
+
+    result.push({
+      name: isEn ? 'T4 Bracelet' : 'Bracelet T4',
+      icon: '📿',
+      ladder: brLadder,
+      lines: brLines
+    });
+
+    return result;
+  }
+
   function renderAdvisorView() {
     if (!dom.tabAdvisorPane) return;
 
     const curChar = getCurrentActiveCharacter();
-    const isEnAdv = isEnLang();
-    const cName = curChar ? curChar.name : (isEnAdv ? 'Active Character' : 'Personnage Actif');
+    const isEn = isEnLang();
+    const isSupport = (state.role === 'support');
+    const cName = curChar ? curChar.name : (isEn ? 'Active Character' : 'Personnage Actif');
     if (dom.advisorCharName) dom.advisorCharName.textContent = cName;
     if (dom.advisorCharStats) {
       dom.advisorCharStats.textContent = `${state.currentIlvl.toFixed(2)} iLvl • ${formatNumber(Math.round(state.currentCp))} CP`;
     }
 
-    // Évaluation et Diagnostic du Bracelet T4
-    renderBraceletDiagnostic(curChar, isEnAdv);
+    const masterData = buildMasterGpdData(curChar, isSupport, isEn);
+    advisorState.lastGpdData = masterData;
 
-    const budget = dom.advInputBudget ? (parseFloat(dom.advInputBudget.value) || 500000) : 500000;
-    const targetIlvl = dom.advInputIlvl ? (parseFloat(dom.advInputIlvl.value) || (state.currentIlvl + 10)) : (state.currentIlvl + 10);
-    const targetCpDelta = dom.advInputCp ? (parseFloat(dom.advInputCp.value) || 300) : 300;
-
-    const scope = {
-      gear: dom.advScopeGear ? dom.advScopeGear.checked : true,
-      advHoning: dom.advScopeAdvHoning ? dom.advScopeAdvHoning.checked : true,
-      gems: dom.advScopeGems ? dom.advScopeGems.checked : true,
-      arkGrid: dom.advScopeArkGrid ? dom.advScopeArkGrid.checked : true,
-      acc: dom.advScopeAcc ? dom.advScopeAcc.checked : true,
-      engravings: dom.advScopeEngravings ? dom.advScopeEngravings.checked : true,
-      bracelet: dom.advScopeBracelet ? dom.advScopeBracelet.checked : true
-    };
-
-    const res = solveAdvisor({
-      startIlvl: state.currentIlvl || 1750.0,
-      startCp: state.currentCp || 3368,
-      role: state.role || 'support',
-      startGear: state.gear || { weapon: 17, head: 14, shoulder: 14, chest: 14, pants: 14, gloves: 14 },
-      startAdv: state.advHoning !== undefined ? state.advHoning : 40,
-      mode: advisorState.mode || 'budget',
-      budget,
-      targetIlvl,
-      targetCpDelta,
-      scope
-    });
-
-    advisorState.lastResult = res;
-
-    // Update KPI Displays
-    if (dom.advResGainCp) dom.advResGainCp.textContent = `+${formatNumber(res.totalCp)} CP`;
-    if (dom.advResProjectedCp) dom.advResProjectedCp.textContent = isEnLang() ? `Projected CP: ${formatNumber(res.endCp)} CP` : `CP Projeté : ${formatNumber(res.endCp)} CP`;
-    if (dom.advResNewIlvl) dom.advResNewIlvl.textContent = res.endIlvl.toFixed(2);
-    if (dom.advResDiffIlvl) dom.advResDiffIlvl.textContent = `+${res.diffIlvl.toFixed(2)} iLvl`;
-    if (dom.advResTotalGold) dom.advResTotalGold.textContent = `${formatNumber(res.totalGold)} g`;
-    if (dom.advResBudgetRemaining) {
-      dom.advResBudgetRemaining.textContent = advisorState.mode === 'budget' 
-        ? (isEnAdv ? `Remaining budget: ${formatNumber(res.budgetRemaining)} g` : `Budget restant : ${formatNumber(res.budgetRemaining)} g`) 
-        : (isEnAdv ? `Total cost to reach target` : `Coût total pour atteindre l'objectif`);
-    }
-    if (dom.advResAvgRoi) {
-      dom.advResAvgRoi.textContent = res.avgRoi > 0 ? `${formatNumber(res.avgRoi)} g / CP` : '—';
+    // 1. Highlight Banner (Next Upgrade)
+    if (masterData.length > 0) {
+      const best = masterData[0];
+      if (dom.gpdNextSystem) dom.gpdNextSystem.textContent = `${best.system} ${best.nextStep}`;
+      if (dom.gpdNextContext) dom.gpdNextContext.textContent = `${isEn ? 'Current:' : 'Actuel :'} ${best.whatItReads}`;
+      if (dom.gpdNextRate) dom.gpdNextRate.textContent = `${formatNumber(best.rate)} g`;
+      if (dom.gpdNextGain) {
+        dom.gpdNextGain.textContent = `${formatNumber(Math.round(best.cost / 1000))}k g ${isEn ? 'for' : 'pour'} +${best.dmgGain.toFixed(2)}% (+${best.cpGain} CP)`;
+      }
     }
 
-    // Update Roadmap Steps List
-    if (dom.advisorRoadmapList) {
-      if (res.steps.length === 0) {
-        dom.advisorRoadmapList.innerHTML = `
-          <div class="roadmap-empty">
-            ${isEnAdv ? '💡 No upgrades recommended for this budget or filter selection.<br>Increase your budget or select additional categories.' : '💡 Aucune amélioration recommandée pour ce budget ou ces filtres.<br>Augmentez votre budget ou cochez d\'autres catégories d\'optimisation.'}
-          </div>
-        `;
-        return;
+    // 2. Goal filtering & Planning
+    const goal = advisorState.selectedGoal || 'all';
+    let chosenIds = new Set();
+    advisorState.planItems = [];
+
+    if (goal !== 'all') {
+      const targetGoal = parseFloat(goal) || 100;
+      let cumCp = 0;
+      let cumGold = 0;
+
+      for (let i = 0; i < masterData.length; i++) {
+        const item = masterData[i];
+        chosenIds.add(item.id);
+        advisorState.planItems.push(item);
+        cumCp += item.cpGain;
+        cumGold += item.cost;
+        if (cumCp >= targetGoal) break;
       }
 
-      let html = '';
-      res.steps.forEach((s, idx) => {
-        const ilvlHtml = s.ilvl > 0 ? `<span class="step-metric-pill ilvl">+${s.ilvl.toFixed(2)} iLvl</span>` : '';
-        const cpHtml = s.cp > 0 ? `<span class="step-metric-pill cp">+${s.cp.toFixed(1)} CP</span>` : '';
-        const goldHtml = s.cost > 0 ? `<span class="step-metric-pill gold">${formatNumber(s.cost)} g</span>` : '';
-        const roiHtml = s.roi > 0 ? `<span class="step-metric-pill roi">${formatNumber(Math.round(s.roi))} g / CP</span>` : '';
+      const avgRoi = cumCp > 0 ? Math.round(cumGold / cumCp) : 0;
+      if (dom.planSummaryGold) dom.planSummaryGold.textContent = `${isEn ? 'Cost:' : 'Coût :'} ${formatNumber(cumGold)} g`;
+      if (dom.planSummaryCp) dom.planSummaryCp.textContent = `${isEn ? 'Gain:' : 'Gain :'} +${formatNumber(cumCp)} CP`;
+      if (dom.planSummaryRoi) dom.planSummaryRoi.textContent = `${formatNumber(avgRoi)} g / CP`;
+      if (dom.gpdPlanSummary) dom.gpdPlanSummary.style.display = 'flex';
+    } else {
+      if (dom.gpdPlanSummary) dom.gpdPlanSummary.style.display = 'none';
+    }
 
-        const guideHtml = (s.targets || s.method) ? `
-          <div class="step-guide-box">
-            ${s.targets ? `<div class="guide-line"><span class="guide-k">${isEnAdv ? '🎯 Target Stats:' : '🎯 Stats Cibles :'}</span> <span class="guide-v">${s.targets}</span></div>` : ''}
-            ${s.method ? `<div class="guide-line"><span class="guide-k">${isEnAdv ? '📍 In-Game Method:' : '📍 Méthode en jeu :'}</span> <span class="guide-v">${s.method}</span></div>` : ''}
-          </div>
-        ` : '';
+    // 3. Render Master Table
+    if (dom.gpdMasterTableBody) {
+      let rowsHtml = '';
+      masterData.forEach((row, idx) => {
+        const isChosen = chosenIds.has(row.id);
+        const planIdx = advisorState.planItems.findIndex(x => x.id === row.id);
+        const trClass = isChosen ? 'gpd-row plan-selected' : 'gpd-row';
 
-        html += `
-          <div class="roadmap-step-item">
-            <div class="step-num-badge">${idx + 1}</div>
-            <div class="step-icon-area">${s.icon || '✨'}</div>
-            <div class="step-main-info">
-              <div class="step-title">
-                <span>${s.name}</span>
-                <span class="step-tier-badge ${s.tier}">${s.tierLabel}</span>
+        let statusBadge = '';
+        if (goal !== 'all') {
+          if (isChosen) {
+            statusBadge = `<span class="gpd-status-badge in-plan">${isEn ? `✅ In Plan (#${planIdx + 1})` : `✅ Dans le Plan (#${planIdx + 1})`}</span>`;
+          } else {
+            statusBadge = `<span class="gpd-status-badge normal">${isEn ? 'Standby' : 'En attente'}</span>`;
+          }
+        } else {
+          if (idx === 0) {
+            statusBadge = `<span class="gpd-status-badge best-deal">${isEn ? '⭐ Best Deal' : '⭐ Recommandé'}</span>`;
+          } else {
+            statusBadge = `<span class="gpd-status-badge normal">${isEn ? 'Standard' : 'Palier'}</span>`;
+          }
+        }
+
+        rowsHtml += `
+          <tr class="${trClass}">
+            <td>
+              <div class="gpd-system-cell">
+                <span class="gpd-system-icon">${row.icon}</span>
+                <span class="gpd-system-title">${row.system}</span>
               </div>
-              <div class="step-sub">${s.sub}</div>
-              <div class="step-metrics-row">
-                ${cpHtml}
-                ${ilvlHtml}
-                ${goldHtml}
-                ${roiHtml}
+            </td>
+            <td><span class="gpd-read-text">${row.whatItReads}</span></td>
+            <td><span class="gpd-rung-badge">${row.wherePutsYou}</span></td>
+            <td><span class="gpd-step-muted">${row.lastStep} <br><small style="color:#fbbf24;">(${row.lastRate})</small></span></td>
+            <td>
+              <div class="gpd-next-step-cell">
+                <span class="gpd-next-step-name">${row.nextStep}</span>
+                <span class="gpd-next-step-details">${formatNumber(Math.round(row.cost / 1000))}k g • +${row.dmgGain.toFixed(2)}%</span>
               </div>
-              ${guideHtml}
-            </div>
-          </div>
+            </td>
+            <td><span class="gpd-rate-val">${formatNumber(row.rate)} g</span></td>
+            <td><span class="gpd-gain-val">+${row.cpGain} CP</span></td>
+            <td>${statusBadge}</td>
+          </tr>
         `;
       });
-      dom.advisorRoadmapList.innerHTML = html;
+      dom.gpdMasterTableBody.innerHTML = rowsHtml;
+    }
+
+    // 4. Render Piece by Piece
+    if (dom.gpdPiecesTableBody) {
+      const pieceData = buildPieceByPieceData(curChar, isSupport, isEn);
+      let pRowsHtml = '';
+      pieceData.forEach(p => {
+        const linesTags = p.lines.map(l => `<span class="piece-line-tag ${l.tier}">${l.text}</span>`).join(' ') || `<span class="gpd-step-muted">${isEn ? 'Standard rolls' : 'Rolls standards'}</span>`;
+        pRowsHtml += `
+          <tr>
+            <td>
+              <div class="piece-name-cell">
+                <span>${p.icon}</span>
+                <span>${p.name}</span>
+              </div>
+            </td>
+            <td><span class="piece-ladder-badge">${p.ladder}</span></td>
+            <td><div class="piece-lines-container">${linesTags}</div></td>
+          </tr>
+        `;
+      });
+      dom.gpdPiecesTableBody.innerHTML = pRowsHtml;
     }
   }
 
-  function applyAdvisorPlan() {
-    if (!advisorState.lastResult) return;
-    const res = advisorState.lastResult;
+  function applyGpdPlan() {
+    if (!advisorState.planItems || advisorState.planItems.length === 0) return;
+    let appliedCount = 0;
 
-    if (res.endGear) {
-      state.gear = { ...res.endGear };
-    }
-    if (res.endAdv !== undefined) {
-      state.advHoning = res.endAdv;
-    }
-
-    // Si des gemmes sont dans le plan
-    const gemSteps = res.steps.filter(s => s.type === 'gem').length;
-    if (gemSteps > 0 && dom.gemSelect) {
-      if (gemSteps >= 6) {
-        dom.gemSelect.value = 'full8';
-        state.gemBonus = state.role === 'support' ? 199 : 335;
-      } else {
-        dom.gemSelect.value = 'major8';
-        state.gemBonus = state.role === 'support' ? 80 : 95;
+    advisorState.planItems.forEach(item => {
+      if (item.applyType === 'weapon' && item.targetVal) {
+        state.gear.weapon = item.targetVal;
+        appliedCount++;
+      } else if (item.applyType === 'armors' && item.targetVal) {
+        ['head', 'shoulder', 'chest', 'pants', 'gloves'].forEach(p => {
+          state.gear[p] = item.targetVal;
+        });
+        appliedCount++;
+      } else if (item.applyType === 'gems') {
+        if (dom.gemSelect) dom.gemSelect.value = 'full9';
+        state.gemBonus = state.role === 'support' ? 240 : 420;
+        appliedCount++;
       }
-    }
+    });
 
-    // Basculer vers l'onglet Honing
     dom.tabBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === 'tab-honing'));
     dom.tabPanes.forEach(p => p.classList.toggle('active', p.id === 'tab-honing'));
 
@@ -4246,132 +4746,42 @@
     updatePredictorView();
     updateActiveCharacterCard(activeCharacterId);
 
-
-
-
-    if (dom.btnApplyRoadmap) {
-      const originalText = dom.btnApplyRoadmap.innerHTML;
-      dom.btnApplyRoadmap.innerHTML = `<span>${isEnLang() ? '✅ Plan Applied to Simulator!' : '✅ Plan Appliqué au Simulateur !'}</span>`;
-      setTimeout(() => { dom.btnApplyRoadmap.innerHTML = originalText; }, 2500);
-    }
-  }
-
-  function setAdvisorMode(mode) {
-    advisorState.mode = mode;
-    if (dom.btnAdvisorModeBudget) dom.btnAdvisorModeBudget.classList.toggle('active', mode === 'budget');
-    if (dom.btnAdvisorModeIlvl) dom.btnAdvisorModeIlvl.classList.toggle('active', mode === 'ilvl');
-    if (dom.btnAdvisorModeCp) dom.btnAdvisorModeCp.classList.toggle('active', mode === 'cp');
-
-    if (dom.advInputBudgetGroup) dom.advInputBudgetGroup.style.display = mode === 'budget' ? 'block' : 'none';
-    if (dom.advInputIlvlGroup) dom.advInputIlvlGroup.style.display = mode === 'ilvl' ? 'block' : 'none';
-    if (dom.advInputCpGroup) dom.advInputCpGroup.style.display = mode === 'cp' ? 'block' : 'none';
-
-    renderAdvisorView();
+    showToast(isEnLang() ? 'Plan applied to Simulator!' : 'Plan appliqué au Simulateur !');
   }
 
   function initAdvisorEvents() {
-
-    if (dom.btnAdvisorModeBudget) dom.btnAdvisorModeBudget.addEventListener('click', () => setAdvisorMode('budget'));
-    if (dom.btnAdvisorModeIlvl) dom.btnAdvisorModeIlvl.addEventListener('click', () => setAdvisorMode('ilvl'));
-    if (dom.btnAdvisorModeCp) dom.btnAdvisorModeCp.addEventListener('click', () => setAdvisorMode('cp'));
-
-    // Quick Budget Pills
-    const budgetPills = document.querySelectorAll('#advQuickBudgetBtns .btn-action-pill');
-    budgetPills.forEach(btn => {
+    // Goal Pills
+    const goalBtns = document.querySelectorAll('#gpdGoalButtons .btn-goal-pill');
+    goalBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        budgetPills.forEach(b => b.classList.remove('active'));
+        goalBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const val = parseFloat(btn.getAttribute('data-val'));
-        if (dom.advInputBudget) dom.advInputBudget.value = val;
-        if (dom.dispAdvisorBudget) dom.dispAdvisorBudget.textContent = `${formatNumber(val)} g`;
+        const goal = btn.getAttribute('data-goal');
+        advisorState.selectedGoal = goal;
+        if (dom.gpdCustomCpInput) dom.gpdCustomCpInput.value = '';
         renderAdvisorView();
       });
     });
 
-    if (dom.advInputBudget) {
-      dom.advInputBudget.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value) || 0;
-        if (dom.dispAdvisorBudget) dom.dispAdvisorBudget.textContent = `${formatNumber(val)} g`;
-      });
-      dom.advInputBudget.addEventListener('change', () => renderAdvisorView());
-    }
-
-    // Quick iLvl Pills
-    const ilvlPills = document.querySelectorAll('#advQuickIlvlBtns .btn-action-pill');
-    ilvlPills.forEach(btn => {
-      btn.addEventListener('click', () => {
-        ilvlPills.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const diff = parseFloat(btn.getAttribute('data-diff'));
-        const target = Math.round((state.currentIlvl + diff) * 100) / 100;
-        if (dom.advInputIlvl) dom.advInputIlvl.value = target;
-        if (dom.dispAdvisorIlvl) dom.dispAdvisorIlvl.textContent = target.toFixed(2);
-        renderAdvisorView();
-      });
-    });
-
-    if (dom.advInputIlvl) {
-      dom.advInputIlvl.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value) || 1750;
-        if (dom.dispAdvisorIlvl) dom.dispAdvisorIlvl.textContent = val.toFixed(2);
-      });
-      dom.advInputIlvl.addEventListener('change', () => renderAdvisorView());
-    }
-
-    // Quick CP Pills
-    const cpPills = document.querySelectorAll('#advQuickCpBtns .btn-action-pill');
-    cpPills.forEach(btn => {
-      btn.addEventListener('click', () => {
-        cpPills.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const diff = parseFloat(btn.getAttribute('data-diff'));
-        if (dom.advInputCp) dom.advInputCp.value = diff;
-        if (dom.dispAdvisorCp) dom.dispAdvisorCp.textContent = `+${diff} CP`;
-        renderAdvisorView();
-      });
-    });
-
-    if (dom.advInputCp) {
-      dom.advInputCp.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value) || 0;
-        if (dom.dispAdvisorCp) dom.dispAdvisorCp.textContent = `+${val} CP`;
-      });
-      dom.advInputCp.addEventListener('change', () => renderAdvisorView());
-    }
-
-    // Checkboxes scope
-    [dom.advScopeGear, dom.advScopeAdvHoning, dom.advScopeGems, dom.advScopeArkGrid, dom.advScopeAcc, dom.advScopeEngravings, dom.advScopeBracelet].forEach(chk => {
-      if (chk) chk.addEventListener('change', () => renderAdvisorView());
-    });
-
-    if (dom.btnRunAdvisor) {
-      dom.btnRunAdvisor.addEventListener('click', () => {
-        const isEnBtn = isEnLang();
-        const origHtml = dom.btnRunAdvisor.innerHTML;
-        dom.btnRunAdvisor.innerHTML = `<span>⚡ ${isEnBtn ? 'Calculating optimal roadmap...' : 'Calcul de la feuille de route...'}</span>`;
-        dom.btnRunAdvisor.disabled = true;
-
-        renderAdvisorView();
-
-        const kpiGrid = document.getElementById('advisorKpiGrid');
-        if (kpiGrid) {
-          kpiGrid.classList.remove('calc-pulse');
-          void kpiGrid.offsetWidth; // force reflow
-          kpiGrid.classList.add('calc-pulse');
-          setTimeout(() => kpiGrid.classList.remove('calc-pulse'), 900);
+    if (dom.gpdCustomCpInput) {
+      dom.gpdCustomCpInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (val && val > 0) {
+          goalBtns.forEach(b => b.classList.remove('active'));
+          advisorState.selectedGoal = val;
+          renderAdvisorView();
+        } else {
+          advisorState.selectedGoal = 'all';
+          const allBtn = document.querySelector('#gpdGoalButtons .btn-goal-pill[data-goal="all"]');
+          if (allBtn) allBtn.classList.add('active');
+          renderAdvisorView();
         }
-
-        setTimeout(() => {
-          dom.btnRunAdvisor.innerHTML = `<span>✅ ${isEnBtn ? 'Optimal Roadmap Computed!' : 'Feuille de Route Optimale Calculée !'}</span>`;
-          setTimeout(() => {
-            dom.btnRunAdvisor.innerHTML = origHtml;
-            dom.btnRunAdvisor.disabled = false;
-          }, 1500);
-        }, 120);
       });
     }
 
-    if (dom.btnApplyRoadmap) dom.btnApplyRoadmap.addEventListener('click', () => applyAdvisorPlan());
+    if (dom.btnApplyGpdPlan) {
+      dom.btnApplyGpdPlan.addEventListener('click', () => applyGpdPlan());
+    }
   }
 
   // --- 4b. SIMULATEUR ARK PASSIVE T4 (ÉVOLUTION / ÉCLAIRAGE / BOND) ---
