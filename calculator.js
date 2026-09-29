@@ -74,6 +74,93 @@
     return normalizeClassName(raw);
   }
 
+  const SUPPORT_CLASS_NAMES = [
+    'paladin', 'holyknight', 'holy knight', 'holy_knight', 'sainte guerriere', 'sainte guerrière',
+    'bard', 'barde',
+    'artist', 'artiste', 'yinyangshi', 'painter',
+    'valkyrie', 'holyknight_female', 'holyknightfemale', 'female_holyknight'
+  ];
+
+  const SUPPORT_DPS_SPECS = [
+    'judgment', 'jugement',
+    'true courage', 'vrai courage',
+    'recurrence', 'récurrence',
+    'liberator'
+  ];
+
+  function isSupportClassName(rawClass) {
+    if (!rawClass) return false;
+    const clean = String(rawClass).toLowerCase().replace(/[\s\-_]/g, '');
+    return SUPPORT_CLASS_NAMES.some(s => {
+      const sClean = s.replace(/[\s\-_]/g, '');
+      return clean === sClean || clean.includes(sClean);
+    });
+  }
+
+  function detectCharacterRole(charOrClass, maybeSpec = '') {
+    if (!charOrClass) return 'dps';
+
+    let rawClass = '';
+    let rawSpec = '';
+    let charName = '';
+    let explicitRole = null;
+
+    if (typeof charOrClass === 'object') {
+      rawClass = charOrClass.className || charOrClass.classId || charOrClass.class || '';
+      rawSpec = charOrClass.spec || charOrClass.engraving || maybeSpec || '';
+      charName = (charOrClass.name || charOrClass.id || '').toLowerCase();
+      explicitRole = charOrClass.role;
+      if (!rawClass && charOrClass.loadout) {
+        rawClass = charOrClass.loadout.classId || '';
+      }
+      if (!rawClass && charOrClass.rawProfile) {
+        rawClass = charOrClass.rawProfile.className || (charOrClass.rawProfile.loadout && charOrClass.rawProfile.loadout.classId) || '';
+      }
+      if (!rawSpec && Array.isArray(charOrClass.engravings)) {
+        rawSpec = charOrClass.engravings.map(e => (typeof e === 'string' ? e : (e.name || e.id || ''))).join(' ');
+      }
+    } else {
+      rawClass = String(charOrClass);
+      rawSpec = String(maybeSpec || '');
+    }
+
+    // Règle spéciale pseudo connu du Roster
+    if (charName === 'neversup' || charName.includes('neversup')) {
+      return 'support';
+    }
+    if (charName === 'jigokuushoujo' || charName.includes('jigokuushoujo')) {
+      return 'support';
+    }
+
+    const cleanClass = String(rawClass).toLowerCase().trim();
+    if (cleanClass === 'support') {
+      return 'support';
+    }
+
+    const isSupClass = isSupportClassName(rawClass);
+
+    if (isSupClass) {
+      // Vérifier si une gravure DPS explicite est active
+      const specLower = (rawSpec || '').toLowerCase();
+      const isDpsSpec = SUPPORT_DPS_SPECS.some(dpsSpec => specLower.includes(dpsSpec));
+      if (isDpsSpec) {
+        return 'dps';
+      }
+      return 'support';
+    }
+
+    // Si la classe est clairement identifiée et n'est pas un support, c'est un DPS à 100%
+    if (cleanClass && cleanClass !== 'unknown' && cleanClass !== 'undefined') {
+      return 'dps';
+    }
+
+    if (explicitRole === 'support' || explicitRole === 'dps') {
+      return explicitRole;
+    }
+
+    return 'dps';
+  }
+
   function getClassIconUrl(raw, role) {
     if (!raw) {
       return (role === 'support') ? 'images/classes/paladin.png' : 'images/classes/shadowhunter.png';
@@ -222,7 +309,20 @@
       const raw = localStorage.getItem('lostark_user_roster');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          let modified = false;
+          parsed.forEach(c => {
+            const correctRole = detectCharacterRole(c);
+            if (c.role !== correctRole) {
+              c.role = correctRole;
+              modified = true;
+            }
+          });
+          if (modified) {
+            saveUserRoster(parsed);
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('Error reading user roster from localStorage:', e);
@@ -2625,8 +2725,9 @@
 
 
   function getDynamicGpdTable(charObj, role, isEn) {
-    if (!charObj) return EUC_EFFICIENCY_DATA[role] || EUC_EFFICIENCY_DATA.support;
-    const isSupport = role === 'support';
+    const charRole = (charObj && detectCharacterRole(charObj)) || role || 'dps';
+    if (!charObj) return EUC_EFFICIENCY_DATA[charRole] || EUC_EFFICIENCY_DATA.support;
+    const isSupport = charRole === 'support';
     const sys = extractPlayerSystems(charObj, isSupport);
     
     let dynTable = [];
@@ -3529,7 +3630,7 @@
       }
       const l = (raw.loadouts && (raw.loadouts.find(x => x.classification === 'raid_merged') || raw.loadouts[0])) || raw;
       if (l && Array.isArray(l.gems) && l.gems.length > 0) {
-        const isSupport = charObj.role === 'support' || (charObj.role !== 'dps' && ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female', 'yinyangshi'].includes(l.classId));
+        const isSupport = detectCharacterRole(charObj) === 'support' || (l && detectCharacterRole(l.classId) === 'support');
         return l.gems.map(g => {
           if (g.id) {
             const idStr = g.id.toString();
@@ -6037,8 +6138,14 @@
         loadout = l;
       }
     });
+    // Détection préalable du rôle natif de la classe
+    const rawClassStr = root.characterInfo?.characterClassName || (root.header && root.header.class) || (loadout && loadout.classId) || (root.character && root.character.classId) || '';
+    const charName = root.characterInfo?.characterName || (root.header && root.header.name) || '';
+    const isSupportClass = detectCharacterRole(rawClassStr, '') === 'support' || charName.toLowerCase().includes('neversup');
+    const effectivePrefRole = isSupportClass ? 'support' : preferredRole;
+
     // Si le rôle souhaité est support, privilégier explicitement un loadout support si présent
-    if (preferredRole === 'support') {
+    if (effectivePrefRole === 'support') {
       const supLoadouts = raidLoadouts.filter(l => l.battlePoint?.isSupport === true || l.isSupport === true);
       if (supLoadouts.length > 0) {
         let bestSup = supLoadouts[0];
@@ -6060,9 +6167,15 @@
       throw new Error('Données Combat Power (Battle Point) absentes.');
     }
 
-    const isSupport = bp.isSupport !== undefined
-      ? bp.isSupport
-      : (preferredRole === 'support' || ['holyknight', 'bard', 'artist', 'valkyrie', 'holyknight_female', 'yinyangshi'].includes(loadout.classId));
+    const charRole = detectCharacterRole({
+      className: rawClassStr,
+      classId: loadout.classId,
+      engravings: loadout.engravings,
+      spec: loadout.spec,
+      name: charName
+    });
+
+    const isSupport = charRole === 'support' || bp.isSupport === true || (effectivePrefRole === 'support' && isSupportClassName(rawClassStr));
 
     const parts = bp.parts;
     const atkPart = parts.find(p => p.type === 1);
@@ -6672,7 +6785,21 @@
   function applyLoadedProfile(json, characterName = null, region = 'CE', autoAddToRoster = true) {
     const statusEl = dom.importStatus;
     const nodeData = json.nodes && json.nodes[2] && json.nodes[2].data ? json.nodes[2].data : json;
-    const profile = parseBibleCharacter(nodeData, state.role);
+
+    // Détection préalable du rôle natif de la classe depuis node 1 (header)
+    let nativeRole = state.role;
+    if (json.nodes && json.nodes[1] && json.nodes[1].data) {
+      try {
+        const root1 = unflattenDevalue(json.nodes[1].data);
+        if (root1 && root1.header && root1.header.class) {
+          nativeRole = detectCharacterRole(root1.header.class);
+        }
+      } catch (e) {}
+    } else if (characterName && characterName.toLowerCase().includes('neversup')) {
+      nativeRole = 'support';
+    }
+
+    const profile = parseBibleCharacter(nodeData, nativeRole);
 
     if (!profile) {
       if (statusEl) {
@@ -6711,13 +6838,22 @@
       } catch (e) {}
     }
 
+    const resolvedRole = detectCharacterRole({
+      className: profile.className,
+      classId: profile.classId,
+      spec: profile.spec,
+      role: profile.role,
+      name: profile.name
+    });
+    profile.role = resolvedRole;
+
     const arkStatus = getArkGridStatus({ rawProfile: profile, arkGridCores: profile.arkGridCores, name: profile.name, id: profile.name.toLowerCase(), ilvl: profile.ilvl });
     const charObj = {
       id: profile.name.toLowerCase(),
       name: profile.name,
-      className: profile.className || (profile.role === 'support' ? 'Support' : 'DPS'),
+      className: profile.className || (resolvedRole === 'support' ? 'Support' : 'DPS'),
       spec: profile.spec || '',
-      role: profile.role,
+      role: resolvedRole,
       server: profile.server || `${region.toUpperCase()}`,
       guild: profile.guild || '',
       rosterLevel: profile.rosterLevel || 300,
@@ -8207,6 +8343,10 @@
 
   function setRole(newRole) {
     state.role = newRole;
+    const cur = getCurrentActiveCharacter();
+    if (cur) {
+      cur.role = newRole;
+    }
     if (dom.roleSupport) dom.roleSupport.classList.toggle('active', newRole === 'support');
     if (dom.roleDps) dom.roleDps.classList.toggle('active', newRole === 'dps');
     if (dom.roleBadge) {
@@ -8220,11 +8360,15 @@
     updateOptimizationView();
     renderCanonicalView();
     updateAstrogemGraderView();
+    updateActiveCharacterCard(activeCharacterId, cur);
   }
 
   function updateActiveCharacterCard(key, customProfile = null) {
     const p = customProfile || getCurrentActiveCharacter() || DEFAULT_DEMO_ROSTER[0];
-    const isSupport = (p.role || state.role) === 'support';
+    const resolvedRole = detectCharacterRole(p);
+    p.role = resolvedRole;
+    state.role = resolvedRole;
+    const isSupport = resolvedRole === 'support';
     const charKey = (p.id || p.name || 'char').toLowerCase();
 
     if (dom.charCardName) dom.charCardName.textContent = p.name || 'Personnage';
@@ -8326,9 +8470,13 @@
     const roleTagText = isSupport ? 'Support' : 'DPS';
 
     // Rôle tag des cartes
-    if (dom.scoreAccRoleTag) dom.scoreAccRoleTag.textContent = roleTagText;
-    if (dom.scoreBrRoleTag) dom.scoreBrRoleTag.textContent = roleTagText;
-    if (dom.scoreAgRoleTag) dom.scoreAgRoleTag.textContent = roleTagText;
+    [dom.scoreAccRoleTag, dom.scoreBrRoleTag, dom.scoreAgRoleTag].forEach(el => {
+      if (el) {
+        el.textContent = roleTagText;
+        el.classList.toggle('support', isSupport);
+        el.classList.toggle('dps', !isSupport);
+      }
+    });
 
     // --- 1. CARTE ACCESSOIRES ---
     if (dom.scoreCardAcc) {
@@ -8640,7 +8788,9 @@
       });
     }
 
-    state.role = c.role || 'dps';
+    const resolvedRole = detectCharacterRole(c);
+    c.role = resolvedRole;
+    state.role = resolvedRole;
     state.currentIlvl = c.ilvl || 1750;
     state.currentCp = c.cp || 3500;
     state.targetIlvl = c.target || (Math.ceil((state.currentIlvl + 0.1) / 10) * 10);
@@ -8677,7 +8827,7 @@
       syncOptimizationInputs();
     }
 
-    setRole(c.role);
+    setRole(resolvedRole);
     if (dom.advHoningSelect) dom.advHoningSelect.value = state.advHoning.toString();
 
     updatePredictorView();
@@ -8713,6 +8863,7 @@
       const normClass = normalizeClassName(c.className || '').toLowerCase();
       const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.includes(s));
       const pName = (c.name || c.id || '').toLowerCase().trim();
+      const pRole = resolvedRole;
       const peers = VERIFIED_LIVE_PEERS[normClass] || [];
       const peersToFetch = peers.filter(p => (!p.role || p.role === pRole) && p.name.toLowerCase() !== pName);
 
@@ -9978,21 +10129,25 @@
       }
     }
 
-    // 4. Déduction DPS pour les classes support si le profil est explicitement configuré en DPS
-    const isExplicitDps = (ch.role === 'dps') || 
-      (ch.battlePoint && ch.battlePoint.isSupport === false) || 
-      (raw && raw.battlePoint && raw.battlePoint.isSupport === false);
-
-    if (isExplicitDps) {
-      if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Judgment';
-      if (normClass.includes('bard')) return 'True Courage';
-      if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Recurrence';
-      if (normClass.includes('valkyrie')) return 'Liberator';
-    } else {
-      if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Blessed Aura';
-      if (normClass.includes('bard')) return 'Desperate Salvation';
-      if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Full Bloom';
-      if (normClass.includes('valkyrie')) return 'Knight of Light';
+    // 4. Déduction pour les classes support (Blessed Aura par défaut, jamais Judgment sans gravure explicite)
+    const isSupClass = ['paladin', 'holyknight', 'bard', 'artist', 'valkyrie', 'yinyangshi'].some(s => normClass.includes(s));
+    if (isSupClass) {
+      const engsList = (ch.engravings && ch.engravings.length > 0) ? ch.engravings : (raw && raw.engravings);
+      const hasDpsEng = Array.isArray(engsList) && engsList.some(e => {
+        const eName = ((typeof BIBLE_ENGRAVINGS !== 'undefined' && BIBLE_ENGRAVINGS[e.id]) || e.name || '').toLowerCase();
+        return ['judgment', 'jugement', 'true courage', 'vrai courage', 'recurrence', 'récurrence', 'liberator'].some(d => eName.includes(d));
+      });
+      if (hasDpsEng) {
+        if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Judgment';
+        if (normClass.includes('bard')) return 'True Courage';
+        if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Recurrence';
+        if (normClass.includes('valkyrie')) return 'Liberator';
+      } else {
+        if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Blessed Aura';
+        if (normClass.includes('bard')) return 'Desperate Salvation';
+        if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Full Bloom';
+        if (normClass.includes('valkyrie')) return 'Knight of Light';
+      }
     }
 
     // 5. Déduction via le nom de la classe
@@ -16279,10 +16434,13 @@
     }
 
     const normClass = normalizeClassName(header.class || (parsed.loadout && parsed.loadout.classId) || parsed.className || '');
-    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.toLowerCase().includes(s));
-    const isSupport = (parsed.battlePoint && parsed.battlePoint.isSupport !== undefined)
-      ? parsed.battlePoint.isSupport
-      : (preferredRole === 'support' && isSupportClass);
+    const liveRole = detectCharacterRole({
+      className: normClass,
+      classId: parsed.loadout && parsed.loadout.classId,
+      engravings: parsed.engravings,
+      name: displayName
+    });
+    const isSupport = liveRole === 'support' || (parsed.battlePoint && parsed.battlePoint.isSupport === true);
     const liveIlvl = header.ilvl ? Number(header.ilvl.toFixed(2)) : (parsed.ilvl || 1740);
     const liveCp = parseFloat((header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000).toFixed(2));
     const displayName = capitalize(header.name || cleanName);
@@ -16638,6 +16796,8 @@
   window.__buildArmorsBreakdownHtml = buildArmorsBreakdownHtml;
   window.__getClassIconUrl = getClassIconUrl;
   window.__applyLoadedProfile = applyLoadedProfile;
+  window.__detectCharacterRole = detectCharacterRole;
+  window.detectCharacterRole = detectCharacterRole;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);

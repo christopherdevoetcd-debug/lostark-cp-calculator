@@ -738,6 +738,18 @@ body {
   letter-spacing: 0.03em;
 }
 
+.score-role-tag.support {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.score-role-tag.dps {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fb7185;
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
 .score-role-tag.gpd-tag {
   background: rgba(250, 204, 21, 0.12);
   color: #facc15;
