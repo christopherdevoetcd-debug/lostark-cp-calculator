@@ -972,6 +972,9 @@
     gpdNextSystem: document.getElementById('gpdNextSystem'),
     gpdNextContext: document.getElementById('gpdNextContext'),
     gpdNextRate: document.getElementById('gpdNextRate'),
+    gpdNextUnit: document.getElementById('gpdNextUnit'),
+    gpdTableTitle: document.getElementById('gpdTableTitle'),
+    gpdThRate: document.getElementById('gpdThRate'),
     gpdNextGain: document.getElementById('gpdNextGain'),
     gpdGoalButtons: document.getElementById('gpdGoalButtons'),
     gpdCustomCpInput: document.getElementById('gpdCustomCpInput'),
@@ -984,12 +987,6 @@
     gpdMasterTableBody: document.getElementById('gpdMasterTableBody'),
     gpdPiecesTable: document.getElementById('gpdPiecesTable'),
     gpdPiecesTableBody: document.getElementById('gpdPiecesTableBody'),
-    btnAdvisorModeBudget: document.getElementById('btnAdvisorModeBudget'),
-    btnAdvisorModeIlvl: document.getElementById('btnAdvisorModeIlvl'),
-    btnAdvisorModeCp: document.getElementById('btnAdvisorModeCp'),
-    advInputBudgetGroup: document.getElementById('advInputBudgetGroup'),
-    advInputIlvlGroup: document.getElementById('advInputIlvlGroup'),
-    advInputCpGroup: document.getElementById('advInputCpGroup'),
     dispAdvisorBudget: document.getElementById('dispAdvisorBudget'),
     dispAdvisorIlvl: document.getElementById('dispAdvisorIlvl'),
     dispAdvisorCp: document.getElementById('dispAdvisorCp'),
@@ -2733,6 +2730,8 @@
   const ARK_CORE_COST_PER_POINT = Math.round(80898 / 3);
   // Bonus d'arme (échelle bonusPct de extractPlayerSystems) gagné par niveau d'affinage effectif
   const WEAPON_HONING_BONUS_PER_LVL = 1.20;
+  // Bonus d'armure (échelle bonusPct) gagné par niveau moyen d'affinage effectif sur les 5 pièces
+  const ARMOR_HONING_BONUS_PER_LVL = { dps: 1.37, support: 1.50 };
   const ARK_CORE_DEFS = [
     { key: 'orderSun', prefix: '67300', fr: 'Ordre Soleil', en: 'Order Sun' },
     { key: 'orderMoon', prefix: '67301', fr: 'Ordre Lune', en: 'Order Moon' },
@@ -2787,7 +2786,7 @@
     // Support : gold par 0.01% de buff ; DPS : gold par 1% de dégâts.
     // Le tier est toujours évalué sur le coût par 1% pour garder les mêmes seuils.
     const ratioUnit = isSupport ? 100 : 1;
-    const pushRow = (id, name, sub, gain, cost, comment) => {
+    const pushRow = (id, name, sub, gain, cost, comment, meta) => {
       if (!(gain > 0) || !(cost > 0)) return;
       const ratio = Math.round(cost / (gain * ratioUnit));
       const tier = getTierFromRatio(cost / gain);
@@ -2802,7 +2801,8 @@
         ratioVal: ratio,
         tier,
         tierLabel: GPD_TIER_LABELS[tier],
-        comment
+        comment,
+        meta: meta || {}
       });
     };
 
@@ -2820,37 +2820,48 @@
         isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
         isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
         dmgGain, cost,
-        isEn ? 'Expected cost (average taps with artisan energy, market-priced materials).' : 'Coût attendu (nombre moyen de tentatives avec artisanat, matériaux au prix du marché).');
+        isEn ? 'Expected cost (average taps with artisan energy, market-priced materials).' : 'Coût attendu (nombre moyen de tentatives avec artisanat, matériaux au prix du marché).',
+        { from: wLvl, to: wLvl + 1 });
     }
 
     // 2. Armor Honing
     let aLvl = Math.floor(sys.armors.avgArmor || 12);
-    if (aLvl < 25) {
-      const dmgGain = isSupport ? 1.50 : 1.08; // 1.08% from prompt for armors
-      const costRaw = (HONING_COSTS.armor[aLvl + 1] || 25000) * 5;
+    // Serka : même logique que l'arme, coût estimé sur le niveau moyen effectif
+    const effALvl = Math.floor(sys.armors.effAvgArmor !== undefined ? sys.armors.effAvgArmor : aLvl);
+    if (effALvl < 25) {
+      // Gain relatif : +1 niveau moyen ajoute ARMOR_HONING_BONUS_PER_LVL au bonus d'armure actuel
+      const curArmorPct = sys.armors.bonusPct || 0;
+      const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
+      const dmgGain = ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
+      // Coût attendu d'un palier sur chacune des 5 pièces
+      const cost = getLevelCost('armor', effALvl).totalValue * 5;
       pushRow('dyn_armor',
         isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
         isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,
-        dmgGain, costRaw * 22,
-        isEn ? 'Next honing level on all 5 armor pieces.' : 'Prochain palier d\'affinage sur les 5 pièces d\'armure.');
+        dmgGain, cost,
+        isEn ? 'Expected cost for all 5 pieces (average taps with artisan energy, market-priced materials).' : 'Coût attendu sur les 5 pièces (nombre moyen de tentatives avec artisanat, matériaux au prix du marché).',
+        { from: aLvl, to: aLvl + 1 });
     }
 
-    // 3. Gems : une ligne par niveau présent, gain = Δ bonus moyen au prorata des gemmes concernées
+    // 3. Gems : une ligne par niveau présent, gain relatif sur le bonus moyen actuel du set
     const gemParts = extractCharacterGemParts(charObj);
     const gemCounts = (gemParts && gemParts.length > 0)
       ? countGemLevels(gemParts, isSupport)
       : countGemLevelsFromLabel((sys.gems && sys.gems.label) || '');
     if (gemCounts) {
       const totalGems = gemCounts[7] + gemCounts[8] + gemCounts[9] + gemCounts[10];
+      const curGemPct = [7, 8, 9, 10].reduce((s, l) => s + gemCounts[l] * GEM_LEVEL_BONUS_PCT[l], 0) / totalGems;
       [7, 8, 9].forEach(lvl => {
         const n = gemCounts[lvl];
         if (!n) return;
-        const gain = n * (GEM_LEVEL_BONUS_PCT[lvl + 1] - GEM_LEVEL_BONUS_PCT[lvl]) / totalGems;
+        const delta = n * (GEM_LEVEL_BONUS_PCT[lvl + 1] - GEM_LEVEL_BONUS_PCT[lvl]) / totalGems;
+        const gain = ((1 + (curGemPct + delta) / 100) / (1 + curGemPct / 100) - 1) * 100;
         pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
           isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
           isEn ? `${n} gem(s) out of ${totalGems}` : `${n} gemme(s) sur ${totalGems}`,
           gain, n * GEM_UPGRADE_COST[lvl],
-          isEn ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced.` : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées.`);
+          isEn ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced.` : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées.`,
+          { lvl, n, counts: gemCounts, total: totalGems });
       });
     }
 
@@ -2875,7 +2886,8 @@
         isEn ? `Ark Grid — ${def.en} core 17P` : `Grille d'Ark — Cœur ${def.fr} 17P`,
         isEn ? `From ${pts} points` : `Depuis ${pts} points`,
         gain, (17 - pts) * ARK_CORE_COST_PER_POINT,
-        isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`);
+        isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`,
+        { key: def.key, label: isEn ? def.en : def.fr, pts });
     });
 
     // 5. Astrogems (Cutting epics to next tier)
@@ -2892,12 +2904,36 @@
       0.77, 271000,
       isEn ? 'Full bracelet reroll campaign.' : 'Campagne complète de reroll de bracelet.');
 
-    // 7. Accessoires
-    pushRow('dyn_acc',
-      isEn ? 'Earring / Ring Upgrade' : 'Upgrade Bijou',
-      isEn ? 'Replace weakest accessory' : 'Remplacer le bijou le plus faible',
-      0.22, 166000,
-      isEn ? 'Replace your weakest accessory.' : 'Remplacer ton bijou le plus faible.');
+    // 7. Accessoires : remplacer le bijou dont le remplacement rapporte le plus (= le plus faible)
+    const accEval = evaluateCharacterAccessories(charObj, isSupport, isEn);
+    if (accEval.slotLines) {
+      const lineSet = isSupport ? ACC_TARGET_LINES.support : ACC_TARGET_LINES.dps;
+      const curAccPct = computeAccessoryLinesBonus(ACC_SLOTS.flatMap(s => accEval.slotLines[s] || []), isSupport);
+      let weakest = null;
+      ACC_SLOTS.forEach(slot => {
+        const kind = slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring');
+        const target = lineSet[kind].map(([key, amount]) => ({ key, amount }));
+        const others = ACC_SLOTS.filter(s => s !== slot).flatMap(s => accEval.slotLines[s] || []);
+        const nextAccPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
+        const gain = ((1 + nextAccPct / 100) / (1 + curAccPct / 100) - 1) * 100;
+        if (!weakest || gain > weakest.gain) weakest = { slot, gain };
+      });
+      if (weakest && weakest.gain > 0) {
+        const slotNames = {
+          neck: isEn ? 'Necklace' : 'Collier',
+          ear1: isEn ? 'Earring #1' : 'Boucle d\'oreille #1',
+          ear2: isEn ? 'Earring #2' : 'Boucle d\'oreille #2',
+          finger1: isEn ? 'Ring #1' : 'Anneau #1',
+          finger2: isEn ? 'Ring #2' : 'Anneau #2'
+        };
+        pushRow('dyn_acc',
+          isEn ? `Accessory Upgrade — ${slotNames[weakest.slot]}` : `Upgrade Bijou — ${slotNames[weakest.slot]}`,
+          isEn ? 'Weakest accessory ➔ 2 High main lines' : 'Bijou le plus faible ➔ 2 lignes principales High',
+          weakest.gain, ACC_UPGRADE_COST,
+          isEn ? 'Marginal gain from replacing your weakest accessory, lines valued with the Arsonistic slopes.' : 'Gain marginal du remplacement de ton bijou le plus faible, lignes valorisées avec les pentes Arsonistic.',
+          { slot: weakest.slot, slotName: slotNames[weakest.slot], curPct: curAccPct });
+      }
+    }
 
     // Sort by most efficient (lowest ratio)
     dynTable.sort((a, b) => a.ratioVal - b.ratioVal);
@@ -3043,21 +3079,7 @@
 
   // --- 4a-bis. SMART UPGRADE ADVISOR (PLANIFICATEUR RENTABLE DE PROGRESSION) ---
 
-  const advisorState = {
-    mode: 'budget', // 'budget', 'ilvl', 'cp'
-    budget: 500000,
-    targetIlvl: 1760.0,
-    targetCpDelta: 300,
-    scope: {
-      gear: true,
-      advHoning: true,
-      gems: true,
-      arkGrid: true,
-      acc: true,
-      engravings: true
-    },
-    lastResult: null
-  };
+  const advisorState = {};
 
   function getArkGridCoreBonus(prefix, points, isSupport, isAncient) {
     const p = Math.max(10, Math.min(20, points || 10));
@@ -3725,559 +3747,6 @@
     return null;
   }
 
-  function solveAdvisor({
-    startIlvl,
-    startCp,
-    role,
-    startGear,
-    startAdv,
-    mode,
-    budget,
-    targetIlvl,
-    targetCpDelta,
-    scope
-  }) {
-    const isSupport = role === 'support';
-    const curGear = { ...startGear };
-    let curAdv = startAdv !== undefined ? startAdv : 40;
-    let curIlvl = startIlvl;
-    let totalGold = 0;
-    let totalCp = 0;
-
-    // Détection de l'état réel du personnage (Gemmes, Ark Grid, Accessoires, Gravures)
-    const curChar = getCurrentActiveCharacter();
-    const cId = (activeCharacterId || (curChar && (curChar.id || curChar.name)) || '').toLowerCase();
-
-    // Détection dynamique universelle des gemmes à améliorer (T4 Lvl 8, 9, 10)
-    let gemsTo8Remaining = 0;
-    let gemsTo9Remaining = 0;
-    let gemsTo10Remaining = 0;
-
-    const activeGemParts = extractCharacterGemParts(curChar);
-    if (activeGemParts && activeGemParts.length > 0) {
-      const t8Threshold = isSupport ? 9.20 : 5.50;
-      const t9Threshold = isSupport ? 10.40 : 6.10;
-      const t10Threshold = isSupport ? 11.50 : 6.80;
-      const normParts = activeGemParts.map(g => (g > 20 ? g / 100 : g));
-      gemsTo8Remaining = normParts.filter(g => g < t8Threshold).length;
-      gemsTo9Remaining = normParts.filter(g => g >= t8Threshold && g < t9Threshold).length;
-      gemsTo10Remaining = normParts.filter(g => g >= t9Threshold && g < t10Threshold).length;
-      if (curChar && (!curChar.gemParts || curChar.gemParts.length === 0)) {
-        curChar.gemParts = activeGemParts;
-      }
-    } else {
-      const demoGemCounts = {
-        neevercry: { to8: 0, to9: 3, to10: 8 },
-        kaarlach: { to8: 2, to9: 9, to10: 0 },
-        neeverslayer: { to8: 0, to9: 6, to10: 5 },
-        neversup: { to8: 6, to9: 5, to10: 0 },
-        jigokuushoujo: { to8: 8, to9: 3, to10: 0 },
-        neverbreak: { to8: 6, to9: 5, to10: 0 }
-      };
-      if (demoGemCounts[cId]) {
-        gemsTo8Remaining = demoGemCounts[cId].to8;
-        gemsTo9Remaining = demoGemCounts[cId].to9;
-        gemsTo10Remaining = demoGemCounts[cId].to10 || 0;
-      } else {
-        const deck = (curChar && curChar.opt && curChar.opt.gemsDeck) || ((curChar && curChar.ilvl >= 1740) ? 'lvl8' : 'lvl7');
-        if (deck === 'lvl10') {
-          gemsTo8Remaining = 0;
-          gemsTo9Remaining = 0;
-          gemsTo10Remaining = 0;
-        } else if (deck === 'lvl9') {
-          gemsTo8Remaining = 0;
-          gemsTo9Remaining = 0;
-          gemsTo10Remaining = 11;
-        } else if (deck === 'lvl8') {
-          gemsTo8Remaining = 0;
-          gemsTo9Remaining = 11;
-          gemsTo10Remaining = 0;
-        } else {
-          gemsTo8Remaining = isSupport ? 6 : 11;
-          gemsTo9Remaining = 0;
-          gemsTo10Remaining = 0;
-        }
-      }
-    }
-
-    // Détection dynamique des Livres Reliques T4 manquants (Formule Inven)
-    const DEMO_ENGRAVINGS = {
-      neverbreak: [{ grade: "engrave_grade04", id: 1141, progress: 16 }],
-      kaarlach: [{ grade: "engrave_grade04", id: 1141, progress: 15 }],
-      neversup: [
-        { grade: "engrave_grade04", id: 1255, progress: 10 },
-        { grade: "engrave_grade04", id: 1301, progress: 2 }
-      ],
-      jigokuushoujo: [{ grade: "engrave_grade04", id: 1301, progress: 5 }],
-      neevercry: [],
-      neeverslayer: []
-    };
-
-    const BOOK_PRICES = {
-      1118: 12000, // Grudge (Rancune)
-      1299: 10000, // Adrenaline (Adrénaline)
-      1254: 9000,  // Raid Captain (Capitaine de Raid)
-      1141: 7500,  // Keen Blunt Weapon (Arme Affûtée)
-      1255: 9000,  // Awakening (Éveil)
-      1301: 8500,  // Expert (Expert)
-      1288: 6000   // Master Brawler (Maître Bagarreur)
-    };
-
-    const GAIN_PER_5_BOOKS = {
-      1118: 0.0075, // Grudge (+0.75% CP / 5 livres)
-      1299: 0.0105, // Adrenaline (+1.05% CP / 5 livres)
-      1254: 0.0080, // Raid Captain (+0.80% CP / 5 livres)
-      1141: 0.0074, // Keen Blunt (+0.74% CP / 5 livres)
-      1255: 0.0120, // Awakening (+1.20% CP / 5 livres en Support)
-      1301: 0.0115  // Expert (+1.15% CP / 5 livres en Support)
-    };
-
-    const rawEngs = (curChar && curChar.engravings && curChar.engravings.length)
-      ? curChar.engravings
-      : (curChar && curChar.rawProfile && curChar.rawProfile.loadouts && curChar.rawProfile.loadouts[0]?.engravings)
-      || (DEMO_ENGRAVINGS[cId] || []);
-
-    const engCandidates = [];
-    rawEngs.forEach(e => {
-      if (e.grade === 'engrave_grade04') {
-        const prog = e.progress || 0;
-        const missing = Math.max(0, 20 - prog);
-        if (missing > 0) {
-          engCandidates.push({ id: e.id, prog, missing });
-        }
-      }
-    });
-
-    const arkStatus = getArkGridStatus(curChar);
-    let arkGridSunAvailable = arkStatus.hasSun17 ? 0 : 1;
-    let arkGridMoonAvailable = arkStatus.hasMoon17 ? 0 : 1;
-    let astrogemsAvailable = 3; // Permet jusqu'à 3 optimisations d'astrogemmes BiS Épiques
-
-    // Évaluation dynamique des Accessoires T4 (Dead -> Mid, et Mid -> High)
-    const accEval = evaluateCharacterAccessories(curChar, isSupport, isEnLang());
-    let accDeadToMidAvailable = accEval ? (accEval.deadCount || 0) : 0;
-    let accMidToHighAvailable = accEval ? (accEval.midCount || 0) : 0;
-
-    const brDiag = evaluateBracelet(curChar, isEnLang());
-    let braceletAvailable = (brDiag && brDiag.tier !== 's' && brDiag.potentialGainCp > 0) ? 1 : 0;
-
-    const steps = [];
-
-    function getCandidates() {
-      const list = [];
-      const isEn = isEnLang();
-
-      // 0. Livres Reliques T4 (Engravings) — Modèle Inven
-      if (scope.engravings) {
-        engCandidates.forEach(eng => {
-          if (eng.missing > 0) {
-            let name = (typeof BIBLE_ENGRAVINGS !== 'undefined' && BIBLE_ENGRAVINGS[eng.id]) || (isEn ? `Engraving #${eng.id}` : `Gravure #${eng.id}`);
-            if (isEn && typeof formatEngravingName === 'function') {
-              name = formatEngravingName(name, 'en');
-            }
-            const price = BOOK_PRICES[eng.id] || 7500;
-            const cost = eng.missing * price;
-            const gainRatio = (GAIN_PER_5_BOOKS[eng.id] || 0.0075) * (eng.missing / 5);
-            const cp = startCp * gainRatio;
-            const roi = cost / cp;
-
-            list.push({
-              type: 'engraving',
-              icon: '📜',
-              name: isEn
-                ? `T4 Relic Books: Finalize ${name} (${eng.prog}/20 ➔ 20/20)`
-                : `Livres Reliques T4 : Finaliser ${name} (${eng.prog}/20 ➔ 20/20)`,
-              sub: isEn
-                ? `Purchase ${eng.missing} relic book${eng.missing > 1 ? 's' : ''} (+${(gainRatio * 100).toFixed(2)}% net CP Inven)`
-                : `Achat de ${eng.missing} livre${eng.missing > 1 ? 's' : ''} relique${eng.missing > 1 ? 's' : ''} (+${(gainRatio * 100).toFixed(2)}% CP net Inven)`,
-              cost,
-              cp,
-              ilvl: 0,
-              roi,
-              tier: roi < 1600 ? 's-plus' : (roi < 2500 ? 's' : 'a'),
-              tierLabel: isEn ? (roi < 1600 ? 'Tier S+' : (roi < 2500 ? 'Tier S' : 'Tier A')) : (roi < 1600 ? 'Rang S+' : (roi < 2500 ? 'Rang S' : 'Rang A')),
-              apply: () => { eng.missing = 0; }
-            });
-          }
-        });
-      }
-
-      // 1.0 Accessoires T4 — Polissage Lignes Mortes ➔ Mid Roll (~45 000 g / proc)
-      if (scope.acc && accDeadToMidAvailable > 0) {
-        const cost = 45000;
-        const cp = startCp * (isSupport ? 0.0095 : 0.0080);
-        list.push({
-          type: 'acc_mid',
-          icon: '💍',
-          name: isEn ? 'T4 Accessory: Polish Dead Line ➔ Mid Roll' : 'Accessoire T4 : Polissage Ligne Morte ➔ Roll Mid',
-          sub: isEn
-            ? (isSupport
-                ? `Reroll dead stat (Crit Dmg / Recovery) into Mid Brand / Ally Buff / AP line (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% Buff Power) (~45k g)`
-                : `Reroll dead stat into Mid Attack Power / Damage line (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% net CP Inven) (~45k g)`)
-            : (isSupport
-                ? `Reroll stat morte (Dégâts Crit / Récup PV) en ligne Marque / Buff Allié / PA (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% Buff Power) (~45k g)`
-                : `Reroll stat morte en ligne Attaque / Dégâts Mid (+${(isSupport ? 0.95 : 0.80).toFixed(2)}% CP net Inven) (~45k g)`),
-          targets: isSupport
-            ? (isEn ? 'Replace dead stat with: Brand Power % • Ally Atk. Power % • Ally Damage %' : 'Remplacer la stat inutile par : Puissance de Marque % • Amplification PA % • Dégâts Allié %')
-            : (isEn ? 'Replace dead stat with: Weapon Power % • Atk. Power % • Additional Damage %' : "Remplacer la stat morte par : Puissance d'Arme % • Puissance d'Attaque % • Dégâts Additionnels %"),
-          method: isEn
-            ? 'Accessory Alchemist NPC: 3 clicks @ 1,200g + powder (or purchase a cheap Mid/Mid accessory on Auction House ~45k g).'
-            : "PNJ Alchimiste d'Accessoires : 3 clics à 1 200g + poudre (ou achat bijou Mid/Mid ~45k g à l'Hôtel des Ventes).",
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 's-plus',
-          tierLabel: isEn ? 'Tier S+' : 'Rang S+',
-          apply: () => { accDeadToMidAvailable--; }
-        });
-      }
-
-      // 1.1 Accessoires T4 — Amélioration Lignes Mid ➔ High Roll (~600 000 g / proc)
-      if (scope.acc && accDeadToMidAvailable === 0 && accMidToHighAvailable > 0) {
-        const cost = 600000;
-        const cp = startCp * (isSupport ? 0.0105 : 0.0090);
-        const slotNamesEn = ['Earring #1', 'Earring #2', 'Ring #1', 'Ring #2', 'Necklace'];
-        const slotNamesFr = ["Boucle d'oreille #1", "Boucle d'oreille #2", "Anneau #1", "Anneau #2", "Collier"];
-        const accIdx = Math.max(0, 9 - accMidToHighAvailable);
-        const sName = isEn ? (slotNamesEn[accIdx % 5] || 'Accessory') : (slotNamesFr[accIdx % 5] || 'Accessoire');
-        list.push({
-          type: 'acc_high',
-          icon: '💎',
-          name: isEn
-            ? `T4 Accessory: Upgrade Mid Line ➔ High Roll (${sName})`
-            : `Accessoire T4 : Amélioration Ligne Mid ➔ Roll High (${sName})`,
-          sub: isEn
-            ? (isSupport
-                ? `Target High Roll line (Ally Atk Power / Damage Enh. / Brand: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% Buff Power) (~600k g)`
-                : `Target High Roll line (Weapon Power / Outgoing Dmg: +${(isSupport ? 1.05 : 0.90).toFixed(2)}% net CP) (~600k g)`)
-            : (isSupport
-                ? `Viser une ligne Roll Élevé (Amplification PA Allié / Dégâts Allié / Marque : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% Buff Power) (~600k g)`
-                : `Viser une ligne Roll Élevé (Puissance Arme / Dégâts Sortants : +${(isSupport ? 1.05 : 0.90).toFixed(2)}% CP net) (~600k g)`),
-          targets: isSupport
-            ? (isEn ? 'Upgrade to High: Ally Atk Power (+5.0%) • Ally Damage (+7.5%) • Brand (+8.0%)' : 'Viser en High : Amplification PA Allié (+5.0%) • Dégâts Allié (+7.5%) • Marque (+8.0%)')
-            : (isEn ? 'Upgrade to High: Weapon Power (+3.0%) • Atk. Power (+1.55%) • Crit Damage (+4.0%)' : "Viser en High : Puissance d'Arme (+3.0%) • Puissance d'Attaque (+1.55%) • Dégâts Crit (+4.0%)"),
-          method: isEn
-            ? 'Purchase a High/Mid accessory on Auction House (~600k g), or reroll existing piece with Radiant Powder at Accessory Alchemist NPC.'
-            : "Acheter un bijou High/Mid à l'Hôtel des Ventes (~600k g), ou polir votre pièce existante avec de la Poudre d'Affinage chez l'Alchimiste.",
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 'a',
-          tierLabel: isEn ? 'Tier A' : 'Rang A',
-          apply: () => { accMidToHighAvailable--; }
-        });
-      }
-
-      // 1.2 Astrogemmes Grille d'Ark — Reroll BiS Épique (~81 000 g / gemme)
-      if (scope.arkGrid && astrogemsAvailable > 0) {
-        const cost = 81000;
-        const cp = startCp * (isSupport ? 0.0160 : 0.0150);
-        const astroSlot = 4 - astrogemsAvailable;
-        list.push({
-          type: 'astrogem',
-          icon: '✨',
-          name: isEn
-            ? `Ark Grid: Cut Epic Astrogem (Node Slot #${astroSlot})`
-            : `Grille d'Ark : Tailler Astrogemme Épique (Nœud #${astroSlot})`,
-          sub: isEn
-            ? (isSupport
-                ? `Target 2 BiS support substats (Ally Dmg / Brand Power) via ~10 cuts (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% net CP) (~81k g)`
-                : `Target 2 BiS offensive substats via ~10 cuts (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% net CP) (~81k g)`)
-            : (isSupport
-                ? `Viser 2 sous-stats BiS support (Dégâts Allié / Marque) via ~10 tailles (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% CP net) (~81k g)`
-                : `Viser 2 sous-stats BiS offensives via ~10 tailles (+${(isSupport ? 1.60 : 1.50).toFixed(2)}% CP net) (~81k g)`),
-          targets: isSupport
-            ? (isEn ? 'Puissance de Marque (Brand Power) • Ally Damage Enh. • Ally Atk. Power Enh.' : 'Puissance de Marque • Amélioration Dégâts Allié • Amélioration PA Allié')
-            : (isEn ? 'Attack Power (AP) • Additional Damage • Boss Damage' : "Puissance d'Attaque (AP) • Dégâts Additionnels • Dégâts aux Boss"),
-          method: isEn
-            ? 'Ark Grid Menu (Alt+K) ➔ Socket an Epic (Purple) Astrogem node. Tap 9 times (900 g/tap). Aim for at least 2 procs on BiS lines. If rolls fail, recycle and recut.'
-            : "Menu Grille d'Ark (Alt+K) ➔ Insérer une Astrogemme Épique (violette). Tailler les 9 essais (900 g/clic). Viser au moins 2 procs sur les lignes BiS. Recycler si raté.",
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 's-plus',
-          tierLabel: isEn ? 'Tier S+' : 'Rang S+',
-          apply: () => { astrogemsAvailable--; }
-        });
-      }
-
-      // 1.5. Bracelet T4 — Évaluation & Reroll BiS (Optionnel / Casino RNG)
-      if (scope.bracelet && braceletAvailable > 0 && brDiag) {
-        const cost = 450000;
-        const cp = brDiag.potentialGainCp;
-        const roi = cost / cp;
-        const hasDead = brDiag.deadStats && brDiag.deadStats.length > 0;
-        const deadStatName = hasDead ? formatBraceletLine(brDiag.deadStats[0].label, isEn) : '';
-        list.push({
-          type: 'bracelet',
-          icon: '📿',
-          name: isEn
-            ? (hasDead ? 'T4 Bracelet: Reroll Dead Stat to BiS Perk (Casino)' : 'T4 Bracelet: Push to Tier A/S Rolls (Casino)')
-            : (hasDead ? 'Bracelet T4 : Reroll Stat Morte en Proc BiS (Casino)' : 'Bracelet T4 : Optimisation Tier A/S (Casino)'),
-          sub: isEn
-            ? (hasDead
-                ? `Heavy RNG gamble: Replace ${deadStatName} (+${Math.round(cp)} CP)`
-                : `Heavy RNG gamble: Target 2 BiS perks to reach Tier A/S (+${Math.round(cp)} CP)`)
-            : (hasDead
-                ? `Gamble très aléatoire : Remplacement de ${deadStatName} (+${Math.round(cp)} CP)`
-                : `Gamble très aléatoire : Viser 2 procs BiS pour le Tier A/S (+${Math.round(cp)} CP)`),
-          cost,
-          cp,
-          ilvl: 0,
-          roi,
-          tier: 'b',
-          tierLabel: isEn ? 'Tier B (RNG)' : 'Rang B (Casino)',
-          apply: () => { braceletAvailable--; }
-        });
-      }
-
-      // 2. Ark Grid Nœud Soleil — Modèle Inven (+1.13% multiplicateur net)
-      if (scope.arkGrid && arkGridSunAvailable > 0) {
-        const cost = 80898;
-        const cp = startCp * 0.0113;
-        list.push({
-          type: 'ark_grid',
-          icon: '☀️',
-          name: isEn ? 'Ark Grid: Solar Order 17 Points' : 'Grille d\'Ark : Ordre Soleil 17 Points',
-          sub: isEn ? 'Major Ark Grid core node (+1.13% net multiplier Inven)' : 'Nœud majeur Ark Grid (+1.13% multiplicateur net Inven)',
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 's',
-          tierLabel: isEn ? 'Tier S' : 'Rang S',
-          apply: () => { arkGridSunAvailable--; }
-        });
-      }
-
-      // 3. Ark Grid Nœud Lune — Modèle Inven (+1.13% multiplicateur net)
-      if (scope.arkGrid && arkGridMoonAvailable > 0) {
-        const cost = 80898;
-        const cp = startCp * 0.0113;
-        list.push({
-          type: 'ark_grid',
-          icon: '🌙',
-          name: isEn ? 'Ark Grid: Lunar Order 17 Points' : 'Grille d\'Ark : Ordre Lune 17 Points',
-          sub: isEn ? 'Lunar Order complement (+1.13% net multiplier Inven)' : 'Complément direct Ordre Lune (+1.13% multiplicateur net Inven)',
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 's',
-          tierLabel: isEn ? 'Tier S' : 'Rang S',
-          apply: () => { arkGridMoonAvailable--; }
-        });
-      }
-
-      // 4. Gemmes T4 Niv. 7 ➔ Niv. 8 (Fusion 3x Lv. 7 = ~290k g)
-      if (scope.gems && gemsTo8Remaining > 0) {
-        const cost = 290000;
-        const cp = startCp * (isSupport ? 0.0115 : 0.00808);
-        const gemIdx = Math.max(1, 11 - gemsTo8Remaining + 1);
-        list.push({
-          type: 'gem_8',
-          icon: '💎',
-          name: isEn ? `T4 Gem: Upgrade Lv. 7 ➔ Lv. 8 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 7 ➔ Niv. 8 (Slot #${gemIdx})`,
-          sub: isEn
-            ? (isSupport ? 'Increases ally Attack Power buff (+1.15% Buff Power Inven)' : 'Increases skill damage (+0.81% net CP Inven)')
-            : (isSupport ? 'Augmente le buff d\'attaque allié (+1.15% Buff Power Inven)' : 'Augmente les dégâts de compétence (+0.81% CP net Inven)'),
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 'a',
-          tierLabel: isEn ? 'Tier A' : 'Rang A',
-          apply: () => { gemsTo8Remaining--; }
-        });
-      }
-
-      // 5. Affinage d'Arme T4 — Modèle Inven (Jusqu'à +25 !)
-      if (scope.gear && curGear.weapon < 25) {
-        const nextLvl = curGear.weapon + 1;
-        const cost = getLevelCost('weapon', curGear.weapon).totalValue;
-        const wpRatio = nextLvl >= 24 ? 0.0135 : (nextLvl >= 21 ? 0.0105 : 0.0080);
-        const cp = startCp * wpRatio;
-        const ilvl = 0.8333;
-        list.push({
-          type: 'weapon',
-          icon: '🔨',
-          piece: 'weapon',
-          from: curGear.weapon,
-          to: nextLvl,
-          name: isEn ? `Weapon Honing: +${curGear.weapon} ➔ +${nextLvl}` : `Affinage Arme : +${curGear.weapon} ➔ +${nextLvl}`,
-          sub: isEn
-            ? `Weapon Power boost (+${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`
-            : `Boost de Puissance d'Arme (+${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP, +${(wpRatio * 100).toFixed(2)}% Base AP Inven)`,
-          targets: isEn ? `Weapon Power +${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP (+${(wpRatio * 100).toFixed(2)}% Base AP)` : `Puissance d'Arme +${nextLvl >= 24 ? 3200 : (nextLvl >= 21 ? 2400 : 1850)} AP (+${(wpRatio * 100).toFixed(2)}% Attaque Base)`,
-          method: isEn ? 'Honing NPC: Destined Destruction Stones, Leapstones, T4 Oreha Fusions & Artisan Energy (Pity safeguard).' : "PNJ Affinage : Pierres de Destruction de Destinée, Pierres de Bond, Minerais de Fusion T4 et Énergie d'Artisan.",
-          cost,
-          cp,
-          ilvl,
-          roi: cost / cp,
-          tier: nextLvl <= 18 ? 's' : (nextLvl <= 20 ? 'a' : 'b'),
-          tierLabel: isEn ? (nextLvl <= 18 ? 'Tier S' : (nextLvl <= 20 ? 'Tier A' : 'Tier B')) : (nextLvl <= 18 ? 'Rang S' : (nextLvl <= 20 ? 'Rang A' : 'Rang B')),
-          apply: () => { curGear.weapon = nextLvl; curIlvl += ilvl; }
-        });
-      }
-
-      // 6. Affinage des Armures T4 — Modèle Inven (Jusqu'à +25 !)
-      if (scope.gear) {
-        const armorOrder = ['chest', 'pants', 'head', 'shoulder', 'gloves'];
-        armorOrder.forEach(p => {
-          if (curGear[p] < 25) {
-            const nextLvl = curGear[p] + 1;
-            const cost = getLevelCost(p, curGear[p]).totalValue;
-            const armRatio = (p === 'chest' || p === 'pants') ? 0.0019 : 0.0014;
-            const cp = startCp * armRatio;
-            const ilvl = 0.8333;
-            const pNameEn = p === 'head' ? 'Helmet' : (p === 'shoulder' ? 'Pauldrons' : (p === 'chest' ? 'Chest' : (p === 'pants' ? 'Pants' : 'Gloves')));
-            const pNameFr = p === 'head' ? 'Casque' : (p === 'shoulder' ? 'Épaulières' : (p === 'chest' ? 'Plastron' : (p === 'pants' ? 'Pantalon' : 'Gants')));
-            list.push({
-              type: 'armor',
-              icon: '🛡️',
-              piece: p,
-              from: curGear[p],
-              to: nextLvl,
-              name: isEn ? `${pNameEn} Honing: +${curGear[p]} ➔ +${nextLvl}` : `Affinage ${pNameFr} : +${curGear[p]} ➔ +${nextLvl}`,
-              sub: isEn
-                ? `Gain Vitality, Defense & Stats (+${(armRatio * 100).toFixed(2)}% CP Inven)`
-                : `Gain de Vitalité, Défense & Stats (+${(armRatio * 100).toFixed(2)}% CP Inven)`,
-              cost,
-              cp,
-              ilvl,
-              roi: cost / cp,
-              tier: nextLvl <= 16 ? 's' : (nextLvl <= 18 ? 'a' : 'b'),
-              tierLabel: isEn ? (nextLvl <= 16 ? 'Tier S' : (nextLvl <= 18 ? 'Tier A' : 'Tier B')) : (nextLvl <= 16 ? 'Rang S' : (nextLvl <= 18 ? 'Rang A' : 'Rang B')),
-              apply: () => { curGear[p] = nextLvl; curIlvl += ilvl; }
-            });
-          }
-        });
-      }
-
-      // 7. Affinage Avancé (+10, +20...) — Modèle Inven (+2.05% CP net)
-      if (scope.advHoning && curAdv < 40) {
-        const nextAdv = curAdv + 10;
-        const cost = (HONING_COSTS.advWeapon[nextAdv] || 50000) + (HONING_COSTS.advArmorTotal[nextAdv] || 200000);
-        const cp = startCp * 0.0205;
-        const ilvl = 10.0;
-        list.push({
-          type: 'adv_honing',
-          icon: '⭐',
-          advTarget: nextAdv,
-          name: isEn ? `Advanced Honing: Tier +${nextAdv} (Full)` : `Affinage Avancé : Palier +${nextAdv} (Complet)`,
-          sub: isEn
-            ? 'Guaranteed global +10 iLvl across all 6 pieces (+2.05% CP Inven)'
-            : 'Palier global +10 iLvl garanti sur l\'ensemble des 6 pièces (+2.05% CP Inven)',
-          cost,
-          cp,
-          ilvl,
-          roi: cost / cp,
-          tier: 's',
-          tierLabel: isEn ? 'Tier S' : 'Rang S',
-          apply: () => { curAdv = nextAdv; curIlvl += ilvl; }
-        });
-      }
-
-      // 8. Gemmes T4 Niv. 8 ➔ Niv. 9 (Fusion 3x Lv. 8 = ~850k g)
-      if (scope.gems && gemsTo8Remaining === 0 && gemsTo9Remaining > 0) {
-        const cost = 850000;
-        const cp = startCp * (isSupport ? 0.0112 : 0.00803);
-        const gemIdx = Math.max(1, 11 - gemsTo9Remaining + 1);
-        list.push({
-          type: 'gem_9',
-          icon: '💎',
-          name: isEn ? `T4 Gem: Upgrade Lv. 8 ➔ Lv. 9 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 8 ➔ Niv. 9 (Slot #${gemIdx})`,
-          sub: isEn ? 'T4 Gem endgame push (+0.80% net CP Inven) (~850k g)' : 'Montée endgame de gemme T4 (+0.80% CP net Inven) (~850k g)',
-          targets: isSupport ? (isEn ? 'Increases Ally Attack Power Buff (+1.12% Buff Power)' : "Augmente l'amplification du buff d'attaque allié (+1.12% Buff Power)") : (isEn ? 'Increases Skill Damage (+0.80% net CP) for major DPS skill' : "Augmente les dégâts de compétence (+0.80% CP net) sur votre compétence principale"),
-          method: isEn ? 'Fuse 3x Lv. 8 Gems (or buy direct Lv. 9 from Auction House). Assign to priority raid damage skill.' : "Fusionner 3x Gemmes T4 Niv. 8 (ou achat direct à l'Hôtel des Ventes). Assigner sur votre compétence principale de raid.",
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 'b',
-          tierLabel: isEn ? 'Tier B' : 'Rang B',
-          apply: () => { gemsTo9Remaining--; }
-        });
-      }
-
-      // 9. Gemmes T4 Niv. 9 ➔ Niv. 10 (Fusion 3x Lv. 9 = ~2,500k g)
-      if (scope.gems && gemsTo8Remaining === 0 && gemsTo9Remaining === 0 && gemsTo10Remaining > 0) {
-        const cost = 2500000;
-        const cp = startCp * (isSupport ? 0.0125 : 0.0090);
-        const gemIdx = Math.max(1, 11 - gemsTo10Remaining + 1);
-        list.push({
-          type: 'gem_10',
-          icon: '💎',
-          name: isEn ? `T4 Gem: Upgrade Lv. 9 ➔ Lv. 10 (Slot #${gemIdx})` : `Gemme T4 : Passage Niv. 9 ➔ Niv. 10 (Slot #${gemIdx})`,
-          sub: isEn ? 'Maximum T4 Gem power (+0.90% net CP Inven) (~2.5M g)' : 'Puissance maximale gemme T4 (+0.90% CP net Inven) (~2.5M g)',
-          cost,
-          cp,
-          ilvl: 0,
-          roi: cost / cp,
-          tier: 'b',
-          tierLabel: isEn ? 'Tier B' : 'Rang B',
-          apply: () => { gemsTo10Remaining--; }
-        });
-      }
-
-      return list;
-    }
-
-    let iterations = 0;
-    while (iterations++ < 50) {
-      const candidates = getCandidates();
-      if (!candidates.length) break;
-
-      if (mode === 'budget') {
-        const affordable = candidates.filter(c => totalGold + c.cost <= budget);
-        if (!affordable.length) break;
-        affordable.sort((a, b) => a.roi - b.roi);
-        const chosen = affordable[0];
-        chosen.apply();
-        totalGold += chosen.cost;
-        totalCp += chosen.cp;
-        steps.push(chosen);
-      } else if (mode === 'ilvl') {
-        if (curIlvl >= targetIlvl - 0.05) break;
-        const ilvlCandidates = candidates.filter(c => c.ilvl > 0);
-        if (!ilvlCandidates.length) break;
-        ilvlCandidates.sort((a, b) => a.cost - b.cost);
-        const chosen = ilvlCandidates[0];
-        chosen.apply();
-        totalGold += chosen.cost;
-        totalCp += chosen.cp;
-        steps.push(chosen);
-      } else if (mode === 'cp') {
-        if (totalCp >= targetCpDelta) break;
-        candidates.sort((a, b) => a.roi - b.roi);
-        const chosen = candidates[0];
-        chosen.apply();
-        totalGold += chosen.cost;
-        totalCp += chosen.cp;
-        steps.push(chosen);
-      }
-    }
-
-    return {
-      startIlvl,
-      endIlvl: curIlvl,
-      diffIlvl: curIlvl - startIlvl,
-      startCp,
-      endCp: Math.round(startCp + totalCp),
-      totalCp: Math.round(totalCp),
-      totalGold,
-      budgetRemaining: Math.max(0, budget - totalGold),
-      avgRoi: totalCp > 0 ? Math.round(totalGold / totalCp) : 0,
-      endGear: curGear,
-      endAdv: curAdv,
-      stepsCount: steps.length,
-      steps
-    };
-  }
-
   function buildMasterGpdData(charObj, isSupport, isEn) {
     const currentCp = (charObj && (charObj.calculatedScore || charObj.inGameScore)) || state.currentCp || 6028;
     const sys = (typeof extractPlayerSystems === 'function') ? extractPlayerSystems(charObj, isEn) : {};
@@ -4289,34 +3758,7 @@
     let agNextStep = isEn ? '➔ A- (3.75 offensive rolls)' : '➔ A- (3.75 rolls off.)';
     let agCost = 675000;
     let agGain = 1.08;
-    let agRate = 623000;
-
-    // 2. Earring (Boucle d'oreille)
-    let earRead = 'mid/high · no flat · low stat';
-    let earWhere = 'A- · 72.8';
-    let earLast = 'mid/mid ➔ mid/high';
-    let earNext = isEn ? '➔ high stat' : '➔ stat élevée';
-    let earCost = 45000;
-    let earGain = 0.05;
-    let earRate = 895000;
-
-    // 3. Necklace (Collier)
-    let neckRead = 'mid/high · no flat · low stat';
-    let neckWhere = 'A- · 74.1';
-    let neckLast = 'mid/mid ➔ mid/high';
-    let neckNext = isEn ? '➔ high stat' : '➔ stat élevée';
-    let neckCost = 2000;
-    let neckGain = 0.002;
-    let neckRate = 1170000;
-
-    // 4. Ring (Anneau)
-    let ringRead = 'high/mid · no flat · mid stat';
-    let ringWhere = 'A · 80.3';
-    let ringLast = 'mid/mid ➔ high/mid';
-    let ringNext = isEn ? '➔ high stat' : '➔ stat élevée';
-    let ringCost = 103000;
-    let ringGain = 0.07;
-    let ringRate = 1480000;
+    let agRate = Math.round(agCost / agGain);
 
     // 5. Karma Enlightenment (Ark Passive)
     let karmaLvl = 27;
@@ -4364,34 +3806,10 @@
     let brWhere = `${brGrade} · ${brScore}`;
     let brLast = `C+ ➔ ${brGrade} (+12.7% ➔ +${brPct}%)`;
     let brNext = `➔ B (+14.08% ${isSupport ? 'buff' : 'dmg'})`;
-    let brCost = 1170000;
-    let brGain = 0.61;
-    let brRate = 1920000;
-
-    // 7. Skill gems
-    let gLvl = 8;
-    if (sys.gems && sys.gems.label) {
-      if (sys.gems.label.includes('10')) gLvl = 10;
-      else if (sys.gems.label.includes('9')) gLvl = 9;
-      else if (sys.gems.label.includes('7')) gLvl = 7;
-    }
-    let gemsRead = isEn ? `mean lvl ${gLvl}.0 (all ${gLvl}s)` : `Niv. moyen ${gLvl}.0 (full ${gLvl})`;
-    let gemsWhere = isEn ? `Level ${gLvl}` : `Niveau ${gLvl}`;
-    let gemsLast = `${gLvl - 1} ➔ ${gLvl}`;
-    let gemsNext = `${gLvl} ➔ ${gLvl + 1} (full ${gLvl + 1}s)`;
-    let gemsCost = gLvl === 8 ? 9240000 : (gLvl === 7 ? 3080000 : 27500000);
-    let gemsGain = gLvl === 8 ? 4.79 : (gLvl === 7 ? 4.83 : 3.90);
-    let gemsRate = Math.round(gemsCost / gemsGain);
-
-    // 8. Armors honing
-    let aLvl = Math.round(sys.armors ? (sys.armors.avgArmor || 20) : (state.gear ? state.gear.head || 20 : 20));
-    let armorsRead = isEn ? `+${aLvl} all pieces` : `+${aLvl} toutes pièces`;
-    let armorsWhere = `+${aLvl}`;
-    let armorsLast = `+${aLvl - 1} ➔ +${aLvl}`;
-    let armorsNext = `+${aLvl} ➔ +${aLvl + 1}`;
-    let armorsCost = 2490000;
-    let armorsGain = 1.08;
-    let armorsRate = 2290000;
+    // Même campagne de reroll que la ligne dyn_brac du tableau GPD
+    let brCost = 271000;
+    let brGain = 0.77;
+    let brRate = Math.round(brCost / brGain);
 
     // 9. Ark grid — cutting rares
     let raresRead = isEn ? 'Rare nodes cut' : 'Noeuds rares taillés';
@@ -4401,16 +3819,6 @@
     let raresCost = 3030000;
     let raresGain = 0.97;
     let raresRate = 3130000;
-
-    // 10. Weapon honing
-    let wLvl = Math.round(sys.weapon ? (sys.weapon.wLvl || 23) : (state.gear ? state.gear.weapon || 23 : 23));
-    let weaponRead = isEn ? `+${wLvl} T4 Weapon` : `+${wLvl} Arme T4`;
-    let weaponWhere = `+${wLvl}`;
-    let weaponLast = `+${wLvl - 1} ➔ +${wLvl}`;
-    let weaponNext = `+${wLvl} ➔ +${wLvl + 1}`;
-    let weaponCost = 7650000;
-    let weaponGain = 1.22;
-    let weaponRate = 6290000;
 
     // 11. Ability stone
     let stoneRead = '9 / 6 / 4';
@@ -4435,48 +3843,6 @@
         dmgGain: agGain,
         rate: agRate,
         category: 'arkGrid'
-      },
-      {
-        id: 'earring',
-        icon: '👂',
-        system: isEn ? 'Earring' : 'Boucle d\'oreille',
-        whatItReads: earRead,
-        wherePutsYou: earWhere,
-        lastStep: earLast,
-        lastRate: '420k / 1%',
-        nextStep: earNext,
-        cost: earCost,
-        dmgGain: earGain,
-        rate: earRate,
-        category: 'acc'
-      },
-      {
-        id: 'necklace',
-        icon: '📿',
-        system: isEn ? 'Necklace' : 'Collier',
-        whatItReads: neckRead,
-        wherePutsYou: neckWhere,
-        lastStep: neckLast,
-        lastRate: '610k / 1%',
-        nextStep: neckNext,
-        cost: neckCost,
-        dmgGain: neckGain,
-        rate: neckRate,
-        category: 'acc'
-      },
-      {
-        id: 'ring',
-        icon: '💍',
-        system: isEn ? 'Ring' : 'Anneau',
-        whatItReads: ringRead,
-        wherePutsYou: ringWhere,
-        lastStep: ringLast,
-        lastRate: '750k / 1%',
-        nextStep: ringNext,
-        cost: ringCost,
-        dmgGain: ringGain,
-        rate: ringRate,
-        category: 'acc'
       },
       {
         id: 'karma_enl',
@@ -4507,38 +3873,6 @@
         category: 'bracelet'
       },
       {
-        id: 'skill_gems',
-        icon: '💎',
-        system: isEn ? 'Skill gems' : 'Gemmes de compétences',
-        whatItReads: gemsRead,
-        wherePutsYou: gemsWhere,
-        lastStep: gemsLast,
-        lastRate: '1.12M / 1%',
-        nextStep: gemsNext,
-        cost: gemsCost,
-        dmgGain: gemsGain,
-        rate: gemsRate,
-        category: 'gems',
-        applyType: 'gems',
-        targetVal: gLvl + 1
-      },
-      {
-        id: 'armors_honing',
-        icon: '🛡️',
-        system: isEn ? 'Armors honing' : 'Affinage Armures',
-        whatItReads: armorsRead,
-        wherePutsYou: armorsWhere,
-        lastStep: armorsLast,
-        lastRate: '1.75M / 1%',
-        nextStep: armorsNext,
-        cost: armorsCost,
-        dmgGain: armorsGain,
-        rate: armorsRate,
-        category: 'gear',
-        applyType: 'armors',
-        targetVal: aLvl + 1
-      },
-      {
         id: 'grid_rares',
         icon: '✨',
         system: isEn ? 'Ark grid — cutting rares' : 'Grille d\'Ark — Taille de rares',
@@ -4551,22 +3885,6 @@
         dmgGain: raresGain,
         rate: raresRate,
         category: 'arkGrid'
-      },
-      {
-        id: 'weapon_honing',
-        icon: '⚔️',
-        system: isEn ? 'Weapon honing' : 'Affinage Arme',
-        whatItReads: weaponRead,
-        wherePutsYou: weaponWhere,
-        lastStep: weaponLast,
-        lastRate: '4.80M / 1%',
-        nextStep: weaponNext,
-        cost: weaponCost,
-        dmgGain: weaponGain,
-        rate: weaponRate,
-        category: 'gear',
-        applyType: 'weapon',
-        targetVal: wLvl + 1
       },
       {
         id: 'ability_stone',
@@ -4584,10 +3902,96 @@
       }
     ];
 
+    // Lignes dynamiques : mêmes coûts et gains que le tableau GPD (getDynamicGpdTable)
+    const dynRows = charObj ? getDynamicGpdTable(charObj, isSupport ? 'support' : 'dps', isEn) : [];
+    const unit = isSupport ? 'buff' : 'dmg';
+    const lvlWord = isEn ? 'Lv.' : 'Niv.';
+    const dynToMaster = (d, extra) => Object.assign({
+      id: d.id,
+      lastRate: '—',
+      cost: d.cost,
+      dmgGain: d.gainVal,
+      // ratioVal est déjà par 0.01% en support : on repasse par 1% comme les autres lignes (reconverti plus bas)
+      rate: isSupport ? d.ratioVal * 100 : d.ratioVal
+    }, extra);
+    dynRows.forEach(d => {
+      const m = d.meta || {};
+      if (d.id === 'dyn_weapon') {
+        rows.push(dynToMaster(d, {
+          icon: '⚔️',
+          system: isEn ? 'Weapon honing' : 'Affinage Arme',
+          whatItReads: isEn ? `+${m.from} T4 Weapon` : `+${m.from} Arme T4`,
+          wherePutsYou: `+${m.from}`,
+          lastStep: `+${m.from - 1} ➔ +${m.from}`,
+          nextStep: `+${m.from} ➔ +${m.to}`,
+          category: 'gear',
+          applyType: 'weapon',
+          targetVal: m.to
+        }));
+      } else if (d.id === 'dyn_armor') {
+        rows.push(dynToMaster(d, {
+          icon: '🛡️',
+          system: isEn ? 'Armors honing' : 'Affinage Armures',
+          whatItReads: isEn ? `+${m.from} all pieces` : `+${m.from} toutes pièces`,
+          wherePutsYou: `+${m.from}`,
+          lastStep: `+${m.from - 1} ➔ +${m.from}`,
+          nextStep: `+${m.from} ➔ +${m.to}`,
+          category: 'gear',
+          applyType: 'armors',
+          targetVal: m.to
+        }));
+      } else if (d.id.startsWith('dyn_gems_')) {
+        const mix = [10, 9, 8, 7].filter(l => m.counts[l] > 0).map(l => `${m.counts[l]}× ${lvlWord} ${l}`).join(', ');
+        rows.push(dynToMaster(d, {
+          icon: '💎',
+          system: isEn ? 'Skill gems' : 'Gemmes de compétences',
+          whatItReads: mix,
+          wherePutsYou: `${m.n}/${m.total} ${lvlWord} ${m.lvl}`,
+          lastStep: '—',
+          nextStep: `${m.n}× ${lvlWord} ${m.lvl} ➔ ${m.lvl + 1}`,
+          category: 'gems',
+          applyType: 'gems',
+          targetVal: m.lvl + 1
+        }));
+      } else if (d.id.startsWith('dyn_core_')) {
+        rows.push(dynToMaster(d, {
+          icon: m.key.endsWith('Sun') ? '☀️' : (m.key.endsWith('Moon') ? '🌙' : '⭐'),
+          system: isEn ? `Ark grid — ${m.label} core` : `Grille d'Ark — Cœur ${m.label}`,
+          whatItReads: `${m.pts} pts`,
+          wherePutsYou: `${m.pts}P`,
+          lastStep: '—',
+          nextStep: `${m.pts}P ➔ 17P`,
+          category: 'arkGrid'
+        }));
+      } else if (d.id === 'dyn_acc') {
+        rows.push(dynToMaster(d, {
+          icon: '💍',
+          system: isEn ? `Accessory — ${m.slotName}` : `Bijou — ${m.slotName}`,
+          whatItReads: isEn ? `Accessories +${m.curPct.toFixed(2)}% ${unit}` : `Bijoux +${m.curPct.toFixed(2)}% ${unit}`,
+          wherePutsYou: isEn ? 'Weakest piece' : 'Pièce la plus faible',
+          lastStep: '—',
+          nextStep: isEn ? '➔ 2 High main lines' : '➔ 2 lignes principales High',
+          category: 'acc'
+        }));
+      }
+    });
+
     rows.forEach(r => {
       r.cpGain = Math.max(1, Math.round(currentCp * (r.dmgGain / 100)));
       r.roi = Math.round(r.cost / r.cpGain);
     });
+
+    // Support : même unité que le tableau GPD, gold par 0.01% de buff (et non par 1%)
+    if (isSupport) {
+      rows.forEach(r => {
+        r.rate = Math.round(r.rate / 100);
+        const m = /^([\d.]+)(k|M) \/ 1%$/.exec(r.lastRate || '');
+        if (m) {
+          const gold = parseFloat(m[1]) * (m[2] === 'M' ? 1e6 : 1e3) / 100;
+          r.lastRate = `${gold >= 1000 ? (gold / 1000).toFixed(1) + 'k' : Math.round(gold)} / 0.01%`;
+        }
+      });
+    }
 
     rows.sort((a, b) => a.rate - b.rate);
     return rows;
@@ -4762,6 +4166,19 @@
 
     const masterData = buildMasterGpdData(curChar, isSupport, isEn);
     advisorState.lastGpdData = masterData;
+
+    // Unité des ratios alignée sur le tableau GPD (appelé après applyTranslations au changement de langue)
+    if (dom.gpdNextUnit) {
+      dom.gpdNextUnit.textContent = isSupport
+        ? (isEn ? 'per 0.01% Ally Buff' : 'par 0.01% Buff Allié')
+        : (isEn ? 'per 1% Dmg' : 'par 1% Dégâts');
+    }
+    if (dom.gpdThRate) dom.gpdThRate.textContent = isSupport ? 'Gold / 0.01%' : 'Gold / 1%';
+    if (dom.gpdTableTitle) {
+      dom.gpdTableTitle.textContent = isEn
+        ? `Global Progression Steps Ranked by Efficiency (Gold / ${isSupport ? '0.01%' : '1%'})`
+        : `Classement Global des Paliers par Rentabilité (Gold / ${isSupport ? '0.01%' : '1%'})`;
+    }
 
     // 1. Highlight Banner (Next Upgrade)
     if (masterData.length > 0) {
@@ -6024,9 +5441,10 @@
     if (prof.items && prof.items.length > 0) {
       const baseIt = prof.items.find(it => it.cat === 'Base' || it.cat === 'Stat de Base');
       if (baseIt) {
-        const bMatch = (baseIt.mult || '').match(/Base Val:\s*([\d\s\u202f]+)/);
+        // Base Val est un entier format\u00e9 par formatNumber : "558,980" (en-US) ou "558 980" (fr-FR, U+202F/U+00A0)
+        const bMatch = (baseIt.mult || '').match(/Base Val:\s*(\d[\d\s\u202f\u00a0,.]*)/);
         if (bMatch) {
-          const baseVal = parseFloat(bMatch[1].replace(/[\s\u202f]/g, ''));
+          const baseVal = parseInt(bMatch[1].replace(/\D/g, ''), 10);
           let dynamicScore = baseVal / 1e4;
           prof.items.forEach(it => {
             if (it.cat === 'Base' || it.cat === 'Stat de Base') return;
@@ -10284,6 +9702,95 @@
 
   
 
+  // --- Valorisation des lignes d'affinage d'accessoires (pentes ARSONISTIC_DATA) ---
+  // PA totale et bonus PA% de base du profil par défaut de bracelet-model.js :
+  // sqrt(703826×1.09 × 241367×1.085 / 6) × 1.125 + 3600 ≈ 209 464
+  const ACC_REF_TOTAL_AP = 209464;
+  const ACC_REF_BASE_AP_PCT = 0.125;
+  // Coût (gold) estimé d'un bijou de remplacement
+  const ACC_UPGRADE_COST = 166000;
+  const ACC_SLOTS = ['neck', 'ear1', 'ear2', 'finger1', 'finger2'];
+  // Bijou cible d'un remplacement : 2 lignes principales du rôle en High + PA d'arme plate Mid
+  const ACC_TARGET_LINES = {
+    dps: {
+      neck: [['addDmg', 2.60], ['outDmg', 2.00], ['wpFlat', 480]],
+      ear: [['apPct', 1.55], ['wpPct', 3.00], ['wpFlat', 480]],
+      ring: [['critPct', 1.55], ['cdmgPct', 4.00], ['wpFlat', 480]]
+    },
+    support: {
+      neck: [['brand', 8.00], ['identity', 6.00], ['wpFlat', 480]],
+      ear: [['wpPct', 3.00], ['shield', 3.50], ['wpFlat', 480]],
+      ring: [['allyAp', 5.00], ['allyDmg', 7.50], ['wpFlat', 480]]
+    }
+  };
+
+  // Clé de stat et quantité (en % ou en points plats) d'une ligne d'affinage brute
+  function getAccessoryLineKey(st) {
+    const t = st.type;
+    const idx = st.index;
+    const val = st.value || 0;
+    if (t === 4 && idx >= 621000000 && idx <= 621000002) return { key: 'outDmg', amount: [0.55, 1.20, 2.00][idx - 621000000] };
+    if (t === 29) return { key: 'identity', amount: idx === 6002 ? 6.00 : (idx === 6001 ? 3.60 : 1.60) };
+    if (t === 50) return { key: 'heal', amount: val / 100 };
+    if (t === 51) return { key: 'shield', amount: val / 100 };
+    if (t === 54) return { key: 'allyAp', amount: val / 100 };
+    if (t === 59 || idx === 16000001) return { key: 'allyDmg', amount: val / 100 };
+    if (t === 2) {
+      const pctKeys = { 152: 'wpPct', 49: 'apPct', 50: 'addDmg', 74: 'critPct', 76: 'cdmgPct', 46: 'brand' };
+      if (pctKeys[idx]) return { key: pctKeys[idx], amount: val / 100 };
+      if (idx === 124) return { key: 'apFlat', amount: val };
+      if (idx === 151) return { key: 'wpFlat', amount: val };
+    }
+    return { key: 'other', amount: 0 };
+  }
+
+  // Gain (% DPS ou % Buff) par unité de ligne, dérivé des tables Arsonistic.
+  // Une clé absente vaut 0 : lignes inutiles, soins, boucliers, jauge d'identité, PV...
+  let accLineSlopesCache = null;
+  function getAccessoryLineSlopes() {
+    if (accLineSlopesCache) return accLineSlopesCache;
+    const dps = ARSONISTIC_DATA.dps;
+    const sup = ARSONISTIC_DATA.support;
+    const perPct = (tbl, field) => tbl.high[field] / tbl.high.pct;
+    const dpsApSlope = perPct(dps.apPct, 'dps');
+    const dpsWpSlope = perPct(dps.wpPct, 'dps');
+    const supWpSlope = perPct(sup.wpPct, 'buffDmg');
+    const supWpFlatPerPoint = sup.wpFlat['960'].buffDmg / 960;
+    accLineSlopesCache = {
+      dps: {
+        addDmg: perPct(dps.addDmg, 'dps'),
+        outDmg: perPct(dps.outDmg, 'dps'),
+        apPct: dpsApSlope,
+        critPct: perPct(dps.critPct, 'dps'),
+        cdmgPct: perPct(dps.cdmgPct, 'dps'),
+        wpPct: dpsWpSlope,
+        // Même équivalence points plats ⇔ % PA d'arme que la table support
+        wpFlat: (supWpFlatPerPoint / supWpSlope) * dpsWpSlope,
+        // +v PA = v / PA totale de réf. ; une ligne PA% de x % n'ajoute que x / (1 + PA% de base)
+        apFlat: (100 / ACC_REF_TOTAL_AP) * dpsApSlope * (1 + ACC_REF_BASE_AP_PCT)
+      },
+      support: {
+        brand: perPct(sup.brand, 'buffDmg'),
+        allyDmg: perPct(sup.allyDmg, 'buffDmg'),
+        allyAp: perPct(sup.allyAp, 'buffDmg'),
+        wpPct: supWpSlope,
+        wpFlat: supWpFlatPerPoint
+      }
+    };
+    return accLineSlopesCache;
+  }
+
+  // Cumul des lignes : additif à l'intérieur d'une même stat, multiplicatif entre stats
+  function computeAccessoryLinesBonus(lines, isSupport) {
+    const slopes = getAccessoryLineSlopes()[isSupport ? 'support' : 'dps'];
+    const pools = {};
+    lines.forEach(l => {
+      if (slopes[l.key]) pools[l.key] = (pools[l.key] || 0) + l.amount;
+    });
+    const mult = Object.keys(pools).reduce((m, k) => m * (1 + pools[k] * slopes[k] / 100), 1);
+    return (mult - 1) * 100;
+  }
+
   function decodeAccessoryStat(st, slot, isSupport, isEn) {
     const t = st.type;
     const idx = st.index;
@@ -10298,9 +9805,16 @@
     if (t === 4 && (idx === 621000000 || idx === 621000001 || idx === 621000002)) {
       const pct = idx === 621000002 ? '2.00' : (idx === 621000001 ? '1.20' : '0.55');
       text = isEn ? `Outgoing Damage (+${pct}%)` : `Dégâts infligés (+${pct}%)`;
-      rollTier = 'passif';
-      tierLabel = isEn ? 'Rank 3 Perk' : 'Passif Rang 3';
-      return { text, rollTier, tierLabel, isDead: false };
+      // Seul le roll max garde le statut « passif » ; dégâts personnels = inutiles en support
+      if (idx === 621000002) {
+        rollTier = 'passif';
+        tierLabel = isEn ? 'Rank 3 Perk' : 'Passif Rang 3';
+      } else {
+        rollTier = idx === 621000001 ? 'mid' : 'low';
+        tierLabel = rollTier === 'mid' ? (isEn ? 'Mid Roll' : 'Roll Moyen') : (isEn ? 'Low Roll' : 'Roll Faible');
+      }
+      isDead = isSupport;
+      return { text, rollTier, tierLabel: isDead ? (isEn ? 'Dead Stat' : 'Ligne Inutile') : tierLabel, isDead };
     }
     if (t === 29) {
       const pct = idx === 6002 ? '6.00' : (idx === 6001 ? '3.60' : '1.60');
@@ -10441,12 +9955,17 @@
     let deadCount = 0;
     let totalFound = 0;
 
+    // Lignes valorisables par bijou (uniquement quand les stats brutes sont disponibles)
+    let slotLines = null;
+
     // 1. Détection via les données d'objets bruts (lostark.bible ou import)
     if (pAccItems && pAccItems.length > 0) {
-      ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].forEach(slot => {
+      ACC_SLOTS.forEach(slot => {
         const item = pAccItems.find(i => i.slot === slot);
         if (item && item.data && Array.isArray(item.data.stats)) {
           const rolls = item.data.stats.filter(st => st.base === false);
+          if (!slotLines) slotLines = {};
+          slotLines[slot] = rolls.map(getAccessoryLineKey);
           rolls.forEach(r => {
             const dec = decodeAccessoryStat(r, slot, isSupport, isEn);
             totalFound++;
@@ -10511,9 +10030,15 @@
     let label = '';
 
     if (totalFound > 0) {
-      // Base 5 pièces T4 = 10.00%, plus les 15 lignes potentielles (+0.35% High, +0.22% Mid, +0.10% Low, -0.15% Dead)
-      let calc = 10.00 + (highCount * 0.35) + (midCount * 0.22) + (lowCount * 0.10) - (deadCount * 0.15);
-      bonusPct = Number(Math.max(10.00, Math.min(15.20, calc)).toFixed(2));
+      if (slotLines) {
+        // Stats brutes : valeur réelle de chaque ligne × pente Arsonistic, cumul multiplicatif entre stats
+        const allLines = ACC_SLOTS.flatMap(s => slotLines[s] || []);
+        bonusPct = Number(computeAccessoryLinesBonus(allLines, isSupport).toFixed(2));
+      } else {
+        // Presets textuels (valeurs non décodables) : estimation par tiers, sans pénalité pour les lignes inutiles
+        const calc = 10.00 + (highCount * 0.35) + (midCount * 0.22) + (lowCount * 0.10);
+        bonusPct = Number(Math.min(15.20, calc).toFixed(2));
+      }
 
       const deadSuffix = deadCount > 0 
         ? (isEn ? `, ${deadCount === 1 ? '1 Dead' : deadCount + ' Dead'}` : `, ${deadCount === 1 ? '1 Inutile' : deadCount + ' Inutiles'}`)
@@ -10554,7 +10079,7 @@
       }
     }
 
-    return { bonusPct, label, highCount, midCount, lowCount, deadCount, totalFound };
+    return { bonusPct, label, highCount, midCount, lowCount, deadCount, totalFound, slotLines };
   }
 
   function extractPlayerSystems(playerChar, isEn = false) {
@@ -10623,8 +10148,8 @@
 
     // Armures T4 : MainStat + Vitalité/HP des 5 pièces d'armure (+1.37% DPS / +1.50% Supp par niveau moyen équivalent)
     const armorBonusPct = isSupport 
-      ? Number((12.00 + (effAvgArmor - 12) * 1.50).toFixed(2)) 
-      : Number((8.00 + (effAvgArmor - 12) * 1.37).toFixed(2));
+      ? Number((12.00 + (effAvgArmor - 12) * ARMOR_HONING_BONUS_PER_LVL.support).toFixed(2))
+      : Number((8.00 + (effAvgArmor - 12) * ARMOR_HONING_BONUS_PER_LVL.dps).toFixed(2));
 
     // 3. Adv Honing
     const adv = playerChar.advHoning !== undefined 
@@ -11178,17 +10703,38 @@
     const isSupport = player.role === 'support';
     const gaps = [];
 
+    // Cœurs : points manquants jusqu'à 17 sur les cœurs Ordre + Chaos du groupe
+    // (sans données de cœur pour le groupe : forfait historique de 3 points manquants)
+    const coreSlots = getArkGridStatus(player).slots || {};
+    const coreGroupCost = (orderKey, chaosKey) => {
+      const pts = [orderKey, chaosKey].map(k => coreSlots[k] || 0);
+      if (pts.every(v => v === 0)) return 3 * ARK_CORE_COST_PER_POINT;
+      return pts.filter(v => v > 0 && v < 17).reduce((sum, v) => sum + (17 - v) * ARK_CORE_COST_PER_POINT, 0);
+    };
+    // Affinage : coût attendu de chaque palier jusqu'au niveau de la référence (1 palier si inconnu)
+    const honingPathCost = (piece, fromLvl, toLvl, pieces) => {
+      const from = Math.floor(fromLvl);
+      const to = Math.min(25, toLvl !== undefined && Math.floor(toLvl) > from ? Math.floor(toLvl) : from + 1);
+      let total = 0;
+      for (let l = from; l < to; l++) total += getLevelCost(piece, l).totalValue * pieces;
+      return total;
+    };
+    const pWeapon = pSys.weapon || {};
+    const tWeapon = tSys.weapon || {};
+    const pArmors = pSys.armors || {};
+    const tArmors = tSys.armors || {};
+
     const systemMeta = [
-      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '☀️', cost: 80898 },
-      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '🌙', cost: 80898 },
-      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '⭐', cost: 80898 },
+      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '☀️', cost: coreGroupCost('orderSun', 'chaosSun') },
+      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '🌙', cost: coreGroupCost('orderMoon', 'chaosMoon') },
+      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '⭐', cost: coreGroupCost('orderStar', 'chaosStar') },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '✨', cost: computeAstrogemUpgradeCost(pSys, tSys) },
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '💎', cost: computeAccessoriesUpgradeCost(player, target) },
-      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: 56200 },
+      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '🗡️', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '✨', cost: 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '🔮', cost: 30000 },
       { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '⚡', cost: computeGemUpgradeCost(player, target) },
-      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '🛡️', cost: 65000 },
+      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '🛡️', cost: honingPathCost('armor', pArmors.effAvgArmor !== undefined ? pArmors.effAvgArmor : (pArmors.avgArmor || 12), tArmors.effAvgArmor, 5) },
       { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '💪', cost: 75000 },
       { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '📜', cost: 40000 },
       { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '🎯', cost: 50000 },
@@ -11340,7 +10886,7 @@
 
     // 2c. Accessoires T4 : +0.80% à +1.20% (up to 15.20%)
     const pAcc = (pSys.accessories && pSys.accessories.bonusPct) || 13.50;
-    const tAcc = Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2)));
+    const tAcc = Math.max(pAcc, Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2))));
     const tAccLabel = isEn ? "3 High Rolls Weapon Atk / Supp Dmg (Optimized)" : "3 Rolls High Atk Arme / Dégâts Supp (Optimisés)";
 
     // 2d. Bracelet T4 : +0.80% (up to 12.00%)
@@ -16792,7 +16338,6 @@
 
   window.__initApp = initApp;
   window.__renderPresetsBar = renderPresetsBar;
-  window.__solveAdvisor = solveAdvisor;
   window.__evaluateBracelet = evaluateBracelet;
   window.__renderBenchmarkTab = renderBenchmarkTab;
   window.__initBenchmarkEvents = initBenchmarkEvents;

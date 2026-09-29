@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=19.2">
+  <link rel="stylesheet" href="style.css?v=19.3">
 </head>
 <body>
   <div class="app-container">
@@ -410,7 +410,7 @@
               <div class="gpd-next-right">
                 <div class="gpd-next-price-box">
                   <span class="gpd-next-rate" id="gpdNextRate">623 000 g</span>
-                  <span class="gpd-next-unit" data-i18n="score_gpd_per">par 1% Dégâts</span>
+                  <span class="gpd-next-unit" id="gpdNextUnit" data-i18n="score_gpd_per">par 1% Dégâts</span>
                 </div>
                 <div class="gpd-next-gain-pill" id="gpdNextGain">675k g pour +1.08% (+65 CP)</div>
               </div>
@@ -450,7 +450,7 @@
           <div class="card gpd-table-card">
             <div class="card-header">
               <div>
-                <h3 data-i18n="gpd_table_title">Classement Global des Paliers par Rentabilité (Gold / 1%)</h3>
+                <h3 id="gpdTableTitle" data-i18n="gpd_table_title">Classement Global des Paliers par Rentabilité (Gold / 1%)</h3>
                 <p class="subtitle" data-i18n="gpd_table_sub">
                   Trié du palier le plus rentable au plus cher. Un palier sélectionné dans votre objectif est mis en évidence.
                 </p>
@@ -466,7 +466,7 @@
                     <th data-i18n="gpd_th_current">Palier Actuel</th>
                     <th data-i18n="gpd_th_last">Dernier Palier</th>
                     <th data-i18n="gpd_th_next">Prochain Palier (À Acheter)</th>
-                    <th data-i18n="gpd_th_rate">Gold / 1%</th>
+                    <th id="gpdThRate" data-i18n="gpd_th_rate">Gold / 1%</th>
                     <th data-i18n="gpd_th_cpgain">Gain CP</th>
                     <th data-i18n="gpd_th_status">Statut</th>
                   </tr>
@@ -2764,7 +2764,7 @@
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=40.2"></script>
+  <script src="calculator.js?v=40.3"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>
