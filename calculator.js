@@ -1458,23 +1458,27 @@
     return { positives, negative: lines.find(l => l.negative) || null };
   }
 
+  // Gain (%) d'un effet de gravure qui passe de base+addOld à base+addNew (même unité que `base`)
+  function engravingBonusGain(kind, base, addOld, addNew) {
+    if (!(addNew > addOld)) return 0;
+    if (kind === 'dmg') return ((1 + (base + addNew) / 100) / (1 + (base + addOld) / 100) - 1) * 100;
+    if (kind === 'ap') {
+      const pool = base + STONE_OTHER_AP_PCT;
+      return ((1 + (pool + addNew) / 100) / (1 + (pool + addOld) / 100) - 1) * 100;
+    }
+    if (!window.Bracelet) return 0;
+    const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
+    const d = (addNew - addOld) / 100;
+    const ref = window.Bracelet.critFactor(prof, 0, 0);
+    const next = kind === 'critRate' ? window.Bracelet.critFactor(prof, d, 0) : window.Bracelet.critFactor(prof, 0, d);
+    return (next / ref - 1) * 100;
+  }
+
   // Gain (%) de la gravure quand la pierre passe du niveau lvlFrom à lvlTo
   function stoneEngravingGain(key, lvlFrom, lvlTo, isSupport) {
     const eff = window.ABILITY_STONE_EFFECTS && window.ABILITY_STONE_EFFECTS[key];
     if (isSupport || !eff || lvlTo <= lvlFrom) return 0;
-    const sOld = lvlFrom > 0 ? eff.stone[lvlFrom - 1] : 0;
-    const sNew = eff.stone[lvlTo - 1];
-    if (eff.kind === 'dmg') return ((1 + (eff.base + sNew) / 100) / (1 + (eff.base + sOld) / 100) - 1) * 100;
-    if (eff.kind === 'ap') {
-      const pool = eff.base + STONE_OTHER_AP_PCT;
-      return ((1 + (pool + sNew) / 100) / (1 + (pool + sOld) / 100) - 1) * 100;
-    }
-    if (!window.Bracelet) return 0;
-    const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
-    const d = (sNew - sOld) / 100;
-    const ref = window.Bracelet.critFactor(prof, 0, 0);
-    const next = eff.kind === 'critRate' ? window.Bracelet.critFactor(prof, d, 0) : window.Bracelet.critFactor(prof, 0, d);
-    return (next / ref - 1) * 100;
+    return engravingBonusGain(eff.kind, eff.base, lvlFrom > 0 ? eff.stone[lvlFrom - 1] : 0, eff.stone[lvlTo - 1]);
   }
 
   // Gain (%) de la PA de base +1,5 % (somme des niveaux >= 5), mesuré sur le profil de référence
@@ -1517,6 +1521,49 @@
     best.toLabel = `${nodesOf(e1, e1.level)}/${nodesOf(e2, e2.level)}`;
     best.stone = stone;
     return best;
+  }
+
+  // --- Livres de gravure reliques T4 : 5 livres par niveau, 4 niveaux ---
+  const RELIC_BOOKS_PER_LEVEL = 5;
+  const RELIC_MAX_BOOKS = 20;
+
+  // Slug du marché loa-buddy pour le livre d'une gravure (« Keen Blunt Weapon » -> keen-blunt-weapon)
+  function relicBookSlug(key) {
+    return key.replace(/'/g, '').replace(/\s+/g, '-');
+  }
+
+  /**
+   * Livres reliques restants par gravure équipée : de la progression actuelle jusqu'au niveau 4.
+   * lostark.bible : grade engrave_grade05 = relique, `progress` = livres lus dans ce grade (0…20).
+   * Les gravures encore légendaires (engrave_grade04) doivent d'abord finir leurs livres légendaires : ignorées.
+   */
+  function getRelicBookUpgrades(charObj, isSupport) {
+    if (isSupport) return [];
+    const raw = (charObj && charObj.rawProfile) || charObj || {};
+    const list = raw.engravings || (raw.loadout && raw.loadout.engravings) || [];
+    const out = [];
+    list.forEach(e => {
+      if (!e || e.grade !== 'engrave_grade05') return;
+      const label = BIBLE_ENGRAVINGS[String(e.id)] || '';
+      const en = label.split(' (')[0];
+      const key = en.toLowerCase();
+      const eff = window.RELIC_BOOK_EFFECTS && window.RELIC_BOOK_EFFECTS[key];
+      if (!eff) return;
+      const read = Math.max(0, Math.min(RELIC_MAX_BOOKS, e.progress || 0));
+      if (read >= RELIC_MAX_BOOKS) return;
+      const price = state.marketPrices[relicBookSlug(key)];
+      if (!(price > 0)) return;
+      const lvl = Math.floor(read / RELIC_BOOKS_PER_LEVEL);
+      const books = RELIC_MAX_BOOKS - read;
+      const gain = engravingBonusGain(eff.kind, eff.base, lvl > 0 ? eff.relic[lvl - 1] : 0, eff.relic[3]);
+      if (!(gain > 0)) return;
+      out.push({
+        id: e.id, key, en,
+        fr: (label.match(/\(([^)]+)\)/) || [])[1] || en,
+        lvl, read, books, price, cost: books * price, gain
+      });
+    });
+    return out;
   }
 
   // --- Bracelet : gain espéré d'une nouvelle campagne (solveur exact, dans bracelet-worker.js) ---
@@ -3276,19 +3323,33 @@
         { from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: upName, odds });
     }
 
-    // 7. Accessoires : remplacer le bijou dont le remplacement rapporte le plus (= le plus faible)
+    // 6c. Livres de gravure reliques : les livres restants jusqu'au niveau relique 4, au prix du marché
+    getRelicBookUpgrades(charObj, isSupport).forEach(r => {
+      const name = isEn ? r.en : r.fr;
+      pushRow(`dyn_relic_${r.id}`,
+        isEn ? `Relic books — ${name} Lv. ${r.lvl} ➔ 4` : `Livres reliques — ${name} niv. ${r.lvl} ➔ 4`,
+        isEn ? `${r.books} books × ${formatNumber(Math.round(r.price))} g` : `${r.books} livres × ${formatNumber(Math.round(r.price))} g`,
+        r.gain, r.cost,
+        isEn
+          ? `Relic book market price (EUC). ${r.read}/20 books already read; the gain per level is nearly linear, so every level has about the same ratio.`
+          : `Prix du livre relique au marché (EUC). ${r.read}/20 livres déjà lus ; le gain par niveau est quasi linéaire, chaque niveau a donc à peu près le même ratio.`,
+        { engraving: name, lvl: r.lvl, books: r.books, read: r.read });
+    });
+
+    // 7. Accessoires : remplacer le bijou au meilleur ratio (gain / prix de son type)
     const accEval = evaluateCharacterAccessories(charObj, isSupport, isEn);
     if (accEval.slotLines) {
-      const weakest = findWeakestAccessoryUpgrade(accEval.slotLines, isSupport);
-      const curAccPct = weakest ? weakest.curPct : 0;
-      if (weakest && weakest.gain > 0) {
+      const best = findBestAccessoryUpgrade(accEval.slotLines, isSupport);
+      if (best) {
         const slotNames = accessorySlotNames(isEn);
         pushRow('dyn_acc',
-          isEn ? `Accessory Upgrade — ${slotNames[weakest.slot]}` : `Upgrade Bijou — ${slotNames[weakest.slot]}`,
-          isEn ? 'Weakest accessory ➔ 2 High main lines' : 'Bijou le plus faible ➔ 2 lignes principales High',
-          weakest.gain, ACC_UPGRADE_COST,
-          isEn ? 'Marginal gain from replacing your weakest accessory, lines valued with the Arsonistic slopes.' : 'Gain marginal du remplacement de ton bijou le plus faible, lignes valorisées avec les pentes Arsonistic.',
-          { slot: weakest.slot, slotName: slotNames[weakest.slot], curPct: curAccPct });
+          isEn ? `Accessory Upgrade — ${slotNames[best.slot]}` : `Upgrade Bijou — ${slotNames[best.slot]}`,
+          isEn ? '➔ 2 High main lines' : '➔ 2 lignes principales High',
+          best.gain, best.cost,
+          isEn
+            ? `Best ratio among your 5 accessories, lines valued with the Arsonistic slopes. Price per accessory type is an in-game estimate (no market source).`
+            : `Meilleur ratio parmi tes 5 bijoux, lignes valorisées avec les pentes Arsonistic. Prix par type de bijou estimé en jeu (pas de source marché).`,
+          { slot: best.slot, slotName: slotNames[best.slot], curPct: best.curPct });
       }
     }
 
@@ -4336,6 +4397,16 @@
           nextStep: isEn ? `New campaign (${Math.round(m.pBeat * 1000) / 10}% to beat)` : `Nouvelle campagne (${Math.round(m.pBeat * 1000) / 10} % de réussite)`,
           category: 'bracelet'
         }));
+      } else if (d.id.startsWith('dyn_relic_')) {
+        rows.push(dynToMaster(d, {
+          icon: '',
+          system: isEn ? `Relic books — ${m.engraving}` : `Livres reliques — ${m.engraving}`,
+          whatItReads: isEn ? `${m.read}/20 books` : `${m.read}/20 livres`,
+          wherePutsYou: isEn ? `Relic Lv. ${m.lvl}` : `Relique niv. ${m.lvl}`,
+          lastStep: '—',
+          nextStep: isEn ? `Lv. ${m.lvl} ➔ 4 (${m.books} books)` : `Niv. ${m.lvl} ➔ 4 (${m.books} livres)`,
+          category: 'engraving'
+        }));
       } else if (d.id === 'dyn_stone') {
         rows.push(dynToMaster(d, {
           icon: '',
@@ -4386,7 +4457,7 @@
           icon: '',
           system: isEn ? `Accessory — ${m.slotName}` : `Bijou — ${m.slotName}`,
           whatItReads: isEn ? `Accessories +${m.curPct.toFixed(2)}% ${unit}` : `Bijoux +${m.curPct.toFixed(2)}% ${unit}`,
-          wherePutsYou: isEn ? 'Weakest piece' : 'Pièce la plus faible',
+          wherePutsYou: isEn ? 'Best ratio' : 'Meilleur ratio',
           lastStep: '—',
           nextStep: isEn ? '➔ 2 High main lines' : '➔ 2 lignes principales High',
           category: 'acc'
@@ -10291,8 +10362,12 @@
   // sqrt(703826×1.09 × 241367×1.085 / 6) × 1.125 + 3600 ≈ 209 464
   const ACC_REF_TOTAL_AP = 209464;
   const ACC_REF_BASE_AP_PCT = 0.125;
-  // Coût (gold) estimé d'un bijou de remplacement
-  const ACC_UPGRADE_COST = 166000;
+  // Coût (gold) d'un bijou de remplacement (2 lignes principales High) par type. Pas de source marché
+  // (hôtel des ventes) : estimation relevée en jeu sur EUC, à mettre à jour de temps en temps.
+  const ACC_UPGRADE_COST = { neck: 166000, ear: 166000, ring: 166000 };
+  const accessoryKind = slot => (slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring'));
+  // Coût moyen d'un bijou, pour les comparaisons globales (Benchmark)
+  const ACC_UPGRADE_COST_AVG = Math.round((ACC_UPGRADE_COST.neck + 2 * ACC_UPGRADE_COST.ear + 2 * ACC_UPGRADE_COST.ring) / 5);
   // Taille d'astrogemmes épiques vers le palier suivant : coût (gold) et gain (%)
   const ASTRO_CUT_COST = 675000;
   const ASTRO_CUT_GAIN = 1.08;
@@ -10379,20 +10454,23 @@
   }
 
   // Bijou dont le remplacement par ACC_TARGET_LINES rapporte le plus (gain relatif en %)
-  function findWeakestAccessoryUpgrade(slotLines, isSupport) {
+  // Bijou à remplacer : meilleur ratio coût / gain, chaque type de bijou ayant son propre prix
+  function findBestAccessoryUpgrade(slotLines, isSupport) {
     if (!slotLines) return null;
     const lineSet = isSupport ? ACC_TARGET_LINES.support : ACC_TARGET_LINES.dps;
     const curPct = computeAccessoryLinesBonus(ACC_SLOTS.flatMap(s => slotLines[s] || []), isSupport);
-    let weakest = null;
+    let best = null;
     ACC_SLOTS.forEach(slot => {
-      const kind = slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring');
+      const kind = accessoryKind(slot);
       const target = lineSet[kind].map(([key, amount]) => ({ key, amount }));
       const others = ACC_SLOTS.filter(s => s !== slot).flatMap(s => slotLines[s] || []);
       const nextPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
       const gain = ((1 + nextPct / 100) / (1 + curPct / 100) - 1) * 100;
-      if (!weakest || gain > weakest.gain) weakest = { slot, gain, curPct, nextPct };
+      if (!(gain > 0)) return;
+      const cost = ACC_UPGRADE_COST[kind];
+      if (!best || cost / gain < best.cost / best.gain) best = { slot, kind, gain, cost, curPct, nextPct };
     });
-    return weakest;
+    return best;
   }
 
   // Bonus accessoires maximal pour le rôle : les 5 bijoux avec leurs 2 lignes principales High
@@ -11354,7 +11432,7 @@
       { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderMoon', 'chaosMoon') },
       { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderStar', 'chaosStar') },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: computeAstrogemUpgradeCost(pSys, tSys) },
-      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: ACC_UPGRADE_COST },
+      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: ACC_UPGRADE_COST_AVG },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '', cost: 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: BRACELET_REROLL_COST },

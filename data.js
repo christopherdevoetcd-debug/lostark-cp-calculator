@@ -1351,3 +1351,26 @@ window.ABILITY_STONE_EFFECTS = {
   'ether predator': { kind: 'ap', base: 16.2, stone: [3, 3.75, 5.25, 6] },
   'contender': { kind: 'ap', base: 25.2, stone: [3.6, 4.5, 6.3, 7.2] }
 };
+
+// --- LIVRES DE GRAVURE RELIQUES T4 : bonus par niveau relique (wiki Lost Ark, page de chaque gravure) ---
+// 5 livres par niveau, 4 niveaux (20 livres). `relic` = bonus relique aux niveaux 1…4 (valeurs totales).
+// `base` = effet avec les livres légendaires au max (base + légendaire 4), relique 0. Mêmes `kind` que la pierre.
+// Adrénaline : le relique donne du taux critique (à stacks max). Contender : +1 stack par niveau (2,1 % PA/stack).
+window.RELIC_BOOK_EFFECTS = {
+  'grudge': { kind: 'dmg', base: 18, relic: [0.75, 1.5, 2.25, 3] },
+  'cursed doll': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
+  'hit master': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
+  'super charge': { kind: 'dmg', base: 18, relic: [0.75, 1.5, 2.25, 3] },
+  'mass increase': { kind: 'dmg', base: 16, relic: [0.75, 1.5, 2.25, 3] },
+  'barricade': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
+  'all-out attack': { kind: 'dmg', base: 18, relic: [0.75, 1.5, 2.25, 3] },
+  'stabilized status': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
+  'master brawler': { kind: 'dmg', base: 4.8, relic: [0.7, 1.4, 2.1, 2.8] },
+  'ambush master': { kind: 'dmg', base: 4.8, relic: [0.7, 1.4, 2.1, 2.8] },
+  'raid captain': { kind: 'dmg', base: 16, relic: [0.8, 1.6, 2.4, 3.2] },
+  'keen blunt weapon': { kind: 'critDmg', base: 44, relic: [2, 4, 6, 8] },
+  'precise dagger': { kind: 'critRate', base: 18, relic: [0.75, 1.5, 2.25, 3] },
+  'adrenaline': { kind: 'critRate', base: 14, relic: [1.5, 3, 4.5, 6] },
+  'ether predator': { kind: 'ap', base: 12.6, relic: [0.9, 1.8, 2.7, 3.6] },
+  'contender': { kind: 'ap', base: 16.8, relic: [2.1, 4.2, 6.3, 8.4] }
+};

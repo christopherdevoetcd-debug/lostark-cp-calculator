@@ -11,7 +11,24 @@ const BODY = JSON.stringify({
     'destiny-destruction-stone',
     'destiny-guardian-stone',
     'lavas-breath',
-    'glaciers-breath'
+    'glaciers-breath',
+    // Livres de gravure reliques (gravures de dégâts)
+    'grudge',
+    'cursed-doll',
+    'hit-master',
+    'super-charge',
+    'mass-increase',
+    'barricade',
+    'all-out-attack',
+    'stabilized-status',
+    'master-brawler',
+    'ambush-master',
+    'raid-captain',
+    'keen-blunt-weapon',
+    'precise-dagger',
+    'adrenaline',
+    'ether-predator',
+    'contender'
   ]
 });
 
