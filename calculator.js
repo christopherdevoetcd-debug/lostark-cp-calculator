@@ -1320,6 +1320,156 @@
     }
   }
 
+  // --- Battle Point support recalculé (profils raid « mélangés ») ---
+  // Bug du jeu : l'arbre d'Ark Passive enregistré ne se met à jour qu'à la déconnexion du personnage. Un support qui a changé
+  // d'arbre en jeu peut donc avoir un profil raid lostark.bible calculé en mode DPS (lignes support à 0, 2 gravures comptées…),
+  // alors que tout le reste (stuff, gravures, gemmes, cœurs) est à jour. Quand les gravures disent support, on recalcule le
+  // Battle Point en mode support avec la table du jeu (branche 2, data/battle-point-support.json, tools/fetch-maxroll-honing.mjs).
+  // Vérifié à l'identique, partie par partie, sur 6 profils support corrects (Bardes, Paladins, Artiste).
+  let bpSupportTable = null;
+  async function loadBpSupportTable() {
+    try {
+      const res = await fetch('data/battle-point-support.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      bpSupportTable = (await res.json()).rows;
+      healStoredSupportProfiles();
+    } catch (e) {
+      console.warn('[BATTLE POINT] Table support indisponible, profils mélangés non recalculés :', e.message);
+    }
+  }
+
+  // Niveau de pierre d'une gravure d'après ses nœuds taillés (6 = +1, 7-8 = +2, 9 = +3, 10 = +4)
+  const stoneLevelOfNodes = nodes => (nodes >= 10 ? 4 : nodes >= 9 ? 3 : nodes >= 7 ? 2 : nodes >= 6 ? 1 : 0);
+  // Clés de stat des lignes de bijoux et de bracelet dans la table (1 = stat type 2 + index)
+  const SUPPORT_LINE_KEYS = { 15: { 2: [54], 3: [59] }, 16: { 2: [50], 3: [51] }, 19: { 2: [54], 3: [59] } };
+
+  /**
+   * Battle Point support d'un loadout enregistré en mode DPS, ou null s'il n'y a rien à recalculer.
+   * Reprend du profil ce qui ne dépend pas du mode (PA de base, PV, niveau, points d'Ark Passive, Karma, cartes, paradis,
+   * gemmes, lignes de stats de base) et revalorise tout le reste avec la table support.
+   */
+  function rebuildSupportBattlePoint(loadout) {
+    const T = bpSupportTable;
+    const bp = loadout && loadout.battlePoint;
+    if (!T || !bp || bp.isSupport !== false || !Array.isArray(bp.parts)) return null;
+    const old = bp.parts;
+    const get = t => old.find(p => p.type === t);
+    const row = (t, pred) => (T[t] || []).find(pred);
+    const t1 = get(1), t2 = get(2);
+    if (!t1 || !(t1.baseAttackPower > 0) || !t2 || !(t2.maxHp > 0)) return null;
+    // Lignes de stats de base (puissance d'arme, stat principale, PV…) : valeur 0 dans les deux modes, gardées pour la lecture du profil
+    const parts = old.filter(p => p.affectsBaseStats === true);
+    parts.push(Object.assign({}, t1, { value: t1.baseAttackPower * T[1][0][0] / 100 }));
+    parts.push(Object.assign({}, t2, { value: t2.maxHp * T[2][0][0] }));
+    const lvl = get(3);
+    if (lvl) { const r = row(3, v => v[0] === lvl.level); parts.push(Object.assign({}, lvl, { value: r ? r[1] : 0 })); }
+    const q = get(4);
+    if (q) parts.push(Object.assign({}, q, { value: 0 }));
+    [5, 6, 7].forEach(t => { const p = get(t); if (p) parts.push(Object.assign({}, p, { value: T[t][0][0] * (p.pointsSpent || 0) })); });
+    const karma = get(8);
+    if (karma) parts.push(Object.assign({}, karma));
+    // Gravures : niveau de livres (13 = relique 20/20) + 20 × niveau de pierre ; type 10 (buff) ou 11 (défense)
+    const stone = ((loadout.items || []).find(i => i.slot === 'ability_stone') || {}).data || {};
+    const stoneLv = {};
+    (stone.engravings || []).forEach(e => { stoneLv[1000 + e.id] = stoneLevelOfNodes(e.nodes); });
+    (loadout.engravings || []).forEach(e => {
+      const books = e.grade === 'engrave_grade05' ? 13 : (e.grade === 'engrave_grade04' ? 9 + Math.floor((e.progress || 0) / 5) : null);
+      if (books === null) return;
+      const code = 20 * (stoneLv[e.id] || 0) + books;
+      [10, 11].forEach(t => {
+        const r = row(t, v => v[0] === e.id && v[1] === code);
+        if (r) parts.push({ type: t, value: r[2], id: e.id, grade: e.grade, stonePoints: stoneLv[e.id] || 0 });
+      });
+    });
+    // Lignes de bijoux et de bracelet
+    const lineValue = (t, st) => {
+      const r = (T[t] || []).find(([key, index]) => (key === 1
+        ? st.type === 2 && st.index === index
+        : ((SUPPORT_LINE_KEYS[t] || {})[key] || []).includes(st.type) || (key === 3 && t !== 16 && st.index === 16000001)));
+      return r ? st.value * r[2] / 1e4 : 0;
+    };
+    (loadout.items || []).forEach(it => {
+      const stats = (it.data && it.data.stats) || [];
+      const isAcc = ACC_SLOTS.includes(it.slot);
+      if (!isAcc && it.slot !== 'bracelet') return;
+      stats.forEach(st => {
+        if (isAcc) {
+          [15, 16].forEach(t => { const v = lineValue(t, st); if (v) parts.push({ type: t, value: v, slot: it.slot, stat: st, affectsBaseStats: false }); });
+          if (st.type === 29) { const r = row(17, v => v[1] === st.index); if (r) parts.push({ type: 17, value: r[2], slot: it.slot, stat: st, affectsBaseStats: false }); }
+        } else {
+          const v = lineValue(19, st);
+          if (v) parts.push({ type: 19, value: v, stat: st, affectsBaseStats: false });
+          if (st.type === 3) [20, 21].forEach(t => { const r = row(t, x => x[1] === st.index); if (r) parts.push({ type: t, value: r[2], stat: st, affectsBaseStats: false }); });
+        }
+      });
+    });
+    // Gemmes : niveau = (ID mod 1000) / 10, T4 = 125 × niveau
+    old.filter(p => p.type === 22).forEach(p => {
+      const tier = String(p.id).startsWith('650') ? 4 : 3;
+      const r = row(22, v => v[0] === tier && v[1] === Math.floor((p.id % 1000) / 10));
+      if (r) parts.push(Object.assign({}, p, { value: r[2] }));
+    });
+    // Stats de combat : clé k = stat de combat 14 + k (2 = Spécialisation, 4 = Célérité en mode support)
+    const stat = t => ((loadout.stats || []).find(s => s.type === t) || {}).value || 0;
+    const combat = get(26);
+    parts.push(Object.assign({}, combat || { type: 26 }, {
+      value: T[26].reduce((sum, [k, c]) => sum + stat(14 + k) * c, 0),
+      total: T[26].reduce((sum, [k]) => sum + stat(14 + k), 0)
+    }));
+    const cards = get(27);
+    if (cards) { const r = row(27, v => v[0] === cards.id && v[1] === cards.rank); parts.push(Object.assign({}, cards, { value: r ? r[2] : 0 })); }
+    // Cœurs de la Grille d'Ark : points = somme des points des gemmes, paliers 10 / 14 / 17 / 18 / 19 / 20
+    (loadout.arkGridCores || []).forEach(c => {
+      const points = (c.gems || []).reduce((s, g) => s + (g.corePoints || 0), 0);
+      [29, 30].forEach(t => {
+        const rows = (T[t] || []).filter(v => v[0] === c.id);
+        let value = 0;
+        [10, 14, 17, 18, 19, 20].forEach((st, i) => { const r = rows.find(v => v[1] === i + 1); if (points >= st && r && r[2] !== undefined) value = r[2]; });
+        if (value) parts.push({ type: t, value, id: c.id, points });
+      });
+    });
+    // Astrogemmes : niveau total de chaque option support (2011 à 2013) sur les gemmes des cœurs
+    const opts = {};
+    (loadout.arkGridCores || []).forEach(c => (c.gems || []).forEach(g => (g.opts || []).forEach(o => { opts[o.id] = (opts[o.id] || 0) + (o.level || 0); })));
+    Object.entries(opts).forEach(([id, totalLevel]) => {
+      const r = (T[31] || []).filter(v => v[0] === Number(id) && v[1] <= totalLevel).pop();
+      if (r) parts.push({ type: 31, value: r[2], id: Number(id), totalLevel });
+    });
+    const paradise = get(33) || get(34);
+    if (paradise) { const r = row(34, v => v[0] === paradise.id); if (r) parts.push({ type: 34, value: r[1], id: paradise.id, paradisePoints: paradise.paradisePoints }); }
+    return Object.assign({}, bp, { isSupport: true, rebuiltSupport: true, parts });
+  }
+
+  // Profils déjà enregistrés (roster, références en cache) : même recalcul une fois la table chargée
+  function healSupportProfile(c) {
+    const raw = c && c.rawProfile;
+    if (!raw || !raw.loadout || detectCharacterRole(c) !== 'support') return false;
+    const bp = rebuildSupportBattlePoint(raw.loadout);
+    if (!bp) return false;
+    raw.loadout.battlePoint = bp;
+    raw.battlePoint = bp;
+    raw.astrogems = bp.parts.filter(p => p.type === 31 || p.type === 32);
+    if (c.loadout) c.loadout = raw.loadout;
+    if (c.battlePoint) c.battlePoint = bp;
+    return true;
+  }
+
+  function healStoredSupportProfiles() {
+    const roster = getUserRoster();
+    if (roster && roster.some(healSupportProfile)) saveUserRoster(roster);
+    let cacheChanged = false;
+    Object.values(liveBibleBenchmarkCache).forEach(b => {
+      if (healSupportProfile(b)) { b.systems = extractPlayerSystems(b, isEnglishLang()); cacheChanged = true; }
+    });
+    if (cacheChanged) {
+      try { localStorage.setItem('lostark_live_benchmarks_cache', JSON.stringify(liveBibleBenchmarkCache)); } catch (e) {}
+    }
+    if (typeof updateActiveCharacterCard === 'function' && activeCharacterId) updateActiveCharacterCard(activeCharacterId);
+    if (typeof renderEfficiencyTable === 'function') renderEfficiencyTable();
+    const benchTab = document.getElementById('tab-benchmark');
+    if (benchTab && benchTab.classList.contains('active') && typeof renderBenchmarkTab === 'function') renderBenchmarkTab();
+  }
+
   // Recettes d'affinage T4 du jeu (Aegir / Serka), tirées du flux Maxroll par tools/fetch-maxroll-honing.mjs
   let honingT4 = null;
   async function loadHoningT4() {
@@ -6577,7 +6727,7 @@
     if (!loadout) {
       loadout = root.loadouts.find(l => !(l.classification || '').toLowerCase().includes('chaos')) || root.loadouts[0];
     }
-    const bp = loadout.battlePoint;
+    let bp = loadout.battlePoint;
     if (!bp || !bp.parts) {
       throw new Error('Données Combat Power (Battle Point) absentes.');
     }
@@ -6589,6 +6739,12 @@
       spec: loadout.spec,
       name: charName
     });
+
+    // Support dont le profil raid a été enregistré en mode DPS (arbre d'Ark Passive périmé) : Battle Point recalculé en mode support
+    if (charRole === 'support') {
+      const rebuilt = rebuildSupportBattlePoint(loadout);
+      if (rebuilt) { loadout.battlePoint = rebuilt; bp = rebuilt; }
+    }
 
     const isSupport = charRole === 'support' || bp.isSupport === true || (effectivePrefRole === 'support' && isSupportClassName(rawClassStr));
 
@@ -8888,8 +9044,17 @@
           ? `<strong>Raid profile mixed</strong> · ${isSupport ? 'DPS' : 'support'} Ark Passive, CP not comparable`
           : `<strong>Profil raid mélangé</strong> · Ark Passive ${isSupport ? 'DPS' : 'support'}, CP non comparable`;
         dom.charCardMixedPill.title = isEn
-          ? `lostark.bible saved your raid profile with a ${isSupport ? 'DPS' : 'support'} Enlightenment tree (often after logging out from a Chaos Dungeon). Its Battle Point is computed in that mode, so comparisons are skipped. Log in with your raid setup, then update your character on lostark.bible.`
-          : `lostark.bible a enregistré ton profil raid avec un arbre d'Illumination ${isSupport ? 'DPS' : 'support'} (souvent après avoir quitté le jeu en donjon du chaos). Son Battle Point est calculé dans ce mode, les comparaisons sont donc suspendues. Reconnecte-toi avec ta configuration de raid, puis mets à jour ton personnage sur lostark.bible.`;
+          ? `lostark.bible saved your raid profile with a ${isSupport ? 'DPS' : 'support'} Enlightenment tree: Lost Ark only saves the Ark Passive tree when the character logs out. Its Battle Point is computed in that mode, so comparisons are skipped. Switch to your raid tree, log the character out, then update it on lostark.bible.`
+          : `lostark.bible a enregistré ton profil raid avec un arbre d'Illumination ${isSupport ? 'DPS' : 'support'} : Lost Ark n'enregistre l'arbre d'Ark Passive qu'à la déconnexion du personnage. Son Battle Point est calculé dans ce mode, les comparaisons sont donc suspendues. Remets ton arbre de raid, déconnecte le personnage, puis mets-le à jour sur lostark.bible.`;
+        dom.charCardMixedPill.hidden = false;
+      } else if (p.rawProfile && p.rawProfile.battlePoint && p.rawProfile.battlePoint.rebuiltSupport) {
+        // Profil raid enregistré en mode DPS mais gravures support : Battle Point recalculé en mode support
+        dom.charCardMixedPill.innerHTML = isEn
+          ? `<strong>Support Battle Point recalculated</strong> · saved Ark Passive tree out of date`
+          : `<strong>Battle Point support recalculé</strong> · arbre d'Ark Passive enregistré périmé`;
+        dom.charCardMixedPill.title = isEn
+          ? `Lost Ark only saves the Ark Passive tree when the character logs out, so lostark.bible computed this raid profile in DPS mode. Your engravings are support ones: the app recalculated the Battle Point in support mode from your real gear, with the game's own table (checked identical on correct support profiles). Nothing to do on your side.`
+          : `Lost Ark n'enregistre l'arbre d'Ark Passive qu'à la déconnexion du personnage : lostark.bible a donc calculé ce profil raid en mode DPS. Tes gravures sont celles d'un support : l'appli a recalculé le Battle Point en mode support à partir de ton vrai stuff, avec la table du jeu (vérifiée à l'identique sur des profils support corrects). Rien à faire de ton côté.`;
         dom.charCardMixedPill.hidden = false;
       } else {
         dom.charCardMixedPill.hidden = true;
@@ -16593,8 +16758,8 @@
           <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px; border-color: var(--accent-gold);">
             <h4 style="margin: 0 0 6px 0; color: var(--accent-gold);">${isEn ? 'Mixed raid profile: comparison skipped' : 'Profil raid mélangé : comparaison suspendue'}</h4>
             <p style="font-size: 14px; color: var(--text-muted); margin: 0;">${isEn
-              ? `${who} raid profile on lostark.bible was saved with an Enlightenment tree of the other role (often after logging out from a Chaos Dungeon). Its Battle Point is computed in that mode, so system gaps would be wrong. Log in with the raid setup, then update the character on lostark.bible.`
-              : `${who} profil raid${hasMixedRaidProfile(player) ? '' : ' de la référence'} sur lostark.bible a été enregistré avec un arbre d'Illumination de l'autre rôle (souvent après avoir quitté le jeu en donjon du chaos). Son Battle Point est calculé dans ce mode : les écarts par système seraient faux. Reconnecte-toi avec la configuration de raid, puis mets à jour le personnage sur lostark.bible.`}</p>
+              ? `${who} raid profile on lostark.bible was saved with an Enlightenment tree of the other role (Lost Ark only saves the Ark Passive tree when the character logs out). Its Battle Point is computed in that mode, so system gaps would be wrong. Switch to the raid tree, log the character out, then update it on lostark.bible.`
+              : `${who} profil raid${hasMixedRaidProfile(player) ? '' : ' de la référence'} sur lostark.bible a été enregistré avec un arbre d'Illumination de l'autre rôle (Lost Ark n'enregistre l'arbre d'Ark Passive qu'à la déconnexion du personnage). Son Battle Point est calculé dans ce mode : les écarts par système seraient faux. Remets l'arbre de raid, déconnecte le personnage, puis mets-le à jour sur lostark.bible.`}</p>
           </div>
         `;
       } else if (activeGaps.length === 0) {
@@ -17758,6 +17923,7 @@
     fetchMarketPrices();
     loadHoningT4();
     loadArkGridBp();
+    loadBpSupportTable();
 
     const savedRoster = getUserRoster();
     if (savedRoster && savedRoster.length > 0) {

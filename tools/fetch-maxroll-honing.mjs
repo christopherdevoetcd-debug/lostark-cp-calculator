@@ -118,3 +118,16 @@ for (const row of Object.values(stats.battlePoint['1']).flat()) {
 const CORE_OUT = new URL('../data/ark-grid-bp.json', import.meta.url);
 writeFileSync(CORE_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), steps: CORE_STEPS, dps: cores }));
 console.log(`data/ark-grid-bp.json écrit (${Object.keys(cores).length} cœurs)`);
+
+// Battle Point en mode support (table battlePoint du jeu, branche 2) : sert à recalculer le Battle Point d'un support
+// quand lostark.bible l'a enregistré en mode DPS (arbre d'Ark Passive périmé : le jeu ne le met à jour qu'à la déconnexion).
+// Par type de partie, les lignes brutes du jeu (valeurs en 0,01 %). Vérifié à l'identique sur 6 profils support réels.
+const SUPPORT_TYPES = [1, 2, 3, 5, 6, 7, 10, 11, 15, 16, 17, 19, 20, 21, 22, 26, 27, 29, 30, 31, 34];
+const supportRows = {};
+for (const row of Object.values(stats.battlePoint['2']).flat()) {
+  if (!row || !SUPPORT_TYPES.includes(row.type)) continue;
+  (supportRows[row.type] = supportRows[row.type] || []).push(row.values);
+}
+const SUPPORT_OUT = new URL('../data/battle-point-support.json', import.meta.url);
+writeFileSync(SUPPORT_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), rows: supportRows }));
+console.log(`data/battle-point-support.json écrit (${Object.keys(supportRows).length} types de parties)`);
