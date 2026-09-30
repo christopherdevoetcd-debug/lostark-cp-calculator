@@ -7379,3 +7379,94 @@ select optgroup {
   min-height: 32px;
   font-size: 13px;
 }
+
+/* Benchmark : joueurs proposés (même classe, CP légèrement supérieur) */
+.bench-suggested-peers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.bench-suggested-peers:empty {
+  display: none;
+}
+
+.bench-suggested-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.bench-suggested-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+
+.bench-suggested-peer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 44px;
+  padding: 10px 14px;
+  margin-left: -1px;
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  border-radius: 0;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.bench-suggested-peer:first-child {
+  margin-left: 0;
+}
+
+.bench-suggested-peer:hover {
+  background: var(--bg-surface-elevated);
+}
+
+.bench-suggested-peer.active {
+  position: relative;
+  background: var(--bg-surface-elevated);
+  border-color: var(--accent);
+}
+
+.bench-suggested-peer .bsp-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.bench-suggested-peer .bsp-meta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.bench-suggested-peer .bsp-cp {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.bench-suggested-peer .bsp-delta {
+  color: var(--gain);
+}
+
+.bench-suggested-note {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Aucun vrai personnage importé : rien de fictif à afficher, seule la fenêtre d'import reste */
+body.no-character #activeCharacterCard,
+body.no-character .tabs-nav,
+body.no-character .main-content {
+  display: none;
+}

@@ -85,8 +85,46 @@
     'judgment', 'jugement',
     'true courage', 'vrai courage',
     'recurrence', 'récurrence',
-    'liberator'
+    'shining knight'
   ];
+  // Spés support (lostark.bible) : Paladin, Barde, Artiste, Valkyrie
+  const SUPPORT_SPEC_NAMES = ['blessed aura', 'desperate salvation', 'full bloom', 'liberator', 'knight of light'];
+  function isSupportSpecName(spec) {
+    return SUPPORT_SPEC_NAMES.includes((spec || '').toLowerCase().trim());
+  }
+
+  // Une classe support est support par défaut ; ce sont ses GRAVURES qui disent si elle est jouée DPS.
+  // « Expert » signe un support ; au moins 2 gravures de dégâts purs signent un build DPS.
+  const SUPPORT_MARKER_ENGRAVINGS = ['expert'];
+  const DPS_DAMAGE_ENGRAVINGS = [
+    'grudge', 'cursed doll', 'keen blunt weapon', 'adrenaline', 'hit master', 'raid captain',
+    'super charge', 'master brawler', 'precise dagger', 'mass increase', 'ambush master', 'barricade',
+    'all-out attack', 'stabilized status', 'ether predator', 'contender'
+  ];
+
+  function engravingNamesOf(ch) {
+    if (!ch || typeof ch !== 'object') return [];
+    const raw = ch.rawProfile || null;
+    const list = (Array.isArray(ch.engravings) && ch.engravings.length ? ch.engravings : null)
+      || (raw && (raw.engravings || (raw.loadout && raw.loadout.engravings)))
+      || (ch.loadout && ch.loadout.engravings)
+      || [];
+    let names = {};
+    try { names = BIBLE_ENGRAVINGS; } catch (e) { names = {}; }
+    return list
+      .map(e => (typeof e === 'string' ? e : ((e && names[e.id]) || (e && e.name) || '')))
+      .map(n => String(n).toLowerCase())
+      .filter(Boolean);
+  }
+
+  // 'support' | 'dps' d'après les gravures, ou null si elles ne sont pas lisibles
+  function roleFromEngravings(ch) {
+    const engs = engravingNamesOf(ch);
+    if (engs.length < 3) return null;
+    if (engs.some(n => SUPPORT_MARKER_ENGRAVINGS.some(m => n.includes(m)))) return 'support';
+    const dpsCount = engs.filter(n => DPS_DAMAGE_ENGRAVINGS.some(d => n.includes(d))).length;
+    return dpsCount >= 2 ? 'dps' : 'support';
+  }
 
   function isSupportClassName(rawClass) {
     if (!rawClass) return false;
@@ -124,13 +162,6 @@
       rawSpec = String(maybeSpec || '');
     }
 
-    // Règle spéciale pseudo connu du Roster
-    if (charName === 'neversup' || charName.includes('neversup')) {
-      return 'support';
-    }
-    if (charName === 'jigokuushoujo' || charName.includes('jigokuushoujo')) {
-      return 'support';
-    }
 
     const cleanClass = String(rawClass).toLowerCase().trim();
     if (cleanClass === 'support') {
@@ -140,7 +171,10 @@
     const isSupClass = isSupportClassName(rawClass);
 
     if (isSupClass) {
-      // Vérifier si une gravure DPS explicite est active
+      // 1. Les gravures décident quand elles sont lisibles
+      const engRole = typeof charOrClass === 'object' ? roleFromEngravings(charOrClass) : null;
+      if (engRole) return engRole;
+      // 2. Sinon, une spé DPS explicite (Judgment, True Courage, Recurrence, Shining Knight)
       const specLower = (rawSpec || '').toLowerCase();
       const isDpsSpec = SUPPORT_DPS_SPECS.some(dpsSpec => specLower.includes(dpsSpec));
       if (isDpsSpec) {
@@ -338,15 +372,11 @@
     }
   }
 
-  let activeRosterMode = getUserRoster() ? 'custom' : 'demo';
   let activeCharacterId = null;
 
+  // Uniquement de vrais personnages importés depuis lostark.bible : aucun roster de démo.
   function getActiveRosterList() {
-    if (activeRosterMode === 'custom') {
-      const u = getUserRoster();
-      if (u && u.length > 0) return u;
-    }
-    return DEFAULT_DEMO_ROSTER;
+    return getUserRoster() || [];
   }
 
   function getCurrentActiveCharacter() {
@@ -355,14 +385,23 @@
       const found = list.find(c => (c.id || c.name.toLowerCase()) === activeCharacterId);
       if (found) return found;
     }
-    return list[0] || DEFAULT_DEMO_ROSTER[0];
+    return list[0] || null;
   }
 
-  function toggleDemoRoster() {
-    activeRosterMode = activeRosterMode === 'custom' ? 'demo' : 'custom';
+  // Aucun vrai personnage : on masque le contenu et on ouvre l'import (non fermable)
+  function showNoCharacterState() {
+    document.body.classList.add('no-character');
     renderPresetsBar();
-    const list = getActiveRosterList();
-    if (list.length > 0) loadCharacter(list[0]);
+    const modal = document.getElementById('welcomeModal');
+    if (modal) modal.classList.add('active');
+    const btnClose = document.getElementById('btnCloseWelcomeModal');
+    if (btnClose) btnClose.style.display = 'none';
+  }
+
+  function hideNoCharacterState() {
+    document.body.classList.remove('no-character');
+    const btnClose = document.getElementById('btnCloseWelcomeModal');
+    if (btnClose) btnClose.style.display = '';
   }
 
   // Profils prédéfinis legacy
@@ -696,7 +735,6 @@
     btnSyncRosterNav: document.getElementById('btnSyncRosterNav'),
     btnManageRoster: document.getElementById('btnManageRoster'),
     rosterCountTag: document.getElementById('rosterCountTag'),
-    btnSwitchDemoRoster: document.getElementById('btnSwitchDemoRoster'),
 
     // Bannière Visuelle du Personnage Actif
     activeCharacterCard: document.getElementById('activeCharacterCard'),
@@ -1113,22 +1151,15 @@
   };
 
   // --- CONFIGURATION & CALCULS DYNAMIQUES DES GEMMES T4 (CANONIQUE SMILEGATE / BIBLE) ---
-  const KNOWN_GEM_PRESETS = {
-    neversup: { major8: 80, full8: 199, full9: 596, full10: 1040 },
-    kaarlach: { major8: 95, full8: 65, full9: 418, full10: 798 },
-    neevercry: { major8: 95, full8: 0, full9: 97, full10: 477 },
-    neeverslayer: { major8: 95, full8: 0, full9: 194, full10: 574 },
-    jigokuushoujo: { major8: 80, full8: 258, full9: 655, full10: 1099 },
-    neverbreak: { major8: 95, full8: 182, full9: 537, full10: 917 }
-  };
 
   function getDynamicGemsForActiveCharacter() {
     const isSupport = state.role === 'support';
     const cId = (activeCharacterId || '').toLowerCase();
     const curChar = getCurrentActiveCharacter();
 
-    if (curChar && Array.isArray(curChar.gemParts) && curChar.gemParts.length > 0) {
-      const gemParts = curChar.gemParts;
+    // Gemmes réellement lues sur le profil (gemParts ou profil brut lostark.bible)
+    const gemParts = curChar ? extractCharacterGemParts(curChar) : null;
+    if (gemParts && gemParts.length > 0) {
       const t8Val = isSupport ? 9.60 : 5.70;
       const t9Val = isSupport ? 10.80 : 6.35;
       const t10Val = isSupport ? 12.00 : 7.00;
@@ -1149,10 +1180,6 @@
         full9: Math.round(to9),
         full10: Math.round(to10)
       };
-    }
-
-    if (KNOWN_GEM_PRESETS[cId]) {
-      return KNOWN_GEM_PRESETS[cId];
     }
 
     return {
@@ -1619,16 +1646,16 @@
   function getCharacterClassKey(curChar) {
     if (!curChar) return 'shadowhunter';
     const raw = String(curChar.className || curChar.classId || curChar.class || curChar.name || '').toLowerCase().trim();
-    if (raw.includes('shadowhunter') || raw.includes('demonic') || raw.includes('neevercry')) return 'shadowhunter';
-    if (raw.includes('souleater') || raw.includes('kaarlach')) return 'souleater';
-    if (raw.includes('slayer') || raw.includes('neeverslayer')) return 'slayer';
-    if (raw.includes('breaker') || raw.includes('neverbreak')) return 'breaker';
+    if (raw.includes('shadowhunter') || raw.includes('demonic')) return 'shadowhunter';
+    if (raw.includes('souleater')) return 'souleater';
+    if (raw.includes('slayer')) return 'slayer';
+    if (raw.includes('breaker')) return 'breaker';
     if (raw.includes('destroyer')) return 'destroyer';
     if (raw.includes('reaper')) return 'reaper';
-    if (raw.includes('bard') || raw.includes('jigokuushoujo')) return 'bard';
+    if (raw.includes('bard')) return 'bard';
     if (raw.includes('artist') || raw.includes('yinyangshi')) return 'artist';
     if (raw.includes('valkyrie') || raw.includes('holyknight_female') || raw.includes('holyknightfemale')) return 'valkyrie';
-    if (raw.includes('paladin') || raw.includes('holyknight') || raw.includes('neversup')) return 'paladin';
+    if (raw.includes('paladin') || raw.includes('holyknight')) return 'paladin';
     if (raw.includes('dimension') || raw.includes('knäy') || raw.includes('knay')) return 'dimensionalist';
     return 'shadowhunter';
   }
@@ -1675,7 +1702,7 @@
       s2: { name: 'Épée de Justice (Sword of Justice)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s', tag: 'Buff PA #2' },
       s3: { name: 'Châtiment Sacré (Holy Smite)', sub: 'Brand Power (+10% dégâts subis) • Durée : 8.0s • Base CD : 8s', tag: 'Marque Alliés' },
       s4: { name: 'Sanctuaire de Grâce (Grace Sanctuary)', sub: 'Bouclier Réactif & Génération de Foi', tag: 'Bouclier & Jauge de Foi' },
-      advisorTitle: 'Recommandation Gemmes Support Valkyrie (Knight of Light) :',
+      advisorTitle: 'Recommandation Gemmes Support Valkyrie (Liberator) :',
       advisorText: 'Priorité à <em>Bénédiction Lumineuse</em> Niv. 8/9 pour sécuriser le temps de recharge et garantir 100% d\'uptime de buff PA allié.',
       baseCdHb: 28,
       baseCdWog: 22,
@@ -3452,7 +3479,6 @@
     // Récupération des items de bracelet
     const rawItems = (charObj && charObj.items)
       || (charObj && charObj.rawProfile && charObj.rawProfile.items)
-      || (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cId] && CANONICAL_PRESETS[cId].items)
       || (liveImportedProfile && liveImportedProfile.items)
       || [];
 
@@ -3787,9 +3813,6 @@
       }
     }
     const cKey = (charObj.id || charObj.name || '').toLowerCase().trim();
-    if (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey] && Array.isArray(CANONICAL_PRESETS[cKey].gemParts)) {
-      return CANONICAL_PRESETS[cKey].gemParts;
-    }
     return null;
   }
 
@@ -4046,7 +4069,7 @@
   function buildPieceByPieceData(charObj, isSupport, isEn) {
     if (!charObj) return [];
     const cKey = (charObj.id || charObj.name || '').toLowerCase().trim();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (charObj.rawProfile ? charObj : null);
+    const canon = (charObj.rawProfile ? charObj : null);
 
     let pAccItems = (charObj && charObj.accessories)
       || (charObj && charObj.rawProfile && charObj.rawProfile.accessories)
@@ -5466,12 +5489,12 @@
 
   
 
-  let activeCanonicalKey = 'neversup';
+  let activeCanonicalKey = null;
   let liveImportedProfile = null;
 
   function renderCanonicalView() {
     const cur = getCurrentActiveCharacter();
-    let prof = liveImportedProfile || (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[activeCanonicalKey]);
+    let prof = liveImportedProfile;
     if (!prof && cur) {
       prof = {
         name: cur.name,
@@ -5485,7 +5508,7 @@
         items: cur.items || []
       };
     }
-    if (!prof && typeof CANONICAL_PRESETS !== 'undefined') prof = CANONICAL_PRESETS.neversup;
+    if (!prof) return;
     const isSupport = prof.role === 'support';
 
     // Recalcule le score canonique exact à partir des items pour garantir une fidélité mathématique absolue
@@ -5665,7 +5688,7 @@
     // Détection préalable du rôle natif de la classe
     const rawClassStr = root.characterInfo?.characterClassName || (root.header && root.header.class) || (loadout && loadout.classId) || (root.character && root.character.classId) || '';
     const charName = root.characterInfo?.characterName || (root.header && root.header.name) || '';
-    const isSupportClass = detectCharacterRole(rawClassStr, '') === 'support' || charName.toLowerCase().includes('neversup');
+    const isSupportClass = detectCharacterRole(rawClassStr, '') === 'support';
     const effectivePrefRole = isSupportClass ? 'support' : preferredRole;
 
     // Si le rôle souhaité est support, privilégier explicitement un loadout support si présent
@@ -6319,8 +6342,6 @@
           nativeRole = detectCharacterRole(root1.header.class);
         }
       } catch (e) {}
-    } else if (characterName && characterName.toLowerCase().includes('neversup')) {
-      nativeRole = 'support';
     }
 
     const profile = parseBibleCharacter(nodeData, nativeRole);
@@ -6915,7 +6936,6 @@
 
     if (importedList.length > 0) {
       saveUserRoster(importedList);
-      activeRosterMode = 'custom';
       renderPresetsBar();
       loadCharacter(importedList[0]);
       renderSavedRosterManager();
@@ -6940,7 +6960,6 @@
     }
 
     saveUserRoster(list);
-    activeRosterMode = 'custom';
     renderPresetsBar();
     loadCharacter(charObj);
     renderSavedRosterManager();
@@ -6951,11 +6970,9 @@
     list = list.filter(c => (c.id || c.name.toLowerCase()) !== charId.toLowerCase());
     saveUserRoster(list);
     if (list.length === 0) {
-      activeRosterMode = 'demo';
-      renderPresetsBar();
-      loadCharacter(DEFAULT_DEMO_ROSTER[0]);
+      activeCharacterId = null;
+      showNoCharacterState();
     } else {
-      activeRosterMode = 'custom';
       renderPresetsBar();
       loadCharacter(list[0]);
     }
@@ -6964,14 +6981,13 @@
 
   function clearUserRoster() {
     localStorage.removeItem('lostark_user_roster');
-    activeRosterMode = 'demo';
-    renderPresetsBar();
-    loadCharacter(DEFAULT_DEMO_ROSTER[0]);
+    activeCharacterId = null;
+    showNoCharacterState();
     renderSavedRosterManager();
     if (dom.importStatus) {
       dom.importStatus.className = 'modal-status info';
       dom.importStatus.style.display = 'block';
-      dom.importStatus.textContent = 'Roster personnel réinitialisé. Affichage du Roster Démo.';
+      dom.importStatus.textContent = isEnLang() ? 'Roster cleared. Import a character to continue.' : 'Roster réinitialisé. Importe un personnage pour continuer.';
     }
   }
 
@@ -6999,7 +7015,6 @@
     }
 
     saveUserRoster(list);
-    activeRosterMode = 'custom';
     renderPresetsBar();
     loadCharacter(list[0]);
     renderSavedRosterManager();
@@ -7081,7 +7096,6 @@
         const list = getUserRoster() || [];
         const found = list.find(x => (x.id || x.name.toLowerCase()) === id);
         if (found) {
-          activeRosterMode = 'custom';
           renderPresetsBar();
           loadCharacter(found);
           if (dom.importModal) dom.importModal.classList.remove('active');
@@ -7360,9 +7374,6 @@
       });
     }
 
-    if (dom.btnSwitchDemoRoster) {
-      dom.btnSwitchDemoRoster.addEventListener('click', () => toggleDemoRoster());
-    }
 
     if (dom.btnOAuthSyncAllRoster) {
       dom.btnOAuthSyncAllRoster.addEventListener('click', () => {
@@ -7670,13 +7681,6 @@
       });
     }
 
-    // Bouton de restauration du Roster Neevercry dans la modale Roster
-    const btnRestoreModal = document.getElementById('btnRestoreNevercryRoster');
-    if (btnRestoreModal) {
-      btnRestoreModal.addEventListener('click', () => {
-        restoreNevercryRoster();
-      });
-    }
   }
 
   function showToast(msg) {
@@ -7695,26 +7699,12 @@
     }, 3800);
   }
 
-  function restoreNevercryRoster() {
-    saveUserRoster(NEVERCRY_PRESET_ROSTER);
-    activeRosterMode = 'custom';
-    renderPresetsBar();
-    loadCharacter(NEVERCRY_PRESET_ROSTER[3]); // Neversup (Paladin)
-    renderSavedRosterManager();
-    sessionStorage.setItem('lostark_onboarding_dismissed', 'true');
-    const welcomeModal = document.getElementById('welcomeModal');
-    if (welcomeModal) welcomeModal.classList.remove('active');
-    const t = (window.i18n && window.i18n.t) || (k => k);
-    showToast(t('toast_nevercry_restored') || 'Roster Neevercry (6 personnages) restauré avec succès.');
-  }
 
   function initWelcomeModal() {
     const modal = document.getElementById('welcomeModal');
     if (!modal) return;
 
     const btnClose = document.getElementById('btnCloseWelcomeModal');
-    const btnDemo = document.getElementById('btnWelcomeDemo');
-    const btnRestore = document.getElementById('btnWelcomeRestoreNevercry');
     const btnFetch = document.getElementById('btnWelcomeFetch');
     const inputName = document.getElementById('welcomeCharName');
     const selectRegion = document.getElementById('welcomeRegion');
@@ -7726,18 +7716,6 @@
     }
 
     if (btnClose) btnClose.addEventListener('click', closeModal);
-    if (btnDemo) {
-      btnDemo.addEventListener('click', () => {
-        closeModal();
-        showToast('Mode Démonstration actif. Importez votre personnage à tout moment avec le bouton en haut.');
-      });
-    }
-
-    if (btnRestore) {
-      btnRestore.addEventListener('click', () => {
-        restoreNevercryRoster();
-      });
-    }
 
     // Suggestions de pseudos rapides
     document.querySelectorAll('.welcome-chip-suggestion').forEach(chip => {
@@ -7890,7 +7868,8 @@
   }
 
   function updateActiveCharacterCard(key, customProfile = null) {
-    const p = customProfile || getCurrentActiveCharacter() || DEFAULT_DEMO_ROSTER[0];
+    const p = customProfile || getCurrentActiveCharacter();
+    if (!p) return;
     const resolvedRole = detectCharacterRole(p);
     p.role = resolvedRole;
     state.role = resolvedRole;
@@ -8270,29 +8249,22 @@
 
     const isEn = isEnLang();
     if (dom.presetsTitle) {
-      dom.presetsTitle.textContent = activeRosterMode === 'custom' 
-        ? (isEn ? 'My Roster:' : 'Mon Roster :') 
-        : (isEn ? 'Roster:' : 'Roster :');
+      dom.presetsTitle.textContent = isEn ? 'My Roster:' : 'Mon Roster :';
     }
     if (dom.rosterStatusBadge) {
-      dom.rosterStatusBadge.textContent = activeRosterMode === 'custom' 
-        ? (isEn ? `Synced (${list.length})` : `Synchronisé (${list.length})`) 
-        : (isEn ? 'Demo' : 'Démo');
-      dom.rosterStatusBadge.className = activeRosterMode === 'custom' ? 'roster-status-badge custom' : 'roster-status-badge';
+      dom.rosterStatusBadge.textContent = isEn ? `Synced (${list.length})` : `Synchronisé (${list.length})`;
+      dom.rosterStatusBadge.className = 'roster-status-badge custom';
     }
     if (dom.btnManageRoster) {
-      dom.btnManageRoster.style.display = activeRosterMode === 'custom' ? 'inline-flex' : 'none';
+      dom.btnManageRoster.style.display = list.length ? 'inline-flex' : 'none';
     }
     if (dom.rosterCountTag) {
       dom.rosterCountTag.textContent = list.length.toString();
     }
-    if (dom.btnSwitchDemoRoster) {
-      dom.btnSwitchDemoRoster.style.display = activeRosterMode === 'custom' ? 'inline-flex' : 'none';
-    }
     if (dom.btnSyncRosterNav) {
-      dom.btnSyncRosterNav.innerHTML = activeRosterMode === 'custom' 
-        ? (isEn ? '<span>+</span> <strong>Add character</strong>' : '<span>+</span> <strong>Ajouter un perso</strong>') 
-        : (isEn ? '<span></span> <strong>Sync my Roster</strong>' : '<span></span> <strong>Synchroniser mon Roster</strong>');
+      dom.btnSyncRosterNav.innerHTML = list.length
+        ? (isEn ? '<span>+</span> <strong>Add character</strong>' : '<span>+</span> <strong>Ajouter un perso</strong>')
+        : (isEn ? '<strong>Import my character</strong>' : '<strong>Importer mon personnage</strong>');
     }
 
     let html = '';
@@ -8329,6 +8301,7 @@
 
   function loadCharacter(c) {
     if (!c) return;
+    hideNoCharacterState();
     const cId = (c.id || c.name.toLowerCase());
     activeCharacterId = cId;
 
@@ -8407,39 +8380,6 @@
     updateActiveCharacterCard(cId, c);
     benchmarkState.customTarget = null;
     benchmarkState.currentTargetId = null;
-
-    // Pré-chargement en tâche de fond des pairs LIVE de la même classe pour ce personnage
-    try {
-      const normClass = normalizeClassName(c.className || '').toLowerCase();
-      const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => normClass.includes(s));
-      const pName = (c.name || c.id || '').toLowerCase().trim();
-      const pRole = resolvedRole;
-      const peers = VERIFIED_LIVE_PEERS[normClass] || [];
-      const peersToFetch = peers.filter(p => (!p.role || p.role === pRole) && p.name.toLowerCase() !== pName);
-
-      // On pré-charge en tâche de fond jusqu'à 6 pairs vérifiés de même rôle (sans le joueur lui-même)
-      peersToFetch.slice(0, 6).forEach(peer => {
-        if (!benchmarkState.searchedTargets || !benchmarkState.searchedTargets.some(s => s.name.toLowerCase() === peer.name.toLowerCase())) {
-          fetchLiveBibleBenchmark(peer.name, peer.region, pRole).then(b => {
-            if (b && (!b.role || b.role === pRole) && (b.name || '').toLowerCase().trim() !== pName) {
-              if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
-              if (!benchmarkState.searchedTargets.some(s => s.id === b.id)) {
-                benchmarkState.searchedTargets.push(b);
-              }
-              if (!benchmarkState.customTarget || benchmarkState.customTarget.isDynamic || (benchmarkState.customTarget.name || '').toLowerCase().trim() === pName || (benchmarkState.customTarget.role && benchmarkState.customTarget.role !== pRole)) {
-                const opt = findOptimalBenchmark(c);
-                if (opt && opt.isLive && (opt.name || '').toLowerCase().trim() !== pName) {
-                  benchmarkState.customTarget = opt;
-                  benchmarkState.currentTargetId = opt.id;
-                }
-              }
-              const bp = document.getElementById('tab-benchmark');
-              if (bp && bp.classList.contains('active')) renderBenchmarkTab();
-            }
-          }).catch(() => {});
-        }
-      });
-    } catch (e) {}
 
     const benchPane = document.getElementById('tab-benchmark');
     if (benchPane && benchPane.classList.contains('active')) {
@@ -9814,12 +9754,22 @@
     if (!ch) return 'Standard T4';
     const cKey = (ch.id || ch.name || '').toLowerCase().trim();
 
+    // Classes support : la spé découle du rôle déterminé par les gravures (support par défaut)
+    const supClassName = ch.className || (ch.rawProfile && ch.rawProfile.className) || '';
+    if (isSupportClassName(supClassName)) {
+      const clsKey = normalizeClassName(supClassName).toLowerCase().replace(/[^a-z]/g, '');
+      const specs = (typeof CLASS_DEFAULT_SPECS !== 'undefined' && CLASS_DEFAULT_SPECS[clsKey]) || null;
+      if (specs) {
+        return detectCharacterRole(ch) === 'dps' ? specs.alt : specs.default;
+      }
+    }
+
     // 1. Si spec explicite valide déjà définie sur l'objet
     if (ch.spec && !['Standard', 'Standard T4', 'Unknown', ''].includes(ch.spec)) {
       return ch.spec;
     }
 
-    const raw = ch.rawProfile || (ch.loadout ? ch : null) || (typeof CANONICAL_PRESETS !== 'undefined' ? CANONICAL_PRESETS[cKey] : null);
+    const raw = ch.rawProfile || (ch.loadout ? ch : null);
     const normClass = normalizeClassName(ch.className || (ch.loadout && ch.loadout.classId) || (raw && raw.loadout && raw.loadout.classId) || (raw && raw.className) || '').toLowerCase();
 
     // 2. Détection via Ark Passive (Enlightenment nodes)
@@ -9896,7 +9846,7 @@
         if (normClass.includes('paladin') || normClass.includes('holyknight')) return 'Blessed Aura';
         if (normClass.includes('bard')) return 'Desperate Salvation';
         if (normClass.includes('artist') || normClass.includes('yinyangshi')) return 'Full Bloom';
-        if (normClass.includes('valkyrie')) return 'Knight of Light';
+        if (normClass.includes('valkyrie')) return 'Liberator';
       }
     }
 
@@ -10260,7 +10210,7 @@
     }
 
     const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
+    const canon = (playerChar.rawProfile ? playerChar : null);
     const pIlvl = playerChar.ilvl || (canon && canon.ilvl) || 1750;
 
     let pAccItems = (playerChar && playerChar.accessories)
@@ -10272,12 +10222,6 @@
       || (canon && canon.loadout && canon.loadout.items && canon.loadout.items.filter(i => ['neck', 'ear1', 'ear2', 'finger1', 'finger2'].includes(i.slot)))
       || [];
 
-    if ((!pAccItems || pAccItems.length === 0) && playerChar && playerChar.name && (playerChar.name.toLowerCase() === 'alphâ' || playerChar.name.toLowerCase() === 'àlphâ' || playerChar.id === 'alphâ' || playerChar.id === 'àlphâ')) {
-      pAccItems = ALPHA_KNOWN_ACCESSORIES;
-    }
-    if ((!pAccItems || pAccItems.length === 0) && playerChar && playerChar.name && (playerChar.name.toLowerCase().includes('neversup') || playerChar.id === 'neversup' || playerChar.id === 'demo_paladin')) {
-      pAccItems = typeof NEVERSUP_KNOWN_ACCESSORIES !== 'undefined' ? NEVERSUP_KNOWN_ACCESSORIES : null;
-    }
 
     let highCount = 0;
     let midCount = 0;
@@ -10417,7 +10361,7 @@
     const normClass = normalizeClassName(playerChar.className || '').toLowerCase();
     const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && ['paladin', 'bard', 'artist', 'holyknight', 'valkyrie', 'yinyangshi'].some(s => normClass.includes(s)));
     const cKey = (playerChar.id || playerChar.name || '').toLowerCase().trim();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || (playerChar.rawProfile ? playerChar : null);
+    const canon = (playerChar.rawProfile ? playerChar : null);
 
     // 1. Ark Grid Status
     const arkStatus = getArkGridStatus(playerChar) || (canon ? getArkGridStatus(canon) : { hasSun17: false, hasMoon17: false, starTier: 1 });
@@ -10563,7 +10507,7 @@
       } else if (normClass.includes('artist') || normClass.includes('yinyangshi')) {
         engLabel = (isEn ? "Full Bloom 3, 5 Full T4 Relic Engravings" : "Pleine Floraison 3, 5 Gravures Reliques T4") + stoneNotice;
       } else if (normClass.includes('valkyrie')) {
-        engLabel = (isEn ? "Knight of Light 3, 5 Full T4 Relic Engravings" : "Chevalière de Lumière 3, 5 Gravures Reliques T4") + stoneNotice;
+        engLabel = (isEn ? "Liberator 3, 5 Full T4 Relic Engravings" : "Libératrice 3, 5 Gravures Reliques T4") + stoneNotice;
       } else {
         engLabel = (isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`) + stoneNotice;
       }
@@ -10855,17 +10799,6 @@
 
   function resolveTargetSystems(target, isEn = false) {
     if (!target) return {};
-    // Référence générée : ses systèmes sont exactement ceux qui ont servi à calculer son CP.
-    // Les garde-fous ci-dessous (profils réels mal lus) les rendraient incohérents avec l'en-tête.
-    if (target.isDynamic && target.systems) {
-      const dynSys = JSON.parse(JSON.stringify(target.systems));
-      for (const [k, v] of Object.entries(dynSys)) {
-        if (v && v.label) {
-          v.label = isEn ? formatLostArkEnglish(v.label) : formatLostArkFrench(v.label);
-        }
-      }
-      return dynSys;
-    }
     let sys = {};
 
     // Si le target possède des données réelles de profil, on extrait fidèlement selon la langue demandée
@@ -11040,7 +10973,7 @@
     const isSupport = player.role === 'support';
     const gaps = [];
 
-    // Cœurs : un point par cœur lu, comme le palier cible de generateDynamicBenchmark (max 20)
+    // Cœurs : un point par cœur lu jusqu'à 20
     // (sans données de cœur pour le groupe : forfait historique de 3 points)
     const coreSlots = getArkGridStatus(player).slots || {};
     const coreGroupCost = (orderKey, chaosKey) => {
@@ -11160,211 +11093,6 @@
   // 100% profils réels en direct de lostark.bible, zéro preset statique, zéro profil générique ou synthétique
   
 
-  function getSuggestedLivePeerForClass(className, currentIlvl = 1750, excludeName = '', playerCp = 0, failedAttempts = null, preferredRole = null) {
-    const norm = normalizeClassName(className || '').toLowerCase();
-    const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => norm.includes(s));
-    const targetRole = preferredRole || (isSupportClass ? 'support' : 'dps');
-    const peers = VERIFIED_LIVE_PEERS[norm] || [];
-    const validPeers = peers.filter(p => {
-      if (p.name.toLowerCase() === (excludeName || '').toLowerCase()) return false;
-      if (p.role && p.role !== targetRole) return false;
-      const reg = (p.region || 'CE').toUpperCase();
-      const pKey = `${p.name.toLowerCase()}_${reg}`;
-      const pKeyAuto = `${p.name.toLowerCase()}_auto`;
-      if (failedAttempts && (failedAttempts.has(pKey) || failedAttempts.has(pKeyAuto) || failedAttempts.has(p.name.toLowerCase()))) {
-        return false;
-      }
-      return true;
-    });
-    if (validPeers.length === 0) return null;
-
-    // Priorité 1 : un pair de même classe et même rôle dont le CP est >= au CP du joueur (palier d'amélioration)
-    if (playerCp > 0) {
-      const higherPeers = validPeers.filter(p => (p.cp || 0) >= playerCp);
-      if (higherPeers.length > 0) {
-        higherPeers.sort((a, b) => Math.abs((a.ilvl || 1750) - currentIlvl) - Math.abs((b.ilvl || 1750) - currentIlvl));
-        return higherPeers[0];
-      }
-    }
-
-    // Priorité 2 : le pair le plus proche en iLvl
-    validPeers.sort((a, b) => Math.abs((a.ilvl || 1750) - currentIlvl) - Math.abs((b.ilvl || 1750) - currentIlvl));
-    return validPeers[0];
-  }
-
-  function generateDynamicBenchmark(playerChar, gemFilter = 'all') {
-    if (!playerChar) return null;
-    const charClassName = playerChar.className || playerChar.characterClass || playerChar.class || '';
-    const normClass = normalizeClassName(charClassName) || 'Soulfist';
-    const isSupport = playerChar.role === 'support' || (playerChar.role !== 'dps' && ['Paladin', 'Bard', 'Artist', 'Valkyrie'].some(s => normClass.toLowerCase().includes(s.toLowerCase())));
-    const pCp = playerChar.cp || playerChar.combatPower || 3500;
-    const pIlvl = playerChar.ilvl || 1740;
-    const spec = getCharacterSpecName(playerChar);
-    const isEn = isEnglishLang();
-
-    // 1. Extraction fidèle des systèmes actuels du joueur
-    const pSys = extractPlayerSystems(playerChar, isEn);
-
-    // 2. Palier cible = ton profil + 1 étape sur chaque système, avec les mêmes formules que extractPlayerSystems
-    // 2a. Arme : +1 niveau réel (Serka inclus via le niveau effectif), même bonus par niveau que le moteur
-    const pW = pSys.weapon || {};
-    const wRaw = pW.wLvl !== undefined ? pW.wLvl : 19;
-    const wEff = pW.effWLvl !== undefined ? pW.effWLvl : wRaw;
-    const wStep = wRaw < 25 ? 1 : 0;
-    const tWeaponBonus = Number(((pW.bonusPct || 0) + wStep * WEAPON_HONING_BONUS_PER_LVL).toFixed(2));
-    const qualTxt = pW.quality !== undefined ? (isEn ? ` (Quality ${pW.quality})` : ` (Qualité ${pW.quality})`) : '';
-    const tWeaponLabel = pW.isSerka
-      ? (isEn ? `T4 Serka Weapon +${wRaw + wStep} (Eq. +${wEff + wStep})${qualTxt}` : `Arme Serka T4 +${wRaw + wStep} (Éq. +${wEff + wStep})${qualTxt}`)
-      : (isEn ? `T4 Weapon +${wRaw + wStep}${qualTxt}` : `Arme T4 +${wRaw + wStep}${qualTxt}`);
-
-    // 2b. Armures : +1 niveau moyen réel
-    const pA = pSys.armors || {};
-    const aRaw = pA.avgArmor !== undefined ? pA.avgArmor : 19;
-    const aEff = pA.effAvgArmor !== undefined ? pA.effAvgArmor : aRaw;
-    const aStep = aRaw < 25 ? 1 : 0;
-    const aPerLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
-    const tArmorBonus = Number(((pA.bonusPct || 0) + aStep * aPerLvl).toFixed(2));
-    const tArmorLabel = pA.isSerka
-      ? (isEn ? `T4 Serka Armor Avg +${aRaw + aStep} (Eq. +${aEff + aStep})` : `Armures Serka T4 Moyenne +${aRaw + aStep} (Éq. +${aEff + aStep})`)
-      : (isEn ? `T4 Armors Avg +${aRaw + aStep}` : `Armures T4 Moyenne +${aRaw + aStep}`);
-
-    // 2c. Accessoires : ton bijou le plus faible remplacé (même modèle que le GPD)
-    const pAcc = (pSys.accessories && pSys.accessories.bonusPct) || 13.50;
-    const accEval = evaluateCharacterAccessories(playerChar, isSupport, isEn);
-    const weakestAcc = accEval && accEval.slotLines ? findWeakestAccessoryUpgrade(accEval.slotLines, isSupport) : null;
-    let tAcc = pAcc;
-    let tAccLabel = isEn ? 'Same as yours' : 'Identique au vôtre';
-    if (weakestAcc && weakestAcc.gain > 0) {
-      tAcc = Number((((1 + pAcc / 100) * (1 + weakestAcc.gain / 100) - 1) * 100).toFixed(2));
-      const slotName = accessorySlotNames(isEn)[weakestAcc.slot];
-      tAccLabel = isEn ? `${slotName} replaced ➔ 2 High main lines` : `${slotName} remplacé ➔ 2 lignes principales High`;
-    } else if (!accEval || !accEval.slotLines) {
-      // Pas de lignes lisibles : ancienne estimation par paliers, jamais sous le joueur
-      tAcc = Math.max(pAcc, Math.min(15.20, Number((pAcc + (pAcc >= 13.50 ? 0.80 : 1.20)).toFixed(2))));
-      tAccLabel = isEn ? '3 High Rolls Weapon Atk / Supp Dmg (Optimized)' : '3 Rolls High Atk Arme / Dégâts Supp (Optimisés)';
-    }
-
-    // 2d. Bracelet : +0.80 % jusqu'à 12 %, jamais sous le joueur
-    const pBrac = (pSys.bracelet && pSys.bracelet.bonusPct) || 10.20;
-    const tBrac = pBrac >= 12.00 ? pBrac : Math.min(12.00, Number((pBrac + 0.80).toFixed(2)));
-    const tBracLabel = pBrac >= 12.00
-      ? (isEn ? 'Same as yours' : 'Identique au vôtre')
-      : (isEn ? 'Relic (Circularity + High Dmg/Buff Perk)' : 'Relique (Circulaire + Passif Dégâts/Buff High)');
-
-    // 2e. Astrogemmes : +0.80 % jusqu'au plafond, jamais sous le joueur
-    const pAstro = (pSys.arkGridAstrogems && pSys.arkGridAstrogems.bonusPct) || (isSupport ? 3.50 : 4.80);
-    const tAstro = Math.max(pAstro, Math.min(isSupport ? 5.50 : 6.80, Number((pAstro + 0.80).toFixed(2))));
-    const tAstroLabel = isEn ? `Astrogems (+${tAstro.toFixed(2)}% Substats)` : `Astrogemmes (+${tAstro.toFixed(2)}% Sous-stats Grille)`;
-
-    // 2f. Gemmes T4
-    const pGems = (pSys.gems && pSys.gems.bonusPct) || 36.00;
-    const playerGemSummary = getCharacterGemSummary(playerChar, isEn);
-    let tGems = pGems;
-    let gemDesc = playerGemSummary;
-    const isGem9 = gemFilter === 'gem9';
-    if (isGem9) {
-      tGems = Math.max(40.50, Number((pGems + 4.50).toFixed(2)));
-      gemDesc = isEn ? 'Mix T4 Gems 8 / 9 (5x Lvl 9)' : 'Mix Gemmes 8 / 9 T4 (5x Niv. 9)';
-    } else if (gemFilter === 'gem8') {
-      tGems = 36.00;
-      gemDesc = isEn ? 'Full T4 Gems 8' : 'Full Gemmes 8 T4';
-    } else {
-      tGems = pGems;
-      gemDesc = playerGemSummary;
-    }
-
-    // 2g. Cœurs Ark Grid : chaque cœur lu passe au palier suivant (max 20 points)
-    const coreSlots = getArkGridStatus(playerChar).slots || {};
-    const coreTarget = (group, pPct, nameFr, nameEn) => {
-      const defs = ARK_CORE_DEFS.filter(d => d.key.endsWith(group));
-      let ratio = 1;
-      const steps = [];
-      defs.forEach(d => {
-        const pts = coreSlots[d.key] || 0;
-        if (pts <= 0) return;
-        const next = Math.min(20, pts + 1);
-        ratio *= (1 + getArkGridCoreBonus(d.prefix, next, isSupport, false) / 100) / (1 + getArkGridCoreBonus(d.prefix, pts, isSupport, false) / 100);
-        steps.push(`${isEn ? d.en.split(' ')[0] : d.fr.split(' ')[0]} ${next}P`);
-      });
-      if (!steps.length || ratio <= 1) {
-        return { label: isEn ? 'Same as yours' : 'Identique au vôtre', bonusPct: pPct };
-      }
-      const bonusPct = Number((((1 + pPct / 100) * ratio - 1) * 100).toFixed(2));
-      return { label: isEn ? `${nameEn}: ${steps.join(', ')} (+${bonusPct.toFixed(2)}%)` : `${nameFr} : ${steps.join(', ')} (+${bonusPct.toFixed(2)}%)`, bonusPct };
-    };
-    const tSunSys = coreTarget('Sun', (pSys.arkGridSun && pSys.arkGridSun.bonusPct) || 0, 'Cœurs Soleil', 'Sun Cores');
-    const tMoonSys = coreTarget('Moon', (pSys.arkGridMoon && pSys.arkGridMoon.bonusPct) || 0, 'Cœurs Lune', 'Moon Cores');
-    const tStarSys = coreTarget('Star', (pSys.arkGridStar && pSys.arkGridStar.bonusPct) || 0, 'Cœurs Étoile', 'Star Cores');
-
-    // 2h. Systèmes à Parité / Endgame Standards
-    const tEvo = Math.max(21.00, (pSys.arkEvolution && pSys.arkEvolution.bonusPct) || 21.00);
-    const tEnl = Math.max(28.28, (pSys.arkEnlightenment && pSys.arkEnlightenment.bonusPct) || 28.28);
-    const tLeap = Math.max(14.00, (pSys.arkLeap && pSys.arkLeap.bonusPct) || 14.00);
-    const tEng = (pSys.engravings && pSys.engravings.bonusPct >= 60) ? pSys.engravings.bonusPct : (playerChar.ilvl >= 1770 ? 104.24 : 101.94);
-    const tAdv = Math.max(8.80, (pSys.advHoning && pSys.advHoning.bonusPct) || 8.80);
-    const tTransW = (pSys.transWeapon && pSys.transWeapon.bonusPct) || 14.50;
-    const tTransA = (pSys.transArmor && pSys.transArmor.bonusPct) || 18.20;
-    const tKarma = (pSys.karma && pSys.karma.bonusPct) || 3.60;
-
-    let engLabel = isEn ? `${spec} 3, 5 Full T4 Relic Engravings` : `${spec} 3, 5 Gravures Reliques T4`;
-
-    const tSys = {
-      engravings: { label: engLabel, bonusPct: tEng, estimated: !!(pSys.engravings && pSys.engravings.estimated) },
-      baseAttackStat: pSys.baseAttackStat || { label: getMainStatName(normClass, isEn) + (playerChar.ilvl >= 1770 ? ' 735k' : ' 690k'), bonusPct: playerChar.ilvl >= 1770 ? 37.00 : 34.50 },
-      combatStats: pSys.combatStats || { label: isEn ? "Combat Stats" : "Stats de Combat", bonusPct: playerChar.ilvl >= 1770 ? 78.36 : 77.07 },
-      arkEvolution: { label: isEn ? '140 Evolution Pts' : '140 Pts Évolution', bonusPct: tEvo },
-      arkEnlightenment: { label: isEn ? '101 Enlightenment Pts' : '101 Pts Illumination', bonusPct: tEnl },
-      arkLeap: { label: isEn ? '70 Leap Pts' : '70 Pts Saut', bonusPct: tLeap },
-      arkGridSun: tSunSys,
-      arkGridMoon: tMoonSys,
-      arkGridStar: tStarSys,
-      arkGridAstrogems: { label: tAstroLabel, bonusPct: tAstro },
-      weapon: { label: tWeaponLabel, bonusPct: Number(tWeaponBonus.toFixed(2)) },
-      armors: { label: tArmorLabel, bonusPct: Number(tArmorBonus.toFixed(2)) },
-      advHoning: { label: isEn ? "Advanced Honing +40" : "Affinage Avancé +40", bonusPct: tAdv },
-      transWeapon: { label: isEn ? "Weapon Transcendence R3" : "Transcendance Arme R3", bonusPct: tTransW },
-      transArmor: { label: isEn ? "Armor Transcendence R3" : "Transcendance Armures R3", bonusPct: tTransA },
-      accessories: { label: tAccLabel, bonusPct: tAcc },
-      bracelet: { label: tBracLabel, bonusPct: tBrac },
-      gems: { label: gemDesc, bonusPct: tGems },
-      karma: { label: isEn ? "Evolution Karma Rank 6" : "Karma Évolution Rang 6", bonusPct: tKarma }
-    };
-
-    // 3. CP de la cible : les systèmes se multiplient, donc CP cible = CP joueur × Π (1 + t) / (1 + p)
-    let cpRatio = 1;
-    Object.keys(tSys).forEach(k => {
-      const pVal = (pSys[k] && pSys[k].bonusPct) || 0;
-      const tVal = (tSys[k] && tSys[k].bonusPct) || 0;
-      cpRatio *= (1 + tVal / 100) / (1 + pVal / 100);
-    });
-    const targetCp = Math.round(pCp * cpRatio);
-    const stepIlvl = Number((pIlvl + (pIlvl >= 1770 ? 2.5 : 5.0)).toFixed(2));
-    const dynamicBenchName = isEn 
-      ? `${normClass} (T4 Benchmark • Target Step)` 
-      : `${normClass} (Benchmark T4 • Palier Progrès)`;
-
-    return {
-      id: `dynamic_${(playerChar.id || playerChar.name || 'char').toLowerCase()}_${gemFilter || 'all'}`,
-      name: dynamicBenchName,
-      className: normClass,
-      characterClass: normClass,
-      spec: spec,
-      role: playerChar.role || (isSupport ? 'support' : 'dps'),
-      ilvl: stepIlvl,
-      cp: targetCp,
-      combatPower: targetCp,
-      server: playerChar.server || 'Elpon (CE)',
-      guild: isEn ? 'Benchmark Standard (T4)' : 'Standard Benchmark T4',
-      rosterLevel: playerChar.rosterLevel || 300,
-      gemTier: isGem9 ? 'gem9' : (gemFilter === 'gem8' ? 'gem8' : 'gem8'),
-      gemDesc: gemDesc,
-      avatarUrl: getClassIconUrl(normClass, playerChar.role || (isSupport ? 'support' : 'dps')),
-      bibleUrl: null,
-      isDynamic: true,
-      systems: tSys
-    };
-  }
-
   function getAvailableBenchmarks(playerChar) {
     if (!playerChar) return [];
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
@@ -11379,30 +11107,14 @@
       const sName = (s.name || s.id || '').toLowerCase().trim();
       if (sName === pName) return;
       const sClass = normalizeClassName(s.className || s.characterClass || s.class || '').toLowerCase();
-      const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+      const sRole = s.role || (isSupportClass ? (isSupportSpecName(s.spec) ? 'support' : 'dps') : 'dps');
       if (s && s.isLive && sClass === pClass && sRole === pRole) {
         list.push(s);
       }
     });
 
-    // 2. Personnages du Roster actif DE LA MÊME CLASSE ET MÊME RÔLE UNIQUEMENT (SANS LE JOUEUR LUI-MÊME)
-    const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
-    currentRoster.forEach(c => {
-      const cName = (c.name || c.id || '').toLowerCase().trim();
-      if (cName === pName) return;
-      const cClass = normalizeClassName(c.className || c.characterClass || c.class || '').toLowerCase();
-      const cRole = c.role || (isSupportClass ? 'support' : 'dps');
-      if (cClass === pClass && cRole === pRole) {
-        list.push(convertCharToBenchmarkFormat(c, isEnLang()));
-      }
-    });
-
-    // 3. Palier Benchmark Calibré T4 (Garantit qu'aucun personnage n'est jamais sans profil de référence)
-    const dyn = generateDynamicBenchmark(playerChar, benchmarkState.gemFilter);
-    if (dyn) {
-      list.push(dyn);
-    }
-
+    // Références : uniquement des joueurs réels chargés en direct depuis lostark.bible
+    // (ni personnages du roster ou de démo, ni profil généré)
     return list;
   }
 
@@ -11422,7 +11134,7 @@
     const sameClass = avail.filter(b => {
       const bClass = normalizeClassName(b.className || b.characterClass || b.class || '').toLowerCase();
       if (bClass !== pClass) return false;
-      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+      const bRole = b.role || (isSupportClass ? (isSupportSpecName(b.spec) ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     });
     if (sameClass.length === 0) return null;
@@ -11462,13 +11174,8 @@
       return anyLive[0];
     }
 
-    // 6. DERNIER RECOURS : Benchmark Calibré synthétique (uniquement si aucun profil LIVE réel n'est chargé)
-    const dyn = sameClass.find(b => b.isDynamic);
-    if (dyn) return dyn;
-
-    // 7. Profil même classe et rôle
-    sameClass.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
-    return sameClass[0] || null;
+    // Aucun joueur réel disponible : pas de référence (l'onglet invite à rechercher un joueur)
+    return null;
   }
 
   function convertCharToBenchmarkFormat(c, isEn) {
@@ -11510,12 +11217,6 @@
       || [];
 
     // Fallback direct sur les données réelles vérifiées de Àlphâ si non ré-hydratées depuis le cache local
-    if ((!pAccItems || pAccItems.length === 0) && player && player.name && (player.name.toLowerCase() === 'alphâ' || player.name.toLowerCase() === 'àlphâ' || player.id === 'alphâ' || player.id === 'àlphâ')) {
-      pAccItems = ALPHA_KNOWN_ACCESSORIES;
-    }
-    if ((!pAccItems || pAccItems.length === 0) && player && player.name && (player.name.toLowerCase().includes('neversup') || player.id === 'neversup' || player.id === 'demo_paladin')) {
-      pAccItems = typeof NEVERSUP_KNOWN_ACCESSORIES !== 'undefined' ? NEVERSUP_KNOWN_ACCESSORIES : null;
-    }
 
     const slots = [
       { key: 'neck', name: isEn ? 'Necklace T4' : 'Collier T4', icon: '', pLines: [], tLines: [], impactCp: 0, verdict: '' },
@@ -11547,7 +11248,7 @@
 
     // Extraction depuis les items textuels du preset (CANONICAL_PRESETS) si pas de données d'objets bruts
     const cKey = (player.id || player.name || '').toLowerCase().trim();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[cKey]) || null;
+    const canon = null;
     const playerItems = (player.items && Array.isArray(player.items) && player.items.filter(i => i.cat === 'Accessoires').length > 0)
       ? player.items.filter(i => i.cat === 'Accessoires')
       : (canon && Array.isArray(canon.items) ? canon.items.filter(i => i.cat === 'Accessoires') : []);
@@ -12072,15 +11773,6 @@
     if (!br && charObj.rawProfile && Array.isArray(charObj.rawProfile.rawItems)) {
       br = charObj.rawProfile.rawItems.find(i => i.slot === 'bracelet');
     }
-    const cName = (charObj.name || charObj.id || '').toLowerCase();
-    if (!br || !br.data || !br.data.stats || br.data.stats.length === 0) {
-      if (cName.includes('alph')) {
-        return ALPHA_KNOWN_BRACELET;
-      }
-      if (cName.includes('cyanora')) {
-        return CYANORA_KNOWN_BRACELET;
-      }
-    }
     return br || null;
   }
 
@@ -12480,9 +12172,6 @@
 
     // 1. Récupération du Bracelet Joueur
     let pBrItem = extractBraceletItem(player);
-    if (!pBrItem && player && player.name && (player.name.toLowerCase() === 'alphâ' || player.name.toLowerCase() === 'àlphâ' || player.id === 'alphâ' || player.id === 'àlphâ')) {
-      pBrItem = ALPHA_KNOWN_BRACELET;
-    }
 
     const pFixed = [];
     const pRolled = [];
@@ -12511,9 +12200,6 @@
 
     // 2. Récupération du Bracelet Cible Référence
     let tBrItem = extractBraceletItem(target);
-    if (!tBrItem && target && target.name && target.name.toLowerCase() === 'cyanora') {
-      tBrItem = CYANORA_KNOWN_BRACELET;
-    }
 
     const tFixed = [];
     const tRolled = [];
@@ -13121,7 +12807,7 @@
   function extractCharacterEngravings(c, isEn = false) {
     if (!c) return [];
     const pId = (c.id || c.name || '').toLowerCase();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+    const canon = null;
 
     const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
       || (c.battlePoint && c.battlePoint.parts)
@@ -13272,7 +12958,7 @@
   function extractCharacterBaseAtkDetails(c, isEn = false) {
     if (!c) return { mainStatName: isEn ? 'Strength' : 'Force', mainStat: 627038, baseAtk: 162736, weaponPower: 218877, ilvl: 1750 };
     const pId = (c.id || c.name || '').toLowerCase();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+    const canon = null;
 
     const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
       || (c.battlePoint && c.battlePoint.parts)
@@ -13320,7 +13006,7 @@
   function extractCharacterCombatStatsDetails(c, isEn = false) {
     if (!c) return { totalPts: 2386, bonusPct: 95.44, swift: 1820, specStat: 566, crit: 0, role: 'support' };
     const pId = (c.id || c.name || '').toLowerCase();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+    const canon = null;
 
     const allBpParts = (c.rawProfile && c.rawProfile.battlePoint && c.rawProfile.battlePoint.parts)
       || (c.battlePoint && c.battlePoint.parts)
@@ -14500,7 +14186,7 @@
     const groupLabel = normGroup === 'sun' ? (isEn ? 'Sun' : 'Soleil') : (normGroup === 'moon' ? (isEn ? 'Moon' : 'Lune') : (isEn ? 'Star' : 'Étoile'));
 
     const pId = (char && (char.id || char.name || '')).toLowerCase();
-    const canon = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+    const canon = null;
 
     function resolveCoreSpecificName(id, rawLabel) {
       let name = '';
@@ -14970,16 +14656,10 @@
     const residual = netGap - modelGap;
     const signed = (v) => `${v > 0 ? '+' : (v < 0 ? '−' : '')}${formatNumber(Math.abs(v))} CP`;
 
-    let explanation;
-    if (target.isDynamic) {
-      explanation = isEn
-        ? `The reference is built from your own profile, one step ahead on each system. Each table row is that system's relative gain on its own; the header multiplies them together, which is why the rows and the header differ by ${formatNumber(Math.abs(residual))} CP.`
-        : `La référence est construite à partir de ton propre profil, avec une étape d'avance sur chaque système. Chaque ligne du tableau est le gain relatif de ce système pris seul ; l'en-tête les multiplie entre eux, d'où l'écart de ${formatNumber(Math.abs(residual))} CP entre les lignes et l'en-tête.`;
-    } else {
-      explanation = isEn
-        ? `The rows model a ${signed(modelGap)} gap; the real profiles differ by ${signed(netGap)}. The remaining ${signed(residual)} comes from what the model does not read (roster level, cards, pets, potions…) and from the way systems multiply together.`
-        : `Les lignes modélisent un écart de ${signed(modelGap)} ; les vrais profils diffèrent de ${signed(netGap)}. Les ${signed(residual)} restants viennent de ce que le modèle ne lit pas (niveau de roster, cartes, familiers, potions…) et de la multiplication des systèmes entre eux.`;
-    }
+    // La référence est toujours un joueur réel : l'écart restant est ce que le modèle n'explique pas
+    const explanation = isEn
+      ? `The rows model a ${signed(modelGap)} gap; the real profiles differ by ${signed(netGap)}. The remaining ${signed(residual)} comes from what the model does not read (roster level, cards, pets, potions…) and from the way systems multiply together.`
+      : `Les lignes modélisent un écart de ${signed(modelGap)} ; les vrais profils diffèrent de ${signed(netGap)}. Les ${signed(residual)} restants viennent de ce que le modèle ne lit pas (niveau de roster, cartes, familiers, potions…) et de la multiplication des systèmes entre eux.`;
 
     return `
       <div class="cp-reconciliation-card">
@@ -15020,6 +14700,157 @@
     `;
   }
 
+  // --- Profils proposés : vrais joueurs de la même classe, CP légèrement supérieur ---
+  // Les noms viennent de data/live-peers.json (classements de raid lostark.bible, tools/harvest-live-peers.mjs) ;
+  // CP et iLvl viennent toujours de la fiche chargée en direct.
+  const SUGGESTED_PEER_COUNT = 3;
+  const SUGGESTED_PEER_MAX_PROBES = 20;  // fiches chargées au plus pour en trouver 3 au-dessus
+  const suggestedPeersState = { pool: null, poolPromise: null, byPlayer: {} };
+
+  function loadLivePeerPool() {
+    if (suggestedPeersState.pool) return Promise.resolve(suggestedPeersState.pool);
+    if (!suggestedPeersState.poolPromise) {
+      suggestedPeersState.poolPromise = fetch('data/live-peers.json', { cache: 'no-cache' })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => (suggestedPeersState.pool = (j && j.classes) || {}))
+        .catch(() => (suggestedPeersState.pool = {}));
+    }
+    return suggestedPeersState.poolPromise;
+  }
+
+  function suggestedPeersKey(player) {
+    return `${(player.name || '').toLowerCase()}|${Math.round(player.cp || 0)}|${player.role || ''}`;
+  }
+
+  async function findSuggestedPeers(player) {
+    const pool = await loadLivePeerPool();
+    const cls = normalizeClassName(player.className || '').toLowerCase().replace(/[^a-z]/g, '');
+    const role = player.role || 'dps';
+    const pName = (player.name || '').toLowerCase().trim();
+    const pIlvl = player.ilvl || 1700;
+    const pCp = player.cp || 0;
+    const pSpec = (getCharacterSpecName(player) || '').toLowerCase();
+    const regMatch = /\((CE|NA|NAE|NAW|SA)\)/i.exec(player.server || '');
+    const pRegion = (player.region || (regMatch && regMatch[1]) || 'CE').toUpperCase().replace(/^NA[EW]$/, 'NA');
+
+    // Classement des candidats. Le CP suit l'iLvl : d'abord la fenêtre [-8 ; +10], puis plus haut,
+    // en dernier plus bas ; à l'intérieur, iLvl le plus proche, même spé et même région.
+    // La fenêtre descend à -8 car l'iLvl du réservoir date du raid relevé : les joueurs ont progressé depuis.
+    const candidates = (pool[cls] || [])
+      .filter(c => c.role === role && c.name.toLowerCase() !== pName)
+      .map(c => {
+        const d = c.ilvl - pIlvl;
+        const group = d >= -8 && d <= 10 ? 0 : (d > 10 ? 1 : 2);
+        let score = group * 1000 + Math.abs(d);
+        if ((c.spec || '').toLowerCase() !== pSpec) score += 3;
+        if ((c.region || '').toUpperCase() !== pRegion) score += 2;
+        return { ...c, score };
+      })
+      .sort((a, b) => a.score - b.score);
+
+    const above = [];
+    let probed = 0;
+    // 2 fiches à la fois : au-delà, lostark.bible refuse une partie des requêtes simultanées.
+    // Une seconde tentative après une courte pause rattrape les refus ponctuels.
+    const fetchPeer = async (c) => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const b = await fetchLiveBibleBenchmark(c.name, c.region || 'AUTO', role);
+          if (b) return b;
+        } catch (e) { /* nouvelle tentative */ }
+        await new Promise(r => setTimeout(r, 600));
+      }
+      return null;
+    };
+    for (let i = 0; i < candidates.length && probed < SUGGESTED_PEER_MAX_PROBES && above.length < SUGGESTED_PEER_COUNT + 2; i += 2) {
+      const batch = candidates.slice(i, i + 2);
+      probed += batch.length;
+      const results = await Promise.all(batch.map(fetchPeer));
+      results.forEach(b => {
+        if (!b || !b.isLive) return;
+        if (normalizeClassName(b.className || '').toLowerCase().replace(/[^a-z]/g, '') !== cls) return;
+        if ((b.role || role) !== role || (b.name || '').toLowerCase() === pName) return;
+        if ((b.cp || 0) > pCp) above.push(b);
+      });
+    }
+    // Les plus proches au-dessus : faible écart de CP, puis iLvl proche
+    above.sort((a, b) => ((a.cp - pCp) - (b.cp - pCp)) || (Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl)));
+    const peers = above.slice(0, SUGGESTED_PEER_COUNT);
+
+    // Disponibles aussi dans le menu des références et pour l'auto-match
+    if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
+    peers.forEach(b => {
+      benchmarkState.searchedTargets = benchmarkState.searchedTargets.filter(t => t.id !== b.id);
+      benchmarkState.searchedTargets.push(b);
+    });
+    return { peers, probed, poolSize: candidates.length };
+  }
+
+  function renderSuggestedPeers(player, target) {
+    const box = document.getElementById('benchSuggestedPeers');
+    if (!box || !player) return;
+    const isEn = isEnglishLang();
+    const st = suggestedPeersState.byPlayer[suggestedPeersKey(player)];
+    const title = `<div class="bench-suggested-title">${isEn ? 'Suggested players — same class, slightly higher CP' : 'Joueurs proposés — même classe, CP légèrement supérieur'}</div>`;
+    if (!st || st.loading) {
+      box.innerHTML = `${title}<div class="bench-suggested-note">${isEn ? 'Searching live profiles on lostark.bible…' : 'Recherche de profils en direct sur lostark.bible…'}</div>`;
+      return;
+    }
+    if (!st.peers.length) {
+      box.innerHTML = `${title}<div class="bench-suggested-note">${isEn
+        ? `No player of this class with a higher CP was found among ${st.probed} live profiles checked. Use the search bar to pick one.`
+        : `Aucun joueur de cette classe avec un CP supérieur parmi les ${st.probed} profils vérifiés en direct. Utilise la barre de recherche.`}</div>`;
+      return;
+    }
+    const pCp = player.cp || 0;
+    const cards = st.peers.map(b => {
+      const sel = target && target.id === b.id;
+      return `<button type="button" class="bench-suggested-peer${sel ? ' active' : ''}" data-peer-id="${escapeHtml(b.id)}" aria-pressed="${sel ? 'true' : 'false'}">
+          <span class="bsp-name">${escapeHtml(b.name)}</span>
+          <span class="bsp-meta">${escapeHtml(b.spec || '')} · ${b.ilvl.toFixed(2)}</span>
+          <span class="bsp-cp">${formatNumber(Math.round(b.cp))} CP <span class="bsp-delta">+${formatNumber(Math.round(b.cp - pCp))}</span></span>
+        </button>`;
+    }).join('');
+    const note = st.peers.length < SUGGESTED_PEER_COUNT
+      ? `<div class="bench-suggested-note">${isEn
+          ? `Only ${st.peers.length} player(s) above your CP among ${st.probed} live profiles checked.`
+          : `Seulement ${st.peers.length} joueur(s) au-dessus de ton CP parmi les ${st.probed} profils vérifiés en direct.`}</div>`
+      : '';
+    box.innerHTML = `${title}<div class="bench-suggested-list">${cards}</div>${note}`;
+    box.querySelectorAll('.bench-suggested-peer').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const peer = st.peers.find(b => b.id === btn.dataset.peerId);
+        if (!peer) return;
+        benchmarkState.userPickedTarget = true;
+        benchmarkState.customTarget = peer;
+        benchmarkState.currentTargetId = peer.id;
+        renderBenchmarkTab();
+      });
+    });
+  }
+
+  // Lance la recherche une fois par personnage ; la référence par défaut devient le premier profil
+  // proposé tant que l'utilisateur n'a pas choisi lui-même.
+  function ensureSuggestedPeers(player) {
+    const key = suggestedPeersKey(player);
+    if (suggestedPeersState.byPlayer[key]) return suggestedPeersState.byPlayer[key];
+    const st = { loading: true, peers: [], probed: 0 };
+    suggestedPeersState.byPlayer[key] = st;
+    findSuggestedPeers(player)
+      .then(res => Object.assign(st, res))
+      .catch(() => {})
+      .finally(() => {
+        st.loading = false;
+        if (st.peers.length && !benchmarkState.userPickedTarget) {
+          benchmarkState.customTarget = st.peers[0];
+          benchmarkState.currentTargetId = st.peers[0].id;
+        }
+        const active = getCurrentActiveCharacter();
+        if (active && suggestedPeersKey(active) === key) renderBenchmarkTab();
+      });
+    return st;
+  }
+
   function renderBenchmarkTab() {
     const heroCard = document.getElementById('benchmarkHeroCard');
     if (!heroCard) return;
@@ -15032,7 +14863,7 @@
 
     // Enrichit le profil joueur depuis CANONICAL_PRESETS si c'est un profil du roster sans rawProfile
     const pId = (player.id || player.name || '').toLowerCase();
-    const canonPlayer = (typeof CANONICAL_PRESETS !== 'undefined' && CANONICAL_PRESETS[pId]) ? CANONICAL_PRESETS[pId] : null;
+    const canonPlayer = null;
     if (canonPlayer) {
       if (!player.rawProfile) player.rawProfile = canonPlayer;
       if (!player.items || player.items.length === 0) player.items = canonPlayer.items;
@@ -15055,8 +14886,8 @@
     if (target) {
       const tName = (target.name || target.id || '').toLowerCase().trim();
       const tClass = normalizeClassName(target.className || '').toLowerCase();
-      const tRole = target.role || (isSupportClass ? (target.spec === 'Blessed Aura' || target.spec === 'Desperate Salvation' || target.spec === 'Full Bloom' || target.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
-      if (tName === pName || tClass !== pClass || tRole !== pRole) {
+      const tRole = target.role || (isSupportClass ? (isSupportSpecName(target.spec) ? 'support' : 'dps') : 'dps');
+      if (!target.isLive || tName === pName || tClass !== pClass || tRole !== pRole) {
         target = null;
         benchmarkState.customTarget = null;
         benchmarkState.currentTargetId = null;
@@ -15071,7 +14902,7 @@
           const bName = (b.name || b.id || '').toLowerCase().trim();
           if (bName === pName) return false;
           if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-          const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+          const bRole = b.role || (isSupportClass ? (isSupportSpecName(b.spec) ? 'support' : 'dps') : 'dps');
           return bRole === pRole;
         });
         // 2. Cherche dans les profils LIVE recherchés de CETTE CLASSE et MÊME RÔLE (sans le joueur lui-même)
@@ -15081,7 +14912,7 @@
             const bName = (b.name || b.id || '').toLowerCase().trim();
             if (bName === pName) return false;
             if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-            const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+            const bRole = b.role || (isSupportClass ? (isSupportSpecName(b.spec) ? 'support' : 'dps') : 'dps');
             return bRole === pRole;
           });
         }
@@ -15094,19 +14925,22 @@
       const bName = (b.name || b.id || '').toLowerCase().trim();
       if (bName === pName) return false;
       if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+      const bRole = b.role || (isSupportClass ? (isSupportSpecName(b.spec) ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     }) || (benchmarkState.searchedTargets || []).some(b => {
       if (!b || !b.isLive) return false;
       const bName = (b.name || b.id || '').toLowerCase().trim();
       if (bName === pName) return false;
       if (normalizeClassName(b.className || '').toLowerCase() !== pClass) return false;
-      const bRole = b.role || (isSupportClass ? (b.spec === 'Blessed Aura' || b.spec === 'Desperate Salvation' || b.spec === 'Full Bloom' || b.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+      const bRole = b.role || (isSupportClass ? (isSupportSpecName(b.spec) ? 'support' : 'dps') : 'dps');
       return bRole === pRole;
     });
 
     // Si la cible actuelle est dynamique ou absente, mais qu'un profil LIVE de cette classe et rôle est disponible en mémoire, on bascule dessus immédiatement
-    if ((!target || target.isDynamic) && hasLivePeer && !benchmarkState.manualDynamicChosen) {
+    // Profils proposés (réservoir + fiches en direct) ; l'ancienne liste figée ne sert qu'en dernier recours
+    const sugState = ensureSuggestedPeers(player);
+
+    if (!target && hasLivePeer) {
       const liveOpt = findOptimalBenchmark(player);
       if (liveOpt && liveOpt.isLive && (liveOpt.name || '').toLowerCase().trim() !== pName) {
         target = liveOpt;
@@ -15115,44 +14949,12 @@
       }
     }
 
-    if ((!target || target.isDynamic) && !hasLivePeer && !benchmarkState.manualDynamicChosen) {
-      const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts, pRole);
-      const peerKey = suggested ? `${suggested.name.toLowerCase()}_${(suggested.region || 'CE').toUpperCase()}` : null;
-      if (suggested && !benchmarkState.isAutoFetching && (!benchmarkState.failedAttempts || !benchmarkState.failedAttempts.has(peerKey))) {
-        benchmarkState.isAutoFetching = true;
-        heroCard.innerHTML = `
-          <div class="bench-char-card" style="text-align: center; padding: 48px 24px; border: 1px dashed rgba(232, 230, 220, 0.4); background: transparent; border-radius: 0; margin: 16px 0;">
-            <div style="font-size: 40px; margin-bottom: 12px;"></div>
-            <div style="font-size: 19px; font-weight: 700; color: #E0A43A; margin-bottom: 8px;">
-              ${isEn ? 'Retrieving live benchmark profile from lostark.bible...' : 'Chargement en direct d\'un profil de référence LIVE sur lostark.bible...'}
-            </div>
-            <div style="font-size: 15px; color: var(--text-muted); max-width: 540px; margin: 0 auto 18px; line-height: 1.5;">
-              ${isEn ? `Fetching fresh live raid data for <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...` : `Récupération automatique des données de raid réelles pour <strong>${escapeHtml(suggested.name)}</strong> (${escapeHtml(player.className)})...`}
-            </div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid rgba(140, 192, 132, 0.3); color: #8CC084; padding: 6px 16px; border-radius: 0; font-size: 13px; font-weight: 600;">
-              <span>${isEn ? `100% LIVE lostark.bible Profiles (${escapeHtml(player.className)})` : `100% Profils LIVE lostark.bible (${escapeHtml(player.className)})`}</span> • <span>${isEn ? 'Same class & role required' : 'Même classe et rôle obligatoires'}</span>
-            </div>
-          </div>
-        `;
-        const select = document.getElementById('benchmarkPresetSelect');
-        if (select) {
-          select.innerHTML = `<option value="">${isEn ? 'Loading live reference...' : 'Chargement profil LIVE...'} </option>`;
-        }
-        searchAndCompareBibleProfile(suggested.name, suggested.region).catch(() => {
-          if (!benchmarkState.failedAttempts) benchmarkState.failedAttempts = new Set();
-          benchmarkState.failedAttempts.add(peerKey);
-        }).finally(() => {
-          benchmarkState.isAutoFetching = false;
-          renderBenchmarkTab();
-        });
-        return;
-      }
-    }
 
     if (!target) {
       target = findOptimalBenchmark(player);
       if (target) benchmarkState.currentTargetId = target.id;
     }
+    renderSuggestedPeers(player, target);
 
     if (!target) {
       // Si aucun profil n'est disponible et aucun fetch n'est en cours :
@@ -15184,7 +14986,7 @@
           const sName = (s.name || s.id || '').toLowerCase().trim();
           if (sName === pName) return false;
           if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
-          const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+          const sRole = s.role || (isSupportClass ? (isSupportSpecName(s.spec) ? 'support' : 'dps') : 'dps');
           return sRole === pRole;
         });
         if (searchedList.length > 0) {
@@ -15192,25 +14994,6 @@
           searchedList.forEach(s => {
             optionsHtml += `<option value="${escapeHtml(s.id)}">
               ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
-            </option>`;
-          });
-          optionsHtml += `</optgroup>`;
-        }
-
-        const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
-        const sameClassRoster = currentRoster.filter(c => {
-          const cName = (c.name || c.id || '').toLowerCase().trim();
-          if (cName === pName) return false;
-          if (normalizeClassName(c.className || '').toLowerCase() !== pClass) return false;
-          const cRole = c.role || (isSupportClass ? 'support' : 'dps');
-          return cRole === pRole;
-        });
-        if (sameClassRoster.length > 0) {
-          optionsHtml += `<optgroup label="${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
-          sameClassRoster.forEach(c => {
-            const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
-            optionsHtml += `<option value="${escapeHtml(rId)}">
-              ${escapeHtml(c.name)} (${escapeHtml(c.className || '')} • ${(c.ilvl || 1700).toFixed(1)} iLvl - ${formatNumber(Math.round(c.cp || 0))} CP)
             </option>`;
           });
           optionsHtml += `</optgroup>`;
@@ -15241,11 +15024,11 @@
         const sName = (s.name || s.id || '').toLowerCase().trim();
         if (sName === pName) return false;
         if (normalizeClassName(s.className || '').toLowerCase() !== pClass) return false;
-        const sRole = s.role || (isSupportClass ? (s.spec === 'Blessed Aura' || s.spec === 'Desperate Salvation' || s.spec === 'Full Bloom' || s.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+        const sRole = s.role || (isSupportClass ? (isSupportSpecName(s.spec) ? 'support' : 'dps') : 'dps');
         return sRole === pRole;
       });
       if (benchmarkState.customTarget && normalizeClassName(benchmarkState.customTarget.className || '').toLowerCase() === pClass && (benchmarkState.customTarget.name || '').toLowerCase().trim() !== pName && !searchedList.some(s => s.id === benchmarkState.customTarget.id)) {
-        const ctRole = benchmarkState.customTarget.role || (isSupportClass ? (benchmarkState.customTarget.spec === 'Blessed Aura' || benchmarkState.customTarget.spec === 'Desperate Salvation' || benchmarkState.customTarget.spec === 'Full Bloom' || benchmarkState.customTarget.spec === 'Knight of Light' ? 'support' : 'dps') : 'dps');
+        const ctRole = benchmarkState.customTarget.role || (isSupportClass ? (isSupportSpecName(benchmarkState.customTarget.spec) ? 'support' : 'dps') : 'dps');
         if (ctRole === pRole) {
           searchedList.unshift(benchmarkState.customTarget);
         }
@@ -15260,34 +15043,6 @@
             ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
           </option>`;
         });
-        optionsHtml += `</optgroup>`;
-      }
-
-      // 2. Personnages du Roster DE LA MÊME CLASSE UNIQUEMENT (ex: alt)
-      const currentRoster = (activeRosterMode === 'custom' ? getUserRoster() : (typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : [])) || [];
-      const sameClassRoster = currentRoster.filter(c => (c.name || c.id) !== (player.name || player.id) && normalizeClassName(c.className || '').toLowerCase() === pClass);
-      if (sameClassRoster.length > 0) {
-        optionsHtml += `<optgroup label="${isEn ? 'Your Other ' + escapeHtml(player.className) + ' (Roster)' : 'Vos Autres ' + escapeHtml(player.className) + ' (Roster)'}">`;
-        sameClassRoster.forEach(c => {
-          const rId = `roster_${(c.id || c.name || '').toLowerCase()}`;
-          const isSel = target && (target.id === rId);
-          optionsHtml += `<option value="${escapeHtml(rId)}" ${isSel ? 'selected' : ''}>
-            ${escapeHtml(c.name)} (${escapeHtml(c.className || '')} • ${(c.ilvl || 1700).toFixed(1)} iLvl - ${formatNumber(Math.round(c.cp || 0))} CP)
-          </option>`;
-        });
-        optionsHtml += `</optgroup>`;
-      }
-
-      // 3. Palier Benchmark Calibré T4 (Garantit qu'aucune classe n'est jamais sans profil)
-      const dynBench = avail.find(b => b.isDynamic);
-      if (dynBench) {
-        optionsHtml += `<optgroup label="${isEn ? 'Calibrated T4 Benchmark' : 'Benchmark Calibré T4'}">`;
-        const isSel = target && (target.id === dynBench.id);
-        const deltaIlvl = dynBench.ilvl - (player.ilvl || 1700);
-        const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
-        optionsHtml += `<option value="${escapeHtml(dynBench.id)}" ${isSel ? 'selected' : ''}>
-          ${escapeHtml(dynBench.name)} (${dynBench.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(dynBench.cp))} CP)
-        </option>`;
         optionsHtml += `</optgroup>`;
       }
 
@@ -16453,27 +16208,17 @@
     const btnAuto = document.getElementById('btnBenchmarkAutoMatch');
     if (btnAuto) {
       btnAuto.addEventListener('click', () => {
+        // Revient au meilleur joueur proposé (même classe, CP le plus proche au-dessus)
         const player = getCurrentActiveCharacter();
+        benchmarkState.userPickedTarget = false;
         benchmarkState.customTarget = null;
         benchmarkState.currentTargetId = null;
-        benchmarkState.manualDynamicChosen = false;
         if (player) {
-          const opt = findOptimalBenchmark(player);
-          if (opt && opt.isLive) {
-            benchmarkState.currentTargetId = opt.id;
-            benchmarkState.customTarget = opt;
-          } else {
-            const pClass = normalizeClassName(player.className || '').toLowerCase();
-            const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
-            const pRole = player.role || (isSupportClass ? 'support' : 'dps');
-            const suggested = getSuggestedLivePeerForClass(player.className, player.ilvl, player.name, player.cp || 0, benchmarkState.failedAttempts, pRole);
-            if (suggested) {
-              searchAndCompareBibleProfile(suggested.name, suggested.region);
-              return;
-            } else if (opt) {
-              benchmarkState.currentTargetId = opt.id;
-              benchmarkState.customTarget = opt;
-            }
+          const st = suggestedPeersState.byPlayer[suggestedPeersKey(player)];
+          const best = st && st.peers && st.peers[0];
+          if (best) {
+            benchmarkState.customTarget = best;
+            benchmarkState.currentTargetId = best.id;
           }
         }
         renderBenchmarkTab();
@@ -16483,6 +16228,7 @@
     const select = document.getElementById('benchmarkPresetSelect');
     if (select) {
       select.addEventListener('change', () => {
+        benchmarkState.userPickedTarget = true;
         const val = select.value;
         const searched = (benchmarkState.searchedTargets || []).find(s => s.id === val);
         if (searched) {
@@ -16517,7 +16263,10 @@
       const doSearch = () => {
         const val = searchInput.value.trim();
         const reg = searchRegion ? searchRegion.value : 'AUTO';
-        if (val) searchAndCompareBibleProfile(val, reg);
+        if (val) {
+          benchmarkState.userPickedTarget = true;
+          searchAndCompareBibleProfile(val, reg);
+        }
       };
       searchBtn.addEventListener('click', doSearch);
       searchInput.addEventListener('keydown', (e) => {
@@ -16571,13 +16320,11 @@
 
     const savedRoster = getUserRoster();
     if (savedRoster && savedRoster.length > 0) {
-      activeRosterMode = 'custom';
+      hideNoCharacterState();
       renderPresetsBar();
       loadCharacter(savedRoster[0]);
     } else {
-      activeRosterMode = 'demo';
-      renderPresetsBar();
-      loadCharacter(DEFAULT_DEMO_ROSTER[0]); // Paladin (Exemple) en Démo
+      showNoCharacterState();
     }
 
     renderSavedRosterManager();
@@ -16634,9 +16381,6 @@
   window.__extractPlayerSystems = extractPlayerSystems;
   window.__parseBibleCharacter = parseBibleCharacter;
   window.__getArkGridStatus = getArkGridStatus;
-  window.__DEFAULT_DEMO_ROSTER = typeof DEFAULT_DEMO_ROSTER !== 'undefined' ? DEFAULT_DEMO_ROSTER : (window.DEFAULT_DEMO_ROSTER || []);
-  window.__NEVERCRY_PRESET_ROSTER = typeof NEVERCRY_PRESET_ROSTER !== 'undefined' ? NEVERCRY_PRESET_ROSTER : (window.NEVERCRY_PRESET_ROSTER || []);
-  window.__restoreNevercryRoster = restoreNevercryRoster;
   window.__showToast = showToast;
   window.__BENCHMARK_DATABASE = typeof BENCHMARK_DATABASE !== 'undefined' ? BENCHMARK_DATABASE : {};
   window.__fetchBibleProfile = fetchBibleProfile;
@@ -16654,10 +16398,7 @@
   window.__fetchLiveBibleBenchmark = fetchLiveBibleBenchmark;
   window.__benchmarkState = typeof benchmarkState !== 'undefined' ? benchmarkState : {};
   window.__getAvailableBenchmarks = getAvailableBenchmarks;
-  window.__generateDynamicBenchmark = generateDynamicBenchmark;
   window.__findOptimalBenchmark = findOptimalBenchmark;
-  window.__getSuggestedLivePeerForClass = getSuggestedLivePeerForClass;
-  window.__VERIFIED_LIVE_PEERS = typeof VERIFIED_LIVE_PEERS !== 'undefined' ? VERIFIED_LIVE_PEERS : (window.VERIFIED_LIVE_PEERS || {});
   window.__extractCharacterEngravings = extractCharacterEngravings;
   window.__buildEngravingsBreakdownHtml = buildEngravingsBreakdownHtml;
   window.__buildBaseAtkBreakdownHtml = buildBaseAtkBreakdownHtml;

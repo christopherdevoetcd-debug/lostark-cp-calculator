@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=22.2">
+  <link rel="stylesheet" href="style.css?v=23.0">
 </head>
 <body>
   <div class="app-container">
@@ -63,9 +63,6 @@
           </button>
           <button type="button" class="btn-action-pill" id="btnManageRoster" title="Gérer ou actualiser vos personnages" style="display: none;">
             Gérer (<span id="rosterCountTag">0</span>)
-          </button>
-          <button type="button" class="btn-action-pill" id="btnSwitchDemoRoster" title="Basculer vers le Roster Démo" style="display: none;">
-            <span data-i18n="btn_switch_demo">↺ Roster Démo</span>
           </button>
         </div>
       </div>
@@ -2315,6 +2312,8 @@
               </div>
             </div>
             <div id="benchLoadingStatus" class="bench-status-msg" style="display: none;"></div>
+            <!-- Profils proposés : vrais joueurs de la même classe, CP légèrement supérieur (data/live-peers.json + fiches en direct) -->
+            <div id="benchSuggestedPeers" class="bench-suggested-peers" aria-live="polite"></div>
           </div>
 
           <!-- Carte Hero : Face à Face & Delta CP -->
@@ -2709,28 +2708,17 @@
 
         <div class="modal-status" id="welcomeStatus" style="display: none; margin-top: 12px;"></div>
 
-        <div style="display: flex; align-items: center; gap: 10px; margin: 18px 0 14px;">
-          <div style="flex: 1; height: 1px; background: rgba(232, 230, 220,0.08);"></div>
-          <span style="font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="welcome_or_label">ou découvrez l'outil</span>
-          <div style="flex: 1; height: 1px; background: rgba(232, 230, 220,0.08);"></div>
-        </div>
-
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" class="btn-secondary" id="btnWelcomeDemo" style="flex: 1; justify-content: center; padding: 9px; font-size: 13px;">
-            <span data-i18n="welcome_btn_demo">Explorer en mode Démo</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>
 
   <script src="i18n.js?v=8.5"></script>
-  <script src="data.js?v=1.2"></script>
+  <script src="data.js?v=2.1"></script>
   <script src="bracelet-data.js?v=1.0"></script>
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=44.5"></script>
+  <script src="calculator.js?v=47.1"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>

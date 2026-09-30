@@ -15,7 +15,7 @@ Elle s'appuie sur la calibration réelle des courbes de `lostark.bible` et les m
 | Fichier | Rôle & Contenu |
 |---|---|
 | `calculator.js` | **Cœur de l'application (~17k lignes)** : Moteur de calcul CP, affinage (honing), simulateur Ark Passive, diagnostic des bracelets, algorithme GPD (Gold Per Damage / Buff), gestion du Roster local, parsing des données JSON `lostark.bible`, exports globaux `window.__*`. |
-| `data.js` | Constantes de jeu, coûts d'affinage T4 (`HONING_COSTS`), XP, bonus des cœurs d'Ark Grid (`getArkGridCoreBonus`), rosters par défaut (`DEFAULT_DEMO_ROSTER`, `NEVERCRY_PRESET_ROSTER`). |
+| `data.js` | Constantes de jeu, coûts d'affinage T4 (`HONING_COSTS`), XP, bonus des cœurs d'Ark Grid (`getArkGridCoreBonus`), dictionnaires du jeu (spés, gravures, stats). Aucune donnée de démo. |
 | `bracelet-model.js` | Modèle mathématique complet de simulation des lignes de bracelet T4 (effets uniques, rolls fixes et combinatoires). |
 | `bracelet-data.js` | Dictionnaire des stats, affixes et tiers de bracelets T4. |
 | `subrank.js` | Système de notation Loseii (grades S+, S, S-, A+, A, A-, B+, B, B-, C+, C, C-, D et percentiles). |
@@ -76,7 +76,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    - `calculator.js?v=X.Y`
 2. **Synchroniser sur le conteneur Docker local (CT 104)** :
    ```bash
-   scp *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/ && ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-cp nginx -s reload"
+   scp *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/ && scp data/*.json root@192.168.1.104:/opt/lostark-cp/public/data/ && ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-cp nginx -s reload"
    ```
 3. **Pousser sur Git (main et master)** :
    ```bash
@@ -86,3 +86,9 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    ```bash
    mkdir -p tmp_deploy && cp *.js *.html *.css tmp_deploy/ && cp -r images data tmp_deploy/ && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && npx -y wrangler pages deploy tmp_deploy --project-name lostark-cp --commit-dirty=true --branch master && rm -rf tmp_deploy
    ```
+
+### Réservoir de joueurs réels (Benchmark)
+- `data/live-peers.json` liste de vrais joueurs par classe, rôle et iLvl, tirés des classements de raid de `lostark.bible` (Armoche, Kazeros, Serca, Cathédrale). Seuls les noms en viennent : CP et iLvl sont toujours rechargés en direct.
+- Le reconstituer (≈2 min, ~1 fois par semaine) : `node tools/harvest-live-peers.mjs`, puis redéployer.
+- Aucune donnée de démo ni règle par pseudo : l'application ne manipule que des personnages importés. Rôle des classes support : support par défaut, DPS seulement si les gravures l'indiquent (`roleFromEngravings`).
+
