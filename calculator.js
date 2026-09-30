@@ -1404,19 +1404,22 @@
    * Gain DPS (%) d'un ensemble de changements de pièces sur le personnage réel (modèle loseii / bebkok) :
    * PA de base = √(puissance d'arme × stat principale / 6), les dégâts suivent la PA, donc
    * gain = 50 × ln(1 + Δpuissance d'arme / total) + 50 × ln(1 + Δstat principale / total).
-   * changes : [{ slot, isSerka, lvl, adv, toLvl, toAdv }]. Les écarts viennent de la table itemLevel (Maxroll).
+   * changes : [{ slot, isSerka, lvl, adv, toLvl, toAdv, toIsSerka? }]. Les écarts viennent de la table itemLevel (Maxroll).
    * Renvoie { gain, dWp, dMs } ou null si une donnée manque : l'appelant garde son estimation.
    */
   function gearDpsGain(ctx, changes) {
     if (!ctx) return null;
     let dWp = 0, dMs = 0;
     for (const c of changes) {
+      // toIsSerka : pièce d'arrivée sur une autre piste (ex. Aegir du joueur contre Serka de la référence)
+      const toSerka = c.toIsSerka !== undefined ? !!c.toIsSerka : !!c.isSerka;
       const tr = honingT4.tracks[c.isSerka ? 'serka' : 'aegir'];
-      if (!tr || !tr.stats || !(c.lvl >= 0 && c.toLvl <= 25)) return null;
+      const trTo = honingT4.tracks[toSerka ? 'serka' : 'aegir'];
+      if (!tr || !tr.stats || !trTo || !trTo.stats || !(c.lvl >= 0 && c.toLvl >= 0 && c.toLvl <= 25)) return null;
       // Serka : l'affinage avancé ne change pas l'iLvl, ni donc les stats de base
-      const adv = c.isSerka ? 0 : c.adv, toAdv = c.isSerka ? 0 : c.toAdv;
+      const adv = c.isSerka ? 0 : c.adv, toAdv = toSerka ? 0 : c.toAdv;
       const from = gearPieceStat(tr, c.slot, c.lvl, adv);
-      const to = gearPieceStat(tr, c.slot, c.toLvl, toAdv);
+      const to = gearPieceStat(trTo, c.slot, c.toLvl, toAdv);
       if (from === null || to === null) return null;
       if (c.slot === 'weapon') dWp += (to - from) * ctx.wpAmp;
       else dMs += to - from;
@@ -1466,15 +1469,16 @@
     return levels.every(l => l) ? levels : null;
   }
 
-  // Gemmes du profil avec leur effet de compétence : dégâts (type 5) ou recharge (type 27), en %
+  // Gemmes du profil avec leur effet de compétence, en % : dégâts (type 5) ou recharge (type 27).
+  // Types 34 et 35 (effets 170 0xx, lus sur des profils lostark.bible) : mêmes valeurs que 5 et 27 (40 % / 22 % au niv. 9)
   function realGems(charObj) {
     const raw = (charObj && charObj.rawProfile) || {};
     const gems = (raw.loadout && raw.loadout.gems) || [];
     const out = gems.map(g => {
       const ap = (g.effects || []).find(e => e.type === 2 && e.id === 150);
-      const sk = (g.effects || []).find(e => e.type === 5 || e.type === 27);
+      const sk = (g.effects || []).find(e => [5, 34, 27, 35].includes(e.type));
       const level = ap ? GEM_AP_BY_VALUE[ap.value] : undefined;
-      return level && sk ? { level, kind: sk.type === 5 ? 'dmg' : 'cd', pct: sk.value / 100 } : null;
+      return level && sk ? { level, kind: sk.type === 27 || sk.type === 35 ? 'cd' : 'dmg', pct: sk.value / 100 } : null;
     });
     return out.length && out.every(Boolean) ? out : null;
   }
@@ -1485,34 +1489,40 @@
   const GEM_STEP = { dmg: 4, cd: 2 };
 
   /**
-   * Gain DPS (%) d'une montée de gemmes : toutes les gemmes au niveau `lvl` passent à lvl + 1.
+   * Gain DPS (%) quand les gemmes du profil passent aux niveaux `toLevels` (même ordre que realGems).
    * Trois effets, d'après les vraies gemmes du profil :
    *  - dégâts : moyenne des (1 + dégâts) des gemmes de dégâts (chaque compétence gemmée porte une part égale des dégâts) ;
    *  - recharge : les compétences sont lancées plus souvent, moyenne des 1 / (1 − recharge), sur 70 % des dégâts ;
    *  - PA de base : % de PA de chaque gemme, sur le multiplicateur de PA réel du Battle Point.
-   * Renvoie 100 × ln(produit), même échelle que l'affinage. null si le profil manque de données.
+   * Renvoie 100 × ln(produit), même échelle que l'affinage (négatif si des gemmes baissent). null si le profil manque de données.
    */
-  function dpsGemUpgradeGain(charObj, lvl) {
+  function dpsGemSetGain(charObj, toLevels) {
     const gems = realGems(charObj);
-    if (!gems || !(GEM_AP_PCT[lvl + 1] > 0)) return null;
-    const up = g => g.level === lvl;
-    const n = gems.filter(up).length;
-    if (!n) return null;
-    const dmg = gems.filter(g => g.kind === 'dmg');
-    const cd = gems.filter(g => g.kind === 'cd');
-    const mean = (arr, f) => arr.reduce((sum, g) => sum + f(g), 0) / arr.length;
+    if (!gems || !toLevels || toLevels.length !== gems.length || toLevels.some(l => !(GEM_AP_PCT[l] > 0))) return null;
+    const rows = gems.map((g, i) => ({ g, steps: toLevels[i] - g.level }));
+    const dmg = rows.filter(r => r.g.kind === 'dmg');
+    const cd = rows.filter(r => r.g.kind === 'cd');
+    const mean = (arr, f) => arr.reduce((sum, r) => sum + f(r), 0) / arr.length;
     let mult = 1;
-    if (dmg.length) mult *= mean(dmg, g => 1 + (g.pct + (up(g) ? GEM_STEP.dmg : 0)) / 100) / mean(dmg, g => 1 + g.pct / 100);
+    if (dmg.length) mult *= mean(dmg, r => 1 + (r.g.pct + r.steps * GEM_STEP.dmg) / 100) / mean(dmg, r => 1 + r.g.pct / 100);
     if (cd.length) {
-      const casts = mean(cd, g => 1 / (1 - (g.pct + (up(g) ? GEM_STEP.cd : 0)) / 100)) / mean(cd, g => 1 / (1 - g.pct / 100));
+      const casts = mean(cd, r => 1 / (1 - (r.g.pct + r.steps * GEM_STEP.cd) / 100)) / mean(cd, r => 1 / (1 - r.g.pct / 100));
       mult *= 1 + GEM_CD_DAMAGE_SHARE * (casts - 1);
     }
     const raw = (charObj && charObj.rawProfile) || {};
     const lo = raw.loadout || {};
     const parts = (lo.battlePoint && lo.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
     const apPool = ((parts.find(p => p.type === 1) || {}).attackPowerMultiplier || 0) / 100;
-    mult *= (1 + apPool + n * (GEM_AP_PCT[lvl + 1] - GEM_AP_PCT[lvl]) / 100) / (1 + apPool);
+    const dAp = rows.reduce((sum, r) => sum + GEM_AP_PCT[r.g.level + r.steps] - GEM_AP_PCT[r.g.level], 0);
+    mult *= (1 + apPool + dAp / 100) / (1 + apPool);
     return 100 * Math.log(mult);
+  }
+
+  // Gain DPS (%) d'une montée de gemmes : toutes les gemmes au niveau `lvl` passent à lvl + 1
+  function dpsGemUpgradeGain(charObj, lvl) {
+    const gems = realGems(charObj);
+    if (!gems || !gems.some(g => g.level === lvl)) return null;
+    return dpsGemSetGain(charObj, gems.map(g => (g.level === lvl ? lvl + 1 : g.level)));
   }
 
   // Célérité nécessaire, à ce niveau moyen de gemmes, pour garder les recharges du set niv. 10
@@ -1575,18 +1585,25 @@
   }
 
   /**
-   * Gains de buff d'une montée de gemmes : les `n` gemmes au niveau `lvl` passent à lvl + 1.
-   * Buffs du set (+n/11 de point), PA de base réelle par gemme, recharge convertie en Spécialisation.
+   * Gain de buff quand les gemmes du profil passent aux niveaux `toLevels` (même ordre que realGemLevels).
+   * Buffs du set (niveau moyen), PA de base réelle par gemme, recharge convertie en Spécialisation.
    * null si le profil manque de données.
    */
-  function supportGemUpgradeGain(charObj, lvl, n) {
+  function supportGemSetGain(charObj, toLevels) {
     const ctx = gearStatContext(charObj);
     const inp = supportInputs(charObj);
-    if (!ctx || !inp.gems || !(GEM_AP_PCT[lvl + 1] > 0)) return null;
-    const after = inp.gemAvg + n / inp.gems.length;
-    const apAfter = inp.apPct + n * (GEM_AP_PCT[lvl + 1] - GEM_AP_PCT[lvl]) / 100;
+    if (!ctx || !inp.gems || !toLevels || toLevels.length !== inp.gems.length || toLevels.some(l => !(GEM_AP_PCT[l] > 0))) return null;
+    const after = toLevels.reduce((a, b) => a + b, 0) / toLevels.length;
+    const apAfter = inp.apPct + inp.gems.reduce((sum, l, i) => sum + GEM_AP_PCT[toLevels[i]] - GEM_AP_PCT[l], 0) / 100;
     return 100 * Math.log(supportContribution(inp, ctx.wp, ctx.ms, after, apAfter) /
       supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct));
+  }
+
+  // Gains de buff d'une montée de gemmes : les gemmes au niveau `lvl` passent à lvl + 1
+  function supportGemUpgradeGain(charObj, lvl) {
+    const gems = realGemLevels(charObj);
+    if (!gems || !gems.includes(lvl)) return null;
+    return supportGemSetGain(charObj, gems.map(l => (l === lvl ? lvl + 1 : l)));
   }
 
   // Gain d'un changement de pièces selon le rôle : dégâts personnels (DPS) ou buff donné aux alliés (support)
@@ -3722,7 +3739,7 @@
       [6, 7, 8, 9].forEach(lvl => {
         const n = counts[lvl];
         if (!n) return;
-        const gain = isSupport ? supportGemUpgradeGain(charObj, lvl, n) : dpsGemUpgradeGain(charObj, lvl);
+        const gain = isSupport ? supportGemUpgradeGain(charObj, lvl) : dpsGemUpgradeGain(charObj, lvl);
         if (gain === null) return;
         pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
           isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
@@ -11902,21 +11919,290 @@
     return base * ((1 + (tPct || 0) / 100) / (1 + (pPct || 0) / 100) - 1);
   }
 
+  // --- Benchmark aligné sur le GPD : chaque écart achetable est chiffré par les fonctions de gain du GPD ---
+  // Gains dans l'unité du GPD (% de dégâts du DPS, ou % de dégâts de chaque allié pour un support),
+  // toujours évalués sur le profil réel du joueur : « ce que rapporterait d'avoir l'état de la référence ».
+  // net > 0 : la référence est devant ; net < 0 : le joueur est devant.
+  // buy / cost : la partie achetable du retard (ce que le plan d'achat propose) et son prix, comme les lignes du GPD.
+
+  // Appariement des gemmes : même type d'effet d'abord, meilleures gemmes face aux meilleures ;
+  // pick(joueur, référence) choisit le niveau retenu (max : rattraper la référence sans rien perdre)
+  function pairGemLevels(pGems, tGems, pick) {
+    const out = pGems.map(g => g.level);
+    const freeP = [], freeT = [];
+    const byLevel = (a, b) => b.level - a.level;
+    ['dmg', 'cd', 'any'].forEach(kind => {
+      const ps = pGems.map((g, i) => ({ i, level: g.level, kind: g.kind || 'any' })).filter(g => g.kind === kind).sort(byLevel);
+      const ts = tGems.map(g => ({ level: g.level, kind: g.kind || 'any' })).filter(g => g.kind === kind).sort(byLevel);
+      const n = Math.min(ps.length, ts.length);
+      for (let k = 0; k < n; k++) out[ps[k].i] = pick(ps[k].level, ts[k].level);
+      freeP.push(...ps.slice(n));
+      freeT.push(...ts.slice(n));
+    });
+    freeP.sort(byLevel);
+    freeT.sort(byLevel);
+    for (let k = 0; k < Math.min(freeP.length, freeT.length); k++) out[freeP[k].i] = pick(freeP[k].level, freeT[k].level);
+    return out;
+  }
+
+  function benchGemGains(player, target, isSupport) {
+    const gemsOf = c => {
+      if (!isSupport) return realGems(c);
+      const levels = realGemLevels(c);
+      return levels ? levels.map(level => ({ level })) : null;
+    };
+    const pGems = gemsOf(player), tGems = gemsOf(target);
+    if (!pGems || !tGems) return null;
+    const setGain = levels => (isSupport ? supportGemSetGain(player, levels) : dpsGemSetGain(player, levels));
+    const up = pairGemLevels(pGems, tGems, Math.max);
+    const both = pairGemLevels(pGems, tGems, (p, t) => t);
+    const buy = setGain(up), net = setGain(both);
+    if (buy === null || net === null) return null;
+    // Coût : chaque gemme relevée, niveau par niveau (mêmes coûts unitaires que le GPD)
+    let cost = 0;
+    pGems.forEach((g, i) => { for (let l = g.level; l < up[i]; l++) cost += GEM_UPGRADE_COST[l] || 0; });
+    return { net, buy, cost };
+  }
+
+  // Coût d'affinage d'une pièce jusqu'au niveau de la référence : recette de sa piste au niveau affiché ;
+  // Aegir contre Serka : estimation Aegir sur les niveaux effectifs (+9 pour le Serka), comme avant
+  function benchHoningPieceCost(slot, p, t) {
+    const piece = slot === 'weapon' ? 'weapon' : 'armor';
+    const sameTrack = honingT4 && p.isSerka === t.isSerka;
+    const from = sameTrack ? p.lvl : p.lvl + (p.isSerka ? 9 : 0);
+    const to = Math.min(25, sameTrack ? t.lvl : t.lvl + (t.isSerka ? 9 : 0));
+    const track = sameTrack && p.isSerka ? 'serka' : 'aegir';
+    let total = 0;
+    for (let l = Math.floor(from); l < to; l++) total += getLevelCost(piece, l, track).totalValue;
+    return total;
+  }
+
+  // Affinage (arme, armures) et affinage avancé : gearDpsGain / supportApGain sur la table itemLevel, pièce par pièce
+  function benchGearGains(player, target, pSys, tSys, isSupport) {
+    const ctx = gearStatContext(player);
+    const tg = (target && (target.gear || (target.rawProfile && target.rawProfile.gear))) || null;
+    if (!ctx || !tg) return null;
+    const slots = ['weapon', ...GEAR_ARMOR_SLOTS];
+    const pieceOf = (c, g, sys, sl) => ({
+      isSerka: !!(sl === 'weapon' ? sys.weapon && sys.weapon.isSerka : sys.armors && sys.armors.isSerka),
+      lvl: g[sl],
+      adv: gearAdvOf(c, g, sl)
+    });
+    const P = {}, T = {};
+    for (const sl of slots) {
+      P[sl] = pieceOf(player, ctx.gear, pSys, sl);
+      T[sl] = pieceOf(target, tg, tSys, sl);
+      if (!(P[sl].lvl >= 0) || !(T[sl].lvl >= 0)) return null;
+    }
+    const change = (sl, to) => ({ slot: sl, isSerka: P[sl].isSerka, lvl: P[sl].lvl, adv: P[sl].adv, toIsSerka: to.isSerka, toLvl: to.lvl, toAdv: to.adv });
+    const gain = list => (list.length ? gearRoleGain(player, ctx, list, isSupport) : 0);
+    // Rang d'une pièce : piste d'abord (Serka au-dessus de l'Aegir), puis niveau affiché
+    const rank = x => (x.isSerka ? 100 : 0) + x.lvl;
+    const honingOf = group => {
+      const toT = group.map(sl => change(sl, { isSerka: T[sl].isSerka, lvl: T[sl].lvl, adv: P[sl].adv }));
+      const behind = group.filter(sl => rank(T[sl]) > rank(P[sl]));
+      const net = gain(toT);
+      const buy = gain(behind.map(sl => change(sl, { isSerka: T[sl].isSerka, lvl: T[sl].lvl, adv: P[sl].adv })));
+      if (net === null || buy === null) return null;
+      const cost = behind.reduce((sum, sl) => sum + benchHoningPieceCost(sl, P[sl], T[sl]), 0);
+      return { net, buy, cost };
+    };
+    const weapon = honingOf(['weapon']);
+    const armors = honingOf(GEAR_ARMOR_SLOTS);
+    if (!weapon || !armors) return { weapon, armors, advHoning: null };
+    // Affinage avancé : niveaux avancés de la référence sur les pièces du joueur
+    // (Aegir des deux côtés seulement : sur le Serka il ne change aucune stat)
+    const advSlots = slots.filter(sl => !P[sl].isSerka && !T[sl].isSerka && T[sl].adv !== P[sl].adv);
+    const toAdv = sl => change(sl, { isSerka: P[sl].isSerka, lvl: P[sl].lvl, adv: T[sl].adv });
+    const advBehind = advSlots.filter(sl => T[sl].adv > P[sl].adv);
+    const advNet = gain(advSlots.map(toAdv));
+    const advBuy = gain(advBehind.map(toAdv));
+    const advCost = advBehind.reduce((sum, sl) => sum + advHoningCostBetween(sl, P[sl].adv, T[sl].adv).totalValue, 0);
+    const advHoning = advNet === null || advBuy === null ? null : { net: advNet, buy: advBuy, cost: advCost };
+    return { weapon, armors, advHoning };
+  }
+
+  // Battle Point DPS d'un cœur (table du jeu) ; palier que son rang n'atteint pas : dernier palier chiffré. null hors table
+  function benchCoreBp(core, points) {
+    const tbl = arkGridBp && core && arkGridBp.dps[core.id];
+    if (!tbl) return null;
+    let v = 0;
+    arkGridBp.steps.forEach((st, i) => { if (points >= st && tbl[i] !== null && tbl[i] !== undefined) v = tbl[i]; });
+    return v;
+  }
+
+  // Gain signé d'un cœur qui passe de `from` à `to` points, par la même règle que la ligne cœur du GPD
+  function benchCoreGain(charObj, key, core, from, to, isSupport) {
+    if (from === to) return 0;
+    const def = ARK_CORE_DEFS.find(d => d.key === key);
+    if (core && core.id.toString().startsWith(WEAPON_CORE_PREFIX)) {
+      // Rang 4 : plafonné à 14 points
+      const cap = p => (Number(core.id.toString().slice(-1)) < 5 ? Math.min(p, 16) : p);
+      const g = weaponCoreGain(charObj, { id: core.id, points: cap(from) }, cap(to), isSupport);
+      return g === null ? 0 : g;
+    }
+    if (isSupport) {
+      const m = SUPPORT_CORE_STEPS[key];
+      const val = p => (p >= 14 ? m.t14 : 0) + (p >= 17 ? m.t17 : 0);
+      return val(to) - val(from);
+    }
+    const bpFrom = benchCoreBp(core, from), bpTo = benchCoreBp(core, to);
+    if (bpFrom !== null) return 100 * Math.log((1 + bpTo / 1e4) / (1 + bpFrom / 1e4));
+    const pct = p => (p >= 10 ? getArkGridCoreBonus(def.prefix, p, isSupport, false) : 0);
+    return ((1 + pct(to) / 100) / (1 + pct(from) / 100) - 1) * 100;
+  }
+
+  // Cœurs de la Grille d'Ark par groupe (Ordre + Chaos) : points du joueur contre points de la référence,
+  // sur le cœur équipé par le joueur (celui de la référence si le joueur n'en a pas)
+  function benchCoreGains(player, target, isSupport) {
+    const pSlots = getArkGridStatus(player).slots || {};
+    const tSlots = getArkGridStatus(target).slots || {};
+    if (!Object.values(pSlots).some(v => v > 0) || !Object.values(tSlots).some(v => v > 0)) return null;
+    const pIds = getArkGridCoreIds(player), tIds = getArkGridCoreIds(target);
+    const group = (orderKey, chaosKey) => [orderKey, chaosKey].reduce((acc, key) => {
+      const from = pSlots[key] || 0, to = tSlots[key] || 0;
+      const core = pIds[key] || tIds[key];
+      const g = benchCoreGain(player, key, core, from, to, isSupport);
+      // DPS : l'écart affiché suit le Battle Point réel des deux cœurs (grade Relique / Ancien compris) ;
+      // le plan d'achat ne garde que les points, sur le cœur du joueur (le grade s'obtient en jeu)
+      const bpP = pIds[key] ? benchCoreBp(pIds[key], from) : 0, bpT = tIds[key] ? benchCoreBp(tIds[key], to) : 0;
+      acc.net += !isSupport && bpP !== null && bpT !== null ? 100 * Math.log((1 + bpT / 1e4) / (1 + bpP / 1e4)) : g;
+      if (to > from && g > 0) { acc.buy += g; acc.cost += (to - from) * ARK_CORE_COST_PER_POINT; }
+      return acc;
+    }, { net: 0, buy: 0, cost: 0 });
+    return {
+      arkGridSun: group('orderSun', 'chaosSun'),
+      arkGridMoon: group('orderMoon', 'chaosMoon'),
+      arkGridStar: group('orderStar', 'chaosStar')
+    };
+  }
+
+  // Prix d'un bijou de la même gamme que celui de la référence (2 lignes principales du rôle)
+  function accessoryPackagePrice(lines, kind, isSupport) {
+    const [m1, m2] = ACC_MAIN_LINES[isSupport ? 'support' : 'dps'][kind];
+    const tierOf = key => {
+      const amt = (lines.find(l => l.key === key) || {}).amount || 0;
+      return ACC_LINE_TIERS[key].reduce((t, v, i) => (amt >= v - 1e-6 ? i : t), -1);
+    };
+    const need = [tierOf(m1), tierOf(m2)].sort((a, b) => b - a);
+    const fits = ACC_PACKAGES.filter(pk => {
+      const has = pk.tiers.slice().sort((a, b) => b - a);
+      return has[0] >= need[0] && has[1] >= need[1] && pk.price[kind] > 0;
+    });
+    return fits.length ? Math.min(...fits.map(pk => pk.price[kind])) : 0;
+  }
+
+  // Bijoux : lignes valorisées avec les pentes Arsonistic (comme la ligne bijou du GPD), bijou par bijou
+  // (les deux boucles et les deux anneaux appariés du meilleur au meilleur)
+  function benchAccessoryGains(player, target, isSupport, isEn) {
+    const pl = evaluateCharacterAccessories(player, isSupport, isEn).slotLines;
+    const tl = evaluateCharacterAccessories(target, isSupport, isEn).slotLines;
+    if (!pl || !tl) return null;
+    const val = lines => computeAccessoryLinesBonus(lines || [], isSupport);
+    const upSet = [], bothSet = [];
+    let cost = 0;
+    [['neck'], ['ear1', 'ear2'], ['finger1', 'finger2']].forEach(group => {
+      const kind = accessoryKind(group[0]);
+      const ps = group.map(s => pl[s] || []).sort((a, b) => val(b) - val(a));
+      const ts = group.map(s => tl[s] || []).sort((a, b) => val(b) - val(a));
+      ps.forEach((lines, k) => {
+        const tLines = ts[k] || [];
+        bothSet.push(...tLines);
+        if (val(tLines) > val(lines) + 1e-9) {
+          upSet.push(...tLines);
+          cost += accessoryPackagePrice(tLines, kind, isSupport);
+        } else upSet.push(...lines);
+      });
+    });
+    const cur = val(ACC_SLOTS.flatMap(s => pl[s] || []));
+    const rel = next => ((1 + val(next) / 100) / (1 + cur / 100) - 1) * 100;
+    return { net: rel(bothSet), buy: rel(upSet), cost };
+  }
+
+  // Livres de gravure reliques (DPS, comme le GPD) : livres manquants pour lire autant que la référence
+  // sur chaque gravure du joueur (jusqu'au niveau 4 si la référence ne la porte pas)
+  function benchRelicBookGains(player, target) {
+    const engrOf = c => {
+      const raw = (c && c.rawProfile) || c || {};
+      return raw.engravings || (raw.loadout && raw.loadout.engravings) || [];
+    };
+    const targetRead = {};
+    engrOf(target).forEach(e => { const r = relicBooksRead(e); if (r !== null) targetRead[e.id] = r; });
+    let mult = 1, cost = 0;
+    engrOf(player).forEach(e => {
+      const read = relicBooksRead(e);
+      if (read === null) return;
+      const key = (BIBLE_ENGRAVINGS[String(e.id)] || '').split(' (')[0].toLowerCase();
+      const eff = window.RELIC_BOOK_EFFECTS && window.RELIC_BOOK_EFFECTS[key];
+      const price = state.marketPrices[relicBookSlug(key)];
+      const goal = e.id in targetRead ? targetRead[e.id] : RELIC_MAX_BOOKS;
+      if (!eff || !(price > 0) || goal <= read) return;
+      const lvl = Math.floor(read / RELIC_BOOKS_PER_LEVEL), goalLvl = Math.floor(goal / RELIC_BOOKS_PER_LEVEL);
+      const g = engravingBonusGain(eff.kind, eff.base, lvl > 0 ? eff.relic[lvl - 1] : 0, goalLvl > 0 ? eff.relic[goalLvl - 1] : 0);
+      mult *= 1 + g / 100;
+      cost += (goal - read) * price;
+    });
+    return { buy: (mult - 1) * 100, cost: Math.round(cost) };
+  }
+
+  /**
+   * Écarts du Benchmark chiffrés comme le GPD, par clé de système (weapon, armors, advHoning, gems,
+   * arkGridSun/Moon/Star, accessories, engravings). Une clé absente garde l'ancien barème bonusPct
+   * (profil sans données détaillées, ou système hors GPD : bracelet, astrogemmes, Ark Passive, Karma…).
+   */
+  function benchmarkGpdGains(player, target, pSys, tSys, isSupport, isEn) {
+    const out = {};
+    const gear = benchGearGains(player, target, pSys, tSys, isSupport);
+    if (gear) ['weapon', 'armors', 'advHoning'].forEach(k => { if (gear[k]) out[k] = gear[k]; });
+    // Qualité d'arme (DPS) : partie type 4 du Battle Point, dans l'écart de l'arme mais hors plan d'achat
+    if (out.weapon && !isSupport) {
+      const qOf = c => {
+        const raw = (c && c.rawProfile) || {};
+        const parts = (raw.loadout && raw.loadout.battlePoint && raw.loadout.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
+        const q = parts.find(p => p.type === 4);
+        return q && q.value > 0 ? q.value : null;
+      };
+      const pq = qOf(player), tq = qOf(target);
+      if (pq !== null && tq !== null) out.weapon.net += 100 * Math.log((1 + tq / 1e4) / (1 + pq / 1e4));
+    }
+    const gems = benchGemGains(player, target, isSupport);
+    if (gems) out.gems = gems;
+    const cores = benchCoreGains(player, target, isSupport);
+    if (cores) Object.assign(out, cores);
+    const acc = benchAccessoryGains(player, target, isSupport, isEn);
+    if (acc) out.accessories = acc;
+    // Gravures : l'écart affiché reste celui du Battle Point (pierre et choix de gravures compris) ;
+    // seuls les livres reliques entrent au plan d'achat, au gain du GPD (pas de ligne livre pour les supports)
+    if (!isSupport) out.engravings = Object.assign({ buyOnly: true }, benchRelicBookGains(player, target));
+    return out;
+  }
+
+  // Conversion d'un gain du GPD en CP : chaque système est un multiplicateur du Battle Point
+  function gpdGainToCp(gain, cp) {
+    const base = cp && cp > 1000 ? cp : 3800;
+    return base * (Math.exp(gain / 100) - 1);
+  }
+
   function computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn) {
     if (!pSys) pSys = extractPlayerSystems(player, isEn);
     if (!tSys) tSys = resolveTargetSystems(target, isEn);
     const isSupport = player.role === 'support';
     const gaps = [];
+    // Écarts achetables chiffrés par les fonctions du GPD (sinon : ancien barème bonusPct)
+    const gpd = benchmarkGpdGains(player, target, pSys, tSys, isSupport, isEn);
+    const unit = isSupport ? 'Buff' : 'DPS';
+    // Même ratio que le GPD : or par 1 % de dégâts (DPS) ou par 0,01 % de buff (support)
+    const ratioUnit = isSupport ? 100 : 1;
+    const ratioLabel = isSupport ? (isEn ? '0.01% Buff' : '0,01 % Buff') : (isEn ? '1% DPS' : '1 % DPS');
 
-    // Cœurs : un point par cœur lu jusqu'à 20
-    // (sans données de cœur pour le groupe : forfait historique de 3 points)
+    // Repli sans données détaillées : cœurs à un point par cœur lu jusqu'à 20 (forfait de 3 points sans cœurs)
     const coreSlots = getArkGridStatus(player).slots || {};
     const coreGroupCost = (orderKey, chaosKey) => {
       const pts = [orderKey, chaosKey].map(k => coreSlots[k] || 0);
       if (pts.every(v => v === 0)) return 3 * ARK_CORE_COST_PER_POINT;
       return pts.filter(v => v > 0 && v < 20).length * ARK_CORE_COST_PER_POINT;
     };
-    // Affinage : coût attendu de chaque palier jusqu'au niveau de la référence (1 palier si inconnu)
+    // Repli affinage : coût attendu de chaque palier jusqu'au niveau de la référence (1 palier si inconnu)
     const honingPathCost = (piece, fromLvl, toLvl, pieces, track = 'aegir') => {
       const from = Math.floor(fromLvl);
       const to = Math.min(25, toLvl !== undefined && Math.floor(toLvl) > from ? Math.floor(toLvl) : from + 1);
@@ -11924,46 +12210,54 @@
       for (let l = from; l < to; l++) total += getLevelCost(piece, l, track).totalValue * pieces;
       return total;
     };
-    // Même équipement des deux côtés et recettes chargées : chemin exact en niveaux affichés.
-    // Sinon (Aegir contre Serka, ou recettes absentes) : estimation Aegir sur les niveaux effectifs.
     const honingGapCost = (piece, p, t, lvlKey, effKey, pieces) => {
       if (honingT4 && !!p.isSerka === !!t.isSerka && p[lvlKey] !== undefined) {
         return honingPathCost(piece, p[lvlKey], t[lvlKey], pieces, p.isSerka ? 'serka' : 'aegir');
       }
       return honingPathCost(piece, p[effKey] !== undefined ? p[effKey] : (p[lvlKey] || 12), t[effKey], pieces);
     };
-    const pWeapon = pSys.weapon || {};
-    const tWeapon = tSys.weapon || {};
-    const pArmors = pSys.armors || {};
-    const tArmors = tSys.armors || {};
 
     const systemMeta = [
-      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderSun', 'chaosSun') },
-      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderMoon', 'chaosMoon') },
-      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderStar', 'chaosStar') },
-      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: 0 }, // obtenues en jeu : écart affiché, hors plan d'achat
-      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: ACC_UPGRADE_COST_AVG },
-      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingGapCost('weapon', pWeapon, tWeapon, 'wLvl', 'effWLvl', 1) },
-      { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '', cost: 125000 },
-      { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: 0 }, // obtenu en jeu : écart affiché, hors plan d'achat
-      { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '', cost: computeGemUpgradeCost(player, target) },
-      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '', cost: honingGapCost('armor', pArmors, tArmors, 'avgArmor', 'effAvgArmor', 5) },
+      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", cost: () => coreGroupCost('orderSun', 'chaosSun') },
+      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", cost: () => coreGroupCost('orderMoon', 'chaosMoon') },
+      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", cost: () => coreGroupCost('orderStar', 'chaosStar') },
+      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", cost: () => 0 }, // obtenues en jeu : écart affiché, hors plan d'achat
+      { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", cost: () => ACC_UPGRADE_COST_AVG },
+      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", cost: () => honingGapCost('weapon', pSys.weapon || {}, tSys.weapon || {}, 'wLvl', 'effWLvl', 1) },
+      { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", cost: () => 125000 },
+      { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", cost: () => 0 }, // obtenu en jeu : écart affiché, hors plan d'achat
+      { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", cost: () => computeGemUpgradeCost(player, target) },
+      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", cost: () => honingGapCost('armor', pSys.armors || {}, tSys.armors || {}, 'avgArmor', 'effAvgArmor', 5) },
       // Stat principale et stats de combat découlent de l'équipement (bijoux, bracelet, affinage), déjà comptés
       // sur leurs propres lignes : coût 0 = affichées au diagnostic mais exclues du plan d'action.
-      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 0 },
-      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '', cost: relicBooksCostToTarget(player, target) }, // livres au prix du marché ; la pierre vient du jeu
-      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '', cost: 0 },
-      { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '', cost: 0 }, // points obtenus en jeu : écart affiché, hors plan d'achat
-      { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '', cost: 0 },
-      { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '', cost: 0 },
-      { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '', cost: 0 } // obtenu en jeu
+      { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", cost: () => 0 },
+      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", cost: () => relicBooksCostToTarget(player, target) }, // livres au prix du marché ; la pierre vient du jeu
+      { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", cost: () => 0 },
+      { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", cost: () => 0 }, // points obtenus en jeu : écart affiché, hors plan d'achat
+      { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", cost: () => 0 },
+      { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", cost: () => 0 },
+      { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", cost: () => 0 } // obtenu en jeu
     ];
+    const rows = {};
 
     systemMeta.forEach(m => {
       const p = pSys[m.key] || { bonusPct: 0, label: '' };
       const t = tSys[m.key] || { bonusPct: 0, label: '' };
-      const delta = isEstimatedPair(p, t) ? 0 : Number((t.bonusPct - p.bonusPct).toFixed(2));
-      const gapCp = delta === 0 ? 0 : systemGapCp(p.bonusPct, t.bonusPct, player.cp);
+      const estimated = isEstimatedPair(p, t);
+      const g = gpd[m.key];
+      // Écart de la ligne : gain du GPD (unité du GPD), sinon écart de bonusPct converti en CP
+      let delta, gapCp, fromGpd = false;
+      if (estimated) {
+        delta = 0; gapCp = 0;
+      } else if (g && !g.buyOnly) {
+        delta = Number(g.net.toFixed(2)); gapCp = gpdGainToCp(g.net, player.cp); fromGpd = true;
+      } else {
+        delta = Number((t.bonusPct - p.bonusPct).toFixed(2)); gapCp = delta === 0 ? 0 : systemGapCp(p.bonusPct, t.bonusPct, player.cp);
+      }
+      // Partie achetable : celle du GPD quand elle existe (seulement ce qui manque, au coût du GPD)
+      const buy = estimated ? 0 : (g ? g.buy : delta);
+      const cost = g ? g.cost : m.cost();
+      rows[m.key] = { delta, gapCp, fromGpd, buy, cost };
 
       let tLabel = t.label || '';
       let pLabel = p.label || '';
@@ -11974,36 +12268,54 @@
         tLabel = formatLostArkFrench(tLabel);
         pLabel = formatLostArkFrench(pLabel);
       }
+      // Partie achetable différente de l'écart total (pièces en avance et en retard) : on l'indique
+      const partText = fromGpd && buy > 0.05 && Math.abs(buy - delta) > 0.05
+        ? (isEn ? `; behind pieces: +${buy.toFixed(2)}% ${unit}` : ` ; pièces en retard : +${buy.toFixed(2)} % ${unit}`)
+        : '';
+      const gapText = fromGpd
+        ? (isEn ? `+${delta}% ${unit}, GPD model${partText}` : `+${delta} % ${unit}, modèle du GPD${partText}`)
+        : (isEn ? `+${delta}% gap` : `écart de +${delta}%`);
 
       if (delta > 0.05) {
         const gainCp = Math.round(gapCp);
         gaps.push({
-          icon: m.icon,
+          icon: '',
           key: m.key,
           title: m.title,
           gainCp: gainCp,
           gainPct: delta,
-          desc: isEn 
-            ? `${tLabel} on benchmark vs ${pLabel} on your character (+${delta}% gap).`
-            : `${tLabel} chez la référence contre ${pLabel} chez vous (écart de +${delta}%).`,
-          cost: m.cost,
-          roi: Math.round(m.cost / Math.max(1, gainCp)),
+          fromGpd,
+          buyFromGpd: !!g,
+          buyPct: buy,
+          desc: isEn
+            ? `${tLabel} on benchmark vs ${pLabel} on your character (${gapText}).`
+            : `${tLabel} chez la référence contre ${pLabel} chez vous (${gapText}).`,
+          cost,
           priority: delta > 1.0 ? 'high' : 'med'
         });
       } else if (delta < -0.15) {
         const gainCp = Math.round(-gapCp);
         gaps.push({
-          icon: m.icon,
+          icon: '',
           key: m.key,
           title: `${m.title} ${isEn ? '(Player Advantage)' : '(Avantage Joueur)'}`,
           gainCp: gainCp,
           gainPct: delta,
+          fromGpd,
           desc: isEn
             ? `Your advantage: ${pLabel} vs ${tLabel} on benchmark (+${gainCp} CP in your favor!).`
             : `Votre avantage : ${pLabel} contre ${tLabel} chez la référence (+${gainCp} CP en votre faveur !).`,
           cost: 0,
-          roi: 0,
           priority: 'player_lead'
+        });
+      }
+      // Gravures : pas d'écart au Battle Point mais des livres reliques qui manquent encore
+      if (g && g.buyOnly && !(delta > 0.05) && g.buy > 0.05 && g.cost > 0) {
+        gaps.push({
+          icon: '', key: m.key, title: m.title, gainCp: Math.round(gpdGainToCp(g.buy, player.cp)), gainPct: Number(g.buy.toFixed(2)),
+          fromGpd: true, buyFromGpd: true, buyPct: g.buy, cost: g.cost, priority: 'med',
+          desc: isEn ? `Relic books still missing to match the reference (+${g.buy.toFixed(2)}% ${unit}, GPD model).`
+            : `Livres reliques qui manquent pour lire autant que la référence (+${g.buy.toFixed(2)} % ${unit}, modèle du GPD).`
         });
       }
     });
@@ -12017,20 +12329,43 @@
       return 0;
     });
 
-    const bothFullRelic = pSys.engravings && tSys.engravings && pSys.engravings.bonusPct >= 95 && tSys.engravings.bonusPct >= 95;
-    const positiveGaps = gaps.filter(g => g.gainCp > 0 && g.cost > 0 && g.priority !== 'player_lead' && (!bothFullRelic || g.key !== 'engravings'));
-    positiveGaps.sort((a, b) => a.roi - b.roi);
+    // Plan d'achat : partie achetable de chaque retard, classée comme le GPD (or par unité de gain).
+    // Un système où le joueur est devant au total peut garder des pièces en retard (ex. 2 armures sur 5) : elles restent au plan.
+    const planGaps = gaps.filter(g => g.priority !== 'player_lead');
+    systemMeta.forEach(m => {
+      const r = rows[m.key];
+      if (!gpd[m.key] || !(r.buy > 0.05) || !(r.cost > 0) || planGaps.some(g => g.key === m.key)) return;
+      planGaps.push({
+        key: m.key, title: m.title, fromGpd: true, buyFromGpd: true, buyPct: r.buy, cost: r.cost,
+        desc: isEn
+          ? `You are ahead on this system overall, but the reference is ahead on part of it (+${r.buy.toFixed(2)}% ${unit} to catch up there, GPD model).`
+          : `Vous êtes devant sur l'ensemble de ce système, mais la référence est devant sur une partie (+${r.buy.toFixed(2)} % ${unit} à rattraper, modèle du GPD).`
+      });
+    });
+    // Système sans données détaillées (ancien barème) : son écart en CP est ramené à la même unité (% du CP)
+    const cpBase = player.cp && player.cp > 1000 ? player.cp : 3800;
+    const planItems = planGaps
+      .filter(g => g.cost > 0 && g.buyPct > 0.01)
+      .map(g => {
+        const pct = g.buyFromGpd ? g.buyPct : 100 * Math.log(1 + systemGapCp(0, g.buyPct, player.cp) / cpBase);
+        return { g, pct, ratio: g.cost / (pct * ratioUnit) };
+      })
+      .sort((a, b) => a.ratio - b.ratio);
 
-    const plan = positiveGaps.slice(0, 5).map((g, idx) => ({
-      step: idx + 1,
-      title: g.title,
-      desc: g.desc,
-      cost: formatNumber(g.cost) + ' g',
-      gain: `+${formatNumber(g.gainCp)} CP`,
-      roi: `${formatNumber(g.roi)} g / CP`
-    }));
+    const plan = planItems.slice(0, 5).map(({ g, pct, ratio }, idx) => {
+      const buyCp = gpdGainToCp(pct, player.cp);
+      const estimate = g.buyFromGpd ? '' : (isEn ? ', estimate' : ', estimation');
+      return {
+        step: idx + 1,
+        title: g.title,
+        desc: g.desc,
+        cost: formatNumber(g.cost) + ' g',
+        gain: `+${pct.toFixed(2)}% ${unit}${isSupport ? '' : ` (+${formatNumber(Math.round(buyCp))} CP${estimate})`}${isSupport && estimate ? ` (${estimate.slice(2)})` : ''}`,
+        roi: `${formatNumber(Math.round(ratio))} g / ${ratioLabel}`
+      };
+    });
 
-    return { gaps, plan };
+    return { gaps, plan, rows };
   }
   // Répertoire de profils LIVE vérifiés en temps réel sur lostark.bible pour l'ensemble des 26 classes du jeu
   // 100% profils réels en direct de lostark.bible, zéro preset statique, zéro profil générique ou synthétique
@@ -14276,10 +14611,13 @@
     };
   }
 
-  function buildWeaponBreakdownHtml(player, target, cpImpact, isEn) {
+  // gpdDelta : écart chiffré comme le GPD (% DPS ou % Buff), remplace l'ancien score multiplicateur
+  function buildWeaponBreakdownHtml(player, target, cpImpact, isEn, gpdDelta) {
     const p = extractCharacterWeaponDetails(player, isEn);
     const t = extractCharacterWeaponDetails(target, isEn);
-    const deltaPct = Number((t.bonusPct - p.bonusPct).toFixed(2));
+    const fromGpd = typeof gpdDelta === 'number';
+    const gpdUnit = player.role === 'support' ? 'Buff' : 'DPS';
+    const deltaPct = fromGpd ? gpdDelta : Number((t.bonusPct - p.bonusPct).toFixed(2));
     const dWp = t.weaponPower - p.weaponPower;
     const dLvl = t.effWLvl - p.effWLvl;
 
@@ -14295,7 +14633,7 @@
               <strong>${isEn ? 'T4 Weapon Honing, Quality & Gear Tier Breakdown' : 'Détail de l\'Affinage de l\'Arme T4, Qualité & Palier d\'Équipement'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(224, 122, 99, 0.15); border-color: rgba(224, 122, 99, 0.35); color: #E07A63;">
-              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${fromGpd ? gpdUnit : (isEn ? 'gap' : 'd\'écart')})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
             </span>
           </div>
           <div class="acc-breakdown-subtitle">
@@ -14335,9 +14673,9 @@
                   ${p.ilvlPiece.toFixed(0)} iLvl Arme
                 </span>
               </div>
-              <span class="acc-piece-gain-pill neutral">
+              ${fromGpd ? '' : `<span class="acc-piece-gain-pill neutral">
                 +${p.bonusPct.toFixed(2)}% Mult.
-              </span>
+              </span>`}
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
@@ -14431,10 +14769,10 @@
                 <td class="col-cp-gain">${(t.qualityVal - p.qualityVal) >= 0 ? `+${(t.qualityVal - p.qualityVal).toFixed(2)}%` : `${(t.qualityVal - p.qualityVal).toFixed(2)}%`}</td>
               </tr>
               <tr>
-                <td><strong>${isEn ? 'Total Weapon System Score' : 'Score Multiplicateur d\'Arme'}</strong></td>
-                <td>+${p.bonusPct.toFixed(2)}%</td>
-                <td><strong style="color:#8CC084;">+${t.bonusPct.toFixed(2)}%</strong></td>
-                <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
+                <td><strong>${fromGpd ? (gpdUnit === 'Buff' ? (isEn ? 'Gap priced like the GPD (honing)' : 'Écart chiffré comme le GPD (affinage)') : (isEn ? 'Gap priced like the GPD (honing + quality)' : 'Écart chiffré comme le GPD (affinage + qualité)')) : (isEn ? 'Total Weapon System Score' : 'Score Multiplicateur d\'Arme')}</strong></td>
+                <td>${fromGpd ? '—' : `+${p.bonusPct.toFixed(2)}%`}</td>
+                <td><strong style="color:#8CC084;">${fromGpd ? '—' : `+${t.bonusPct.toFixed(2)}%`}</strong></td>
+                <td class="col-cp-gain">${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(2)}%${fromGpd ? ` ${gpdUnit}` : ''}</td>
               </tr>
             </tbody>
             <tfoot>
@@ -14496,10 +14834,13 @@
     };
   }
 
-  function buildArmorsBreakdownHtml(player, target, cpImpact, isEn) {
+  // gpdDelta : écart chiffré comme le GPD (% DPS ou % Buff), remplace l'ancien score multiplicateur
+  function buildArmorsBreakdownHtml(player, target, cpImpact, isEn, gpdDelta) {
     const p = extractCharacterArmorsDetails(player, isEn);
     const t = extractCharacterArmorsDetails(target, isEn);
-    const deltaPct = Number((t.bonusPct - p.bonusPct).toFixed(2));
+    const fromGpd = typeof gpdDelta === 'number';
+    const gpdUnit = player.role === 'support' ? 'Buff' : 'DPS';
+    const deltaPct = fromGpd ? gpdDelta : Number((t.bonusPct - p.bonusPct).toFixed(2));
     const dMainStat = t.mainStat - p.mainStat;
     const dLvl = t.effAvgArmor - p.effAvgArmor;
 
@@ -14515,7 +14856,7 @@
               <strong>${isEn ? 'T4 Armors Honing, Main Stat & Gear Tier Breakdown' : 'Détail de l\'Affinage des Armures T4, Stat Principale & Palier d\'Équipement'}</strong>
             </div>
             <span class="acc-breakdown-tag" style="background: rgba(232, 230, 220, 0.15); border-color: rgba(232, 230, 220, 0.35); color: #E0A43A;">
-              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${isEn ? 'gap' : 'd\'écart'})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
+              ${cpImpact > 0 ? `+${cpImpact} CP (+${deltaPct.toFixed(2)}% ${fromGpd ? gpdUnit : (isEn ? 'gap' : 'd\'écart')})` : (isEn ? 'Player Advantage / Parity' : 'Avance Joueur / Parité')}
             </span>
           </div>
           <div class="acc-breakdown-subtitle">
@@ -14555,9 +14896,9 @@
                   ${p.ilvlPiece.toFixed(0)} iLvl Armures
                 </span>
               </div>
-              <span class="acc-piece-gain-pill neutral">
+              ${fromGpd ? '' : `<span class="acc-piece-gain-pill neutral">
                 +${p.bonusPct.toFixed(2)}% Mult.
-              </span>
+              </span>`}
             </div>
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
@@ -14645,10 +14986,10 @@
                 <td class="col-cp-gain"><strong>${dMainStat > 0 ? `+${formatNumber(dMainStat)} pts` : `${formatNumber(dMainStat)} pts`}</strong></td>
               </tr>
               <tr>
-                <td><strong>${isEn ? 'Total Armor System Score' : 'Score Multiplicateur d\'Armure'}</strong></td>
-                <td>+${p.bonusPct.toFixed(2)}%</td>
-                <td><strong style="color:#8CC084;">+${t.bonusPct.toFixed(2)}%</strong></td>
-                <td class="col-cp-gain">+${deltaPct.toFixed(2)}%</td>
+                <td><strong>${fromGpd ? (isEn ? 'Gap priced like the GPD (item level table)' : 'Écart chiffré comme le GPD (table des niveaux d\'objet)') : (isEn ? 'Total Armor System Score' : 'Score Multiplicateur d\'Armure')}</strong></td>
+                <td>${fromGpd ? '—' : `+${p.bonusPct.toFixed(2)}%`}</td>
+                <td><strong style="color:#8CC084;">${fromGpd ? '—' : `+${t.bonusPct.toFixed(2)}%`}</strong></td>
+                <td class="col-cp-gain">${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(2)}%${fromGpd ? ` ${gpdUnit}` : ''}</td>
               </tr>
             </tbody>
             <tfoot>
@@ -16103,7 +16444,7 @@
     const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
     const directCpGap = Math.round((target.cp || 0) - (player.cp || 0));
 
-    const { gaps, plan } = computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn);
+    const { gaps, plan, rows: gpdRows } = computeDynamicGapsAndPlan(player, target, pSys, tSys, isEn);
 
     // 4. Diagnostic des Écarts Prioritaires (Uniquement les leviers de progression ou avantages joueur)
     const gapsGrid = document.getElementById('benchmarkGapsGrid');
@@ -16228,7 +16569,9 @@
         }
         const pItem = { label: pLabel, bonusPct: pRaw.bonusPct };
         const tItem = { label: tLabel, bonusPct: tRaw.bonusPct };
-        const delta = estimatedPair ? 0 : Number((tItem.bonusPct - pItem.bonusPct).toFixed(2));
+        // Systèmes chiffrés comme le GPD : écart = gain du GPD (% DPS ou % Buff), pas de différence de bonusPct
+        const gpdRow = !estimatedPair && gpdRows && gpdRows[cfg.key] && gpdRows[cfg.key].fromGpd ? gpdRows[cfg.key] : null;
+        const delta = estimatedPair ? 0 : (gpdRow ? gpdRow.delta : Number((tItem.bonusPct - pItem.bonusPct).toFixed(2)));
         const isEqual = Math.abs(delta) <= 0.02;
 
         const isAcc = cfg.key === 'accessories';
@@ -16247,14 +16590,15 @@
         const isHiddenInEqual = isEqual && !hasInteractivePanel;
         if (isHiddenInEqual) equalRowsCount++;
 
+        const deltaUnit = gpdRow ? ` ${player.role === 'support' ? 'Buff' : 'DPS'}` : '';
         const deltaStr = delta > 0.01 
-          ? `+${delta.toFixed(2)}%` 
-          : (delta < -0.01 ? `${delta.toFixed(2)}%` : '= 0.00%');
+          ? `+${delta.toFixed(2)}%${deltaUnit}` 
+          : (delta < -0.01 ? `${delta.toFixed(2)}%${deltaUnit}` : '= 0.00%');
         const badgeClass = delta > 0.01 
           ? 'delta-badge-pos' 
           : (delta < -0.01 ? 'delta-badge-neg' : 'delta-badge-neutral');
 
-        const rowGapCp = systemGapCp(pItem.bonusPct, tItem.bonusPct, player.cp);
+        const rowGapCp = gpdRow ? gpdRow.gapCp : systemGapCp(pItem.bonusPct, tItem.bonusPct, player.cp);
         const cpImpact = delta > 0.01 ? Math.round(rowGapCp) : 0;
         const playerLeadCp = delta < -0.01 ? Math.round(-rowGapCp) : 0;
 
@@ -16387,8 +16731,8 @@
             <td class="col-sys">
               ${toggleBtn}<span>${cfg.icon}</span> <strong>${escapeHtml(cfg.name)}</strong>
             </td>
-            <td class="col-player">${escapeHtml(pItem.label)} (${pItem.bonusPct.toFixed(2)}%)</td>
-            <td class="col-target">${escapeHtml(tItem.label)} (${tItem.bonusPct.toFixed(2)}%)</td>
+            <td class="col-player">${escapeHtml(pItem.label)}${gpdRow ? '' : ` (${pItem.bonusPct.toFixed(2)}%)`}</td>
+            <td class="col-target">${escapeHtml(tItem.label)}${gpdRow ? '' : ` (${tItem.bonusPct.toFixed(2)}%)`}</td>
             <td class="col-delta"><span class="${badgeClass}">${deltaStr}</span></td>
             <td class="col-cp" style="font-family:var(--font-mono); font-weight:700; color:${cpImpact > 0 ? '#8CC084' : 'var(--text-muted)'};">
               ${cpDisplay}
@@ -16479,7 +16823,7 @@
             </tr>
           `;
         } else if (isWeapon) {
-          const weaponDetailsHtml = buildWeaponBreakdownHtml(player, target, cpImpact, isEn);
+          const weaponDetailsHtml = buildWeaponBreakdownHtml(player, target, cpImpact, isEn, gpdRow ? gpdRow.delta : undefined);
           rowsHtml += `
             <tr id="rowWeaponDetails" class="row-weapon-details" style="display: none;">
               <td colspan="6">
@@ -16488,7 +16832,7 @@
             </tr>
           `;
         } else if (isArmors) {
-          const armorsDetailsHtml = buildArmorsBreakdownHtml(player, target, cpImpact, isEn);
+          const armorsDetailsHtml = buildArmorsBreakdownHtml(player, target, cpImpact, isEn, gpdRow ? gpdRow.delta : undefined);
           rowsHtml += `
             <tr id="rowArmorsDetails" class="row-armors-details" style="display: none;">
               <td colspan="6">
@@ -17349,6 +17693,8 @@
   };
   window.__renderAdvisorView = renderAdvisorView;
   window.__computeDynamicGapsAndPlan = computeDynamicGapsAndPlan;
+  window.__benchmarkGpdGains = benchmarkGpdGains;
+  window.__getDynamicGpdTable = getDynamicGpdTable;
   window.__buildCpReconciliationHtml = buildCpReconciliationHtml;
   window.__resolveTargetSystems = resolveTargetSystems;
   window.__fetchLiveBibleBenchmark = fetchLiveBibleBenchmark;
