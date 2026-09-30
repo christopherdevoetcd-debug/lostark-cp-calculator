@@ -5,8 +5,18 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_DIR"
 
+# Secrets locaux (jamais versionnés) : .env contient par ex. CLOUDFLARE_API_TOKEN=...
+if [ -f .env ]; then set -a; . ./.env; set +a; fi
+# Le token vient de l'environnement ou de .env, jamais de ce fichier (dépôt public).
+# Vérifié avant tout envoi pour ne pas laisser CT 104 et Cloudflare désynchronisés.
+if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+  echo "Erreur : CLOUDFLARE_API_TOKEN absent. Ajoute-le dans .env (ignoré par Git) ou exporte-le." >&2
+  exit 1
+fi
+
 echo "=== [1/4] Vérification de la syntaxe JS ==="
-node -c calculator.js data.js bracelet-worker.js functions/api/market/prices.js
+# node -c ne vérifie que le premier fichier passé : une commande par fichier
+for f in *.js functions/api/market/prices.js; do node -c "$f"; done
 echo "Syntaxe JS : OK"
 
 echo "=== [2/4] Synchronisation CT 104 (Docker Nginx) ==="
@@ -16,8 +26,6 @@ ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-c
 echo "CT 104 : déployé et Nginx rechargé"
 
 echo "=== [3/4] Déploiement Cloudflare Pages ==="
-# Variables Cloudflare
-export CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:-cfut_hkuPHo1cXzigA8s0Gb3j3YoawTRU4gShlRJtZuAi5a9a580f}"
 export CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-8c75c7e4c291330a382ebdb9afa62dfb}"
 
 # Environnement Node v22 via NVM

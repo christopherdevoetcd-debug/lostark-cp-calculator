@@ -2,5 +2,6 @@ client-agent/
 node_modules/
 *.exe
 .wrangler/
+.env
 package.json
 package-lock.json

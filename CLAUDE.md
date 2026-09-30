@@ -84,6 +84,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    ./deploy.sh
    ```
    *(Ce script autonome vérifie la syntaxe JS, synchronise CT 104 + Nginx, déploie sur Cloudflare Pages via Wrangler et vérifie la mise en ligne)*
+   - Le token Cloudflare est lu dans `.env` (ignoré par Git) ou l'environnement : `CLOUDFLARE_API_TOKEN=...`. Ne jamais l'écrire dans un fichier versionné, le dépôt est public.
 
 ### Réservoir de joueurs réels (Benchmark)
 - `data/live-peers.json` liste de vrais joueurs par classe, rôle et iLvl, tirés des classements de raid de `lostark.bible` (Armoche, Kazeros, Serca, Cathédrale). Seuls les noms en viennent : CP et iLvl sont toujours rechargés en direct.
