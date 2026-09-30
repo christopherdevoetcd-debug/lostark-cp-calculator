@@ -11819,7 +11819,12 @@
 
     const transWeaponLabel = isEn ? "Weapon Transcendence R3 (21 Pts)" : "Transcendance Arme R3 (21 Pts)";
     const transArmorLabel = isEn ? "Armor Transcendence R3 (105 Pts)" : "Transcendance Armures R3 (105 Pts)";
-    const karmaLabel = isEn ? "Karma Evolution Rank 6" : "Karma Évolution Rang 6";
+    // Karma : partie type 8 du Battle Point (3,60 % au rang 6 d'Évolution) ; repli sur le rang 6 sans Battle Point
+    const karmaPart = allBpParts.find(p => p && p.type === 8);
+    const karmaBonusPct = karmaPart && Number.isFinite(karmaPart.value) ? Number((karmaPart.value / 100).toFixed(2)) : 3.60;
+    const karmaLabel = karmaPart
+      ? (isEn ? `Karma Evolution (+${karmaBonusPct.toFixed(2)}%)` : `Karma Évolution (+${karmaBonusPct.toFixed(2)} %)`)
+      : (isEn ? "Karma Evolution Rank 6" : "Karma Évolution Rang 6");
 
     // 8b. Astrogemmes de la Grille d'Ark
     let astroBonusPct = isSupport ? 3.50 : 4.80;
@@ -11829,8 +11834,9 @@
     if (Array.isArray(bpParts) && bpParts.length > 0) {
       const astros = bpParts.filter(p => p.type === 31 || p.type === 32);
       if (astros.length > 0) {
-        const sumVal = astros.reduce((sum, p) => sum + (p.value || 0), 0);
-        astroBonusPct = Number((sumVal / 100).toFixed(2));
+        // Chaque partie est un multiplicateur 1 + v / 10 000 du Battle Point
+        const mult = astros.reduce((m, p) => m * (1 + (p.value || 0) / 1e4), 1);
+        astroBonusPct = Number(((mult - 1) * 100).toFixed(2));
       }
     }
     const astroLabel = isEn
@@ -11946,7 +11952,7 @@
       accessories: { label: accLabel, bonusPct: accBonusPct },
       bracelet: { label: braceletLabel, bonusPct: brBonusPct, fromBattlePoint: hasRealBr },
       gems: { label: gemDesc, bonusPct: gemBonusPct },
-      karma: { label: karmaLabel, bonusPct: 3.60 }
+      karma: { label: karmaLabel, bonusPct: karmaBonusPct }
     };
   }
 
@@ -12468,6 +12474,32 @@
     return out;
   }
 
+  /**
+   * Écart de CP d'un DPS sur les systèmes hors GPD (> 0 : la référence est devant), lu sur les parties du Battle Point :
+   * le CP est le produit des parties (1 + v / 10 000), donc ΔCP = CP × (produit référence ÷ produit joueur − 1).
+   * Remplace l'ancien barème (points d'Ark Passive × constante, Karma fixe, sommes de parties). null sans Battle Point.
+   */
+  const DPS_BP_SYSTEMS = {
+    arkGridAstrogems: [31, 32],
+    bracelet: [19, 20, 21],
+    engravings: [10, 11],
+    combatStats: [26],
+    arkEvolution: [5],
+    arkEnlightenment: [6],
+    arkLeap: [7],
+    karma: [8]
+  };
+  function dpsBpGaps(player, target, cpBase) {
+    const pp = battlePointPartsOf(player), tp = battlePointPartsOf(target);
+    const valid = parts => parts.some(p => p.type === 1 && p.value > 0);
+    if (!valid(pp) || !valid(tp)) return null;
+    const prod = (parts, types) => parts.filter(p => types.includes(p.type))
+      .reduce((m, p) => m * (1 + (Number.isFinite(p.value) ? p.value : 0) / 1e4), 1);
+    const out = {};
+    Object.entries(DPS_BP_SYSTEMS).forEach(([key, types]) => { out[key] = cpBase * (prod(tp, types) / prod(pp, types) - 1); });
+    return out;
+  }
+
   // Conversion d'un gain du GPD en CP : chaque système est un multiplicateur du Battle Point
   function gpdGainToCp(gain, cp) {
     const base = cp && cp > 1000 ? cp : 3800;
@@ -12486,6 +12518,8 @@
     // DPS : la ligne stat principale ne garde que le reste de l'attaque de base (l'affinage et les gemmes ont leur ligne)
     const dpsRest = isSupport ? null : baseAttackRestRatio(player, target, gpd);
     const cpBase = player.cp && player.cp > 1000 ? player.cp : 3800;
+    // DPS : systèmes hors GPD (astrogemmes, bracelet, gravures, stats, Ark Passive, Karma) au Battle Point du jeu
+    const bpCp = isSupport ? supCp : dpsBpGaps(player, target, cpBase);
     const unit = isSupport ? 'Buff' : 'DPS';
     // Même ratio que le GPD : or par 1 % de dégâts (DPS) ou par 0,01 % de buff (support)
     const ratioUnit = isSupport ? 100 : 1;
@@ -12544,7 +12578,7 @@
       // Écart de la ligne : gain du GPD (unité du GPD), sinon écart de bonusPct converti en CP.
       // Support : le CP vient des parties du Battle Point ; l'écart en % reste le buff du GPD, ou la part du CP (unité « CP »)
       let delta, gapCp, fromGpd = false, rowUnit = null;
-      const sCp = supCp && !estimated ? supCp[m.key] : undefined;
+      const sCp = bpCp && !estimated ? bpCp[m.key] : undefined;
       if (estimated) {
         delta = 0; gapCp = 0;
       } else if (g && !g.buyOnly) {
