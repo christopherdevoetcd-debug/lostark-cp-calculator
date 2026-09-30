@@ -1563,24 +1563,32 @@
   }
 
   /**
-   * Livres reliques restants par gravure équipée : de la progression actuelle jusqu'au niveau 4.
-   * lostark.bible : grade engrave_grade05 = relique, `progress` = livres lus dans ce grade (0…20).
-   * Les gravures encore légendaires (engrave_grade04) doivent d'abord finir leurs livres légendaires : ignorées.
+   * Livres reliques déjà lus sur une gravure, d'après lostark.bible (vérifié sur le Battle Point de 100+ gravures) :
+   * - engrave_grade05 : livres reliques terminés (20/20), `progress` vaut toujours 0 ;
+   * - engrave_grade04 : livres légendaires terminés, `progress` = livres reliques lus (0…19).
+   * Autre grade (livres légendaires en cours) : null, ces livres-là n'ont pas de prix marché.
    */
+  function relicBooksRead(e) {
+    if (!e) return null;
+    if (e.grade === 'engrave_grade05') return RELIC_MAX_BOOKS;
+    if (e.grade === 'engrave_grade04') return Math.max(0, Math.min(RELIC_MAX_BOOKS - 1, e.progress || 0));
+    return null;
+  }
+
+  /** Livres reliques restants par gravure équipée : de la progression actuelle jusqu'au niveau 4. */
   function getRelicBookUpgrades(charObj, isSupport) {
     if (isSupport) return [];
     const raw = (charObj && charObj.rawProfile) || charObj || {};
     const list = raw.engravings || (raw.loadout && raw.loadout.engravings) || [];
     const out = [];
     list.forEach(e => {
-      if (!e || e.grade !== 'engrave_grade05') return;
+      const read = relicBooksRead(e);
+      if (read === null || read >= RELIC_MAX_BOOKS) return;
       const label = BIBLE_ENGRAVINGS[String(e.id)] || '';
       const en = label.split(' (')[0];
       const key = en.toLowerCase();
       const eff = window.RELIC_BOOK_EFFECTS && window.RELIC_BOOK_EFFECTS[key];
       if (!eff) return;
-      const read = Math.max(0, Math.min(RELIC_MAX_BOOKS, e.progress || 0));
-      if (read >= RELIC_MAX_BOOKS) return;
       const price = state.marketPrices[relicBookSlug(key)];
       if (!(price > 0)) return;
       const lvl = Math.floor(read / RELIC_BOOKS_PER_LEVEL);
@@ -1597,7 +1605,7 @@
   }
 
   // Benchmark : prix des livres reliques qui manquent au joueur pour lire autant que la référence
-  // sur chacune de ses gravures reliques (jusqu'au niveau 4 si la référence ne l'a pas en relique).
+  // sur chacune de ses gravures (jusqu'au niveau 4 si la référence ne porte pas cette gravure).
   // 0 si aucun livre manquant n'a de prix marché (ex. gravures support) : écart affiché, hors plan d'achat.
   function relicBooksCostToTarget(player, target) {
     const engrOf = c => {
@@ -1606,16 +1614,18 @@
     };
     const targetRead = {};
     engrOf(target).forEach(e => {
-      if (e && e.grade === 'engrave_grade05') targetRead[e.id] = Math.min(RELIC_MAX_BOOKS, e.progress || 0);
+      const read = relicBooksRead(e);
+      if (read !== null) targetRead[e.id] = read;
     });
     let total = 0;
     engrOf(player).forEach(e => {
-      if (!e || e.grade !== 'engrave_grade05') return;
+      const read = relicBooksRead(e);
+      if (read === null) return;
       const label = BIBLE_ENGRAVINGS[String(e.id)] || '';
       const price = state.marketPrices[relicBookSlug(label.split(' (')[0].toLowerCase())];
       if (!(price > 0)) return;
       const goal = e.id in targetRead ? targetRead[e.id] : RELIC_MAX_BOOKS;
-      total += Math.max(0, goal - Math.min(RELIC_MAX_BOOKS, e.progress || 0)) * price;
+      total += Math.max(0, goal - read) * price;
     });
     return Math.round(total);
   }
