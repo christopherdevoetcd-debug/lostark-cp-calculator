@@ -753,6 +753,7 @@
     charCardGearPill: document.getElementById('charCardGearPill'),
     charCardStonePill: document.getElementById('charCardStonePill'),
     charCardKarmaPill: document.getElementById('charCardKarmaPill'),
+    charCardMixedPill: document.getElementById('charCardMixedPill'),
     charImageUploadInput: document.getElementById('charImageUploadInput'),
     btnResetAvatar: document.getElementById('btnResetAvatar'),
 
@@ -1440,6 +1441,19 @@
     const prob = V(N, 0, N, 0, N, 5);
     stoneSuccessCache.set(cacheKey, prob);
     return prob;
+  }
+
+  // Profil raid « mélangé » : lostark.bible calcule le Battle Point selon l'arbre d'Illumination enregistré.
+  // Un joueur qui quitte après un donjon du chaos en arbre DPS peut laisser un profil raid de support avec
+  // ses gravures support mais un Battle Point en mode DPS (PV à 0, gravures support sans valeur).
+  // Ces chiffres ne se comparent pas à ceux d'un profil cohérent.
+  function hasMixedRaidProfile(c, roleOverride) {
+    const bp = c && c.rawProfile && c.rawProfile.battlePoint;
+    if (!bp || typeof bp.isSupport !== 'boolean') return false;
+    const role = roleOverride || c.role;
+    if (role === 'support') return bp.isSupport === false;
+    if (role === 'dps') return bp.isSupport === true;
+    return false;
   }
 
   // Karma T4 lu sur le Battle Point (part 8 = Évolution, part 9 = Bond, en centièmes de %).
@@ -8299,6 +8313,22 @@
       }
     }
 
+    // Profil raid mélangé (arbre d'Illumination d'un autre rôle) : chiffres non fiables, on le dit
+    if (dom.charCardMixedPill) {
+      const isEn = isEnLang();
+      if (hasMixedRaidProfile(p, isSupport ? 'support' : 'dps')) {
+        dom.charCardMixedPill.innerHTML = isEn
+          ? `<strong>Raid profile mixed</strong> · ${isSupport ? 'DPS' : 'support'} Ark Passive, CP not comparable`
+          : `<strong>Profil raid mélangé</strong> · Ark Passive ${isSupport ? 'DPS' : 'support'}, CP non comparable`;
+        dom.charCardMixedPill.title = isEn
+          ? `lostark.bible saved your raid profile with a ${isSupport ? 'DPS' : 'support'} Enlightenment tree (often after logging out from a Chaos Dungeon). Its Battle Point is computed in that mode, so comparisons are skipped. Log in with your raid setup, then update your character on lostark.bible.`
+          : `lostark.bible a enregistré ton profil raid avec un arbre d'Illumination ${isSupport ? 'DPS' : 'support'} (souvent après avoir quitté le jeu en donjon du chaos). Son Battle Point est calculé dans ce mode, les comparaisons sont donc suspendues. Reconnecte-toi avec ta configuration de raid, puis mets à jour ton personnage sur lostark.bible.`;
+        dom.charCardMixedPill.hidden = false;
+      } else {
+        dom.charCardMixedPill.hidden = true;
+      }
+    }
+
     // Karma : obtenu en jeu, on affiche ce qu'il apporte au Battle Point
     if (dom.charCardKarmaPill) {
       const isEn = isEnLang();
@@ -15143,6 +15173,7 @@
         if (!b || !b.isLive) return;
         if (normalizeClassName(b.className || '').toLowerCase().replace(/[^a-z]/g, '') !== cls) return;
         if ((b.role || role) !== role || (b.name || '').toLowerCase() === pName) return;
+        if (hasMixedRaidProfile(b, role)) return;
         if ((b.cp || 0) > pCp) above.push(b);
       });
     }
@@ -15526,6 +15557,9 @@
 
     const pSys = extractPlayerSystems(player, isEn);
     const tSys = resolveTargetSystems(target, isEn);
+    // Profil raid mélangé (d'un côté ou de l'autre) : aucun écart système par système
+    const mixedProfiles = hasMixedRaidProfile(player) || hasMixedRaidProfile(target, player.role);
+    if (mixedProfiles) [pSys, tSys].forEach(sys => Object.values(sys).forEach(v => { if (v && typeof v === 'object') v.estimated = true; }));
     const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
     const directCpGap = Math.round((target.cp || 0) - (player.cp || 0));
 
@@ -15536,7 +15570,17 @@
     const reconEl = document.getElementById('benchmarkCpReconciliation');
     if (gapsGrid) {
       const activeGaps = gaps.filter(g => g.gainCp > 0 || g.priority === 'player_lead');
-      if (activeGaps.length === 0) {
+      if (mixedProfiles) {
+        const who = hasMixedRaidProfile(player) ? (isEn ? 'Your' : 'Ton') : (isEn ? 'The reference\'s' : 'Le');
+        gapsGrid.innerHTML = `
+          <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px; border-color: var(--accent-gold);">
+            <h4 style="margin: 0 0 6px 0; color: var(--accent-gold);">${isEn ? 'Mixed raid profile: comparison skipped' : 'Profil raid mélangé : comparaison suspendue'}</h4>
+            <p style="font-size: 14px; color: var(--text-muted); margin: 0;">${isEn
+              ? `${who} raid profile on lostark.bible was saved with an Enlightenment tree of the other role (often after logging out from a Chaos Dungeon). Its Battle Point is computed in that mode, so system gaps would be wrong. Log in with the raid setup, then update the character on lostark.bible.`
+              : `${who} profil raid${hasMixedRaidProfile(player) ? '' : ' de la référence'} sur lostark.bible a été enregistré avec un arbre d'Illumination de l'autre rôle (souvent après avoir quitté le jeu en donjon du chaos). Son Battle Point est calculé dans ce mode : les écarts par système seraient faux. Reconnecte-toi avec la configuration de raid, puis mets à jour le personnage sur lostark.bible.`}</p>
+          </div>
+        `;
+      } else if (activeGaps.length === 0) {
         gapsGrid.innerHTML = `
           <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px;">
             <span style="font-size: 31px;"></span>
@@ -15636,7 +15680,7 @@
           pLabel = formatLostArkFrench(pLabel);
           tLabel = formatLostArkFrench(tLabel);
         }
-        const estimatedPair = isEstimatedPair(pRaw, tRaw);
+        const estimatedPair = mixedProfiles || isEstimatedPair(pRaw, tRaw);
         if (estimatedPair) {
           const note = isEn ? ' [estimated — not read]' : ' [estimé — non lu]';
           if (pRaw.estimated) pLabel += note;

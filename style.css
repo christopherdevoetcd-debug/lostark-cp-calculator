@@ -953,6 +953,16 @@ body {
   font-weight: 700;
 }
 
+.sub-pill.warn-pill {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-subtle);
+}
+
+.sub-pill.warn-pill strong {
+  color: var(--accent-gold);
+}
+
 .sub-pill.source-pill {
   color: var(--text-dim);
 }

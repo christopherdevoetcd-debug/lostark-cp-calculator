@@ -89,5 +89,6 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 ### Réservoir de joueurs réels (Benchmark)
 - `data/live-peers.json` liste de vrais joueurs par classe, rôle et iLvl, tirés des classements de raid de `lostark.bible` (Armoche, Kazeros, Serca, Cathédrale). Seuls les noms en viennent : CP et iLvl sont toujours rechargés en direct.
 - Le reconstituer (≈2 min, ~1 fois par semaine) : `node tools/harvest-live-peers.mjs`, puis redéployer.
+- Toujours lire le profil **raid** de lostark.bible, jamais le profil donjon du chaos. Le mode du Battle Point (`battlePoint.isSupport`) suit l'arbre d'Illumination enregistré : un support qui quitte le jeu après un chaos en arbre DPS peut laisser un profil raid « mélangé » (gravures support, Battle Point en mode DPS). `hasMixedRaidProfile()` le détecte : avertissement sur la fiche, Benchmark suspendu, jamais retenu comme référence.
 - Aucune donnée de démo ni règle par pseudo : l'application ne manipule que des personnages importés. Rôle des classes support : support par défaut, DPS seulement si les gravures l'indiquent (`roleFromEngravings`).
 
