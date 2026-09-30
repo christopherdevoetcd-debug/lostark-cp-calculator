@@ -10377,9 +10377,14 @@
   // Gammes achetées à l'hôtel des ventes : tiers des 2 lignes principales (0 = Low, 1 = Mid, 2 = High),
   // 3e ligne morte. Pas de source marché : prix EUC relevés en jeu (null = prix inconnu, gamme ignorée).
   // Échantillon lostark.bible 1730+ (2026-09-30) : High / Mid est la combinaison la plus portée,
-  // 600 à 700 k à l'hôtel des ventes EUC selon le joueur (milieu retenu).
+  // High / Mid : 600 à 700 k à l'hôtel des ventes EUC (milieu retenu).
   const ACC_PACKAGES = [
-    { id: 'HM', label: 'High / Mid', tiers: [2, 1], price: { neck: 650000, ear: 650000, ring: 650000 } }
+    { id: 'HM', label: 'High / Mid', tiers: [2, 1], price: { neck: 650000, ear: 650000, ring: 650000 } },
+    { id: 'MM', label: 'Mid / Mid', tiers: [1, 1], price: { neck: 35000, ear: 35000, ring: 35000 } },
+    // 40 à 80 k
+    { id: 'HL', label: 'High / Low', tiers: [2, 0], price: { neck: 60000, ear: 60000, ring: 60000 } },
+    // Collier 4 à 5,2 M, boucle 3 à 4,5 M, anneau 2,7 à 4 M (milieu de fourchette)
+    { id: 'HH', label: 'High / High', tiers: [2, 2], price: { neck: 4600000, ear: 3750000, ring: 3350000 } }
   ];
   const accessoryKind = slot => (slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring'));
   // Coût moyen d'un bijou de la gamme de référence, pour les comparaisons globales (Benchmark)
