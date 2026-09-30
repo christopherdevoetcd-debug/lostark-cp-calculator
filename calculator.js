@@ -338,6 +338,13 @@
   }
 
   // Fonctions de persistance du Roster personnel (isolé par navigateur)
+  // CP du profil raid lu (loadout.combatPower) ; les anciens imports gardaient le maximum historique de l'en-tête
+  function raidCombatPowerOf(c) {
+    const raw = (c && c.rawProfile) || {};
+    const cp = raw.raidCombatPower || (raw.loadout && raw.loadout.combatPower && raw.loadout.combatPower.score);
+    return cp > 0 ? parseFloat(cp.toFixed(2)) : null;
+  }
+
   function getUserRoster() {
     try {
       const raw = localStorage.getItem('lostark_user_roster');
@@ -349,6 +356,11 @@
             const correctRole = detectCharacterRole(c);
             if (c.role !== correctRole) {
               c.role = correctRole;
+              modified = true;
+            }
+            const raidCp = raidCombatPowerOf(c);
+            if (raidCp && c.cp !== raidCp) {
+              c.cp = raidCp;
               modified = true;
             }
           });
@@ -7092,6 +7104,8 @@
       role: resolvedRole,
       ilvl,
       inGameScore: parseFloat(inGameScore.toFixed(2)),
+      // CP du profil raid lu (loadout.combatPower) : celui qui correspond aux pièces comparées
+      raidCombatPower: loadout.combatPower && loadout.combatPower.score ? parseFloat(loadout.combatPower.score.toFixed(2)) : null,
       calculatedScore: parseFloat(calculatedTotal.toFixed(2)),
       buffPower: parseFloat(atkMin.toFixed(2)),
       healPower: isSupport ? parseFloat(defMin.toFixed(2)) : 0,
@@ -7238,7 +7252,11 @@
           if (h.rosterLevel) profile.rosterLevel = h.rosterLevel;
           if (h.class) profile.className = formatClassName(h.class);
           if (h.ilvl) profile.ilvl = parseFloat(h.ilvl.toFixed(2));
-          if (h.maxCombatPower && h.maxCombatPower.score) {
+          // maxCombatPower est le maximum historique (ex. 4 930 contre 3 335 aujourd'hui sur un Paladin) :
+          // le CP du profil raid lu passe avant, l'en-tête ne sert que de repli
+          if (profile.raidCombatPower) {
+            profile.inGameScore = profile.raidCombatPower;
+          } else if (h.maxCombatPower && h.maxCombatPower.score) {
             profile.inGameScore = parseFloat(h.maxCombatPower.score.toFixed(2));
           } else if (h.combatPower && h.combatPower.score) {
             profile.inGameScore = parseFloat(h.combatPower.score.toFixed(2));
@@ -12002,10 +12020,12 @@
       const toT = group.map(sl => change(sl, { isSerka: T[sl].isSerka, lvl: T[sl].lvl, adv: P[sl].adv }));
       const behind = group.filter(sl => rank(T[sl]) > rank(P[sl]));
       const net = gain(toT);
+      const stat = gearDpsGain(ctx, toT);
       const buy = gain(behind.map(sl => change(sl, { isSerka: T[sl].isSerka, lvl: T[sl].lvl, adv: P[sl].adv })));
       if (net === null || buy === null) return null;
       const cost = behind.reduce((sum, sl) => sum + benchHoningPieceCost(sl, P[sl], T[sl]), 0);
-      return { net, buy, cost };
+      // dWp / dMs : écart de puissance d'arme et de stat principale (CP support, attaque de base du Battle Point)
+      return { net, buy, cost, dWp: stat ? stat.dWp : 0, dMs: stat ? stat.dMs : 0 };
     };
     const weapon = honingOf(['weapon']);
     const armors = honingOf(GEAR_ARMOR_SLOTS);
@@ -12016,9 +12036,11 @@
     const toAdv = sl => change(sl, { isSerka: P[sl].isSerka, lvl: P[sl].lvl, adv: T[sl].adv });
     const advBehind = advSlots.filter(sl => T[sl].adv > P[sl].adv);
     const advNet = gain(advSlots.map(toAdv));
+    const advStat = advSlots.length ? gearDpsGain(ctx, advSlots.map(toAdv)) : null;
     const advBuy = gain(advBehind.map(toAdv));
     const advCost = advBehind.reduce((sum, sl) => sum + advHoningCostBetween(sl, P[sl].adv, T[sl].adv).totalValue, 0);
-    const advHoning = advNet === null || advBuy === null ? null : { net: advNet, buy: advBuy, cost: advCost };
+    const advHoning = advNet === null || advBuy === null ? null
+      : { net: advNet, buy: advBuy, cost: advCost, dWp: advStat ? advStat.dWp : 0, dMs: advStat ? advStat.dMs : 0 };
     return { weapon, armors, advHoning };
   }
 
@@ -12177,6 +12199,101 @@
     return out;
   }
 
+  // --- CP d'un support, comme le calcule le jeu (Battle Point en mode support, lostark.bible) ---
+  // CP = branche buff + branche défense. Buff : partie type 1 (PA de base × 1,24) × (1 + v / 10 000) de chaque partie offensive ;
+  // défense : partie type 2 (PV × 12) × les parties 11, 16, 18, 21, 30, 32, 35 (soins, boucliers…).
+  // Le % de buff du GPD (modèle Loseii) ne se convertit pas en CP : le Battle Point pèse les lignes support
+  // environ 5 fois plus, avec un rapport qui change d'une stat à l'autre. Le CP support se lit donc sur les parties du jeu.
+  const BP_DEF_TYPES = [11, 16, 18, 21, 30, 32, 35];
+  // Gemme T4 en mode support : 125 × niveau (table battlePoint du jeu, branche 2)
+  const SUPPORT_GEM_BP_PER_LEVEL = 125;
+
+  function battlePointPartsOf(c) {
+    const raw = (c && c.rawProfile) || {};
+    return (raw.loadout && raw.loadout.battlePoint && raw.loadout.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
+  }
+
+  function supportBpBranches(c) {
+    const parts = battlePointPartsOf(c);
+    const t1 = parts.find(p => p.type === 1), t2 = parts.find(p => p.type === 2);
+    if (!t1 || !t2 || !(t1.value > 0) || !(t2.value > 0)) return null;
+    let A = t1.value / 1e4, D = t2.value / 1e4;
+    parts.forEach(p => {
+      if (p.type <= 2) return;
+      const m = 1 + (p.value || 0) / 1e4;
+      if (BP_DEF_TYPES.includes(p.type)) D *= m; else A *= m;
+    });
+    return { A, D };
+  }
+
+  /**
+   * Écart de CP d'un support, par système (> 0 : la référence est devant), sur les branches du joueur :
+   * ΔCP = buff × (rapport des parties offensives − 1) + défense × (rapport des parties défensives − 1).
+   * Parties réelles des deux profils ; l'équipement (dans l'attaque de base) passe par l'écart de puissance d'arme
+   * et de stat principale du GPD, les gemmes par leur partie et leur % de PA. Les PV des armures ne sont pas modélisés.
+   */
+  /**
+   * Attaque de base (partie type 1) de la référence sur celle du joueur, SANS ce que portent déjà les lignes
+   * affinage (√(puissance d'arme × stat principale)) et gemmes (% de PA) : reste = stat du bracelet, lignes plates
+   * des bijoux, élixirs… null si une donnée manque.
+   */
+  function baseAttackRestRatio(player, target, gpd) {
+    const p1 = battlePointPartsOf(player).find(p => p.type === 1), t1 = battlePointPartsOf(target).find(p => p.type === 1);
+    const ctx = gearStatContext(player);
+    if (!p1 || !t1 || !(p1.value > 0) || !(t1.value > 0) || !ctx || !gpd.weapon || !gpd.armors) return null;
+    const dWp = ['weapon', 'armors', 'advHoning'].reduce((sum, k) => sum + ((gpd[k] && gpd[k].dWp) || 0), 0);
+    const dMs = ['weapon', 'armors', 'advHoning'].reduce((sum, k) => sum + ((gpd[k] && gpd[k].dMs) || 0), 0);
+    const gear = Math.sqrt((ctx.wp + dWp) * (ctx.ms + dMs) / (ctx.wp * ctx.ms));
+    const pl = realGemLevels(player), tl = realGemLevels(target);
+    const apPool = (p1.attackPowerMultiplier || 0) / 100;
+    const gemAp = levels => levels.reduce((sum, l) => sum + GEM_AP_PCT[l], 0) / 100;
+    const gems = pl && tl ? (1 + apPool + gemAp(tl) - gemAp(pl)) / (1 + apPool) : 1;
+    return (t1.value / p1.value) / (gear * gems);
+  }
+
+  function supportCpGaps(player, target, gpd) {
+    const br = supportBpBranches(player);
+    const pp = battlePointPartsOf(player), tp = battlePointPartsOf(target);
+    if (!br || !tp.length) return null;
+    const cp = (mA, mD) => br.A * (mA - 1) + br.D * ((mD === undefined ? 1 : mD) - 1);
+    const prod = (parts, pick, def) => parts.filter(p => pick(p) && BP_DEF_TYPES.includes(p.type) === def)
+      .reduce((m, p) => m * (1 + (p.value || 0) / 1e4), 1);
+    const fromParts = pick => cp(prod(tp, pick, false) / prod(pp, pick, false), prod(tp, pick, true) / prod(pp, pick, true));
+    const ofTypes = types => p => types.includes(p.type);
+    const cores = prefixes => p => (p.type === 29 || p.type === 30) && prefixes.some(pr => String(p.id).startsWith(pr));
+    const out = {
+      arkGridSun: fromParts(cores(['67300', '67310'])),
+      arkGridMoon: fromParts(cores(['67301', '67311'])),
+      arkGridStar: fromParts(cores(['67302', '67312'])),
+      arkGridAstrogems: fromParts(ofTypes([31, 32])),
+      accessories: fromParts(ofTypes([15, 16, 17])),
+      bracelet: fromParts(ofTypes([19, 20, 21])),
+      engravings: fromParts(ofTypes([10, 11])),
+      combatStats: fromParts(ofTypes([26])),
+      arkEvolution: fromParts(ofTypes([5])),
+      arkEnlightenment: fromParts(ofTypes([6])),
+      arkLeap: fromParts(ofTypes([7])),
+      karma: fromParts(ofTypes([8])),
+    };
+    const rest = baseAttackRestRatio(player, target, gpd);
+    if (rest !== null) out.baseAttackStat = cp(rest);
+    // Équipement : l'attaque de base suit √(puissance d'arme × stat principale)
+    const ctx = gearStatContext(player);
+    const gearCp = g => (ctx && g ? cp(Math.sqrt((ctx.wp + (g.dWp || 0)) * (ctx.ms + (g.dMs || 0)) / (ctx.wp * ctx.ms))) : undefined);
+    ['weapon', 'armors', 'advHoning'].forEach(k => { if (gpd[k]) out[k] = gearCp(gpd[k]); });
+    if (out.weapon !== undefined) out.weapon += fromParts(ofTypes([4]));
+    // Gemmes : partie type 22 (125 × niveau) et % de PA des gemmes dans l'attaque de base
+    const pl = realGemLevels(player), tl = realGemLevels(target);
+    const apPool = ((pp.find(p => p.type === 1) || {}).attackPowerMultiplier || 0) / 100;
+    if (pl && tl) {
+      const gemBp = levels => levels.reduce((m, l) => m * (1 + SUPPORT_GEM_BP_PER_LEVEL * l / 1e4), 1);
+      const gemAp = levels => levels.reduce((sum, l) => sum + GEM_AP_PCT[l], 0) / 100;
+      out.gems = cp(gemBp(tl) / gemBp(pl) * (1 + apPool + gemAp(tl) - gemAp(pl)) / (1 + apPool));
+    }
+    Object.keys(out).forEach(k => { if (!(Number.isFinite(out[k]))) delete out[k]; });
+    return out;
+  }
+
   // Conversion d'un gain du GPD en CP : chaque système est un multiplicateur du Battle Point
   function gpdGainToCp(gain, cp) {
     const base = cp && cp > 1000 ? cp : 3800;
@@ -12190,6 +12307,11 @@
     const gaps = [];
     // Écarts achetables chiffrés par les fonctions du GPD (sinon : ancien barème bonusPct)
     const gpd = benchmarkGpdGains(player, target, pSys, tSys, isSupport, isEn);
+    // Support : CP lu sur les parties du Battle Point en mode support (le % de buff du GPD ne se convertit pas en CP)
+    const supCp = isSupport ? supportCpGaps(player, target, gpd) : null;
+    // DPS : la ligne stat principale ne garde que le reste de l'attaque de base (l'affinage et les gemmes ont leur ligne)
+    const dpsRest = isSupport ? null : baseAttackRestRatio(player, target, gpd);
+    const cpBase = player.cp && player.cp > 1000 ? player.cp : 3800;
     const unit = isSupport ? 'Buff' : 'DPS';
     // Même ratio que le GPD : or par 1 % de dégâts (DPS) ou par 0,01 % de buff (support)
     const ratioUnit = isSupport ? 100 : 1;
@@ -12245,19 +12367,28 @@
       const t = tSys[m.key] || { bonusPct: 0, label: '' };
       const estimated = isEstimatedPair(p, t);
       const g = gpd[m.key];
-      // Écart de la ligne : gain du GPD (unité du GPD), sinon écart de bonusPct converti en CP
-      let delta, gapCp, fromGpd = false;
+      // Écart de la ligne : gain du GPD (unité du GPD), sinon écart de bonusPct converti en CP.
+      // Support : le CP vient des parties du Battle Point ; l'écart en % reste le buff du GPD, ou la part du CP (unité « CP »)
+      let delta, gapCp, fromGpd = false, rowUnit = null;
+      const sCp = supCp && !estimated ? supCp[m.key] : undefined;
       if (estimated) {
         delta = 0; gapCp = 0;
       } else if (g && !g.buyOnly) {
-        delta = Number(g.net.toFixed(2)); gapCp = gpdGainToCp(g.net, player.cp); fromGpd = true;
+        delta = Number(g.net.toFixed(2)); gapCp = sCp !== undefined ? sCp : gpdGainToCp(g.net, player.cp); fromGpd = true; rowUnit = unit;
+      } else if (sCp !== undefined) {
+        gapCp = sCp; delta = Number((100 * sCp / cpBase).toFixed(2)); rowUnit = 'CP';
+      } else if (m.key === 'baseAttackStat' && dpsRest !== null) {
+        gapCp = cpBase * (dpsRest - 1); delta = Number((100 * (dpsRest - 1)).toFixed(2)); rowUnit = 'CP';
       } else {
         delta = Number((t.bonusPct - p.bonusPct).toFixed(2)); gapCp = delta === 0 ? 0 : systemGapCp(p.bonusPct, t.bonusPct, player.cp);
       }
       // Partie achetable : celle du GPD quand elle existe (seulement ce qui manque, au coût du GPD)
       const buy = estimated ? 0 : (g ? g.buy : delta);
       const cost = g ? g.cost : m.cost();
-      rows[m.key] = { delta, gapCp, fromGpd, buy, cost };
+      rows[m.key] = { delta, gapCp, fromGpd, unit: rowUnit, buy, cost };
+      // Support : cartes classées sur le CP du jeu (retard si la référence gagne plus de 0,05 % du CP, avance au-delà de 0,15 %)
+      const behind = supCp && rowUnit ? gapCp > 0.0005 * cpBase : delta > 0.05;
+      const ahead = supCp && rowUnit ? gapCp < -0.0015 * cpBase : delta < -0.15;
 
       let tLabel = t.label || '';
       let pLabel = p.label || '';
@@ -12272,11 +12403,17 @@
       const partText = fromGpd && buy > 0.05 && Math.abs(buy - delta) > 0.05
         ? (isEn ? `; behind pieces: +${buy.toFixed(2)}% ${unit}` : ` ; pièces en retard : +${buy.toFixed(2)} % ${unit}`)
         : '';
-      const gapText = fromGpd
+      const signed = v => `${v >= 0 ? '+' : ''}${v}`;
+      const gapText = fromGpd && supCp
+        ? (isEn ? `${signed(Math.round(gapCp))} CP from the game's Battle Point; ${signed(delta)}% raid Buff, GPD model${partText}`
+          : `${signed(Math.round(gapCp))} CP au Battle Point du jeu ; ${signed(delta)} % de Buff pour le raid, modèle du GPD${partText}`)
+        : fromGpd
         ? (isEn ? `+${delta}% ${unit}, GPD model${partText}` : `+${delta} % ${unit}, modèle du GPD${partText}`)
-        : (isEn ? `+${delta}% gap` : `écart de +${delta}%`);
+        : rowUnit === 'CP'
+          ? (isEn ? `+${Math.round(gapCp)} CP from the game's Battle Point` : `+${Math.round(gapCp)} CP au Battle Point du jeu`)
+          : (isEn ? `+${delta}% gap` : `écart de +${delta}%`);
 
-      if (delta > 0.05) {
+      if (behind) {
         const gainCp = Math.round(gapCp);
         gaps.push({
           icon: '',
@@ -12293,7 +12430,7 @@
           cost,
           priority: delta > 1.0 ? 'high' : 'med'
         });
-      } else if (delta < -0.15) {
+      } else if (ahead) {
         const gainCp = Math.round(-gapCp);
         gaps.push({
           icon: '',
@@ -12310,7 +12447,7 @@
         });
       }
       // Gravures : pas d'écart au Battle Point mais des livres reliques qui manquent encore
-      if (g && g.buyOnly && !(delta > 0.05) && g.buy > 0.05 && g.cost > 0) {
+      if (g && g.buyOnly && !behind && g.buy > 0.05 && g.cost > 0) {
         gaps.push({
           icon: '', key: m.key, title: m.title, gainCp: Math.round(gpdGainToCp(g.buy, player.cp)), gainPct: Number(g.buy.toFixed(2)),
           fromGpd: true, buyFromGpd: true, buyPct: g.buy, cost: g.cost, priority: 'med',
@@ -12343,7 +12480,6 @@
       });
     });
     // Système sans données détaillées (ancien barème) : son écart en CP est ramené à la même unité (% du CP)
-    const cpBase = player.cp && player.cp > 1000 ? player.cp : 3800;
     const planItems = planGaps
       .filter(g => g.cost > 0 && g.buyPct > 0.01)
       .map(g => {
@@ -16570,7 +16706,8 @@
         const pItem = { label: pLabel, bonusPct: pRaw.bonusPct };
         const tItem = { label: tLabel, bonusPct: tRaw.bonusPct };
         // Systèmes chiffrés comme le GPD : écart = gain du GPD (% DPS ou % Buff), pas de différence de bonusPct
-        const gpdRow = !estimatedPair && gpdRows && gpdRows[cfg.key] && gpdRows[cfg.key].fromGpd ? gpdRows[cfg.key] : null;
+        // Support : aussi les systèmes hors GPD, chiffrés en CP sur les parties du Battle Point (unité « CP »)
+        const gpdRow = !estimatedPair && gpdRows && gpdRows[cfg.key] && gpdRows[cfg.key].unit ? gpdRows[cfg.key] : null;
         const delta = estimatedPair ? 0 : (gpdRow ? gpdRow.delta : Number((tItem.bonusPct - pItem.bonusPct).toFixed(2)));
         const isEqual = Math.abs(delta) <= 0.02;
 
@@ -16590,17 +16727,18 @@
         const isHiddenInEqual = isEqual && !hasInteractivePanel;
         if (isHiddenInEqual) equalRowsCount++;
 
-        const deltaUnit = gpdRow ? ` ${player.role === 'support' ? 'Buff' : 'DPS'}` : '';
+        const deltaUnit = gpdRow ? ` ${gpdRow.unit}` : '';
         const deltaStr = delta > 0.01 
           ? `+${delta.toFixed(2)}%${deltaUnit}` 
-          : (delta < -0.01 ? `${delta.toFixed(2)}%${deltaUnit}` : '= 0.00%');
+          : (delta < -0.01 ? `${delta.toFixed(2)}%${deltaUnit}` : `= 0.00%${deltaUnit}`);
         const badgeClass = delta > 0.01 
           ? 'delta-badge-pos' 
           : (delta < -0.01 ? 'delta-badge-neg' : 'delta-badge-neutral');
 
         const rowGapCp = gpdRow ? gpdRow.gapCp : systemGapCp(pItem.bonusPct, tItem.bonusPct, player.cp);
-        const cpImpact = delta > 0.01 ? Math.round(rowGapCp) : 0;
-        const playerLeadCp = delta < -0.01 ? Math.round(-rowGapCp) : 0;
+        // Le CP suit son propre signe (support : buff du GPD et CP du jeu peuvent diverger, ex. cœurs au-delà de 17 points)
+        const cpImpact = gpdRow ? Math.max(0, Math.round(rowGapCp)) : (delta > 0.01 ? Math.round(rowGapCp) : 0);
+        const playerLeadCp = gpdRow ? Math.max(0, Math.round(-rowGapCp)) : (delta < -0.01 ? Math.round(-rowGapCp) : 0);
 
         if (cpImpact > 0) {
           totalPositiveTableCp += cpImpact;
@@ -16823,7 +16961,7 @@
             </tr>
           `;
         } else if (isWeapon) {
-          const weaponDetailsHtml = buildWeaponBreakdownHtml(player, target, cpImpact, isEn, gpdRow ? gpdRow.delta : undefined);
+          const weaponDetailsHtml = buildWeaponBreakdownHtml(player, target, cpImpact, isEn, gpdRow && gpdRow.fromGpd ? gpdRow.delta : undefined);
           rowsHtml += `
             <tr id="rowWeaponDetails" class="row-weapon-details" style="display: none;">
               <td colspan="6">
@@ -16832,7 +16970,7 @@
             </tr>
           `;
         } else if (isArmors) {
-          const armorsDetailsHtml = buildArmorsBreakdownHtml(player, target, cpImpact, isEn, gpdRow ? gpdRow.delta : undefined);
+          const armorsDetailsHtml = buildArmorsBreakdownHtml(player, target, cpImpact, isEn, gpdRow && gpdRow.fromGpd ? gpdRow.delta : undefined);
           rowsHtml += `
             <tr id="rowArmorsDetails" class="row-armors-details" style="display: none;">
               <td colspan="6">
@@ -17242,6 +17380,8 @@
       liveBibleBenchmarkCache = JSON.parse(savedLiveCache) || {};
       Object.values(liveBibleBenchmarkCache).forEach(b => {
         if (b && b.isLive) {
+          const raidCp = raidCombatPowerOf(b);
+          if (raidCp) b.cp = raidCp;
           if ((!b.gear || !b.systems || !b.systems.weapon || b.systems.weapon.label.includes('+17')) && b.rawProfile && b.rawProfile.gear) {
             b.gear = b.rawProfile.gear;
             b.weaponQuality = b.rawProfile.weaponQuality !== undefined ? b.rawProfile.weaponQuality : b.weaponQuality;
@@ -17374,7 +17514,8 @@
     });
     const isSupport = liveRole === 'support' || (parsed.battlePoint && parsed.battlePoint.isSupport === true);
     const liveIlvl = header.ilvl ? Number(header.ilvl.toFixed(2)) : (parsed.ilvl || 1740);
-    const liveCp = parseFloat((header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000).toFixed(2));
+    // CP du profil raid comparé ligne par ligne ; maxCombatPower (maximum historique) seulement en repli
+    const liveCp = parseFloat((parsed.raidCombatPower || header.maxCombatPower?.score || header.combatPower?.score || parsed.inGameScore || parsed.calculatedScore || 4000).toFixed(2));
 
     const liveChar = {
       name: displayName,
