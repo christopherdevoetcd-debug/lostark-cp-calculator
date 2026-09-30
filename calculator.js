@@ -1528,9 +1528,11 @@
 
   // Stat de base d'une pièce d'après la table itemLevel du jeu : iLvl = base + 5 × affinage,
   // + 1 iLvl par niveau d'affinage avancé sur l'Aegir (table iLvl par iLvl). Sur le Serka l'avancé ne bouge pas l'iLvl.
-  function gearPieceStat(tr, slot, lvl, adv) {
+  // key : 'mainStat' (défaut) ou 'vitality' pour une armure ; l'arme donne toujours sa puissance d'arme.
+  function gearPieceStat(tr, slot, lvl, adv, key = 'mainStat') {
     const by = tr.stats.byIlvl;
-    const arr = by ? (slot === 'weapon' ? by.weaponPower : by.mainStat[slot]) : (slot === 'weapon' ? tr.stats.weaponPower : tr.stats.mainStat[slot]);
+    const src = by || tr.stats;
+    const arr = slot === 'weapon' ? src.weaponPower : src[key] && src[key][slot];
     const v = arr && arr[by ? 5 * lvl + (adv || 0) : lvl];
     return v > 0 ? v : null;
   }
@@ -1559,7 +1561,8 @@
     const parts = (lo.battlePoint && lo.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
     const earringPct = parts.filter(p => p.stat && p.stat.index === 152).reduce((s, p) => s + (p.stat.value || 0) / 100, 0);
     const karmaPct = ((lo.karma && lo.karma.enlightenment) || 0) * 0.1;
-    return { wp, ms, wpAmp: 1 + (earringPct + karmaPct) / 100, gear };
+    // Vitalité (stat 6) : les PV max suivent la Vitalité (branche défense du CP support)
+    return { wp, ms, vit: stat(6), wpAmp: 1 + (earringPct + karmaPct) / 100, gear };
   }
 
   /**
@@ -1567,11 +1570,11 @@
    * PA de base = √(puissance d'arme × stat principale / 6), les dégâts suivent la PA, donc
    * gain = 50 × ln(1 + Δpuissance d'arme / total) + 50 × ln(1 + Δstat principale / total).
    * changes : [{ slot, isSerka, lvl, adv, toLvl, toAdv, toIsSerka? }]. Les écarts viennent de la table itemLevel (Maxroll).
-   * Renvoie { gain, dWp, dMs } ou null si une donnée manque : l'appelant garde son estimation.
+   * Renvoie { gain, dWp, dMs, dVit } (dVit : Vitalité des armures, 0 si la table ne l'a pas) ou null si une donnée manque : l'appelant garde son estimation.
    */
   function gearDpsGain(ctx, changes) {
     if (!ctx) return null;
-    let dWp = 0, dMs = 0;
+    let dWp = 0, dMs = 0, dVit = 0;
     for (const c of changes) {
       // toIsSerka : pièce d'arrivée sur une autre piste (ex. Aegir du joueur contre Serka de la référence)
       const toSerka = c.toIsSerka !== undefined ? !!c.toIsSerka : !!c.isSerka;
@@ -1584,9 +1587,13 @@
       const to = gearPieceStat(trTo, c.slot, c.toLvl, toAdv);
       if (from === null || to === null) return null;
       if (c.slot === 'weapon') dWp += (to - from) * ctx.wpAmp;
-      else dMs += to - from;
+      else {
+        dMs += to - from;
+        const vFrom = gearPieceStat(tr, c.slot, c.lvl, adv, 'vitality'), vTo = gearPieceStat(trTo, c.slot, c.toLvl, toAdv, 'vitality');
+        if (vFrom !== null && vTo !== null) dVit += vTo - vFrom;
+      }
     }
-    return { gain: 50 * Math.log(1 + dWp / ctx.wp) + 50 * Math.log(1 + dMs / ctx.ms), dWp, dMs };
+    return { gain: 50 * Math.log(1 + dWp / ctx.wp) + 50 * Math.log(1 + dMs / ctx.ms), dWp, dMs, dVit };
   }
 
   // Modèle support de Loseii (loastuff/loa-gpd, model/support.js et model/gems.js) :
@@ -12189,8 +12196,8 @@
       const buy = gain(behind.map(sl => change(sl, { isSerka: T[sl].isSerka, lvl: T[sl].lvl, adv: P[sl].adv })));
       if (net === null || buy === null) return null;
       const cost = behind.reduce((sum, sl) => sum + benchHoningPieceCost(sl, P[sl], T[sl]), 0);
-      // dWp / dMs : écart de puissance d'arme et de stat principale (CP support, attaque de base du Battle Point)
-      return { net, buy, cost, dWp: stat ? stat.dWp : 0, dMs: stat ? stat.dMs : 0 };
+      // dWp / dMs / dVit : écart de puissance d'arme, de stat principale et de Vitalité (CP support : attaque de base et PV du Battle Point)
+      return { net, buy, cost, dWp: stat ? stat.dWp : 0, dMs: stat ? stat.dMs : 0, dVit: stat ? stat.dVit : 0 };
     };
     const weapon = honingOf(['weapon']);
     const armors = honingOf(GEAR_ARMOR_SLOTS);
@@ -12205,7 +12212,7 @@
     const advBuy = gain(advBehind.map(toAdv));
     const advCost = advBehind.reduce((sum, sl) => sum + advHoningCostBetween(sl, P[sl].adv, T[sl].adv).totalValue, 0);
     const advHoning = advNet === null || advBuy === null ? null
-      : { net: advNet, buy: advBuy, cost: advCost, dWp: advStat ? advStat.dWp : 0, dMs: advStat ? advStat.dMs : 0 };
+      : { net: advNet, buy: advBuy, cost: advCost, dWp: advStat ? advStat.dWp : 0, dMs: advStat ? advStat.dMs : 0, dVit: advStat ? advStat.dVit : 0 };
     return { weapon, armors, advHoning };
   }
 
@@ -12395,7 +12402,8 @@
    * Écart de CP d'un support, par système (> 0 : la référence est devant), sur les branches du joueur :
    * ΔCP = buff × (rapport des parties offensives − 1) + défense × (rapport des parties défensives − 1).
    * Parties réelles des deux profils ; l'équipement (dans l'attaque de base) passe par l'écart de puissance d'arme
-   * et de stat principale du GPD, les gemmes par leur partie et leur % de PA. Les PV des armures ne sont pas modélisés.
+   * et de stat principale du GPD (branche buff) et par l'écart de Vitalité des armures (branche défense : PV max
+   * proportionnels à la Vitalité, partie type 2 = PV × 12), les gemmes par leur partie et leur % de PA.
    */
   /**
    * Attaque de base (partie type 1) de la référence sur celle du joueur, SANS ce que portent déjà les lignes
@@ -12442,9 +12450,10 @@
     };
     const rest = baseAttackRestRatio(player, target, gpd);
     if (rest !== null) out.baseAttackStat = cp(rest);
-    // Équipement : l'attaque de base suit √(puissance d'arme × stat principale)
+    // Équipement : l'attaque de base suit √(puissance d'arme × stat principale), les PV max suivent la Vitalité
     const ctx = gearStatContext(player);
-    const gearCp = g => (ctx && g ? cp(Math.sqrt((ctx.wp + (g.dWp || 0)) * (ctx.ms + (g.dMs || 0)) / (ctx.wp * ctx.ms))) : undefined);
+    const vitRatio = g => (ctx.vit > 0 ? (ctx.vit + (g.dVit || 0)) / ctx.vit : 1);
+    const gearCp = g => (ctx && g ? cp(Math.sqrt((ctx.wp + (g.dWp || 0)) * (ctx.ms + (g.dMs || 0)) / (ctx.wp * ctx.ms)), vitRatio(g)) : undefined);
     ['weapon', 'armors', 'advHoning'].forEach(k => { if (gpd[k]) out[k] = gearCp(gpd[k]); });
     if (out.weapon !== undefined) out.weapon += fromParts(ofTypes([4]));
     // Gemmes : partie type 22 (125 × niveau) et % de PA des gemmes dans l'attaque de base

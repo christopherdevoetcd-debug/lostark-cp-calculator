@@ -25,7 +25,7 @@ const TRACKS = {
   serka: { weapon: '411100', armor: '411101' }
 };
 // Stats de base par iLvl (table itemLevel) : +N = baseIlvl + 5N. Arme : puissance d'arme (stat 151) ;
-// armures : stat principale (stat 3), par emplacement (catégories 10201…10205).
+// armures : stat principale (stat 3) et Vitalité (stat 6, PV de la branche défense du CP support), par emplacement (catégories 10201…10205).
 // Aegir : chaque niveau d'affinage avancé ajoute +1 iLvl à la pièce (profils lostark.bible : tout +18/40 = 1720),
 // la table est donc aussi lue iLvl par iLvl jusqu'à +25 et 40 niveaux avancés. Serka : l'iLvl reste 1675 + 5N.
 const STAT_ITEMS = {
@@ -90,14 +90,16 @@ for (const [track, pieces] of Object.entries(TRACKS)) {
   const ilvls = Array.from({ length: 26 }, (_, n) => si.baseIlvl + 5 * n);
   data.tracks[track].stats = {
     weaponPower: ilvls.map(i => statAt(si.weapon, i, 151)),
-    mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, ilvls.map(i => statAt(lo, i, 3))]))
+    mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, ilvls.map(i => statAt(lo, i, 3))])),
+    vitality: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, ilvls.map(i => statAt(lo, i, 6))]))
   };
   if (si.advIlvl) {
     // byIlvl[k] = stat à baseIlvl + k (k = 5 × affinage + affinage avancé)
     const all = Array.from({ length: 5 * 25 + si.advIlvl + 1 }, (_, k) => si.baseIlvl + k);
     data.tracks[track].stats.byIlvl = {
       weaponPower: all.map(i => statAt(si.weapon, i, 151)),
-      mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, all.map(i => statAt(lo, i, 3))]))
+      mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, all.map(i => statAt(lo, i, 3))])),
+      vitality: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, all.map(i => statAt(lo, i, 6))]))
     };
   }
 }
