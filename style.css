@@ -820,10 +820,11 @@ body {
 
 .score-card-footer {
   font-size: 12px;
+  line-height: 1.4;
   color: #8E8A7C;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Plusieurs informations (lignes, % du max, détail Subrank) : retour à la ligne plutôt que troncature */
+  white-space: normal;
+  overflow-wrap: anywhere;
   padding-top: 5px;
   border-top: 1px solid rgba(232, 230, 220, 0.05);
 }

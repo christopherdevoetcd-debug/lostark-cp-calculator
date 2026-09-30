@@ -8035,7 +8035,7 @@
             const mStr = `${accEval.midCount} Mid`;
             const dStr = accEval.deadCount > 0 ? ` • ${accEval.deadCount} ${isEn ? 'Dead' : 'Morts'}` : '';
             const maxStr = accEval.slotLines
-              ? ` • ${Math.round(accessoryGrade(bonusPct, isSupport).ratio * 100)} % ${isEn ? 'of max' : 'du max'}`
+              ? ` • ${Math.round(accessoryGrade(bonusPct, isSupport).ratio * 100)}\u00a0%\u00a0${isEn ? 'of\u00a0max' : 'du\u00a0max'}`
               : '';
             dom.scoreAccDetail.textContent = `${hStr} • ${mStr}${dStr}${maxStr}`;
           } else {
