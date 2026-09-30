@@ -104,3 +104,17 @@ for (const [track, pieces] of Object.entries(TRACKS)) {
 
 writeFileSync(OUT, JSON.stringify(data, null, 1));
 console.log(`data/honing-t4.json écrit (${Object.keys(data.tracks).join(', ')})`);
+
+// Battle Point des cœurs de la Grille d'Ark (table battlePoint du jeu, branche 1 = mode DPS) :
+// par cœur, la valeur cumulée aux paliers 10 / 14 / 17 / 18 / 19 / 20 points, en 0,01 % de dégâts
+// (chaque partie du Battle Point s'applique comme un multiplicateur 1 + bp / 10 000). null = option non chiffrée.
+const CORE_STEPS = [10, 14, 17, 18, 19, 20];
+const cores = {};
+for (const row of Object.values(stats.battlePoint['1']).flat()) {
+  if (!row || row.type !== 29) continue;
+  const [id, step, value] = row.values;
+  (cores[id] = cores[id] || CORE_STEPS.map(() => null))[step - 1] = value === undefined ? null : value;
+}
+const CORE_OUT = new URL('../data/ark-grid-bp.json', import.meta.url);
+writeFileSync(CORE_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), steps: CORE_STEPS, dps: cores }));
+console.log(`data/ark-grid-bp.json écrit (${Object.keys(cores).length} cœurs)`);

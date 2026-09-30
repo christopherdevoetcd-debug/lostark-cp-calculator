@@ -1293,6 +1293,21 @@
       return expectedTaps;
   }
 
+  // Battle Point des cœurs de la Grille d'Ark en mode DPS (table du jeu, tools/fetch-maxroll-honing.mjs) :
+  // par ID de cœur, valeur cumulée à 10 / 14 / 17 / 18 / 19 / 20 points, en 0,01 % de dégâts
+  let arkGridBp = null;
+  async function loadArkGridBp() {
+    try {
+      const res = await fetch('data/ark-grid-bp.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      arkGridBp = await res.json();
+      if (typeof renderEfficiencyTable === 'function') renderEfficiencyTable();
+      if (typeof renderAdvisorView === 'function') renderAdvisorView();
+    } catch (e) {
+      console.warn('[ARK GRID] Battle Point des cœurs indisponible, barème interne utilisé :', e.message);
+    }
+  }
+
   // Recettes d'affinage T4 du jeu (Aegir / Serka), tirées du flux Maxroll par tools/fetch-maxroll-honing.mjs
   let honingT4 = null;
   async function loadHoningT4() {
@@ -3748,6 +3763,7 @@
     const ark = getArkGridStatus(charObj);
     const slots = ark.slots || {};
     const hasSlotData = Object.values(slots).some(v => v > 0);
+    const coreIds = getArkGridCoreIds(charObj);
     ARK_CORE_DEFS.forEach(def => {
       let pts = slots[def.key] || 0;
       if (!hasSlotData) {
@@ -3763,17 +3779,31 @@
         const m = SUPPORT_CORE_STEPS[def.key];
         gain = (pts < 14 ? m.t14 : 0) + m.t17;
       } else {
-        const cur = getArkGridCoreBonus(def.prefix, pts, isSupport, false);
-        const next = getArkGridCoreBonus(def.prefix, 17, isSupport, false);
-        // Les cœurs se cumulent multiplicativement (cf. evalCoreGroup)
-        gain = ((1 + next / 100) / (1 + cur / 100) - 1) * 100;
+        // DPS : Battle Point du cœur équipé (table du jeu), chaque partie = multiplicateur 1 + bp / 10 000
+        const core = coreIds[def.key];
+        const tbl = arkGridBp && core && arkGridBp.dps[core.id];
+        if (tbl) {
+          const next = arkCoreBpAt(tbl, 17);
+          // Cœur dont le rang ne va pas jusqu'à 17 points : il faut un autre cœur, pas de ligne en points
+          if (next === null) return;
+          gain = 100 * Math.log((1 + next / 1e4) / (1 + (arkCoreBpAt(tbl, pts) || 0) / 1e4));
+        } else {
+          const cur = getArkGridCoreBonus(def.prefix, pts, isSupport, false);
+          const nextPct = getArkGridCoreBonus(def.prefix, 17, isSupport, false);
+          // Les cœurs se cumulent multiplicativement (cf. evalCoreGroup)
+          gain = ((1 + nextPct / 100) / (1 + cur / 100) - 1) * 100;
+        }
       }
       pushRow(`dyn_core_${def.key}`,
         isEn ? `Ark Grid — ${def.en} core 17P` : `Grille d'Ark — Cœur ${def.fr} 17P`,
         isEn ? `From ${pts} points` : `Depuis ${pts} points`,
         gain, (17 - pts) * ARK_CORE_COST_PER_POINT,
         (isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`) +
-          (isSupport ? (isEn ? ' Buff measured by Loseii on a reference Bard (14 and 17-point options).' : ' Buff mesuré par Loseii sur un Barde de référence (options 14 et 17 points).') : ''),
+          (isSupport
+            ? (isEn ? ' Buff measured by Loseii on a reference Bard (14 and 17-point options).' : ' Buff mesuré par Loseii sur un Barde de référence (options 14 et 17 points).')
+            : (arkGridBp && coreIds[def.key] && arkGridBp.dps[coreIds[def.key].id]
+              ? (isEn ? " Damage from the game's own Battle Point table for your equipped core." : ' Dégâts d\'après la table Battle Point du jeu pour le cœur équipé.')
+              : '')),
         { key: def.key, label: isEn ? def.en : def.fr, pts });
     });
 
@@ -4042,6 +4072,30 @@
         return 1.50;
       }
     }
+  }
+
+  // Cœur équipé dans chaque emplacement (ID et points), d'après les parties 29 / 30 du Battle Point
+  function getArkGridCoreIds(charObj) {
+    const raw = (charObj && charObj.rawProfile) || {};
+    const parts = (raw.loadout && raw.loadout.battlePoint && raw.loadout.battlePoint.parts)
+      || (raw.battlePoint && raw.battlePoint.parts) || [];
+    const out = {};
+    const add = (id, points) => {
+      const def = ARK_CORE_DEFS.find(d => id.toString().startsWith(d.prefix));
+      if (def && (!out[def.key] || points > out[def.key].points)) out[def.key] = { id, points };
+    };
+    parts.filter(p => (p.type === 29 || p.type === 30) && p.id).forEach(p => add(p.id, p.points || 0));
+    // Cœurs sous 10 points : absents du Battle Point, lus dans la grille (points = somme des gemmes)
+    const cores = (raw.loadout && raw.loadout.arkGridCores) || raw.arkGridCores || [];
+    cores.filter(c => c && c.id).forEach(c => add(c.id, (c.gems || []).reduce((sum, g) => sum + (g.corePoints || 0), 0)));
+    return out;
+  }
+
+  // Battle Point DPS d'un cœur à `points` (0 sous 10 points), null si le jeu ne chiffre pas ce palier
+  function arkCoreBpAt(tbl, points) {
+    let v = 0;
+    arkGridBp.steps.forEach((st, i) => { if (points >= st) v = tbl[i]; });
+    return v;
   }
 
   function getArkGridStatus(charObj) {
@@ -17181,6 +17235,7 @@
     bindEvents();
     fetchMarketPrices();
     loadHoningT4();
+    loadArkGridBp();
 
     const savedRoster = getUserRoster();
     if (savedRoster && savedRoster.length > 0) {

@@ -98,6 +98,10 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
   - Le simulateur de l'onglet 2 garde l'estimation en CP pour les supports.
 - iLvl d'une pièce (vérifié sur les profils lostark.bible) : Aegir 1590 + 5 × affinage + affinage avancé ; Serka 1675 + 5 × affinage (l'avancé n'y change ni l'iLvl ni les stats, pas de ligne GPD). La puissance d'arme totale du profil = stat de base de l'arme à son iLvl × (1 + % boucles d'oreilles + Karma Illumination).
 
+### Battle Point des cœurs de la Grille d'Ark (DPS)
+- `data/ark-grid-bp.json` : table `battlePoint` du jeu (flux Maxroll, branche 1 = mode DPS), écrite par `node tools/fetch-maxroll-honing.mjs`. Par ID de cœur, valeur cumulée à 10 / 14 / 17 / 18 / 19 / 20 points en 0,01 % de dégâts (chaque partie du Battle Point est un multiplicateur 1 + bp ÷ 10 000). Les profils lostark.bible donnent les mêmes valeurs (parties type 29).
+- GPD DPS : gain d'un cœur jusqu'à 17 points = 100 × ln((1 + bp17) ÷ (1 + bp actuel)), pour le cœur réellement équipé (`getArkGridCoreIds`, repli sur `loadout.arkGridCores` sous 10 points). Pas de ligne si le rang du cœur ne va pas jusqu'à 17 ; cœurs absents de la table (ex. Chaos Étoile puissance d'arme, déjà compté dans l'attaque de base) : ancien barème `getArkGridCoreBonus`.
+
 ### Réservoir de joueurs réels (Benchmark)
 - `data/live-peers.json` liste de vrais joueurs par classe, rôle et iLvl, tirés des classements de raid de `lostark.bible` (Armoche, Kazeros, Serca, Cathédrale). Seuls les noms en viennent : CP et iLvl sont toujours rechargés en direct.
 - Le reconstituer (≈2 min, ~1 fois par semaine) : `node tools/harvest-live-peers.mjs`, puis redéployer.
