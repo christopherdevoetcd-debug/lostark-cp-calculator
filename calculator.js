@@ -1391,6 +1391,222 @@
     };
   }
 
+  // --- Pierre d'aptitude T4 (Grande pierre d'envol : 10 nœuds par ligne) ---
+  // Prix (gold) d'une pierre non taillée portant les deux gravures voulues. Pas de source marché
+  // (hôtel des ventes) : calé sur l'ancienne constante, 14,17 M pour une 9/7 ≈ 1 390 pierres × ~10 k.
+  const ABILITY_STONE_PRICE = 10000;
+  // Niveau de pierre 1…4 atteint à 6 / 7 / 9 / 10 nœuds
+  const STONE_LEVEL_NODES = [6, 7, 9, 10];
+  // Somme des niveaux positifs >= 5 : Puissance d'attaque de base +1,5 %
+  const STONE_BASE_AP_BONUS = 0.015;
+  // Autres sources de Puissance d'attaque % supposées cumulées avec une gravure « PA » (Adrénaline, etc.)
+  const STONE_OTHER_AP_PCT = 20;
+  const stoneSuccessCache = new Map();
+
+  function stoneLevelFromNodes(nodes) {
+    let lvl = 0;
+    STONE_LEVEL_NODES.forEach((t, i) => { if (nodes >= t) lvl = i + 1; });
+    return lvl;
+  }
+
+  /**
+   * Probabilité exacte d'obtenir au moins `a` nœuds sur la gravure 1 et `b` sur la gravure 2,
+   * stratégie de taille optimale (chaîne de Markov / programmation dynamique) :
+   * 10 tentatives par ligne, chance de départ 75 %, -10 % après un succès, +10 % après un échec (25 %…75 %).
+   * La ligne négative sert de « ligne de délestage » pour remonter la chance ; son résultat est ignoré.
+   */
+  function stoneSuccessProbability(a, b) {
+    const cacheKey = `${a}/${b}`;
+    if (stoneSuccessCache.has(cacheKey)) return stoneSuccessCache.get(cacheKey);
+    const N = 10;
+    const P = [0.25, 0.35, 0.45, 0.55, 0.65, 0.75];
+    const memo = new Map();
+    const V = (r1, s1, r2, s2, r3, pi) => {
+      if (s1 >= a && s2 >= b) return 1;
+      if (s1 + r1 < a || s2 + r2 < b) return 0;
+      const key = ((((r1 * 11 + s1) * 11 + r2) * 11 + s2) * 11 + r3) * 6 + pi;
+      const hit = memo.get(key);
+      if (hit !== undefined) return hit;
+      const p = P[pi], up = Math.min(5, pi + 1), dn = Math.max(0, pi - 1);
+      let best = 0;
+      if (r1 > 0) best = Math.max(best, p * V(r1 - 1, Math.min(a, s1 + 1), r2, s2, r3, dn) + (1 - p) * V(r1 - 1, s1, r2, s2, r3, up));
+      if (r2 > 0) best = Math.max(best, p * V(r1, s1, r2 - 1, Math.min(b, s2 + 1), r3, dn) + (1 - p) * V(r1, s1, r2 - 1, s2, r3, up));
+      if (r3 > 0) best = Math.max(best, p * V(r1, s1, r2, s2, r3 - 1, dn) + (1 - p) * V(r1, s1, r2, s2, r3 - 1, up));
+      memo.set(key, best);
+      return best;
+    };
+    const prob = V(N, 0, N, 0, N, 5);
+    stoneSuccessCache.set(cacheKey, prob);
+    return prob;
+  }
+
+  // Pierre équipée, lue sur le profil importé : deux gravures positives + la ligne négative
+  function getAbilityStone(charObj) {
+    const raw = (charObj && charObj.rawProfile) || charObj || {};
+    const items = raw.rawItems || (raw.loadout && raw.loadout.items) || (charObj && charObj.loadout && charObj.loadout.items) || [];
+    const stone = items.find(i => i && i.slot === 'ability_stone');
+    const engr = stone && stone.data && Array.isArray(stone.data.engravings) ? stone.data.engravings : null;
+    if (!engr) return null;
+    const lines = engr.map(e => {
+      const label = BIBLE_ENGRAVINGS[String(e.id)] || '';
+      const en = label.split(' (')[0];
+      const fr = (label.match(/\(([^)]+)\)/) || [])[1] || en;
+      return { id: e.id, en, fr, key: en.toLowerCase(), nodes: e.nodes || 0, level: stoneLevelFromNodes(e.nodes || 0), negative: /Reduction/.test(en) };
+    });
+    const positives = lines.filter(l => !l.negative && l.en);
+    if (positives.length !== 2) return null;
+    return { positives, negative: lines.find(l => l.negative) || null };
+  }
+
+  // Gain (%) de la gravure quand la pierre passe du niveau lvlFrom à lvlTo
+  function stoneEngravingGain(key, lvlFrom, lvlTo, isSupport) {
+    const eff = window.ABILITY_STONE_EFFECTS && window.ABILITY_STONE_EFFECTS[key];
+    if (isSupport || !eff || lvlTo <= lvlFrom) return 0;
+    const sOld = lvlFrom > 0 ? eff.stone[lvlFrom - 1] : 0;
+    const sNew = eff.stone[lvlTo - 1];
+    if (eff.kind === 'dmg') return ((1 + (eff.base + sNew) / 100) / (1 + (eff.base + sOld) / 100) - 1) * 100;
+    if (eff.kind === 'ap') {
+      const pool = eff.base + STONE_OTHER_AP_PCT;
+      return ((1 + (pool + sNew) / 100) / (1 + (pool + sOld) / 100) - 1) * 100;
+    }
+    if (!window.Bracelet) return 0;
+    const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
+    const d = (sNew - sOld) / 100;
+    const ref = window.Bracelet.critFactor(prof, 0, 0);
+    const next = eff.kind === 'critRate' ? window.Bracelet.critFactor(prof, d, 0) : window.Bracelet.critFactor(prof, 0, d);
+    return (next / ref - 1) * 100;
+  }
+
+  // Gain (%) de la PA de base +1,5 % (somme des niveaux >= 5), mesuré sur le profil de référence
+  function stoneBaseApGain() {
+    if (!window.Bracelet) return 0;
+    const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
+    const without = Object.assign({}, prof, { baseApPct: prof.baseApPct - STONE_BASE_AP_BONUS });
+    return (window.Bracelet.attackPower(prof) / window.Bracelet.attackPower(without) - 1) * 100;
+  }
+
+  /**
+   * Meilleure amélioration de pierre : monter UNE des deux gravures d'un niveau, l'autre gardée à son niveau.
+   * Coût = prix d'une pierre / probabilité exacte de réussir la taille visée.
+   */
+  function getAbilityStoneUpgrade(charObj, isSupport) {
+    const stone = getAbilityStone(charObj);
+    if (!stone) return null;
+    const [e1, e2] = stone.positives;
+    const nodesFor = lvl => (lvl > 0 ? STONE_LEVEL_NODES[lvl - 1] : 0);
+    const candidates = [];
+    [[e1, e2], [e2, e1]].forEach(([up, keep]) => {
+      if (up.level >= 4) return;
+      const upTo = up.level + 1;
+      const target = [nodesFor(upTo), nodesFor(keep.level)];
+      const p = stoneSuccessProbability(target[0], target[1]);
+      if (!(p > 0)) return;
+      const sumFrom = e1.level + e2.level;
+      const apBonus = sumFrom < 5 && sumFrom + 1 >= 5 ? stoneBaseApGain() : 0;
+      const engGain = stoneEngravingGain(up.key, up.level, upTo, isSupport);
+      const gain = ((1 + engGain / 100) * (1 + apBonus / 100) - 1) * 100;
+      const cost = ABILITY_STONE_PRICE / p;
+      candidates.push({ up, keep, upTo, target, p, stones: 1 / p, cost, gain, apBonus });
+    });
+    const scored = candidates.filter(c => c.gain > 0);
+    if (!scored.length) return null;
+    scored.sort((x, y) => x.cost / x.gain - y.cost / y.gain);
+    const best = scored[0];
+    const nodesOf = (eng, lvl) => (eng === best.up ? nodesFor(best.upTo) : nodesFor(lvl));
+    best.fromLabel = `${e1.nodes}/${e2.nodes}`;
+    best.toLabel = `${nodesOf(e1, e1.level)}/${nodesOf(e2, e2.level)}`;
+    best.stone = stone;
+    return best;
+  }
+
+  // --- Bracelet : gain espéré d'une nouvelle campagne (solveur exact, dans bracelet-worker.js) ---
+  // Prix (gold) d'un bracelet non rerollé portant les mêmes lignes fixes et traits. Pas de source marché
+  // (hôtel des ventes) : reprend l'ancien forfait de campagne. Les rerolls eux-mêmes sont gratuits dans le modèle.
+  const BRACELET_REROLL_COST = 271000;
+  // 4 rerolls normaux + 3 tickets de reconversion
+  const BRACELET_CAMPAIGN_ROLLS = 7;
+  const BRACELET_EV_STORAGE = 'lostark_bracelet_ev';
+  let braceletEvCache = null;
+  let braceletWorker = null;
+  const braceletEvPending = new Set();
+
+  function loadBraceletEvCache() {
+    if (braceletEvCache) return braceletEvCache;
+    try { braceletEvCache = JSON.parse(localStorage.getItem(BRACELET_EV_STORAGE) || '{}') || {}; } catch (e) { braceletEvCache = {}; }
+    return braceletEvCache;
+  }
+
+  function getBraceletStats(charObj) {
+    const cands = [charObj && charObj.bracelet, charObj && charObj.rawProfile && charObj.rawProfile.bracelet];
+    for (const b of cands) {
+      if (!b) continue;
+      if (Array.isArray(b.stats)) return b.stats;
+      if (b.data && Array.isArray(b.data.stats)) return b.data.stats;
+    }
+    return null;
+  }
+
+  // Entrées du solveur pour le bracelet porté : lignes fixes, lignes rerollables, traits
+  function braceletSolverInput(charObj, isSupport) {
+    const stats = getBraceletStats(charObj);
+    if (!stats || !window.Bracelet) return null;
+    const dec = window.Bracelet.decodeBibleBracelet(stats);
+    if (!dec || !Array.isArray(dec.lines) || !dec.lines.length) return null;
+    const TRAIT_KEYS = { crit: 'crit', spec: 'spec', swiftness: 'swift' };
+    const traits = {};
+    const fixed = [];
+    const granted = [];
+    dec.lines.forEach(l => {
+      const clean = { cat: l.cat, family: l.family, tier: l.tier, value: l.value };
+      if (l.cat === 'trait' && TRAIT_KEYS[l.family]) traits[TRAIT_KEYS[l.family]] = l.value;
+      (l.fixed ? fixed : granted).push(clean);
+    });
+    if (!granted.length) return null;
+    return {
+      grade: dec.grade || 'ancient',
+      role: isSupport ? 'support' : 'dps',
+      fixed, granted, traits,
+      slots: granted.length,
+      rolls: BRACELET_CAMPAIGN_ROLLS
+    };
+  }
+
+  /**
+   * Gain espéré (%) d'une campagne complète sur un bracelet neuf, en gardant l'actuel s'il reste meilleur.
+   * Renvoie le résultat en cache, ou null en lançant le calcul (le tableau se redessine à la réception).
+   */
+  function getBraceletRerollEstimate(charObj, isSupport) {
+    const input = braceletSolverInput(charObj, isSupport);
+    if (!input) return null;
+    const key = `${window.Bracelet.MODEL_SIG}|${window.Bracelet.VERSION}|${JSON.stringify(input)}`;
+    const cache = loadBraceletEvCache();
+    if (cache[key]) return cache[key];
+    if (braceletEvPending.has(key) || typeof Worker === 'undefined') return null;
+    try {
+      if (!braceletWorker) {
+        braceletWorker = new Worker('bracelet-worker.js?v=1.0');
+        braceletWorker.onmessage = (ev) => {
+          const res = ev.data || {};
+          braceletEvPending.delete(res.key);
+          if (!res.ok) { console.warn('[BRACELET] Calcul impossible :', res.error); return; }
+          const store = loadBraceletEvCache();
+          store[res.key] = { gain: res.gain, pBeat: res.pBeat, curPct: res.curPct, freshMeanPct: res.freshMeanPct };
+          // On ne garde que les 20 derniers bracelets calculés
+          const keys = Object.keys(store);
+          if (keys.length > 20) keys.slice(0, keys.length - 20).forEach(k => delete store[k]);
+          try { localStorage.setItem(BRACELET_EV_STORAGE, JSON.stringify(store)); } catch (e) {}
+          if (typeof renderEfficiencyTable === 'function') renderEfficiencyTable();
+          if (typeof renderAdvisorView === 'function') renderAdvisorView();
+        };
+      }
+      braceletEvPending.add(key);
+      braceletWorker.postMessage(Object.assign({ key }, input));
+    } catch (e) {
+      console.warn('[BRACELET] Worker indisponible :', e.message);
+    }
+    return null;
+  }
+
   function updatePredictorView() {
     const { currentIlvl, currentCp, targetIlvl, role, gemBonus } = state;
 
@@ -3031,12 +3247,34 @@
       ASTRO_CUT_GAIN, ASTRO_CUT_COST,
       isEn ? 'Cut epic astrogems to reach the next tier.' : 'Tailler des astrogemmes épiques pour le palier suivant.');
 
-    // 6. Bracelet
-    pushRow('dyn_brac',
-      isEn ? 'Bracelet — Next Tier' : 'Bracelet — Palier Supérieur',
-      isEn ? 'Roll a new bracelet campaign' : 'Campagne de reroll complète',
-      0.77, BRACELET_REROLL_COST,
-      isEn ? 'Full bracelet reroll campaign.' : 'Campagne complète de reroll de bracelet.');
+    // 6. Bracelet : gain espéré conditionnel au bracelet porté (calcul asynchrone, ligne absente tant qu'il tourne)
+    const brEv = getBraceletRerollEstimate(charObj, isSupport);
+    if (brEv) {
+      const pct = Math.round(brEv.pBeat * 1000) / 10;
+      pushRow('dyn_brac',
+        isEn ? 'Bracelet — New campaign' : 'Bracelet — Nouvelle campagne',
+        isEn ? `${pct}% chance to beat yours` : `${pct} % de chances de battre le tien`,
+        brEv.gain, BRACELET_REROLL_COST,
+        isEn
+          ? `Expected gain of a fresh bracelet with the same fixed lines and traits, played optimally over ${BRACELET_CAMPAIGN_ROLLS} rolls; you keep yours when the new one is worse. Bracelet price is an estimate (no market source).`
+          : `Gain espéré d'un bracelet neuf aux mêmes lignes fixes et traits, joué de façon optimale sur ${BRACELET_CAMPAIGN_ROLLS} rerolls ; tu gardes le tien si le nouveau est moins bon. Prix du bracelet estimé (pas de source marché).`,
+        { pBeat: brEv.pBeat, curPct: brEv.curPct });
+    }
+
+    // 6b. Pierre d'aptitude : monter une gravure d'un niveau, coût exact par chaîne de Markov
+    const stoneUp = getAbilityStoneUpgrade(charObj, isSupport);
+    if (stoneUp) {
+      const upName = isEn ? stoneUp.up.en : stoneUp.up.fr;
+      const odds = Math.round(stoneUp.stones);
+      pushRow('dyn_stone',
+        isEn ? `Ability stone — ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}` : `Pierre d'aptitude — ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}`,
+        isEn ? `${upName} Lv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}` : `${upName} niv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}`,
+        stoneUp.gain, stoneUp.cost,
+        isEn
+          ? `Exact odds with optimal faceting: 1 stone in ${formatNumber(odds)} reaches ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)}%). Uncut stone priced ${formatNumber(ABILITY_STONE_PRICE)} g (no market source).${stoneUp.apBonus > 0 ? ' Includes the +1.5% base Atk. Power at 5 levels.' : ''}`
+          : `Probabilité exacte avec une taille optimale : 1 pierre sur ${formatNumber(odds)} atteint ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)} %). Pierre non taillée comptée ${formatNumber(ABILITY_STONE_PRICE)} g (pas de source marché).${stoneUp.apBonus > 0 ? ' Inclut la PA de base +1,5 % à 5 niveaux.' : ''}`,
+        { from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: upName, odds });
+    }
 
     // 7. Accessoires : remplacer le bijou dont le remplacement rapporte le plus (= le plus faible)
     const accEval = evaluateCharacterAccessories(charObj, isSupport, isEn);
@@ -3966,12 +4204,11 @@
     let karmaRate = 1830000;
 
     // 6. Bracelet
-    let brGrade = 'B-';
-    let brScore = '63.2';
-    let brPct = 13.47;
-    const brStats = (charObj && charObj.bracelet && Array.isArray(charObj.bracelet.stats) && charObj.bracelet.stats)
-      || (charObj && charObj.rawProfile && charObj.rawProfile.bracelet && Array.isArray(charObj.rawProfile.bracelet.stats) && charObj.rawProfile.bracelet.stats)
-      || null;
+    // Lecture du bracelet porté (grade Subrank) ; la ligne elle-même vient de dyn_brac (getDynamicGpdTable)
+    let brGrade = null;
+    let brScore = null;
+    let brPct = null;
+    const brStats = getBraceletStats(charObj);
 
     if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brStats) {
       try {
@@ -3994,14 +4231,8 @@
         }
       } catch (e) {}
     }
-    let brRead = `${brGrade} · ${brScore} · +${brPct}% ${isSupport ? 'buff' : 'dmg'}`;
-    let brWhere = `${brGrade} · ${brScore}`;
-    let brLast = `C+ ➔ ${brGrade} (+12.7% ➔ +${brPct}%)`;
-    let brNext = `➔ B (+14.08% ${isSupport ? 'buff' : 'dmg'})`;
-    // Même campagne de reroll que la ligne dyn_brac du tableau GPD
-    let brCost = 271000;
-    let brGain = 0.77;
-    let brRate = Math.round(brCost / brGain);
+    const brRead = brGrade ? `${brGrade} · ${brScore} · +${brPct}% ${isSupport ? 'buff' : 'dmg'}` : '—';
+    const brWhere = brGrade ? `${brGrade} · ${brScore}` : '—';
 
     // 9. Ark grid — cutting rares
     let raresRead = isEn ? 'Rare nodes cut' : 'Noeuds rares taillés';
@@ -4011,15 +4242,6 @@
     let raresCost = 3030000;
     let raresGain = 0.97;
     let raresRate = 3130000;
-
-    // 11. Ability stone
-    let stoneRead = '9 / 6 / 4';
-    let stoneWhere = isEn ? 'Tier 3 (9-6)' : 'Tier 3 (9-6)';
-    let stoneLast = '9-5 ➔ 9-6';
-    let stoneNext = isEn ? '9-6 ➔ 9-7 (Tier 4)' : '9-6 ➔ 9-7 (Tier 4)';
-    let stoneCost = 14170000;
-    let stoneGain = 1.15;
-    let stoneRate = 12340000;
 
     const rows = [
       {
@@ -4051,20 +4273,6 @@
         category: 'arkPassive'
       },
       {
-        id: 'bracelet',
-        icon: '',
-        system: isEn ? 'Bracelet' : 'Bracelet',
-        whatItReads: brRead,
-        wherePutsYou: brWhere,
-        lastStep: brLast,
-        lastRate: '1.10M / 1%',
-        nextStep: brNext,
-        cost: brCost,
-        dmgGain: brGain,
-        rate: brRate,
-        category: 'bracelet'
-      },
-      {
         id: 'grid_rares',
         icon: '',
         system: isEn ? 'Ark grid — cutting rares' : 'Grille d\'Ark — Taille de rares',
@@ -4077,20 +4285,6 @@
         dmgGain: raresGain,
         rate: raresRate,
         category: 'arkGrid'
-      },
-      {
-        id: 'ability_stone',
-        icon: '',
-        system: isEn ? 'Ability stone' : 'Pierre de capacité',
-        whatItReads: stoneRead,
-        wherePutsYou: stoneWhere,
-        lastStep: stoneLast,
-        lastRate: '8.50M / 1%',
-        nextStep: stoneNext,
-        cost: stoneCost,
-        dmgGain: stoneGain,
-        rate: stoneRate,
-        category: 'stone'
       }
     ];
 
@@ -4131,6 +4325,26 @@
           category: 'gear',
           applyType: 'armors',
           targetVal: m.to
+        }));
+      } else if (d.id === 'dyn_brac') {
+        rows.push(dynToMaster(d, {
+          icon: '',
+          system: 'Bracelet',
+          whatItReads: brRead,
+          wherePutsYou: brWhere,
+          lastStep: '—',
+          nextStep: isEn ? `New campaign (${Math.round(m.pBeat * 1000) / 10}% to beat)` : `Nouvelle campagne (${Math.round(m.pBeat * 1000) / 10} % de réussite)`,
+          category: 'bracelet'
+        }));
+      } else if (d.id === 'dyn_stone') {
+        rows.push(dynToMaster(d, {
+          icon: '',
+          system: isEn ? 'Ability stone' : 'Pierre d\'aptitude',
+          whatItReads: `${m.from} · ${m.engraving}`,
+          wherePutsYou: m.from,
+          lastStep: '—',
+          nextStep: isEn ? `${m.from} ➔ ${m.to} (1 in ${formatNumber(m.odds)})` : `${m.from} ➔ ${m.to} (1 sur ${formatNumber(m.odds)})`,
+          category: 'stone'
         }));
       } else if (d.id === 'dyn_adv_weapon' || d.id === 'dyn_adv_armor') {
         const isW = d.id === 'dyn_adv_weapon';
@@ -10079,8 +10293,6 @@
   const ACC_REF_BASE_AP_PCT = 0.125;
   // Coût (gold) estimé d'un bijou de remplacement
   const ACC_UPGRADE_COST = 166000;
-  // Coût (gold) d'une campagne complète de reroll de bracelet
-  const BRACELET_REROLL_COST = 271000;
   // Taille d'astrogemmes épiques vers le palier suivant : coût (gold) et gain (%)
   const ASTRO_CUT_COST = 675000;
   const ASTRO_CUT_GAIN = 1.08;

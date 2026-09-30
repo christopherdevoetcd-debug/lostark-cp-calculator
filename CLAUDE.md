@@ -17,6 +17,7 @@ Elle s'appuie sur la calibration réelle des courbes de `lostark.bible` et les m
 | `calculator.js` | **Cœur de l'application (~17k lignes)** : Moteur de calcul CP, affinage (honing), simulateur Ark Passive, diagnostic des bracelets, algorithme GPD (Gold Per Damage / Buff), gestion du Roster local, parsing des données JSON `lostark.bible`, exports globaux `window.__*`. |
 | `data.js` | Constantes de jeu, coûts d'affinage T4 (`HONING_COSTS`), XP, bonus des cœurs d'Ark Grid (`getArkGridCoreBonus`), dictionnaires du jeu (spés, gravures, stats). Aucune donnée de démo. |
 | `bracelet-model.js` | Modèle mathématique complet de simulation des lignes de bracelet T4 (effets uniques, rolls fixes et combinatoires). |
+| `bracelet-worker.js` | Web Worker : lance le solveur exact de `bracelet-model.js` (gain espéré d'une nouvelle campagne de bracelet) hors du fil principal, résultat en cache `localStorage` (`lostark_bracelet_ev`). |
 | `bracelet-data.js` | Dictionnaire des stats, affixes et tiers de bracelets T4. |
 | `subrank.js` | Système de notation Loseii (grades S+, S, S-, A+, A, A-, B+, B, B-, C+, C, C-, D et percentiles). |
 | `gear-data.js` | Données complémentaires d'équipement et d'affinage avancé (+10, +20, +30, +40). |
