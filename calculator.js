@@ -3774,13 +3774,18 @@
       }
       if (pts <= 0 || pts >= 17) return;
       let gain;
-      if (isSupport) {
+      const core = coreIds[def.key];
+      const isWeaponCore = !!(core && core.id.toString().startsWith(WEAPON_CORE_PREFIX));
+      if (isWeaponCore) {
+        // Cœur « Arme » : chiffré sur la puissance d'arme réelle du personnage ; pas de ligne si son rang n'atteint pas 17
+        gain = weaponCoreGain(charObj, core, 17, isSupport);
+        if (gain === null) return;
+      } else if (isSupport) {
         // Support : paliers mesurés par Loseii, en % de dégâts de chaque allié (même échelle que bijoux et gemmes)
         const m = SUPPORT_CORE_STEPS[def.key];
         gain = (pts < 14 ? m.t14 : 0) + m.t17;
       } else {
         // DPS : Battle Point du cœur équipé (table du jeu), chaque partie = multiplicateur 1 + bp / 10 000
-        const core = coreIds[def.key];
         const tbl = arkGridBp && core && arkGridBp.dps[core.id];
         if (tbl) {
           const next = arkCoreBpAt(tbl, 17);
@@ -3799,7 +3804,9 @@
         isEn ? `From ${pts} points` : `Depuis ${pts} points`,
         gain, (17 - pts) * ARK_CORE_COST_PER_POINT,
         (isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`) +
-          (isSupport
+          (isWeaponCore
+            ? (isEn ? " Weapon core: the game's weapon power options applied to your real weapon power." : " Cœur Arme : options de puissance d'arme du jeu appliquées à ta vraie puissance d'arme.")
+            : isSupport
             ? (isEn ? ' Buff measured by Loseii on a reference Bard (14 and 17-point options).' : ' Buff mesuré par Loseii sur un Barde de référence (options 14 et 17 points).')
             : (arkGridBp && coreIds[def.key] && arkGridBp.dps[coreIds[def.key].id]
               ? (isEn ? " Damage from the game's own Battle Point table for your equipped core." : ' Dégâts d\'après la table Battle Point du jeu pour le cœur équipé.')
@@ -4072,6 +4079,36 @@
         return 1.50;
       }
     }
+  }
+
+  // Cœur Chaos Étoile « Arme » (ID 6731210xx, dernier chiffre = rang) : options cumulées du jeu (arkGridCoreOptions).
+  // 10 pts : +1 300 ; 14 : +0,75 % ; 17 : +2 600 et +1,50 % (rang 5) ou +3 900 et +2,25 % (rang 6) ; 18 à 20 : +0,23 % chacun.
+  // Rang 4 : options 10 et 14 seulement. null si le rang n'atteint pas ce palier.
+  const WEAPON_CORE_PREFIX = '6731210';
+  function weaponCoreBonus(id, points) {
+    const grade = Number(id.toString().slice(-1));
+    if (points >= 17 && grade < 5) return null;
+    let flat = 0, pct = 0;
+    if (points >= 10) flat += 1300;
+    if (points >= 14) pct += 0.75;
+    if (points >= 17) { flat += grade >= 6 ? 3900 : 2600; pct += grade >= 6 ? 2.25 : 1.5; }
+    [18, 19, 20].forEach(t => { if (points >= t) pct += 0.23; });
+    return { flat, pct };
+  }
+
+  /**
+   * Gain du cœur « Arme » jusqu'à `toPoints` : puissance d'arme totale = (fixe) × (1 + % boucles + % Karma + % du cœur)
+   * (formule de bebkok, exacte sur les profils Serka). DPS : gain de dégâts ; support : buff de PA donné aux alliés.
+   */
+  function weaponCoreGain(charObj, core, toPoints, isSupport) {
+    const ctx = gearStatContext(charObj);
+    const cur = weaponCoreBonus(core.id, core.points);
+    const next = weaponCoreBonus(core.id, toPoints);
+    if (!ctx || !cur || !next) return null;
+    const pool = ctx.wpAmp - 1 + cur.pct / 100;
+    const flat = ctx.wp / (1 + pool);
+    const wpAfter = (flat + next.flat - cur.flat) * (1 + pool + (next.pct - cur.pct) / 100);
+    return isSupport ? supportApGain(charObj, ctx, wpAfter - ctx.wp, 0) : 50 * Math.log(wpAfter / ctx.wp);
   }
 
   // Cœur équipé dans chaque emplacement (ID et points), d'après les parties 29 / 30 du Battle Point
