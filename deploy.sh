@@ -22,6 +22,8 @@ echo "Syntaxe JS : OK"
 echo "=== [2/4] Synchronisation CT 104 (Docker Nginx) ==="
 scp -q *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/
 scp -rq images data root@192.168.1.104:/opt/lostark-cp/public/ 2>/dev/null || true
+# nginx.conf est monté seul dans le conteneur : réécrit en place (même inode), un scp ne serait pas vu
+ssh root@192.168.1.104 "cat > /opt/lostark-cp/nginx.conf" < nginx.conf
 ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-cp nginx -s reload" >/dev/null
 echo "CT 104 : déployé et Nginx rechargé"
 

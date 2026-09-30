@@ -50,8 +50,14 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 - `types 50, 51, 54, 59` : Lignes d'affinage de bijoux spécifiques Support (50 = Soins, 51 = Boucliers, 54 = Amplification PA allié, 59 = Dégâts alliés). Si le rôle est DPS, ces lignes sont des **Dead Stats** ; si Support, elles sont prioritaires (High/Mid rolls).
 
 ### 3. Modèle GPD & Smart Advisor
-- La fonction `getDynamicGpdTable(charObj, role, isEn)` évalue chaque palier d'amélioration possible (Honing arme, Honing armures, Affinage avancé, Gemmes T4, Taillage d'astrogemmes, Cœurs 17pts, Affinage bijoux, Livres de gravure T4).
-- Elle calcule le ratio `Coût en or / Gain net de puissance` et classe les actions par ROI décroissant.
+- La fonction `getDynamicGpdTable(charObj, role, isEn)` liste **toutes** les façons de monter le personnage, chiffrées en or, comme le GPD de Loseii (loseii.com/loa-gpd) : affinage arme / armures, affinage avancé, gemmes, cœurs 17 pts, livres reliques, qualité d'arme, bijoux (une ligne par type : collier, boucle, anneau), bracelet, pierre d'aptitude, Karma d'Illumination, astrogemmes (taille d'épiques et de rares). Classement par or / 1 % (DPS) ou / 0,01 % (support), rang S+ / S / A / B / C / D (`getTierFromRatio`, D au-delà de 6 M / 1 %) et colonne « Ton état » (`gpdRowState`, note de Loseii quand l'échelle en a une).
+- Tables de Loseii chargées en direct (`loadLoseiiGpd`, CORS ouvert, CSP de `nginx.conf` : script-src et connect-src autorisent https://www.loseii.com) : `rows.json` / `rows-dps.json` (échelle du bracelet), `arkgrid-rows-{,dps-}{epic,rare}.json` (taille d'astrogemmes), et `astrogem.js` (note des gemmes) épinglé par empreinte SRI (`LOSEII_ASTROGEM_JS` + `LOSEII_ASTROGEM_SRI` à changer ensemble).
+  - Bracelet (`braceletGpdStep`) : note Subrank du bracelet porté ; note suivante = campagne neuve depuis zéro (`total` de l'échelle), gain = `totalDamage` − dégâts du bracelet actuel (méthode de Loseii, vérifiée sur Neevercry : B- → B 1,17 M pour +0,61 %).
+  - Astrogemmes (`astrogemGridBand`) : note moyenne des gemmes (`Astrogem.grade` / `supportGrade`), coût de base 8 / 9 / 10 d'après les options (2001-2003, 2011-2013), Ordre / Chaos d'après le cœur (6730… / 6731…) ; ligne de l'échelle qui part de cette note (vérifié : Neevercry B+, épiques 675 k +1,08 %, rares 3,03 M +0,97 %).
+  - Karma (`karmaGpdStep`) : `data/karma-t4.json` (table du jeu, flux Maxroll, identique à celle de Loseii), 900 or par essai, jauge d'énergie ; +0,10 % de puissance d'arme par niveau.
+  - Pierre d'aptitude : taille exacte (`getAbilityStoneUpgrade`), pierre non taillée = 9 pheons.
+  - Prix hors marché réglables au-dessus du tableau (`lostark_gpd_prices` en localStorage) : pheon et bracelet 90/90 non relancé ; défauts = prix de Loseii ; leurs achats sont repris au prorata (`loseiiRepriceRatio`).
+- Le Smart Advisor (`buildMasterGpdData`) reprend les mêmes lignes ; une ligne sans traduction y est ignorée.
 
 ---
 

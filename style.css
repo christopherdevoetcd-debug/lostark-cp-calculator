@@ -7093,6 +7093,7 @@ select optgroup {
 .gpd-tier.tier-a { color: #A8A493; }
 .gpd-tier.tier-b { color: #948F80; }
 .gpd-tier.tier-c { color: #8E8A7C; }
+.gpd-tier.tier-d { color: var(--loss); }
 
 .gpd-status-badge {
   font-family: var(--font-mono);
@@ -7487,4 +7488,28 @@ body.no-character .main-content {
   padding: 24px 16px;
   text-align: center;
   color: var(--text-muted);
+}
+
+/* GPD : rang D (pires ratios), colonne « Ton état », prix réglables */
+.prio-badge.d { color: var(--loss); }
+.eff-table .col-state {
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.gpd-price-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 0 0 16px;
+}
+.gpd-price-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.gpd-price-field input {
+  width: 160px;
+  max-width: 100%;
 }

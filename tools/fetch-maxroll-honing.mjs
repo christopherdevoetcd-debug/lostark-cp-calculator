@@ -143,3 +143,18 @@ for (const id of [2011, 2012, 2013]) {
 }
 writeFileSync(SUPPORT_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), rows: supportRows, gemOptions }));
 console.log(`data/battle-point-support.json écrit (${Object.keys(supportRows).length} types de parties)`);
+
+// Karma d'Illumination (table karma du jeu, planche 20000) : par niveau, chance d'un essai (0,01 %), énergie gagnée
+// à chaque échec (0,01 % ; la jauge pleine garantit l'essai suivant), or par essai et puissance d'arme totale (0,01 %).
+// levels[N] = passage de N à N + 1. Identique à la table de Loseii (loa-gpd/data/karma.json).
+const karmaLevels = {};
+for (const rank of Object.values(stats.karma['20000'].ranks)) {
+  for (const [lv, v] of Object.entries(rank.levels)) {
+    const cur = karmaLevels[lv];
+    if (cur && !(v.prob > 0)) continue;
+    karmaLevels[lv] = { prob: v.prob, care: v.care, gold: (v.money && v.money['2']) || 0, wp: v.stats[0].value };
+  }
+}
+const KARMA_OUT = new URL('../data/karma-t4.json', import.meta.url);
+writeFileSync(KARMA_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), enlightenment: karmaLevels }));
+console.log(`data/karma-t4.json écrit (${Object.keys(karmaLevels).length} niveaux d'Illumination)`);
