@@ -12,6 +12,11 @@ const BODY = JSON.stringify({
     'destiny-guardian-stone',
     'lavas-breath',
     'glaciers-breath',
+    // Matériaux d'affinage Serka (T4 1675)
+    'superior-abidos-fusion-material',
+    'destiny-crystallized-destruction-stone',
+    'destiny-crystallized-guardian-stone',
+    'great-destiny-leapstone',
     // Livres de gravure reliques (gravures de dégâts)
     'grudge',
     'cursed-doll',

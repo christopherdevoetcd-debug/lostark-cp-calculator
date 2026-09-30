@@ -494,7 +494,9 @@
   // État de l'application
   const state = {
     // Prix unitaires par défaut (EUC, 2026-09-30), remplacés au chargement par fetchMarketPrices()
-    marketPrices: { 'destiny-leapstone': 16, 'prime-oreha-fusion-material': 58, 'abidos-fusion-material': 124, 'destiny-destruction-stone': 5, 'destiny-guardian-stone': 0.58, 'destiny-shard': 0, 'lavas-breath': 411, 'glaciers-breath': 398, 'gold': 1 },
+    marketPrices: { 'destiny-leapstone': 16, 'prime-oreha-fusion-material': 58, 'abidos-fusion-material': 124, 'destiny-destruction-stone': 5, 'destiny-guardian-stone': 0.58, 'destiny-shard': 0, 'lavas-breath': 411, 'glaciers-breath': 398, 'gold': 1,
+      // Matériaux Serka (T4 1675)
+      'superior-abidos-fusion-material': 151, 'destiny-crystallized-destruction-stone': 23.55, 'destiny-crystallized-guardian-stone': 3, 'great-destiny-leapstone': 26 },
     role: 'support',
     currentIlvl: 1750.0,
     currentCp: 3369,
@@ -1291,8 +1293,68 @@
       return expectedTaps;
   }
 
-  function getLevelCost(piece, lvl) {
+  // Recettes d'affinage T4 du jeu (Aegir / Serka), tirées du flux Maxroll par tools/fetch-maxroll-honing.mjs
+  let honingT4 = null;
+  async function loadHoningT4() {
+    try {
+      const res = await fetch('data/honing-t4.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      honingT4 = await res.json();
+      if (typeof updateHoningView === 'function') updateHoningView();
+      if (typeof renderEfficiencyTable === 'function') renderEfficiencyTable();
+      if (typeof renderAdvisorView === 'function') renderAdvisorView();
+      const active = typeof getCurrentActiveCharacter === 'function' ? getCurrentActiveCharacter() : null;
+      if (active && typeof updateActiveCharacterCard === 'function') updateActiveCharacterCard(active.id || active.name);
+    } catch (e) {
+      console.warn('[HONING] Recettes Maxroll indisponibles, tables internes utilisées :', e.message);
+    }
+  }
+
+  /**
+   * Coût attendu d'une étape d'affinage (+lvl → +lvl+1) d'après la recette du jeu.
+   * Taux en 0,01 % : p = base + min(échecs × failBonus, failMax) + souffles × rate.
+   * Chaque échec charge l'énergie d'artisan du taux dépensé ; à `threshold` (215 %) la tentative suivante réussit.
+   * On garde le nombre constant de souffles le moins cher (souvent 0 quand le souffle coûte plus que les tentatives qu'il évite).
+   */
+  function recipeStepCost(recipe) {
+    const matGold = Object.entries(recipe.mats).reduce((sum, [slug, n]) => sum + n * (state.marketPrices[slug] || 0), 0);
+    const baseTap = recipe.gold + matGold;
+    const breathPrice = recipe.breath ? (state.marketPrices[recipe.breath.slug] || 0) : 0;
+    let best = null;
+    const maxB = recipe.breath ? recipe.breath.max : 0;
+    for (let b = 0; b <= maxB; b++) {
+      const juice = recipe.breath ? b * recipe.breath.rate : 0;
+      let reach = 1, energy = 0, taps = 0;
+      for (let fails = 0; fails < 1000 && reach > 1e-9; fails++) {
+        if (energy >= recipe.threshold) { taps += reach; reach = 0; break; }
+        const p = Math.min(10000, recipe.success + Math.min(fails * recipe.failBonus, recipe.failMax) + juice);
+        taps += reach;
+        reach *= 1 - p / 10000;
+        energy += p;
+      }
+      const cost = taps * (baseTap + b * breathPrice);
+      if (!best || cost < best.cost) best = { cost, taps, breaths: b, rawGold: taps * recipe.gold };
+    }
+    return best;
+  }
+
+  // Étape d'affinage à chiffrer pour une pièce : recette Serka au niveau affiché quand elle est chargée,
+  // sinon (repli) Serka estimé comme de l'Aegir au niveau effectif (+9). null au-delà de +25.
+  function honingStepFor(piece, isSerka, lvl, effLvl) {
+    const track = isSerka ? 'serka' : 'aegir';
+    if (!isSerka || (honingT4 && honingT4.tracks[track])) return lvl < 25 ? { track, lvl } : null;
+    const e = effLvl !== undefined ? effLvl : lvl + 9;
+    return e < 25 ? { track: 'aegir', lvl: e } : null;
+  }
+
+  function getLevelCost(piece, lvl, track = 'aegir') {
       if (lvl < 10 || lvl > 24) return { totalValue: 0, rawGold: 0 };
+      const recipe = honingT4 && honingT4.tracks[track] && honingT4.tracks[track][piece === 'weapon' ? 'weapon' : 'armor'][lvl];
+      if (recipe) {
+        const r = recipeStepCost(recipe);
+        return { totalValue: Math.round(r.cost), rawGold: Math.round(r.rawGold), taps: r.taps, breaths: r.breaths };
+      }
+      if (track !== 'aegir') return { totalValue: 0, rawGold: 0 };
       
       const isWeapon = piece === 'weapon';
       const costs = isWeapon ? window.T4_WEAPON_COST : window.T4_ARMOR_COST;
@@ -3231,14 +3293,14 @@
 
     // 1. Weapon Honing
     let wLvl = sys.weapon.wLvl || 12;
-    // Serka : même puissance qu'Aegir +9, on estime donc le coût sur le niveau effectif
-    const effWLvl = sys.weapon.effWLvl !== undefined ? sys.weapon.effWLvl : wLvl;
-    if (effWLvl < 25) {
+    // Serka : sa propre recette au niveau affiché (Maxroll) ; sans elle, estimation Aegir au niveau effectif (+9)
+    const wStep = honingStepFor('weapon', sys.weapon.isSerka, wLvl, sys.weapon.effWLvl);
+    if (wStep) {
       // Gain relatif : +1 niveau ajoute WEAPON_HONING_BONUS_PER_LVL au bonus d'arme actuel
       const curWeaponPct = sys.weapon.bonusPct || 0;
       const dmgGain = ((1 + (curWeaponPct + WEAPON_HONING_BONUS_PER_LVL) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
       // Coût attendu du palier : tentatives moyennes (artisan) × matériaux au prix du marché
-      const cost = getLevelCost('weapon', effWLvl).totalValue;
+      const cost = getLevelCost('weapon', wStep.lvl, wStep.track).totalValue;
       pushRow('dyn_weapon',
         isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
         isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
@@ -3249,15 +3311,15 @@
 
     // 2. Armor Honing
     let aLvl = Math.floor(sys.armors.avgArmor || 12);
-    // Serka : même logique que l'arme, coût estimé sur le niveau moyen effectif
-    const effALvl = Math.floor(sys.armors.effAvgArmor !== undefined ? sys.armors.effAvgArmor : aLvl);
-    if (effALvl < 25) {
+    // Serka : même logique que l'arme
+    const aStep = honingStepFor('armor', sys.armors.isSerka, aLvl, sys.armors.effAvgArmor !== undefined ? Math.floor(sys.armors.effAvgArmor) : undefined);
+    if (aStep) {
       // Gain relatif : +1 niveau moyen ajoute ARMOR_HONING_BONUS_PER_LVL au bonus d'armure actuel
       const curArmorPct = sys.armors.bonusPct || 0;
       const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
       const dmgGain = ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
       // Coût attendu d'un palier sur chacune des 5 pièces
-      const cost = getLevelCost('armor', effALvl).totalValue * 5;
+      const cost = getLevelCost('armor', aStep.lvl, aStep.track).totalValue * 5;
       pushRow('dyn_armor',
         isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
         isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,
@@ -11395,12 +11457,20 @@
       return pts.filter(v => v > 0 && v < 20).length * ARK_CORE_COST_PER_POINT;
     };
     // Affinage : coût attendu de chaque palier jusqu'au niveau de la référence (1 palier si inconnu)
-    const honingPathCost = (piece, fromLvl, toLvl, pieces) => {
+    const honingPathCost = (piece, fromLvl, toLvl, pieces, track = 'aegir') => {
       const from = Math.floor(fromLvl);
       const to = Math.min(25, toLvl !== undefined && Math.floor(toLvl) > from ? Math.floor(toLvl) : from + 1);
       let total = 0;
-      for (let l = from; l < to; l++) total += getLevelCost(piece, l).totalValue * pieces;
+      for (let l = from; l < to; l++) total += getLevelCost(piece, l, track).totalValue * pieces;
       return total;
+    };
+    // Même équipement des deux côtés et recettes chargées : chemin exact en niveaux affichés.
+    // Sinon (Aegir contre Serka, ou recettes absentes) : estimation Aegir sur les niveaux effectifs.
+    const honingGapCost = (piece, p, t, lvlKey, effKey, pieces) => {
+      if (honingT4 && !!p.isSerka === !!t.isSerka && p[lvlKey] !== undefined) {
+        return honingPathCost(piece, p[lvlKey], t[lvlKey], pieces, p.isSerka ? 'serka' : 'aegir');
+      }
+      return honingPathCost(piece, p[effKey] !== undefined ? p[effKey] : (p[lvlKey] || 12), t[effKey], pieces);
     };
     const pWeapon = pSys.weapon || {};
     const tWeapon = tSys.weapon || {};
@@ -11413,11 +11483,11 @@
       { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderStar', 'chaosStar') },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: 0 }, // obtenues en jeu : écart affiché, hors plan d'achat
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: ACC_UPGRADE_COST_AVG },
-      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
+      { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingGapCost('weapon', pWeapon, tWeapon, 'wLvl', 'effWLvl', 1) },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '', cost: 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", icon: '', cost: 0 }, // obtenu en jeu : écart affiché, hors plan d'achat
       { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", icon: '', cost: computeGemUpgradeCost(player, target) },
-      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '', cost: honingPathCost('armor', pArmors.effAvgArmor !== undefined ? pArmors.effAvgArmor : (pArmors.avgArmor || 12), tArmors.effAvgArmor, 5) },
+      { key: 'armors', title: isEn ? "T4 Armor Honing" : "Affinage Armures T4", icon: '', cost: honingGapCost('armor', pArmors, tArmors, 'avgArmor', 'effAvgArmor', 5) },
       // Stat principale et stats de combat découlent de l'équipement (bijoux, bracelet, affinage), déjà comptés
       // sur leurs propres lignes : coût 0 = affichées au diagnostic mais exclues du plan d'action.
       { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 0 },
@@ -16708,7 +16778,9 @@
   // Pierres de destruction / gardien : l'API donne le prix d'un lot de 100 au marché
   const MARKET_BUNDLE_SIZE = {
     'destiny-destruction-stone': 100,
-    'destiny-guardian-stone': 100
+    'destiny-guardian-stone': 100,
+    'destiny-crystallized-destruction-stone': 100,
+    'destiny-crystallized-guardian-stone': 100
   };
 
   // Prix du marché EUC (API de loa-buddy) via notre route serveur /api/market/prices :
@@ -16739,6 +16811,7 @@
     console.log('[APP] initApp executed! readyState:', document.readyState);
     bindEvents();
     fetchMarketPrices();
+    loadHoningT4();
 
     const savedRoster = getUserRoster();
     if (savedRoster && savedRoster.length > 0) {
