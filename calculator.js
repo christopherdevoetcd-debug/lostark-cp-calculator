@@ -1451,6 +1451,55 @@
     return levels.every(l => l) ? levels : null;
   }
 
+  // Gemmes du profil avec leur effet de compétence : dégâts (type 5) ou recharge (type 27), en %
+  function realGems(charObj) {
+    const raw = (charObj && charObj.rawProfile) || {};
+    const gems = (raw.loadout && raw.loadout.gems) || [];
+    const out = gems.map(g => {
+      const ap = (g.effects || []).find(e => e.type === 2 && e.id === 150);
+      const sk = (g.effects || []).find(e => e.type === 5 || e.type === 27);
+      const level = ap ? GEM_AP_BY_VALUE[ap.value] : undefined;
+      return level && sk ? { level, kind: sk.type === 5 ? 'dmg' : 'cd', pct: sk.value / 100 } : null;
+    });
+    return out.length && out.every(Boolean) ? out : null;
+  }
+
+  // Part des dégâts d'un DPS portée par des compétences à recharge (Loseii, lignes gemmes DPS)
+  const GEM_CD_DAMAGE_SHARE = 0.7;
+  // Effet de compétence gagné par niveau de gemme T4 : +4 points de dégâts, +2 points de réduction de recharge
+  const GEM_STEP = { dmg: 4, cd: 2 };
+
+  /**
+   * Gain DPS (%) d'une montée de gemmes : toutes les gemmes au niveau `lvl` passent à lvl + 1.
+   * Trois effets, d'après les vraies gemmes du profil :
+   *  - dégâts : moyenne des (1 + dégâts) des gemmes de dégâts (chaque compétence gemmée porte une part égale des dégâts) ;
+   *  - recharge : les compétences sont lancées plus souvent, moyenne des 1 / (1 − recharge), sur 70 % des dégâts ;
+   *  - PA de base : % de PA de chaque gemme, sur le multiplicateur de PA réel du Battle Point.
+   * Renvoie 100 × ln(produit), même échelle que l'affinage. null si le profil manque de données.
+   */
+  function dpsGemUpgradeGain(charObj, lvl) {
+    const gems = realGems(charObj);
+    if (!gems || !(GEM_AP_PCT[lvl + 1] > 0)) return null;
+    const up = g => g.level === lvl;
+    const n = gems.filter(up).length;
+    if (!n) return null;
+    const dmg = gems.filter(g => g.kind === 'dmg');
+    const cd = gems.filter(g => g.kind === 'cd');
+    const mean = (arr, f) => arr.reduce((sum, g) => sum + f(g), 0) / arr.length;
+    let mult = 1;
+    if (dmg.length) mult *= mean(dmg, g => 1 + (g.pct + (up(g) ? GEM_STEP.dmg : 0)) / 100) / mean(dmg, g => 1 + g.pct / 100);
+    if (cd.length) {
+      const casts = mean(cd, g => 1 / (1 - (g.pct + (up(g) ? GEM_STEP.cd : 0)) / 100)) / mean(cd, g => 1 / (1 - g.pct / 100));
+      mult *= 1 + GEM_CD_DAMAGE_SHARE * (casts - 1);
+    }
+    const raw = (charObj && charObj.rawProfile) || {};
+    const lo = raw.loadout || {};
+    const parts = (lo.battlePoint && lo.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
+    const apPool = ((parts.find(p => p.type === 1) || {}).attackPowerMultiplier || 0) / 100;
+    mult *= (1 + apPool + n * (GEM_AP_PCT[lvl + 1] - GEM_AP_PCT[lvl]) / 100) / (1 + apPool);
+    return 100 * Math.log(mult);
+  }
+
   // Célérité nécessaire, à ce niveau moyen de gemmes, pour garder les recharges du set niv. 10
   function supportSwiftFor(level) {
     const M = SUPPORT_MODEL;
@@ -3649,23 +3698,28 @@
     }
 
     // 3. Gems : une ligne par niveau présent
-    // Support : vraies gemmes du profil, gain de buff du modèle Loseii ; sinon gain relatif sur le bonus moyen du set
-    const supGems = isSupport ? realGemLevels(charObj) : null;
+    // Vraies gemmes du profil : buff du modèle Loseii (support) ou dégâts, recharge et PA (DPS) ;
+    // sinon (profil sans gemmes détaillées) gain relatif sur le bonus moyen du set
+    const supGems = realGemLevels(charObj);
     if (supGems) {
       const counts = { 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
       supGems.forEach(l => { counts[l]++; });
       [6, 7, 8, 9].forEach(lvl => {
         const n = counts[lvl];
         if (!n) return;
-        const gain = supportGemUpgradeGain(charObj, lvl, n);
+        const gain = isSupport ? supportGemUpgradeGain(charObj, lvl, n) : dpsGemUpgradeGain(charObj, lvl);
         if (gain === null) return;
         pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
           isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
           isEn ? `${n} gem(s) out of ${supGems.length}` : `${n} gemme(s) sur ${supGems.length}`,
           gain, n * GEM_UPGRADE_COST[lvl],
-          isEn
-            ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced. Buff (Loseii model): ally buffs +1 point per set level, real base AP per gem, cooldown turned into Specialization.`
-            : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées. Buff (modèle Loseii) : +1 point de buffs alliés par niveau du set, vraie PA de base par gemme, recharge convertie en Spécialisation.`,
+          isSupport
+            ? (isEn
+              ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced. Buff (Loseii model): ally buffs +1 point per set level, real base AP per gem, cooldown turned into Specialization.`
+              : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées. Buff (modèle Loseii) : +1 point de buffs alliés par niveau du set, vraie PA de base par gemme, recharge convertie en Spécialisation.`)
+            : (isEn
+              ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced. Damage gems +4% skill damage, cooldown gems -2% cooldown (70% of damage on cooldown), plus each gem's base attack power.`
+              : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées. Gemmes de dégâts +4 % de dégâts de compétence, gemmes de recharge −2 % de recharge (70 % des dégâts sous recharge), plus la PA de base de chaque gemme.`),
           { lvl, n, counts, total: supGems.length });
       });
     }
