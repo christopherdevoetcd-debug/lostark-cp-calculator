@@ -3817,18 +3817,36 @@
    * Les dégâts additionnels s'additionnent entre eux : gain dilué dans le pool de bracelet-model.js
    * (familier, astrogemmes, collier), avec la vraie qualité à la place de la qualité 100. null si rien à gagner.
    */
-  function weaponQualityUpgrade(charObj) {
-    if (!window.Bracelet) return null;
+  // Qualité d'arme lue sur la partie type 4 du Battle Point (null si absente)
+  function weaponQualityOf(charObj) {
     const qp = battlePointPartsOf(charObj).find(p => p.type === 4);
-    const q = qp && Number.isFinite(qp.quality) ? qp.quality : null;
-    if (q === null || q >= 100) return null;
+    return qp && Number.isFinite(qp.quality) ? qp.quality : null;
+  }
+
+  // Gain DPS (%) de la qualité q à q2 : dégâts additionnels dilués dans le pool de bracelet-model.js
+  function weaponQualityGain(q, q2) {
+    if (!window.Bracelet) return null;
     const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
     const pool = window.Bracelet.addDamagePool(prof) - (prof.addDamage.weaponQuality || 0) + weaponQualityAddDmg(q);
+    return 100 * Math.log((1 + pool - weaponQualityAddDmg(q) + weaponQualityAddDmg(q2)) / (1 + pool));
+  }
+
+  // Chance par essai de tirer au moins la qualité q (chances fixes, la qualité n'est gardée que si elle monte)
+  function weaponQualityChanceAtLeast(q) {
+    let c = 0;
+    for (let n = Math.max(0, q); n <= 100; n++) c += weaponQualityChance(n);
+    return c;
+  }
+
+  function weaponQualityUpgrade(charObj) {
+    if (!window.Bracelet) return null;
+    const q = weaponQualityOf(charObj);
+    if (q === null || q >= 100) return null;
     let chance = 0, gainSum = 0;
     for (let n = q + 1; n <= 100; n++) {
       const c = weaponQualityChance(n);
       chance += c;
-      gainSum += c * 100 * Math.log((1 + pool - weaponQualityAddDmg(q) + weaponQualityAddDmg(n)) / (1 + pool));
+      gainSum += c * weaponQualityGain(q, n);
     }
     if (!(chance > 0)) return null;
     return { quality: q, chance, taps: 1 / chance, cost: WEAPON_QUALITY_TAP_GOLD / chance, gain: gainSum / chance };
@@ -12005,6 +12023,13 @@
       arkGridStar: { label: starLabel, bonusPct: starBonusPct },
       arkGridAstrogems: { label: astroLabel, bonusPct: astroBonusPct },
       weapon: { label: weaponLabel, bonusPct: weaponBonusPct, quality: wQual, qualityVal: wQualVal, wLvl, effWLvl, isSerka: isSerkaWeapon },
+      // Écart chiffré par le GPD (benchmarkGpdGains) ; bonusPct 0 : le repli de l'arme compte déjà la qualité
+      weaponQuality: {
+        label: isSupport
+          ? (isEn ? `Quality ${wQual} (no effect on buffs)` : `Qualité ${wQual} (sans effet sur le buff)`)
+          : (isEn ? `Quality ${wQual} (+${wQualVal.toFixed(2)}% additional damage)` : `Qualité ${wQual} (+${wQualVal.toFixed(2)} % dégâts additionnels)`),
+        bonusPct: 0
+      },
       armors: { label: armorsLabel, bonusPct: Number(armorBonusPct.toFixed(2)), avgArmor, effAvgArmor, isSerka: isSerkaArmors, serkaArmorCount },
       advHoning: { label: advLabel, bonusPct: advBonusPct },
       transWeapon: { label: transWeaponLabel, bonusPct: 14.50 },
@@ -12414,16 +12439,15 @@
     const out = {};
     const gear = benchGearGains(player, target, pSys, tSys, isSupport);
     if (gear) ['weapon', 'armors', 'advHoning'].forEach(k => { if (gear[k]) out[k] = gear[k]; });
-    // Qualité d'arme (DPS) : partie type 4 du Battle Point, dans l'écart de l'arme mais hors plan d'achat
-    if (out.weapon && !isSupport) {
-      const qOf = c => {
-        const raw = (c && c.rawProfile) || {};
-        const parts = (raw.loadout && raw.loadout.battlePoint && raw.loadout.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
-        const q = parts.find(p => p.type === 4);
-        return q && q.value > 0 ? q.value : null;
-      };
-      const pq = qOf(player), tq = qOf(target);
-      if (pq !== null && tq !== null) out.weapon.net += 100 * Math.log((1 + tq / 1e4) / (1 + pq / 1e4));
+    // Qualité d'arme (DPS) : ligne à part, même gain que la ligne du GPD ; coût pour tirer au moins la qualité
+    // de la référence = 800 or ÷ chance par essai. Rien pour un support (ni buff, ni CP).
+    if (!isSupport) {
+      const pq = weaponQualityOf(player), tq = weaponQualityOf(target);
+      const net = pq !== null && tq !== null ? weaponQualityGain(pq, tq) : null;
+      if (net !== null) {
+        const behind = tq > pq;
+        out.weaponQuality = { net, buy: behind ? net : 0, cost: behind ? Math.round(WEAPON_QUALITY_TAP_GOLD / weaponQualityChanceAtLeast(tq)) : 0 };
+      }
     }
     const gems = benchGemGains(player, target, isSupport);
     if (gems) out.gems = gems;
@@ -12622,6 +12646,7 @@
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", cost: () => 0 }, // obtenues en jeu : écart affiché, hors plan d'achat
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", cost: () => ACC_UPGRADE_COST_AVG },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", cost: () => honingGapCost('weapon', pSys.weapon || {}, tSys.weapon || {}, 'wLvl', 'effWLvl', 1) },
+      { key: 'weaponQuality', title: isEn ? "Weapon Quality" : "Qualité d'Arme", cost: () => 0 }, // chiffrée par le GPD (DPS) ; sinon hors plan
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", cost: () => 125000 },
       { key: 'bracelet', title: isEn ? "T4 Bracelet Passives (Circularity)" : "Passifs de Bracelet T4 (Circulaire)", cost: () => 0 }, // obtenu en jeu : écart affiché, hors plan d'achat
       { key: 'gems', title: isEn ? "T4 Gems Tier" : "Palier de Gemmes T4", cost: () => computeGemUpgradeCost(player, target) },
@@ -16935,7 +16960,8 @@
         { key: 'arkGridStar', name: isEn ? 'Ark Grid: Star Cores (Order & Chaos)' : 'Ark Grid : Cœurs Étoile (Ordre & Chaos)', icon: '', prio: 'med' },
         { key: 'arkGridAstrogems', name: isEn ? 'Ark Grid: Astrogems (Substats)' : 'Ark Grid : Astrogemmes (Sous-stats)', icon: '', prio: 'med' },
         { key: 'accessories', name: isEn ? 'T4 Accessories (Rolls & Lines)' : 'Accessoires T4 (Rolls & Lignes)', icon: '', prio: 'high' },
-        { key: 'weapon', name: isEn ? 'T4 Weapon (Honing & Quality)' : 'Arme T4 (Affinage & Qualité)', icon: '', prio: 'med' },
+        { key: 'weapon', name: isEn ? 'T4 Weapon (Honing)' : 'Arme T4 (Affinage)', icon: '', prio: 'med' },
+        { key: 'weaponQuality', name: isEn ? 'Weapon Quality (Additional Damage)' : 'Qualité d\'Arme (Dégâts Additionnels)', icon: '', prio: 'med' },
         { key: 'advHoning', name: isEn ? 'T4 Advanced Honing' : 'Affinage Avancé T4', icon: '', prio: 'equal' },
         { key: 'bracelet', name: isEn ? 'T4 Bracelet (Stats & Passives)' : 'Bracelet T4 (Stats & Passifs)', icon: '', prio: 'med' },
         { key: 'gems', name: isEn ? 'T4 Gems (Tiers & DMG)' : 'Gemmes T4 (Niveaux & Dégâts)', icon: '', prio: target.gemTier === 'gem8' ? 'equal' : 'opt' },
