@@ -1409,11 +1409,134 @@
     return { gain: 50 * Math.log(1 + dWp / ctx.wp) + 50 * Math.log(1 + dMs / ctx.ms), dWp, dMs };
   }
 
+  // Modèle support de Loseii (loastuff/loa-gpd, model/support.js et model/gems.js) :
+  // Q = 100 × ln(ap × marque × identité), en % de dégâts de CHAQUE allié.
+  // Le support buffé est leur Barde de référence (gemmes niv. 9) ; les écarts du vrai personnage
+  // (PA, % de PA, lignes de bijoux, niveau moyen des gemmes) sont appliqués par-dessus.
+  const SUPPORT_MODEL = {
+    share: 0.22,             // part de sa PA de base que le support donne à un allié
+    upAp: 0.95, upBrand: 1, upSeren: 0.7, upChord: 0.7, upTskill: 0.4,
+    allyAtkEnh: 68.55,       // % à gemmes niv. 9 (absentes du profil lostark.bible) ; les bijoux s'y ajoutent
+    allyDmg: 38.26,
+    allyDmgT: 9.26,
+    brandPower: 45,
+    spec: 1016,
+    classCoeff: 0.0005005722461,
+    baseAdd: 0.3585,
+    dpsWP: 260918,           // DPS buffé : 241 367 d'arme × (1 + 6 % boucles + 2,1 % karma)
+    dpsMS: 767170,
+    dpsAtkPct: 0.2948,
+    dpsFlatAtk: 3600,
+    // Gemmes : +1 point de chaque buff par niveau du set, recharge convertie en Spécialisation
+    gemRefLevel: 9,
+    gemBuffPerLevel: 1,
+    swiftAtTen: 1400,
+    cdrPerSwift: 15 / 699,
+    gemCdrAtTen: 0.24,
+    cdrPerGemLevel: 0.02
+  };
+  // % de PA de base d'UNE gemme T4 par niveau (effet stat 150 des profils lostark.bible, en 0,01 %)
+  const GEM_AP_BY_VALUE = { 45: 6, 60: 7, 80: 8, 100: 9, 120: 10 };
+  const GEM_AP_PCT = { 6: 0.45, 7: 0.60, 8: 0.80, 9: 1.00, 10: 1.20 };
+
+  // Niveaux des gemmes du profil (null si une gemme n'est pas reconnue)
+  function realGemLevels(charObj) {
+    const raw = (charObj && charObj.rawProfile) || {};
+    const gems = (raw.loadout && raw.loadout.gems) || [];
+    if (!gems.length) return null;
+    const levels = gems.map(g => {
+      const ap = (g.effects || []).find(e => e.type === 2 && e.id === 150);
+      return ap ? GEM_AP_BY_VALUE[ap.value] : undefined;
+    });
+    return levels.every(l => l) ? levels : null;
+  }
+
+  // Célérité nécessaire, à ce niveau moyen de gemmes, pour garder les recharges du set niv. 10
+  function supportSwiftFor(level) {
+    const M = SUPPORT_MODEL;
+    const target = (1 - M.swiftAtTen * M.cdrPerSwift / 100) * (1 - M.gemCdrAtTen);
+    const gemCdr = M.gemCdrAtTen - (10 - level) * M.cdrPerGemLevel;
+    return (1 - target / (1 - gemCdr)) * 100 / M.cdrPerSwift;
+  }
+
+  // Données du support lues sur le profil : % de PA (Battle Point type 1), lignes des bijoux, gemmes
+  function supportInputs(charObj) {
+    const raw = (charObj && charObj.rawProfile) || {};
+    const lo = raw.loadout || {};
+    const parts = (lo.battlePoint && lo.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
+    const atkPart = parts.find(p => p.type === 1) || {};
+    const lines = { allyAtkEnh: 0, allyDmg: 0, brand: 0 };
+    (lo.items || []).forEach(it => ((it.data && it.data.stats) || []).forEach(st => {
+      const v = (st.value || 0) / 100;
+      if (st.type === 54) lines.allyAtkEnh += v;
+      else if (st.type === 59 || st.index === 16000001) lines.allyDmg += v;
+      else if (st.type === 2 && st.index === 46) lines.brand += v;
+    }));
+    const gems = realGemLevels(charObj);
+    const gemAvg = gems ? gems.reduce((a, b) => a + b, 0) / gems.length : SUPPORT_MODEL.gemRefLevel;
+    return { apPct: (atkPart.attackPowerMultiplier || 0) / 100, lines, gems, gemAvg };
+  }
+
+  // Multiplicateur de dégâts donné à un allié (ap × marque × identité)
+  function supportContribution(inp, wp, ms, gemAvg, apPct) {
+    const M = SUPPORT_MODEL;
+    const shift = (gemAvg - M.gemRefLevel) * M.gemBuffPerLevel;
+    const atkEnh = (M.allyAtkEnh + shift + inp.lines.allyAtkEnh) / 100;
+    const allyDmg = (M.allyDmg + shift + inp.lines.allyDmg) / 100;
+    const allyDmgT = (M.allyDmgT + inp.lines.allyDmg) / 100;
+    const brandPower = (M.brandPower + shift + inp.lines.brand) / 100;
+    const spec = M.spec + supportSwiftFor(M.gemRefLevel) - supportSwiftFor(gemAvg);
+    const specEff = spec * M.classCoeff;
+    const supAtk = Math.sqrt(wp * ms / 6) * (1 + apPct);
+    const dpsAtk = Math.sqrt(M.dpsWP * M.dpsMS / 6);
+    const mults = 1 + M.dpsAtkPct;
+    const apMult = ((dpsAtk + supAtk * M.share * (1 + atkEnh)) * mults + M.dpsFlatAtk) / (dpsAtk * mults + M.dpsFlatAtk);
+    const ap = 1 + M.upAp * (apMult - 1);
+    const brand = 1 + M.upBrand * 0.1 * (1 + brandPower);
+    const seren = 0.15 * (1 + allyDmg) * (1 + specEff);
+    const chord = 0.02 * (1 + allyDmg) * (1 + specEff);
+    const tsk = 0.1 * (1 + allyDmgT);
+    const identity = 1 + (M.upSeren * seren + M.upChord * chord + M.upTskill * tsk) / (1 + M.baseAdd);
+    return ap * brand * identity;
+  }
+
+  /**
+   * Gain de buff (% de dégâts de chaque allié, même échelle que les lignes support des bijoux)
+   * quand la puissance d'arme et la stat principale du support montent de dWp / dMs.
+   */
+  function supportApGain(charObj, ctx, dWp, dMs) {
+    const inp = supportInputs(charObj);
+    return 100 * Math.log(supportContribution(inp, ctx.wp + dWp, ctx.ms + dMs, inp.gemAvg, inp.apPct) /
+      supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct));
+  }
+
+  /**
+   * Gains de buff d'une montée de gemmes : les `n` gemmes au niveau `lvl` passent à lvl + 1.
+   * Buffs du set (+n/11 de point), PA de base réelle par gemme, recharge convertie en Spécialisation.
+   * null si le profil manque de données.
+   */
+  function supportGemUpgradeGain(charObj, lvl, n) {
+    const ctx = gearStatContext(charObj);
+    const inp = supportInputs(charObj);
+    if (!ctx || !inp.gems || !(GEM_AP_PCT[lvl + 1] > 0)) return null;
+    const after = inp.gemAvg + n / inp.gems.length;
+    const apAfter = inp.apPct + n * (GEM_AP_PCT[lvl + 1] - GEM_AP_PCT[lvl]) / 100;
+    return 100 * Math.log(supportContribution(inp, ctx.wp, ctx.ms, after, apAfter) /
+      supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct));
+  }
+
+  // Gain d'un changement de pièces selon le rôle : dégâts personnels (DPS) ou buff donné aux alliés (support)
+  function gearRoleGain(charObj, ctx, changes, isSupport) {
+    const r = gearDpsGain(ctx, changes);
+    if (!r) return null;
+    return isSupport ? supportApGain(charObj, ctx, r.dWp, r.dMs) : r.gain;
+  }
+
   /**
    * Gain DPS (%) d'une étape d'affinage (+1) sur l'arme ou sur les 5 armures, chaque pièce depuis
    * son niveau et son affinage avancé. null si une donnée manque.
    */
-  function honingDpsGain(charObj, piece, isSerka) {
+  function honingDpsGain(charObj, piece, isSerka, isSupport) {
     const ctx = gearStatContext(charObj);
     if (!ctx) return null;
     const g = ctx.gear;
@@ -1421,15 +1544,15 @@
     const changes = slots.filter(sl => g[sl] >= 0 && g[sl] < 25)
       .map(sl => ({ slot: sl, isSerka, lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: g[sl] + 1, toAdv: gearAdvOf(charObj, g, sl) }));
     if (!changes.length) return null;
-    const r = gearDpsGain(ctx, changes);
-    return r && r.gain > 0 ? r.gain : null;
+    const gain = gearRoleGain(charObj, ctx, changes, isSupport);
+    return gain > 0 ? gain : null;
   }
 
   /**
    * Gain DPS (%) de l'affinage avancé jusqu'à `toAdv` sur les pièces `slots` (Aegir seulement :
    * +1 iLvl par niveau). null sur le Serka ou si une donnée manque.
    */
-  function advHoningDpsGain(charObj, slots, isSerka, toAdv) {
+  function advHoningDpsGain(charObj, slots, isSerka, toAdv, isSupport) {
     if (isSerka) return null;
     const ctx = gearStatContext(charObj);
     if (!ctx) return null;
@@ -1437,8 +1560,8 @@
     const changes = slots.filter(sl => g[sl] >= 0 && g[sl] <= 25)
       .map(sl => ({ slot: sl, isSerka: false, lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: g[sl], toAdv }));
     if (changes.length !== slots.length) return null;
-    const r = gearDpsGain(ctx, changes);
-    return r && r.gain > 0 ? r.gain : null;
+    const gain = gearRoleGain(charObj, ctx, changes, isSupport);
+    return gain > 0 ? gain : null;
   }
 
   function getLevelCost(piece, lvl, track = 'aegir') {
@@ -3344,7 +3467,8 @@
   // Bonus CP% moyen par niveau de gemme T4 (même échelle que extractPlayerSystems)
   const GEM_LEVEL_BONUS_PCT = { 7: 31.5, 8: 36.0, 9: 40.5, 10: 48.0 };
   // Coût (gold) pour monter UNE gemme T4 du niveau clé au niveau suivant
-  const GEM_UPGRADE_COST = { 7: 276000, 8: 813000, 9: 2415000 };
+  // Niv. 6 : trois gemmes niv. 6 font une niv. 7, donc 1/3 du coût du niveau 7
+  const GEM_UPGRADE_COST = { 6: 92000, 7: 276000, 8: 813000, 9: 2415000 };
   // Coût (gold) par point de cœur manquant pour atteindre 17 points.
   // Calé sur l'ancien forfait de 80 898 g, interprété comme un passage 14 → 17 (3 points).
   const ARK_CORE_COST_PER_POINT = Math.round(80898 / 3);
@@ -3433,8 +3557,8 @@
     if (wStep) {
       // Gain relatif : +1 niveau ajoute WEAPON_HONING_BONUS_PER_LVL au bonus d'arme actuel
       const curWeaponPct = sys.weapon.bonusPct || 0;
-      // DPS : gain réel sur la puissance d'arme du personnage ; sinon (support, données absentes) estimation par niveau
-      const realGain = isSupport ? null : honingDpsGain(charObj, 'weapon', sys.weapon.isSerka);
+      // Gain réel sur le personnage : dégâts (DPS) ou buff de PA donné aux alliés (support) ; estimation par niveau si une donnée manque
+      const realGain = honingDpsGain(charObj, 'weapon', sys.weapon.isSerka, isSupport);
       const dmgGain = realGain !== null ? realGain : ((1 + (curWeaponPct + WEAPON_HONING_BONUS_PER_LVL) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
       // Coût attendu du palier : tentatives moyennes (artisan) × matériaux au prix du marché
       const cost = getLevelCost('weapon', wStep.lvl, wStep.track).totalValue;
@@ -3454,7 +3578,7 @@
       // Gain relatif : +1 niveau moyen ajoute ARMOR_HONING_BONUS_PER_LVL au bonus d'armure actuel
       const curArmorPct = sys.armors.bonusPct || 0;
       const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
-      const realGain = isSupport ? null : honingDpsGain(charObj, 'armor', sys.armors.isSerka);
+      const realGain = honingDpsGain(charObj, 'armor', sys.armors.isSerka, isSupport);
       const dmgGain = realGain !== null ? realGain : ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
       // Coût attendu d'un palier sur chacune des 5 pièces, chacune depuis son propre niveau quand on le connaît
       const gearLv = charObj && charObj.gear;
@@ -3481,8 +3605,8 @@
       if (wAdv && !sys.weapon.isSerka) {
         const curWeaponPct = sys.weapon.bonusPct || 0;
         const add = WEAPON_HONING_BONUS_PER_LVL * wAdv.levels / 5;
-        // DPS : gain réel d'après la table itemLevel ; sinon (support, données absentes) estimation par niveau
-        const realGain = isSupport ? null : advHoningDpsGain(charObj, ['weapon'], false, wAdv.to);
+        // Gain réel d'après la table itemLevel (DPS : dégâts, support : buff de PA) ; sinon estimation par niveau
+        const realGain = advHoningDpsGain(charObj, ['weapon'], false, wAdv.to, isSupport);
         const dmgGain = realGain !== null ? realGain : ((1 + (curWeaponPct + add) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
         pushRow('dyn_adv_weapon',
           isEn ? `Advanced Honing — Weapon ${wAdv.from} ➔ ${wAdv.to}` : `Affinage avancé — Arme ${wAdv.from} ➔ ${wAdv.to}`,
@@ -3500,8 +3624,8 @@
         const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
         // Le niveau moyen des 5 pièces monte de (pièces × niveaux) / 5, à 1/5 d'un niveau normal
         const add = perLvl * (lagging.length * aAdv.levels / 5) / 5;
-        // DPS : gain réel pièce par pièce (chacune a sa propre courbe de stat principale)
-        const realGain = isSupport ? null : advHoningDpsGain(charObj, laggingSlots, false, aAdv.to);
+        // Gain réel pièce par pièce (chacune a sa propre courbe de stat principale)
+        const realGain = advHoningDpsGain(charObj, laggingSlots, false, aAdv.to, isSupport);
         const dmgGain = realGain !== null ? realGain : ((1 + (curArmorPct + add) / 100) / (1 + curArmorPct / 100) - 1) * 100;
         pushRow('dyn_adv_armor',
           isEn ? `Advanced Honing — Armors ${aAdv.from} ➔ ${aAdv.to}` : `Affinage avancé — Armures ${aAdv.from} ➔ ${aAdv.to}`,
@@ -3512,12 +3636,32 @@
       }
     }
 
-    // 3. Gems : une ligne par niveau présent, gain relatif sur le bonus moyen actuel du set
-    const gemParts = extractCharacterGemParts(charObj);
+    // 3. Gems : une ligne par niveau présent
+    // Support : vraies gemmes du profil, gain de buff du modèle Loseii ; sinon gain relatif sur le bonus moyen du set
+    const supGems = isSupport ? realGemLevels(charObj) : null;
+    if (supGems) {
+      const counts = { 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
+      supGems.forEach(l => { counts[l]++; });
+      [6, 7, 8, 9].forEach(lvl => {
+        const n = counts[lvl];
+        if (!n) return;
+        const gain = supportGemUpgradeGain(charObj, lvl, n);
+        if (gain === null) return;
+        pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
+          isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
+          isEn ? `${n} gem(s) out of ${supGems.length}` : `${n} gemme(s) sur ${supGems.length}`,
+          gain, n * GEM_UPGRADE_COST[lvl],
+          isEn
+            ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced. Buff (Loseii model): ally buffs +1 point per set level, real base AP per gem, cooldown turned into Specialization.`
+            : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées. Buff (modèle Loseii) : +1 point de buffs alliés par niveau du set, vraie PA de base par gemme, recharge convertie en Spécialisation.`,
+          { lvl, n, counts, total: supGems.length });
+      });
+    }
+    const gemParts = supGems ? null : extractCharacterGemParts(charObj);
     const gemCounts = (gemParts && gemParts.length > 0)
       ? countGemLevels(gemParts, isSupport)
       : countGemLevelsFromLabel((sys.gems && sys.gems.label) || '');
-    if (gemCounts) {
+    if (gemCounts && !supGems) {
       const totalGems = gemCounts[7] + gemCounts[8] + gemCounts[9] + gemCounts[10];
       const curGemPct = [7, 8, 9, 10].reduce((s, l) => s + gemCounts[l] * GEM_LEVEL_BONUS_PCT[l], 0) / totalGems;
       [7, 8, 9].forEach(lvl => {
@@ -4540,7 +4684,7 @@
           category: 'gear'
         }));
       } else if (d.id.startsWith('dyn_gems_')) {
-        const mix = [10, 9, 8, 7].filter(l => m.counts[l] > 0).map(l => `${m.counts[l]}× ${lvlWord} ${l}`).join(', ');
+        const mix = [10, 9, 8, 7, 6].filter(l => m.counts[l] > 0).map(l => `${m.counts[l]}× ${lvlWord} ${l}`).join(', ');
         rows.push(dynToMaster(d, {
           icon: '',
           system: isEn ? 'Skill gems' : 'Gemmes de compétences',
