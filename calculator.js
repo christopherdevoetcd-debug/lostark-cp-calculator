@@ -1582,6 +1582,30 @@
     return out;
   }
 
+  // Benchmark : prix des livres reliques qui manquent au joueur pour lire autant que la référence
+  // sur chacune de ses gravures reliques (jusqu'au niveau 4 si la référence ne l'a pas en relique).
+  // 0 si aucun livre manquant n'a de prix marché (ex. gravures support) : écart affiché, hors plan d'achat.
+  function relicBooksCostToTarget(player, target) {
+    const engrOf = c => {
+      const raw = (c && c.rawProfile) || c || {};
+      return raw.engravings || (raw.loadout && raw.loadout.engravings) || [];
+    };
+    const targetRead = {};
+    engrOf(target).forEach(e => {
+      if (e && e.grade === 'engrave_grade05') targetRead[e.id] = Math.min(RELIC_MAX_BOOKS, e.progress || 0);
+    });
+    let total = 0;
+    engrOf(player).forEach(e => {
+      if (!e || e.grade !== 'engrave_grade05') return;
+      const label = BIBLE_ENGRAVINGS[String(e.id)] || '';
+      const price = state.marketPrices[relicBookSlug(label.split(' (')[0].toLowerCase())];
+      if (!(price > 0)) return;
+      const goal = e.id in targetRead ? targetRead[e.id] : RELIC_MAX_BOOKS;
+      total += Math.max(0, goal - Math.min(RELIC_MAX_BOOKS, e.progress || 0)) * price;
+    });
+    return Math.round(total);
+  }
+
   // --- Bracelet : gain espéré d'une nouvelle campagne (solveur exact, dans bracelet-worker.js) ---
   // 4 rerolls normaux + 3 tickets de reconversion
   const BRACELET_CAMPAIGN_ROLLS = 7;
@@ -11357,7 +11381,7 @@
       // Stat principale et stats de combat découlent de l'équipement (bijoux, bracelet, affinage), déjà comptés
       // sur leurs propres lignes : coût 0 = affichées au diagnostic mais exclues du plan d'action.
       { key: 'baseAttackStat', title: isEn ? "Main Stat & Base AP" : "Stat Principale & Attaque de Base", icon: '', cost: 0 },
-      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '', cost: 40000 },
+      { key: 'engravings', title: isEn ? "Engravings & Ability Stone" : "Gravures & Pierre de Naissance", icon: '', cost: relicBooksCostToTarget(player, target) }, // livres au prix du marché ; la pierre vient du jeu
       { key: 'combatStats', title: isEn ? "Combat Stats (Quality & Potions)" : "Stats de Combat (Qualité & Potions)", icon: '', cost: 0 },
       { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '', cost: 0 }, // points obtenus en jeu : écart affiché, hors plan d'achat
       { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '', cost: 0 },
