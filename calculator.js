@@ -3871,7 +3871,7 @@
 
   function getDynamicGpdTable(charObj, role, isEn) {
     const charRole = (charObj && detectCharacterRole(charObj)) || role || 'dps';
-    if (!charObj) return EUC_EFFICIENCY_DATA[charRole] || EUC_EFFICIENCY_DATA.support;
+    if (!charObj) return [];
     const isSupport = charRole === 'support';
     const sys = extractPlayerSystems(charObj, isEn);
 
@@ -4179,11 +4179,9 @@
     const role = state.role || 'support';
     const isSupport = role === 'support';
     
-    let list = EUC_EFFICIENCY_DATA[role] || EUC_EFFICIENCY_DATA.support;
+    // Uniquement le GPD du personnage actif : sans personnage importé, état vide (aucun tableau figé)
     const activeChar = getCurrentActiveCharacter();
-    if (activeChar) {
-       list = getDynamicGpdTable(activeChar, role, isEnLang());
-    }
+    const list = activeChar ? getDynamicGpdTable(activeChar, role, isEnLang()) : [];
 
     const isEn = isEnLang();
     if (dom.effRoleBadge) {
@@ -4205,71 +4203,25 @@
         : (isEn ? 'Cost / 1% DPS' : 'Coût / 1% DPS');
     }
 
-    // Trouver la prochaine meilleure amélioration non encore acquise
-    let nextBest = null;
-    for (const item of list) {
-      const acquired = item.checkAcquired ? item.checkAcquired(state) : false;
-      if (!acquired) {
-        nextBest = item;
-        break;
-      }
-    }
-
-    const EFF_TRANS_EN = {
-      acc_wp_mid: { name: 'T4 Accessory: Weapon AP % Line (Mid Roll)', sub: 'Ancient Accessory • +1.8% Weapon Power', comment: 'Best ROI: accessible basic roll for a direct party AP buff boost.' },
-      ark_grid_order_sun_17: { name: 'Ark Grid: Solar Order 17 Points', sub: 'Ark Grid Tree • Solar Order Node', comment: 'Best Ark Grid investment: +1.13% direct buff for ~81k gold.' },
-      ark_grid_order_moon_17: { name: 'Ark Grid: Lunar Order 17 Points', sub: 'Ark Grid Tree • Lunar Order Node', comment: 'Direct complement to Solar Order, very good cost-efficiency ratio.' },
-      ark_grid_chaos_moon_17: { name: 'Ark Grid: Lunar Chaos (Brand) 17P', sub: 'Ark Grid Tree • Brand Specialization', comment: 'Increases party Brand Power debuff effectiveness.' },
-      ark_grid_chaos_star_17: { name: 'Ark Grid: Stellar Chaos (Weapon) 17P', sub: 'Ark Grid Tree • Weapon Power Node', comment: 'Weapon power transmitted to allies at a very good cost.' },
-      weapon_18: { name: 'Standard Honing: Weapon +17 ➔ +18', sub: 'T4 Honing • Aegir Weapon', comment: 'Key weapon milestone (+29 CP and +0.32% Buff) for a moderate 56k gold cost.' },
-      weapon_19: { name: 'Standard Honing: Weapon +18 ➔ +19', sub: 'T4 Honing • Aegir Weapon', comment: 'Final lower-cost weapon milestone before the +20 difficulty cliff.' },
-      weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed gain without failure using breaths and books (~125k total gold EUC).' },
-      acc_wp_high: { name: 'T4 Accessory: Weapon AP % Line (High Roll)', sub: 'Ancient Accessory • +3.0% Weapon Power', comment: 'High stat optimization to top off your primary jewelry pieces.' },
-      weapon_adv_11_20: { name: 'Advanced Weapon Honing: Stages 11 ➔ 20', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Secures +0.66% net buff, essential before tackling normal +20 honing.' },
-      armor_15_16: { name: 'Armor Honing: All Armors to +16', sub: '5 Armor Pieces (Chest, Pants, Helmet...)', comment: 'Provides a large Vitality and Shield boost for a modest expense.' },
-      weapon_adv_21_30: { name: 'Advanced Weapon Honing: Stages 21 ➔ 30', sub: 'Advanced Honing Aegir • 10 Levels', comment: 'Big power boost, substantial cost but far more cost-effective than normal +21+ honing.' },
-      gem_atk_7_8: { name: 'T4 Damage/AP Gem: Lv. 7 ➔ Lv. 8', sub: 'Tier 1 Attack Buff Gem', comment: 'Expensive for a Support (+0.14% buff). Hone after Ark Grid and Weapon +18.' },
-      weapon_20: { name: 'Standard Honing: Weapon +19 ➔ +20', sub: 'T4 Honing • Aegir Weapon', comment: 'Success rate drops drastically, cost per tap doubled.' },
-      gem_atk_9_10: { name: 'T4 Damage/AP Gem: Lv. 9 ➔ Lv. 10', sub: '1x Lv. 10 Endgame T4 Gem', comment: '2.4 Million gold for only +0.14% buff. Worst ROI ratio in the game for support.' },
-      dps_acc_mid_low: { name: 'T4 Accessories: 5x Mid-Low Rolls', sub: 'Set of 5 Ancient T4 Accessories', comment: 'First milestone of ancient accessories: +6.4% DPS for under 10k gold.' },
-      dps_acc_high: { name: 'T4 Accessories: 5x High First Line Rolls', sub: 'Ancient Set • High Primary Line', comment: 'Good gold-to-DPS ratio.' },
-      dps_weapon_18: { name: 'Standard Honing: Weapon +17 ➔ +18', sub: 'T4 Honing • Aegir Weapon', comment: 'Direct +1.4% DPS gain and major Weapon Power boost.' },
-      dps_ark_grid_order_17: { name: 'Ark Grid: Order (Sun+Moon+Star) 17P', sub: 'Full 17-Point Ark Grid Tree', comment: 'Largest single damage gain in this table: +20.8% DPS for ~890k gold.' },
-      dps_weapon_19: { name: 'Standard Honing: Weapon +18 ➔ +19', sub: 'T4 Honing • Aegir Weapon', comment: 'Weapon continuity before the +20 wall.' },
-      dps_weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed power without rng failure using full materials.' },
-      dps_weapon_adv_11_20: { name: 'Advanced Weapon Honing: Stages 11 ➔ 20', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Second advanced weapon honing block, very solid ROI.' },
-      dps_weapon_20: { name: 'Standard Honing: Weapon +19 ➔ +20', sub: 'T4 Honing • Aegir Weapon', comment: 'The +20 milestone: expensive, but key for the 1780+ bracket.' },
-      dps_weapon_21: { name: 'Standard Honing: Weapon +20 ➔ +21', sub: 'T4 Honing • Aegir Weapon', comment: '+21 step with a larger weapon power bonus.' },
-      dps_weapon_adv_21_30: { name: 'Advanced Weapon Honing: Stages 21 ➔ 30', sub: 'Advanced Honing Brelshaza T4 • 10 Levels', comment: 'Large guaranteed gain without RNG for ~449k gold.' },
-      dps_gems_7_8_cd: { name: 'T4 Cooldown Gems: Lv. 7 ➔ Lv. 8', sub: '1 cooldown gem on a core rotation skill', comment: 'Aligns your skill rotation for smoother play and more DPS.' },
-      dps_weapon_adv_31_40: { name: 'Advanced Weapon Honing: Stages 31 ➔ 40', sub: 'Advanced Honing Brelshaza T4 • 10 Levels', comment: 'Final advanced weapon honing block.' },
-      dps_gems_7_8_dmg: { name: 'T4 Damage Gems: Lv. 7 ➔ Lv. 8 (Skill 60%)', sub: '1 damage gem on your main skill', comment: 'Worth it on the skill that deals the largest share of your damage.' },
-      dps_weapon_22: { name: 'Standard Honing: Weapon +21 ➔ +22', sub: 'T4 Honing • Aegir Weapon', comment: 'Rising cost, needs solid gold reserves.' },
-      dps_weapon_23: { name: 'Standard Honing: Weapon +22 ➔ +23', sub: 'T4 Honing • Aegir Weapon', comment: 'Weapon at +23.' },
-      dps_armor_adv_1_10: { name: 'Advanced Armor Honing: Stages 1 ➔ 10', sub: '5 armor pieces (Echidna)', comment: 'Adds main stat and guaranteed item level.' },
-      dps_armor_adv_11_20: { name: 'Advanced Armor Honing: Stages 11 ➔ 20', sub: '5 armor pieces (Echidna)', comment: 'Overall item level and main stat gain for raids.' },
-      dps_armors_all_20: { name: 'Armor Honing: All to +20', sub: '5 armor pieces (+19 ➔ +20)', comment: 'Reaches the 1780+ bracket on every armor piece.' },
-      dps_weapon_24: { name: 'Standard Honing: Weapon +23 ➔ +24', sub: 'T4 Honing • Aegir Weapon', comment: 'Aegir weapon +24: a heavy investment.' },
-      dps_gems_8_9_cd: { name: 'T4 Gems: Lv. 8 ➔ Lv. 9 (1 cycle)', sub: 'Main cooldown gem', comment: 'Endgame rotation optimization.' },
-      dps_weapon_25: { name: 'Standard Honing: Weapon +24 ➔ +25', sub: 'T4 Honing • Aegir Weapon (+25 max)', comment: 'Aegir cap: weapon power at its ceiling.' },
-      dps_gems_9_10_dmg: { name: 'T4 Damage Gem: Lv. 9 ➔ Lv. 10 (Skill 60%)', sub: '1 endgame T4 Lv. 10 gem', comment: '2.4 million gold for 1.9% DPS. Keep this for the very end of progression.' },
-    };
+    // Meilleure amélioration : première ligne (tableau déjà trié par ratio)
+    const nextBest = list[0] || null;
 
     if (dom.effNextBestDesc) {
       if (nextBest) {
         const unit = isSupport 
           ? (isEn ? '0.01% Raid Buff' : '0.01% Buff Alliés') 
           : (isEn ? '1% Personal DPS' : '1% DPS');
-        const nextBestTrans = isEn ? (EFF_TRANS_EN[nextBest.id] || {}) : {};
-        const nbName = nextBestTrans.name || nextBest.name;
-        const nbComment = nextBestTrans.comment || nextBest.comment;
         dom.effNextBestDesc.innerHTML = isEn
-          ? `<strong>${nbName}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nbComment}</em></span>`
+          ? `<strong>${nextBest.name}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nextBest.comment}</em></span>`
           : `<strong>${nextBest.name}</strong> (${nextBest.gainText}) pour un coût estimé de <strong>${formatNumber(nextBest.cost)} gold</strong>, soit un ratio de rentabilité de <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nextBest.comment}</em></span>`;
+      } else if (!activeChar) {
+        dom.effNextBestDesc.innerHTML = isEn
+          ? `Import a character from lostark.bible to rank its upgrades by gold per gain.`
+          : `Importe un personnage depuis lostark.bible pour classer ses améliorations par or dépensé.`;
       } else {
         dom.effNextBestDesc.innerHTML = isEn
-          ? `All major T4 milestones in this table are done.`
-          : `Tous les paliers majeurs de ce tableau sont validés.`;
+          ? `No upgrade can be priced on this character right now.`
+          : `Aucune amélioration chiffrable sur ce personnage pour l'instant.`;
       }
     }
 
@@ -4277,25 +4229,15 @@
       let rowsHtml = '';
       list.forEach((item, idx) => {
         const isTop = nextBest && nextBest.id === item.id;
-        const acquired = item.checkAcquired ? item.checkAcquired(state) : false;
-        
-        const trans = isEn ? (EFF_TRANS_EN[item.id] || {}) : {};
-        const itemName = trans.name || item.name;
-        const itemSub = trans.sub || item.sub;
         const itemTierLabel = isEn 
           ? item.tierLabel.replace('Rang S+', 'Tier S+').replace('Rang S', 'Tier S').replace('Rang A', 'Tier A').replace('Rang B', 'Tier B').replace('Rang C', 'Tier C').replace('Piège à Gold', 'Gold Trap').replace('Luxe Extrême', 'Extreme Luxury')
           : item.tierLabel;
-        const acquiredBadge = acquired ? (isEn ? ' <span style="font-size:11px; color:var(--accent-green); font-weight:700;">[ACQUIRED]</span>' : ' <span style="font-size:11px; color:var(--accent-green); font-weight:700;">[ACQUIS]</span>') : '';
-
         rowsHtml += `
           <tr class="eff-row ${isTop ? 'top-pick' : ''}">
             <td class="col-rank">${idx + 1}</td>
             <td class="col-name">
-              <div>
-                ${isTop ? '' : ''}<strong>${itemName}</strong>
-                ${acquiredBadge}
-              </div>
-              <span class="eff-subtext">${itemSub}</span>
+              <div><strong>${item.name}</strong></div>
+              <span class="eff-subtext">${item.sub}</span>
             </td>
             <td class="col-gain">${item.gainText}</td>
             <td class="col-cost">${formatNumber(item.cost)} g</td>
@@ -4306,6 +4248,11 @@
           </tr>
         `;
       });
+      if (!list.length) {
+        rowsHtml = `<tr class="eff-row"><td colspan="6" class="eff-empty">${activeChar
+          ? (isEn ? 'No priced upgrade for this character.' : 'Aucune amélioration chiffrée pour ce personnage.')
+          : (isEn ? 'No character imported yet.' : 'Aucun personnage importé.')}</td></tr>`;
+      }
       dom.effTableBody.innerHTML = rowsHtml;
     }
   }

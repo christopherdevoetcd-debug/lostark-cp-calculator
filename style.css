@@ -7481,3 +7481,10 @@ body.no-character .tabs-nav,
 body.no-character .main-content {
   display: none;
 }
+
+/* Tableau GPD sans personnage importé */
+.eff-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
