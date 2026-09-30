@@ -493,7 +493,8 @@
 
   // État de l'application
   const state = {
-    marketPrices: { 'destiny-leapstone': 65, 'prime-oreha-fusion-material': 60, 'abidos-fusion-material': 120, 'destiny-destruction-stone': 16, 'destiny-guardian-stone': 4, 'destiny-shard': 0, 'gold': 1 },
+    // Prix unitaires par défaut (EUC, 2026-09-30), remplacés au chargement par fetchMarketPrices()
+    marketPrices: { 'destiny-leapstone': 16, 'prime-oreha-fusion-material': 58, 'abidos-fusion-material': 124, 'destiny-destruction-stone': 5, 'destiny-guardian-stone': 0.58, 'destiny-shard': 0, 'gold': 1 },
     role: 'support',
     currentIlvl: 1750.0,
     currentCp: 3369,
@@ -1307,10 +1308,10 @@
       const leaps = costs[4][lvl];
       const rawGold = costs[5][lvl];
       
-      const priceDest = state.marketPrices['destiny-destruction-stone'] || 16;
-      const priceGuard = state.marketPrices['destiny-guardian-stone'] || 4;
-      const actualFusionPrice = lvl >= 20 ? (state.marketPrices['abidos-fusion-material'] || 120) : (state.marketPrices['prime-oreha-fusion-material'] || 60);
-      const priceLeap = state.marketPrices['destiny-leapstone'] || 65;
+      const priceDest = state.marketPrices['destiny-destruction-stone'] || 5;
+      const priceGuard = state.marketPrices['destiny-guardian-stone'] || 0.58;
+      const actualFusionPrice = lvl >= 20 ? (state.marketPrices['abidos-fusion-material'] || 124) : (state.marketPrices['prime-oreha-fusion-material'] || 58);
+      const priceLeap = state.marketPrices['destiny-leapstone'] || 16;
       
       const tapCostGold = rawGold +
            destStones * priceDest + 
@@ -16278,38 +16279,33 @@
 
   // Initialisation au chargement
   
+  // Pierres de destruction / gardien : l'API donne le prix d'un lot de 100 au marché
+  const MARKET_BUNDLE_SIZE = {
+    'destiny-destruction-stone': 100,
+    'destiny-guardian-stone': 100
+  };
+
+  // Prix du marché EUC (API de loa-buddy) via notre route serveur /api/market/prices :
+  // l'API n'autorise pas l'appel direct depuis le navigateur (CORS).
   async function fetchMarketPrices() {
     try {
-      const response = await fetch('https://marketdata-api.yrzhao1068589.workers.dev/v1/prices/latest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          region_slug: 'euc',
-          item_slugs: [
-            'destiny-leapstone',
-            'prime-oreha-fusion-material',
-            'abidos-fusion-material',
-            'destiny-destruction-stone',
-            'destiny-guardian-stone'
-          ]
-        })
-      });
+      const response = await fetch('/api/market/prices', { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       if (Array.isArray(data)) {
         data.forEach(item => {
-          if (item.item_slug === 'destiny-destruction-stone' || item.item_slug === 'destiny-guardian-stone') {
-             state.marketPrices[item.item_slug] = item.price / 10; // Crystals are sold in bundles of 10
-          } else {
-             state.marketPrices[item.item_slug] = item.price;
-          }
+          if (!item || typeof item.price !== 'number' || item.price <= 0) return;
+          state.marketPrices[item.item_slug] = item.price / (MARKET_BUNDLE_SIZE[item.item_slug] || 1);
         });
+        state.marketPricesUpdatedAt = Math.max(...data.map(d => d.timestamp || 0)) * 1000 || Date.now();
       }
-      console.log('[MARKET API] Prices updated:', state.marketPrices);
+      console.log('[MARKET API] Prices updated (EUC):', state.marketPrices);
       if (typeof updatePredictorView === 'function') updatePredictorView();
       if (typeof updateHoningView === 'function') updateHoningView();
-      if (typeof updateSmartAdvisor === 'function') updateSmartAdvisor();
+      if (typeof renderEfficiencyTable === 'function') renderEfficiencyTable();
+      if (typeof renderAdvisorView === 'function') renderAdvisorView();
     } catch (e) {
-      console.error('[MARKET API] Failed to fetch prices:', e);
+      console.warn('[MARKET API] Prix du marché indisponibles, prix par défaut utilisés:', e.message);
     }
   }
 
