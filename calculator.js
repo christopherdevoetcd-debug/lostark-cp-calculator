@@ -2086,6 +2086,9 @@
   // Autres sources de Puissance d'attaque % supposées cumulées avec une gravure « PA » (Adrénaline, etc.)
   const STONE_OTHER_AP_PCT = 20;
   const stoneSuccessCache = new Map();
+  // Au-delà de ce nombre de pierres, un palier n'est plus un achat réaliste (un 10/x s'achète taillé à l'hôtel
+  // des ventes, sans prix connu) : pas de ligne GPD. Loseii ne chiffre que le palier niveau 5 (1 sur ~725).
+  const STONE_GPD_MAX_STONES = 5000;
 
   function stoneLevelFromNodes(nodes) {
     let lvl = 0;
@@ -4410,18 +4413,20 @@
     }
 
     // 9. Pierre d'aptitude : taille exacte (chaîne de Markov), pierre non taillée = 9 pheons au prix réglable
+    // La taille coûte de l'argent (non comptée) ; l'or = pierres non taillées achetées
     const stoneUp = getAbilityStoneUpgrade(charObj, isSupport);
-    if (stoneUp) {
+    if (stoneUp && stoneUp.stones <= STONE_GPD_MAX_STONES) {
       const upName = isEn ? stoneUp.up.en : stoneUp.up.fr;
       const odds = Math.round(stoneUp.stones);
+      const stoneGold = formatNumber(Math.round(abilityStonePrice()));
       pushRow('dyn_stone',
         isEn ? `Ability stone ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}` : `Pierre d'aptitude ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}`,
         isEn ? `${upName} Lv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 stone in ${formatNumber(odds)}` : `${upName} niv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 pierre sur ${formatNumber(odds)}`,
         stoneUp.gain, stoneUp.cost,
         isEn
-          ? `Exact odds with optimal faceting: 1 stone in ${formatNumber(odds)} reaches ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)}%). Uncut stone = ${ABILITY_STONE_PHEONS} pheons (${formatNumber(Math.round(abilityStonePrice()))} g).${stoneUp.apBonus > 0 ? ' Includes the +1.5% base Atk. Power at 5 levels.' : ''}`
-          : `Probabilité exacte avec une taille optimale : 1 pierre sur ${formatNumber(odds)} atteint ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)} %). Pierre non taillée = ${ABILITY_STONE_PHEONS} pheons (${formatNumber(Math.round(abilityStonePrice()))} g).${stoneUp.apBonus > 0 ? ' Inclut la PA de base +1,5 % à 5 niveaux.' : ''}`,
-        { state: stoneUp.fromLabel, from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: upName, odds });
+          ? `Exact odds with optimal faceting: 1 stone in ${formatNumber(odds)} reaches ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)}%). Cost = ${formatNumber(odds)} uncut stones × ${stoneGold} g (${ABILITY_STONE_PHEONS} pheons each); faceting costs silver, not counted.${stoneUp.apBonus > 0 ? ' Includes the +1.5% base Atk. Power at 5 levels.' : ''}`
+          : `Probabilité exacte avec une taille optimale : 1 pierre sur ${formatNumber(odds)} atteint ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)} %). Coût = ${formatNumber(odds)} pierres non taillées × ${stoneGold} or (${ABILITY_STONE_PHEONS} pheons chacune) ; la taille coûte de l'argent, non comptée.${stoneUp.apBonus > 0 ? ' Inclut la PA de base +1,5 % à 5 niveaux.' : ''}`,
+        { state: stoneUp.fromLabel, from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: upName, odds, stoneGold });
     }
 
     // 10. Karma d'Illumination : niveau suivant, 900 or par essai
@@ -5494,7 +5499,9 @@
           whatItReads: `${m.from} · ${m.engraving}`,
           wherePutsYou: m.from,
           lastStep: '—',
-          nextStep: isEn ? `${m.from} ➔ ${m.to} (1 in ${formatNumber(m.odds)})` : `${m.from} ➔ ${m.to} (1 sur ${formatNumber(m.odds)})`,
+          nextStep: isEn
+            ? `${m.from} ➔ ${m.to} · ${formatNumber(m.odds)} uncut stones × ${m.stoneGold} g (faceting in silver, not counted)`
+            : `${m.from} ➔ ${m.to} · ${formatNumber(m.odds)} pierres non taillées × ${m.stoneGold} or (taille en argent, non comptée)`,
           category: 'stone'
         }));
       } else if (d.id === 'dyn_karma') {
