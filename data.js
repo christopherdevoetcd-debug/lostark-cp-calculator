@@ -694,20 +694,6 @@ window.EUC_EFFICIENCY_DATA = {
         checkAcquired: (st) => st.advHoning >= 20
       },
       {
-        id: 'karma_evo_6',
-        name: 'Karma Évolution : Rangs 0 ➔ 6',
-        sub: 'Système Ark Passive Karma',
-        gainText: '+0.50% Buff',
-        gainVal: 0.50,
-        cost: 199000,
-        ratioText: '3 980 g',
-        ratioVal: 3980,
-        tier: 'b',
-        tierLabel: 'Rang B',
-        comment: 'Investissement fixe de 199k gold pour débloquer les nœuds d\'évolution.',
-        checkAcquired: (st) => st.opt ? !!st.opt.karmaEvo : (st.currentIlvl >= 1750)
-      },
-      {
         id: 'armor_15_16',
         name: 'Affinage Armures : Toutes à +16',
         sub: '5 Pièces d\'armure (Torse, Jambes, Casque...)',
@@ -777,20 +763,6 @@ window.EUC_EFFICIENCY_DATA = {
         comment: '2.4 Millions de gold pour seulement +0.14% de buff. Pire ratio ROI du jeu pour un support.',
         checkAcquired: (st) => st.opt && st.opt.gemsDeck === 'lvl10'
       },
-      {
-        id: 'stone_9_7',
-        name: 'Pierre de Capacité 9/7 (Full Pheons)',
-        sub: 'Tentatives répétées de pierre 9/7',
-        gainText: '+0.30% Buff',
-        gainVal: 0.30,
-        cost: 12127500,
-        ratioText: '404 250 g',
-        ratioVal: 404250,
-        tier: 'trap',
-        tierLabel: 'Luxe Extrême',
-        comment: 'Coût astronomique (~12M gold en moyenne) pour un apport minime sur support.',
-        checkAcquired: () => false
-      }
     ],
 
     dps: [
@@ -837,20 +809,6 @@ window.EUC_EFFICIENCY_DATA = {
         checkAcquired: (st) => st.gear && st.gear.weapon >= 18
       },
       {
-        id: 'dps_karma_enlight_6',
-        name: 'Karma Illumination : Rangs 0 ➔ 6',
-        sub: 'Système Ark Passive Karma DPS',
-        gainText: '+4.67% DPS',
-        gainVal: 4.67,
-        cost: 199000,
-        ratioText: '42 612 g',
-        ratioVal: 42612,
-        tier: 's',
-        tierLabel: 'Rang S',
-        comment: 'Débloque les nœuds d\'illumination majeurs de la classe (+4.67% DPS net).',
-        checkAcquired: (st) => st.opt ? !!st.opt.karmaEnlight : (st.currentIlvl >= 1750)
-      },
-      {
         id: 'dps_ark_grid_order_17',
         name: 'Grille d\'Ark : Ordre (Soleil+Lune+Étoile) 17P',
         sub: 'Arbre Ark Grid Complet 17 Points',
@@ -891,20 +849,6 @@ window.EUC_EFFICIENCY_DATA = {
         tierLabel: 'Rang S',
         comment: 'Sécurisé, sans RNG : +2.82% DPS pour 135k gold tout compris.',
         checkAcquired: (st) => st.advHoning >= 10
-      },
-      {
-        id: 'dps_karma_evo_6',
-        name: 'Karma Évolution : Rangs 0 ➔ 6',
-        sub: 'Système Ark Passive Karma DPS',
-        gainText: '+3.60% DPS',
-        gainVal: 3.60,
-        cost: 199000,
-        ratioText: '55 278 g',
-        ratioVal: 55278,
-        tier: 'a',
-        tierLabel: 'Rang A',
-        comment: 'Augmentation passive de stats de combat et multiplicateurs.',
-        checkAcquired: (st) => st.opt ? !!st.opt.karmaEvo : (st.currentIlvl >= 1750)
       },
       {
         id: 'dps_weapon_adv_11_20',

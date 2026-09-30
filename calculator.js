@@ -752,6 +752,7 @@
     charCardRoster: document.getElementById('charCardRoster'),
     charCardGearPill: document.getElementById('charCardGearPill'),
     charCardStonePill: document.getElementById('charCardStonePill'),
+    charCardKarmaPill: document.getElementById('charCardKarmaPill'),
     charImageUploadInput: document.getElementById('charImageUploadInput'),
     btnResetAvatar: document.getElementById('btnResetAvatar'),
 
@@ -1439,6 +1440,20 @@
     const prob = V(N, 0, N, 0, N, 5);
     stoneSuccessCache.set(cacheKey, prob);
     return prob;
+  }
+
+  // Karma T4 lu sur le Battle Point (part 8 = Évolution, part 9 = Bond, en centièmes de %).
+  // Obtenu en jeu : affiché sur la fiche, jamais classé en or.
+  function getKarmaBonus(charObj) {
+    const raw = (charObj && charObj.rawProfile) || {};
+    const parts = (raw.battlePoint && raw.battlePoint.parts)
+      || (charObj && charObj.battlePoint && charObj.battlePoint.parts)
+      || (raw.loadout && raw.loadout.battlePoint && raw.loadout.battlePoint.parts)
+      || (charObj && charObj.loadout && charObj.loadout.battlePoint && charObj.loadout.battlePoint.parts);
+    if (!Array.isArray(parts)) return null;
+    const pct = type => parts.filter(x => x.type === type).reduce((sum, x) => sum + ((('value' in x) ? x.value : x.min) || 0), 0) / 100;
+    if (!parts.some(x => x.type === 8 || x.type === 9)) return null;
+    return { evolution: pct(8), leap: pct(9) };
   }
 
   // Pierre équipée, lue sur le profil importé : deux gravures positives + la ligne négative
@@ -3284,15 +3299,8 @@
         { key: def.key, label: isEn ? def.en : def.fr, pts });
     });
 
-    // 5. Astrogems (Cutting epics to next tier)
-    pushRow('dyn_astro',
-      isEn ? 'Ark grid — Astrogems' : 'Grille d\'Ark — Astrogemmes',
-      isEn ? 'Cutting epics ➔ Next Tier' : 'Taille d\'épiques ➔ Palier Suivant',
-      ASTRO_CUT_GAIN, ASTRO_CUT_COST,
-      isEn ? 'Cut epic astrogems to reach the next tier.' : 'Tailler des astrogemmes épiques pour le palier suivant.');
-
-    // Bracelet et pierre d'aptitude : obtenus en jeu (chaos, gardiens, Paradise), pas achetés.
-    // Pas de ligne en or ici ; leurs chances de farm sont affichées sur la fiche (updateActiveCharacterCard).
+    // Bracelet, pierre d'aptitude, astrogemmes et Karma : obtenus en jeu (chaos, gardiens, Paradise, raids), pas achetés.
+    // Pas de ligne en or ici ; leur état est affiché sur la fiche (updateActiveCharacterCard, cartes de score).
 
     // 6c. Livres de gravure reliques : les livres restants jusqu'au niveau relique 4, au prix du marché
     getRelicBookUpgrades(charObj, isSupport).forEach(r => {
@@ -3413,21 +3421,17 @@
       weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed gain without failure using breaths and books (~125k total gold EUC).' },
       acc_wp_high: { name: 'T4 Accessory: Weapon AP % Line (High Roll)', sub: 'Ancient Accessory • +3.0% Weapon Power', comment: 'High stat optimization to top off your primary jewelry pieces.' },
       weapon_adv_11_20: { name: 'Advanced Weapon Honing: Stages 11 ➔ 20', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Secures +0.66% net buff, essential before tackling normal +20 honing.' },
-      karma_evo_6: { name: 'Karma Evolution: Ranks 0 ➔ 6', sub: 'Ark Passive Karma System', comment: 'Fixed investment of 199k gold to unlock evolution nodes.' },
       armor_15_16: { name: 'Armor Honing: All Armors to +16', sub: '5 Armor Pieces (Chest, Pants, Helmet...)', comment: 'Provides a large Vitality and Shield boost for a modest expense.' },
       weapon_adv_21_30: { name: 'Advanced Weapon Honing: Stages 21 ➔ 30', sub: 'Advanced Honing Aegir • 10 Levels', comment: 'Big power boost, substantial cost but far more cost-effective than normal +21+ honing.' },
       gem_atk_7_8: { name: 'T4 Damage/AP Gem: Lv. 7 ➔ Lv. 8', sub: 'Tier 1 Attack Buff Gem', comment: 'Expensive for a Support (+0.14% buff). Hone after Ark Grid and Weapon +18.' },
       weapon_20: { name: 'Standard Honing: Weapon +19 ➔ +20', sub: 'T4 Honing • Aegir Weapon', comment: 'Success rate drops drastically, cost per tap doubled.' },
       gem_atk_9_10: { name: 'T4 Damage/AP Gem: Lv. 9 ➔ Lv. 10', sub: '1x Lv. 10 Endgame T4 Gem', comment: '2.4 Million gold for only +0.14% buff. Worst ROI ratio in the game for support.' },
-      stone_9_7: { name: '9/7 Ability Stone (Full Pheons)', sub: 'Repeated 9/7 stone cutting attempts', comment: 'Astronomical cost (~12M gold on average) for minimal support gain.' },
       dps_acc_mid_low: { name: 'T4 Accessories: 5x Mid-Low Rolls', sub: 'Set of 5 Ancient T4 Accessories', comment: 'First milestone of ancient accessories: +6.4% DPS for under 10k gold.' },
       dps_acc_high: { name: 'T4 Accessories: 5x High First Line Rolls', sub: 'Ancient Set • High Primary Line', comment: 'Good gold-to-DPS ratio.' },
       dps_weapon_18: { name: 'Standard Honing: Weapon +17 ➔ +18', sub: 'T4 Honing • Aegir Weapon', comment: 'Direct +1.4% DPS gain and major Weapon Power boost.' },
-      dps_karma_enlight_6: { name: 'Karma Enlightenment: Ranks 0 ➔ 6', sub: 'Ark Passive Karma DPS System', comment: 'Unlocks major class enlightenment nodes (+4.67% net DPS).' },
       dps_ark_grid_order_17: { name: 'Ark Grid: Order (Sun+Moon+Star) 17P', sub: 'Full 17-Point Ark Grid Tree', comment: 'Largest single damage gain in this table: +20.8% DPS for ~890k gold.' },
       dps_weapon_19: { name: 'Standard Honing: Weapon +18 ➔ +19', sub: 'T4 Honing • Aegir Weapon', comment: 'Weapon continuity before the +20 wall.' },
       dps_weapon_adv_1_10: { name: 'Advanced Weapon Honing: Stages 1 ➔ 10', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Guaranteed power without rng failure using full materials.' },
-      dps_karma_evo_6: { name: 'Karma Evolution: Ranks 0 ➔ 6', sub: 'Ark Passive Karma System (DPS)', comment: 'Passive increase to combat stats and multipliers.' },
       dps_weapon_adv_11_20: { name: 'Advanced Weapon Honing: Stages 11 ➔ 20', sub: 'Advanced Honing Echidna • 10 Levels', comment: 'Second advanced weapon honing block, very solid ROI.' },
       dps_weapon_20: { name: 'Standard Honing: Weapon +19 ➔ +20', sub: 'T4 Honing • Aegir Weapon', comment: 'The +20 milestone: expensive, but key for the 1780+ bracket.' },
       dps_weapon_21: { name: 'Standard Honing: Weapon +20 ➔ +21', sub: 'T4 Honing • Aegir Weapon', comment: '+21 step with a larger weapon power bonus.' },
@@ -4211,83 +4215,8 @@
 
   function buildMasterGpdData(charObj, isSupport, isEn) {
     const currentCp = (charObj && (charObj.calculatedScore || charObj.inGameScore)) || state.currentCp || 6028;
-    const sys = (typeof extractPlayerSystems === 'function') ? extractPlayerSystems(charObj, isEn) : {};
-
-    // 1. Ark Grid — cutting epics
-    let agRead = isEn ? 'B+ (mean of 24 epics: 3.51 offensive rolls)' : 'B+ (moyenne des 24 gemmes : 3.51 rolls off.)';
-    let agWhere = 'B+ · 78.5';
-    let agLastStep = isEn ? 'B ➔ B+ (3.5 offensive rolls)' : 'B ➔ B+ (3.5 rolls off.)';
-    let agNextStep = isEn ? '➔ A- (3.75 offensive rolls)' : '➔ A- (3.75 rolls off.)';
-    let agCost = ASTRO_CUT_COST;
-    let agGain = ASTRO_CUT_GAIN;
-    let agRate = Math.round(agCost / agGain);
-
-    // 5. Karma Enlightenment (Ark Passive)
-    let karmaLvl = 27;
-    if (sys.apPoints && sys.apPoints.enlightenment) {
-      karmaLvl = Math.round(sys.apPoints.enlightenment / 3.7) || 27;
-    }
-    let karmaRead = isEn ? `Level ${karmaLvl}` : `Niveau ${karmaLvl}`;
-    let karmaWhere = isEn ? `Level ${karmaLvl}` : `Niveau ${karmaLvl}`;
-    let karmaLast = `${karmaLvl - 1} ➔ ${karmaLvl}`;
-    let karmaNext = `${karmaLvl} ➔ ${karmaLvl + 1}`;
-    let karmaCost = 83000;
-    let karmaGain = 0.05;
-    let karmaRate = 1830000;
-
-    // 9. Ark grid — cutting rares
-    let raresRead = isEn ? 'Rare nodes cut' : 'Noeuds rares taillés';
-    let raresWhere = 'B+';
-    let raresLast = 'B ➔ B+';
-    let raresNext = '➔ A-';
-    let raresCost = 3030000;
-    let raresGain = 0.97;
-    let raresRate = 3130000;
-
-    const rows = [
-      {
-        id: 'grid_epics',
-        icon: '',
-        system: isEn ? 'Ark grid — cutting epics' : 'Grille d\'Ark — Taille d\'épiques',
-        whatItReads: agRead,
-        wherePutsYou: agWhere,
-        lastStep: agLastStep,
-        lastRate: '412k / 1%',
-        nextStep: agNextStep,
-        cost: agCost,
-        dmgGain: agGain,
-        rate: agRate,
-        category: 'arkGrid'
-      },
-      {
-        id: 'karma_enl',
-        icon: '',
-        system: isEn ? 'Karma Enlightenment' : 'Karma Éclairage',
-        whatItReads: karmaRead,
-        wherePutsYou: karmaWhere,
-        lastStep: karmaLast,
-        lastRate: '1.45M / 1%',
-        nextStep: karmaNext,
-        cost: karmaCost,
-        dmgGain: karmaGain,
-        rate: karmaRate,
-        category: 'arkPassive'
-      },
-      {
-        id: 'grid_rares',
-        icon: '',
-        system: isEn ? 'Ark grid — cutting rares' : 'Grille d\'Ark — Taille de rares',
-        whatItReads: raresRead,
-        wherePutsYou: raresWhere,
-        lastStep: raresLast,
-        lastRate: '2.10M / 1%',
-        nextStep: raresNext,
-        cost: raresCost,
-        dmgGain: raresGain,
-        rate: raresRate,
-        category: 'arkGrid'
-      }
-    ];
+    // Taille d'astrogemmes et Karma : obtenus en jeu, pas de ligne en or (cf. getDynamicGpdTable)
+    const rows = [];
 
     // Lignes dynamiques : mêmes coûts et gains que le tableau GPD (getDynamicGpdTable)
     const dynRows = charObj ? getDynamicGpdTable(charObj, isSupport ? 'support' : 'dps', isEn) : [];
@@ -8346,6 +8275,24 @@
       }
     }
 
+    // Karma : obtenu en jeu, on affiche ce qu'il apporte au Battle Point
+    if (dom.charCardKarmaPill) {
+      const isEn = isEnLang();
+      const karma = getKarmaBonus(p);
+      if (karma) {
+        const fmt = v => (isEn ? v.toFixed(2) : v.toFixed(2).replace('.', ','));
+        dom.charCardKarmaPill.innerHTML = isEn
+          ? `Karma · Evolution <strong>+${fmt(karma.evolution)}%</strong> · Leap <strong>+${fmt(karma.leap)}%</strong>`
+          : `Karma · Évolution <strong>+${fmt(karma.evolution)} %</strong> · Bond <strong>+${fmt(karma.leap)} %</strong>`;
+        dom.charCardKarmaPill.title = isEn
+          ? 'Karma bonus read from the Battle Point. Karma comes from content, not gold: it is not ranked in the GPD.'
+          : 'Bonus de Karma lu sur le Battle Point. Le Karma vient du contenu, pas de l\'or : il n\'est pas classé dans le GPD.';
+        dom.charCardKarmaPill.hidden = false;
+      } else {
+        dom.charCardKarmaPill.hidden = true;
+      }
+    }
+
     // Mise à jour des 4 Cartes de Score de Profil (Loseii Style)
     updateProfileScoreCards(p, isSupport, isEnLang());
   }
@@ -10344,9 +10291,6 @@
   // Coût moyen d'un bijou de la gamme de référence, pour les comparaisons globales (Benchmark)
   const ACC_UPGRADE_COST_AVG = ACC_PACKAGES[0].price.neck;
 
-  // Taille d'astrogemmes épiques vers le palier suivant : coût (gold) et gain (%)
-  const ASTRO_CUT_COST = 675000;
-  const ASTRO_CUT_GAIN = 1.08;
   const ACC_SLOTS = ['neck', 'ear1', 'ear2', 'finger1', 'finger2'];
   // Bijou cible d'un remplacement : 2 lignes principales du rôle en High + PA d'arme plate Mid
   const ACC_TARGET_LINES = {
@@ -11359,17 +11303,6 @@
   }
 
   
-  function computeAstrogemUpgradeCost(pSys, tSys) {
-    if (!pSys || !tSys) return 60000;
-    const pAst = pSys.arkGridAstrogems ? pSys.arkGridAstrogems.bonusPct : 0;
-    const tAst = tSys.arkGridAstrogems ? tSys.arkGridAstrogems.bonusPct : 0;
-    const delta = tAst - pAst;
-    if (delta <= 0) return 60000;
-    
-    // Même taux que la ligne « Taille d'épiques » du GPD : ASTRO_CUT_COST pour +ASTRO_CUT_GAIN %
-    return Math.round(delta / ASTRO_CUT_GAIN * ASTRO_CUT_COST);
-  }
-
   // Écart de CP d'un système entre joueur (p) et référence (t) : les systèmes se multiplient,
   // donc l'écart est le gain relatif (1 + t) / (1 + p) − 1 appliqué au CP du joueur.
   // Positif : la référence est devant ; négatif : le joueur est devant.
@@ -11414,7 +11347,7 @@
       { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderSun', 'chaosSun') },
       { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderMoon', 'chaosMoon') },
       { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", icon: '', cost: coreGroupCost('orderStar', 'chaosStar') },
-      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: computeAstrogemUpgradeCost(pSys, tSys) },
+      { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", icon: '', cost: 0 }, // obtenues en jeu : écart affiché, hors plan d'achat
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", icon: '', cost: ACC_UPGRADE_COST_AVG },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", icon: '', cost: honingPathCost('weapon', pWeapon.effWLvl !== undefined ? pWeapon.effWLvl : (pWeapon.wLvl || 12), tWeapon.effWLvl, 1) },
       { key: 'advHoning', title: isEn ? "T4 Advanced Honing" : "Affinage Avancé T4", icon: '', cost: 125000 },
@@ -11429,7 +11362,7 @@
       { key: 'arkEnlightenment', title: isEn ? "Ark Passive: Enlightenment (Spec Tree)" : "Ark Passive : Illumination (Arbre Spé)", icon: '', cost: 25000 },
       { key: 'arkEvolution', title: isEn ? "Ark Passive: Evolution (Net Stats)" : "Ark Passive : Évolution (Stats Nets)", icon: '', cost: 20000 },
       { key: 'arkLeap', title: isEn ? "Ark Passive: Leap (Hyper Awakening)" : "Ark Passive : Saut (Hyper Awakening)", icon: '', cost: 30000 },
-      { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '', cost: 70000 }
+      { key: 'karma', title: isEn ? "T4 Karma (Evolution Rank 6)" : "Karma T4 (Évolution Rang 6)", icon: '', cost: 0 } // obtenu en jeu
     ];
 
     systemMeta.forEach(m => {
