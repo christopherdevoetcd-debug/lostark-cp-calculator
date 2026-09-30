@@ -131,5 +131,15 @@ for (const row of Object.values(stats.battlePoint['2']).flat()) {
   (supportRows[row.type] = supportRows[row.type] || []).push(row.values);
 }
 const SUPPORT_OUT = new URL('../data/battle-point-support.json', import.meta.url);
-writeFileSync(SUPPORT_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), rows: supportRows }));
+// Options support des astrogemmes (arkGridGemOptions) : valeur de la stat par niveau d'option, en 0,01 %.
+// 2011 = dégâts alliés (stat 59), 2012 = puissance de marque (stat 2 index 46), 2013 = amplification de PA alliée (stat 54),
+// les mêmes stats que les lignes support des bijoux. gemOptions[id][n - 1] = valeur au niveau n.
+const gemOptions = {};
+for (const id of [2011, 2012, 2013]) {
+  const vals = [];
+  for (let n = 1; stats.arkGridGemOptions[`${id}#${n}`]; n++) vals.push(stats.arkGridGemOptions[`${id}#${n}`].stat.value);
+  if (!vals.length) throw new Error(`Option d'astrogemme ${id} absente`);
+  gemOptions[id] = vals;
+}
+writeFileSync(SUPPORT_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), rows: supportRows, gemOptions }));
 console.log(`data/battle-point-support.json écrit (${Object.keys(supportRows).length} types de parties)`);

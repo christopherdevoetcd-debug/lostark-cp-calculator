@@ -1327,11 +1327,15 @@
   // Battle Point en mode support avec la table du jeu (branche 2, data/battle-point-support.json, tools/fetch-maxroll-honing.mjs).
   // Vérifié à l'identique, partie par partie, sur 6 profils support corrects (Bardes, Paladins, Artiste).
   let bpSupportTable = null;
+  // Options support des astrogemmes : valeur (0,01 %) par niveau d'option, gemOptions[id][n - 1]
+  let astroSupportOptions = null;
   async function loadBpSupportTable() {
     try {
       const res = await fetch('data/battle-point-support.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      bpSupportTable = (await res.json()).rows;
+      const json = await res.json();
+      bpSupportTable = json.rows;
+      astroSupportOptions = json.gemOptions || null;
       healStoredSupportProfiles();
     } catch (e) {
       console.warn('[BATTLE POINT] Table support indisponible, profils mélangés non recalculés :', e.message);
@@ -1751,6 +1755,58 @@
     const inp = supportInputs(charObj);
     return 100 * Math.log(supportContribution(inp, ctx.wp + dWp, ctx.ms + dMs, inp.gemAvg, inp.apPct) /
       supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct));
+  }
+
+  // Options support des astrogemmes = mêmes stats que les lignes support des bijoux
+  const ASTRO_SUPPORT_LINES = { 2011: 'allyDmg', 2012: 'brand', 2013: 'allyAtkEnh' };
+
+  // Somme des options support des astrogemmes du profil, en % (null sans cœurs ou sans table)
+  function supportAstroLines(charObj) {
+    const lo = (charObj && charObj.rawProfile && charObj.rawProfile.loadout) || {};
+    const cores = lo.arkGridCores;
+    if (!astroSupportOptions || !Array.isArray(cores) || !cores.length) return null;
+    const out = { allyAtkEnh: 0, allyDmg: 0, brand: 0 };
+    cores.forEach(c => (c.gems || []).forEach(g => (g.opts || []).forEach(o => {
+      const key = ASTRO_SUPPORT_LINES[o.id], vals = astroSupportOptions[o.id];
+      if (key && vals && o.level > 0) out[key] += (vals[Math.min(o.level, vals.length) - 1] || 0) / 100;
+    })));
+    return out;
+  }
+
+  /**
+   * Gain de buff si le joueur avait les options support d'astrogemmes de la référence.
+   * La base de Loseii compte déjà la grille d'Ark de son Barde de référence : seul l'écart
+   * référence − joueur s'ajoute aux lignes du joueur, jamais la valeur absolue. null si une donnée manque.
+   */
+  function supportAstroGain(player, target) {
+    const ctx = gearStatContext(player);
+    const pa = supportAstroLines(player), ta = supportAstroLines(target);
+    if (!ctx || !pa || !ta) return null;
+    const inp = supportInputs(player);
+    const moved = Object.assign({}, inp, { lines: {} });
+    Object.keys(inp.lines).forEach(k => { moved.lines[k] = inp.lines[k] + (ta[k] - pa[k]); });
+    return 100 * Math.log(supportContribution(moved, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct) /
+      supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct));
+  }
+
+  /**
+   * Gain de buff d'un support pour tout le bracelet (lignes, stats et traits réunis), modèle de bracelet-model.js
+   * (même modèle support ap × marque × identité, plus les débuffs de groupe sur un DPS allié). null sans bracelet lisible.
+   */
+  function supportBraceletBuff(charObj) {
+    if (!window.Bracelet) return null;
+    const items = (charObj && charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.items) || [];
+    const item = items.find(i => i.slot === 'bracelet');
+    const stats = getBraceletStats(charObj) || (item && item.data && Array.isArray(item.data.stats) ? item.data.stats : null);
+    if (!stats) return null;
+    const dec = window.Bracelet.decodeBibleBracelet(stats);
+    if (!dec || !Array.isArray(dec.lines) || !dec.lines.length) return null;
+    const TRAIT_KEYS = { crit: 'crit', spec: 'spec', swiftness: 'swift' };
+    const traits = { crit: 0, spec: 0, swift: 0 };
+    const lines = [];
+    dec.lines.forEach(l => { if (l.cat === 'trait' && TRAIT_KEYS[l.family]) traits[TRAIT_KEYS[l.family]] = l.value; else lines.push(l); });
+    const D = window.Bracelet.jointScore(lines, traits, dec.grade || 'ancient', window.Bracelet.normalizeProfile({ role: 'support' }));
+    return Number.isFinite(D) ? D : null;
   }
 
   /**
@@ -12374,6 +12430,14 @@
     // Gravures : l'écart affiché reste celui du Battle Point (pierre et choix de gravures compris) ;
     // seuls les livres reliques entrent au plan d'achat, au gain du GPD (pas de ligne livre pour les supports)
     if (!isSupport) out.engravings = Object.assign({ buyOnly: true }, benchRelicBookGains(player, target));
+    // Supports : bracelet et astrogemmes aussi en % de Buff (obtenus en jeu : hors plan d'achat, buy = cost = 0) ;
+    // le CP de ces lignes reste lu sur le Battle Point (supportCpGaps)
+    if (isSupport) {
+      const pb = supportBraceletBuff(player), tb = supportBraceletBuff(target);
+      if (pb !== null && tb !== null) out.bracelet = { net: tb - pb, buy: 0, cost: 0 };
+      const astro = supportAstroGain(player, target);
+      if (astro !== null) out.arkGridAstrogems = { net: astro, buy: 0, cost: 0 };
+    }
     return out;
   }
 
