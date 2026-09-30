@@ -75,18 +75,15 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 1. **Incrémenter le cache-busting** dans `index.html` :
    - `style.css?v=X.Y`
    - `calculator.js?v=X.Y`
-2. **Synchroniser sur le conteneur Docker local (CT 104)** :
-   ```bash
-   scp *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/ && scp data/*.json root@192.168.1.104:/opt/lostark-cp/public/data/ && ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-cp nginx -s reload"
-   ```
-3. **Pousser sur Git (main et master)** :
+2. **Pousser sur Git (main et master)** :
    ```bash
    git commit -am "feat/fix: description des changements" && git push origin main && git push origin main:master
    ```
-4. **Déployer sur Cloudflare Pages** :
+3. **Déployer sur CT 104 et Cloudflare Pages en une seule commande** :
    ```bash
-   mkdir -p tmp_deploy && cp *.js *.html *.css tmp_deploy/ && cp -r images data tmp_deploy/ && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && npx -y wrangler pages deploy tmp_deploy --project-name lostark-cp --commit-dirty=true --branch master && rm -rf tmp_deploy
+   ./deploy.sh
    ```
+   *(Ce script autonome vérifie la syntaxe JS, synchronise CT 104 + Nginx, déploie sur Cloudflare Pages via Wrangler et vérifie la mise en ligne)*
 
 ### Réservoir de joueurs réels (Benchmark)
 - `data/live-peers.json` liste de vrais joueurs par classe, rôle et iLvl, tirés des classements de raid de `lostark.bible` (Armoche, Kazeros, Serca, Cathédrale). Seuls les noms en viennent : CP et iLvl sont toujours rechargés en direct.
