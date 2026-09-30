@@ -1347,6 +1347,41 @@
     return e < 25 ? { track: 'aegir', lvl: e } : null;
   }
 
+  /**
+   * Gain DPS (%) d'une étape d'affinage sur le personnage réel (modèle loseii / bebkok) :
+   * PA de base = √(puissance d'arme × stat principale / 6), les dégâts suivent la PA, donc
+   * gain = 50 × ln(1 + écart / total) sur la puissance d'arme (arme) ou la stat principale (armures).
+   * L'écart de la pièce vient de la table itemLevel du jeu (Maxroll) ; les totaux, du profil raid lostark.bible.
+   * La puissance d'arme de la pièce est amplifiée par les % du personnage (boucles d'oreilles, Karma Illumination).
+   * null si une donnée manque : l'appelant garde son estimation.
+   */
+  function honingDpsGain(charObj, piece, isSerka) {
+    const tr = honingT4 && honingT4.tracks[isSerka ? 'serka' : 'aegir'];
+    const raw = (charObj && charObj.rawProfile) || {};
+    const lo = raw.loadout || {};
+    const gear = (charObj && charObj.gear) || raw.gear;
+    if (!tr || !tr.stats || !gear || !Array.isArray(lo.stats)) return null;
+    const stat = t => (lo.stats.find(s => s.type === t) || {}).value || 0;
+    if (piece === 'weapon') {
+      const lvl = gear.weapon;
+      const total = stat(151);
+      if (!(total > 0) || !(lvl >= 0 && lvl < 25)) return null;
+      const parts = (lo.battlePoint && lo.battlePoint.parts) || (raw.battlePoint && raw.battlePoint.parts) || [];
+      const earringPct = parts.filter(p => p.stat && p.stat.index === 152).reduce((s, p) => s + (p.stat.value || 0) / 100, 0);
+      const karmaPct = ((lo.karma && lo.karma.enlightenment) || 0) * 0.1;
+      const delta = (tr.stats.weaponPower[lvl + 1] - tr.stats.weaponPower[lvl]) * (1 + (earringPct + karmaPct) / 100);
+      return 50 * Math.log(1 + delta / total);
+    }
+    const total = Math.max(stat(3), stat(4), stat(5));
+    if (!(total > 0)) return null;
+    let delta = 0;
+    for (const slot of ['head', 'chest', 'pants', 'gloves', 'shoulder']) {
+      const l = gear[slot];
+      if (l >= 0 && l < 25) delta += tr.stats.mainStat[slot][l + 1] - tr.stats.mainStat[slot][l];
+    }
+    return delta > 0 ? 50 * Math.log(1 + delta / total) : null;
+  }
+
   function getLevelCost(piece, lvl, track = 'aegir') {
       if (lvl < 10 || lvl > 24) return { totalValue: 0, rawGold: 0 };
       const recipe = honingT4 && honingT4.tracks[track] && honingT4.tracks[track][piece === 'weapon' ? 'weapon' : 'armor'][lvl];
@@ -3298,7 +3333,9 @@
     if (wStep) {
       // Gain relatif : +1 niveau ajoute WEAPON_HONING_BONUS_PER_LVL au bonus d'arme actuel
       const curWeaponPct = sys.weapon.bonusPct || 0;
-      const dmgGain = ((1 + (curWeaponPct + WEAPON_HONING_BONUS_PER_LVL) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
+      // DPS : gain réel sur la puissance d'arme du personnage ; sinon (support, données absentes) estimation par niveau
+      const realGain = isSupport ? null : honingDpsGain(charObj, 'weapon', sys.weapon.isSerka);
+      const dmgGain = realGain !== null ? realGain : ((1 + (curWeaponPct + WEAPON_HONING_BONUS_PER_LVL) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
       // Coût attendu du palier : tentatives moyennes (artisan) × matériaux au prix du marché
       const cost = getLevelCost('weapon', wStep.lvl, wStep.track).totalValue;
       pushRow('dyn_weapon',
@@ -3317,9 +3354,16 @@
       // Gain relatif : +1 niveau moyen ajoute ARMOR_HONING_BONUS_PER_LVL au bonus d'armure actuel
       const curArmorPct = sys.armors.bonusPct || 0;
       const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
-      const dmgGain = ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
-      // Coût attendu d'un palier sur chacune des 5 pièces
-      const cost = getLevelCost('armor', aStep.lvl, aStep.track).totalValue * 5;
+      const realGain = isSupport ? null : honingDpsGain(charObj, 'armor', sys.armors.isSerka);
+      const dmgGain = realGain !== null ? realGain : ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
+      // Coût attendu d'un palier sur chacune des 5 pièces, chacune depuis son propre niveau quand on le connaît
+      const gearLv = charObj && charObj.gear;
+      const perPiece = honingT4 && gearLv && aStep.track === (sys.armors.isSerka ? 'serka' : 'aegir')
+        ? ['head', 'chest', 'pants', 'gloves', 'shoulder'].map(sl => gearLv[sl]).filter(l => l >= 10 && l < 25)
+        : null;
+      const cost = perPiece && perPiece.length === 5
+        ? perPiece.reduce((sum, l) => sum + getLevelCost('armor', l, aStep.track).totalValue, 0)
+        : getLevelCost('armor', aStep.lvl, aStep.track).totalValue * 5;
       pushRow('dyn_armor',
         isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
         isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,

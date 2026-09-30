@@ -24,12 +24,26 @@ const TRACKS = {
   aegir: { weapon: '410500', armor: '410501' },
   serka: { weapon: '411100', armor: '411101' }
 };
+// Stats de base par iLvl (table itemLevel) : +N = baseIlvl + 5N. Arme : puissance d'arme (stat 151) ;
+// armures : stat principale (stat 3), par emplacement (catégories 10201…10205).
+const STAT_ITEMS = {
+  aegir: { baseIlvl: 1590, weapon: '11159000', armor: { head: '11159011', chest: '11159012', pants: '11159013', gloves: '11159014', shoulder: '11159015' } },
+  serka: { baseIlvl: 1675, weapon: '12159000', armor: { head: '12159011', chest: '12159012', pants: '12159013', gloves: '12159014', shoulder: '12159015' } }
+};
 
 const res = await fetch(FEED, { headers: { 'User-Agent': 'lostark-cp-calculator' } });
 if (!res.ok) throw new Error(`Flux Maxroll : HTTP ${res.status}`);
 const stats = await res.json();
 const common = stats.enhanceCommon;
 const quality = stats.itemQuality;
+const itemLevel = stats.itemLevel;
+
+function statAt(levelOption, ilvl, statId) {
+  const row = itemLevel[`${levelOption}#${ilvl}`];
+  const s = row && row.find(x => x.stat === statId);
+  if (!s) throw new Error(`Stat ${statId} absente pour ${levelOption}#${ilvl}`);
+  return s.value;
+}
 
 // Matériaux par niveau : portés par l'objet (itemQuality), qui renvoie vers sa recette commune
 function matsFor(commonKey) {
@@ -70,6 +84,12 @@ for (const [track, pieces] of Object.entries(TRACKS)) {
     }
     data.tracks[track][piece] = levels;
   }
+  const si = STAT_ITEMS[track];
+  const ilvls = Array.from({ length: 26 }, (_, n) => si.baseIlvl + 5 * n);
+  data.tracks[track].stats = {
+    weaponPower: ilvls.map(i => statAt(si.weapon, i, 151)),
+    mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, ilvls.map(i => statAt(lo, i, 3))]))
+  };
 }
 
 writeFileSync(OUT, JSON.stringify(data, null, 1));

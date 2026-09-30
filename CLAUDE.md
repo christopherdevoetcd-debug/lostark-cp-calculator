@@ -89,6 +89,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 ### Recettes d'affinage T4 (Maxroll)
 - `data/honing-t4.json` : recettes du jeu (or, matériaux, taux, bonus d'échec, artisan, souffles) pour l'Aegir (1640) et le Serka (1675), arme et armures, +10 à +25. Tirées du flux du planificateur Maxroll (`assets-ng.maxroll.gg/laplanner/game/stats.json`, même source que loseii.com).
 - Les régénérer après un patch d'affinage : `node tools/fetch-maxroll-honing.mjs`, puis redéployer. Le Serka est chiffré sur sa propre recette au niveau affiché ; l'estimation « Aegir +9 » ne sert plus que de repli si le fichier manque.
+- Le fichier contient aussi les stats de base par niveau (table `itemLevel` : puissance d'arme, stat principale par emplacement). Gain DPS d'un affinage (`honingDpsGain`) = 50 × ln(1 + écart ÷ total du personnage), PA de base = √(puissance d'arme × stat principale ÷ 6). Les supports gardent l'estimation par niveau.
 
 ### Réservoir de joueurs réels (Benchmark)
 - `data/live-peers.json` liste de vrais joueurs par classe, rôle et iLvl, tirés des classements de raid de `lostark.bible` (Armoche, Kazeros, Serca, Cathédrale). Seuls les noms en viennent : CP et iLvl sont toujours rechargés en direct.
