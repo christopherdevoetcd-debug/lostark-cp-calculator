@@ -3802,6 +3802,38 @@
     chaosMoon: { t14: 0, t17: 0.7 },
     chaosStar: { t14: 0, t17: 0.7 }
   };
+  // Qualité d'arme (Relique / Ancien, wiki Lost Ark « Quality upgrade », vérifié en jeu : 94 → 0,45 %, 97 → 0,23 %).
+  // Chaque essai tire une qualité avec des chances fixes, quelle que soit la qualité actuelle ; elle n'est gardée que si
+  // elle est plus haute. Tranche 0-10, 11-20 … 91-100, puis 10 % par qualité de la tranche. Coût : 800 or + 3 pierres du
+  // chaos (obtenues en jeu, non comptées). Effet : dégâts additionnels 10 % + 0,002 % × qualité² (partie type 4 du Battle Point).
+  const WEAPON_QUALITY_BANDS = [25.19, 21.41, 17.63, 13.85, 10.08, 6.30, 2.52, 1.26, 1.01, 0.76];
+  const WEAPON_QUALITY_TAP_GOLD = 800;
+  const weaponQualityChance = q => (q <= 10 ? WEAPON_QUALITY_BANDS[0] / 11 : WEAPON_QUALITY_BANDS[Math.min(9, Math.floor((q - 1) / 10))] / 10) / 100;
+  const weaponQualityAddDmg = q => 0.10 + 0.00002 * q * q;
+
+  /**
+   * Prochaine amélioration de qualité d'arme d'un DPS : chance par essai de dépasser la qualité actuelle, coût moyen
+   * (800 or ÷ chance) et gain moyen une fois réussie (qualité tirée au-dessus de l'actuelle, pondérée par ses chances).
+   * Les dégâts additionnels s'additionnent entre eux : gain dilué dans le pool de bracelet-model.js
+   * (familier, astrogemmes, collier), avec la vraie qualité à la place de la qualité 100. null si rien à gagner.
+   */
+  function weaponQualityUpgrade(charObj) {
+    if (!window.Bracelet) return null;
+    const qp = battlePointPartsOf(charObj).find(p => p.type === 4);
+    const q = qp && Number.isFinite(qp.quality) ? qp.quality : null;
+    if (q === null || q >= 100) return null;
+    const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
+    const pool = window.Bracelet.addDamagePool(prof) - (prof.addDamage.weaponQuality || 0) + weaponQualityAddDmg(q);
+    let chance = 0, gainSum = 0;
+    for (let n = q + 1; n <= 100; n++) {
+      const c = weaponQualityChance(n);
+      chance += c;
+      gainSum += c * 100 * Math.log((1 + pool - weaponQualityAddDmg(q) + weaponQualityAddDmg(n)) / (1 + pool));
+    }
+    if (!(chance > 0)) return null;
+    return { quality: q, chance, taps: 1 / chance, cost: WEAPON_QUALITY_TAP_GOLD / chance, gain: gainSum / chance };
+  }
+
   const GPD_TIER_LABELS = { 's-plus': 'Rang S+', 's': 'Rang S', 'a': 'Rang A', 'b': 'Rang B', 'c': 'Rang C' };
 
   // Répartition des gemmes par niveau à partir des valeurs de gemParts (seuils DPS/Support)
@@ -4071,6 +4103,21 @@
           : `Prix du livre relique au marché (EUC). ${r.read}/20 livres déjà lus ; le gain par niveau est quasi linéaire, chaque niveau a donc à peu près le même ratio.`,
         { engraving: name, lvl: r.lvl, books: r.books, read: r.read });
     });
+
+    // 6d. Qualité d'arme (DPS) : les dégâts additionnels ne profitent qu'au porteur, rien pour le buff d'un support
+    // (le Battle Point support compte la qualité à 0)
+    const wq = isSupport ? null : weaponQualityUpgrade(charObj);
+    if (wq) {
+      const pct = (wq.chance * 100).toFixed(2);
+      pushRow('dyn_quality',
+        isEn ? `Weapon quality ${wq.quality} ➔ higher` : `Qualité d'arme ${wq.quality} ➔ supérieure`,
+        isEn ? `${pct}% per attempt, ~${Math.round(wq.taps)} attempts` : `${pct} % par essai, ~${Math.round(wq.taps)} essais`,
+        wq.gain, wq.cost,
+        isEn
+          ? `Official odds (fixed, whatever the current quality): ${pct}% per attempt to beat ${wq.quality}. Average cost ${formatNumber(Math.round(wq.cost))} gold (800 gold per attempt; the 3 chaos stones come from content and are not counted). Gain: average additional damage of the higher qualities (10% + 0.002% × quality²), diluted in the additional damage pool.`
+          : `Chances officielles (fixes, quelle que soit la qualité actuelle) : ${pct} % par essai de dépasser ${wq.quality}. Coût moyen ${formatNumber(Math.round(wq.cost))} or (800 or par essai ; les 3 pierres du chaos viennent du contenu et ne sont pas comptées). Gain : dégâts additionnels moyens des qualités supérieures (10 % + 0,002 % × qualité²), dilués dans le pool de dégâts additionnels.`,
+        { quality: wq.quality, chance: wq.chance, taps: wq.taps });
+    }
 
     // 7. Accessoires : remplacer le bijou au meilleur ratio (gain / prix de son type)
     const accEval = evaluateCharacterAccessories(charObj, isSupport, isEn);
@@ -5112,6 +5159,16 @@
           lastStep: '—',
           nextStep: `${m.pts}P ➔ 17P`,
           category: 'arkGrid'
+        }));
+      } else if (d.id === 'dyn_quality') {
+        rows.push(dynToMaster(d, {
+          icon: '',
+          system: isEn ? 'Weapon quality' : 'Qualité d\'arme',
+          whatItReads: isEn ? `Quality ${m.quality}` : `Qualité ${m.quality}`,
+          wherePutsYou: `${m.quality}`,
+          lastStep: '—',
+          nextStep: isEn ? `${m.quality} ➔ higher (${(m.chance * 100).toFixed(2)}%/attempt)` : `${m.quality} ➔ supérieure (${(m.chance * 100).toFixed(2)} %/essai)`,
+          category: 'gear'
         }));
       } else if (d.id === 'dyn_acc') {
         rows.push(dynToMaster(d, {
