@@ -26,8 +26,10 @@ const TRACKS = {
 };
 // Stats de base par iLvl (table itemLevel) : +N = baseIlvl + 5N. Arme : puissance d'arme (stat 151) ;
 // armures : stat principale (stat 3), par emplacement (catégories 10201…10205).
+// Aegir : chaque niveau d'affinage avancé ajoute +1 iLvl à la pièce (profils lostark.bible : tout +18/40 = 1720),
+// la table est donc aussi lue iLvl par iLvl jusqu'à +25 et 40 niveaux avancés. Serka : l'iLvl reste 1675 + 5N.
 const STAT_ITEMS = {
-  aegir: { baseIlvl: 1590, weapon: '11159000', armor: { head: '11159011', chest: '11159012', pants: '11159013', gloves: '11159014', shoulder: '11159015' } },
+  aegir: { baseIlvl: 1590, advIlvl: 40, weapon: '11159000', armor: { head: '11159011', chest: '11159012', pants: '11159013', gloves: '11159014', shoulder: '11159015' } },
   serka: { baseIlvl: 1675, weapon: '12159000', armor: { head: '12159011', chest: '12159012', pants: '12159013', gloves: '12159014', shoulder: '12159015' } }
 };
 
@@ -90,6 +92,14 @@ for (const [track, pieces] of Object.entries(TRACKS)) {
     weaponPower: ilvls.map(i => statAt(si.weapon, i, 151)),
     mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, ilvls.map(i => statAt(lo, i, 3))]))
   };
+  if (si.advIlvl) {
+    // byIlvl[k] = stat à baseIlvl + k (k = 5 × affinage + affinage avancé)
+    const all = Array.from({ length: 5 * 25 + si.advIlvl + 1 }, (_, k) => si.baseIlvl + k);
+    data.tracks[track].stats.byIlvl = {
+      weaponPower: all.map(i => statAt(si.weapon, i, 151)),
+      mainStat: Object.fromEntries(Object.entries(si.armor).map(([slot, lo]) => [slot, all.map(i => statAt(lo, i, 3))]))
+    };
+  }
 }
 
 writeFileSync(OUT, JSON.stringify(data, null, 1));
