@@ -3344,12 +3344,12 @@
         const slotNames = accessorySlotNames(isEn);
         pushRow('dyn_acc',
           isEn ? `Accessory Upgrade — ${slotNames[best.slot]}` : `Upgrade Bijou — ${slotNames[best.slot]}`,
-          isEn ? '➔ 2 High main lines' : '➔ 2 lignes principales High',
+          isEn ? `➔ ${best.pkg.label} + 1 dead line` : `➔ ${best.pkg.label} + 1 ligne morte`,
           best.gain, best.cost,
           isEn
             ? `Best ratio among your 5 accessories, lines valued with the Arsonistic slopes. Price per accessory type is an in-game estimate (no market source).`
             : `Meilleur ratio parmi tes 5 bijoux, lignes valorisées avec les pentes Arsonistic. Prix par type de bijou estimé en jeu (pas de source marché).`,
-          { slot: best.slot, slotName: slotNames[best.slot], curPct: best.curPct });
+          { slot: best.slot, slotName: slotNames[best.slot], curPct: best.curPct, pkg: best.pkg.label });
       }
     }
 
@@ -4459,7 +4459,7 @@
           whatItReads: isEn ? `Accessories +${m.curPct.toFixed(2)}% ${unit}` : `Bijoux +${m.curPct.toFixed(2)}% ${unit}`,
           wherePutsYou: isEn ? 'Best ratio' : 'Meilleur ratio',
           lastStep: '—',
-          nextStep: isEn ? '➔ 2 High main lines' : '➔ 2 lignes principales High',
+          nextStep: isEn ? `➔ ${m.pkg} + dead line` : `➔ ${m.pkg} + ligne morte`,
           category: 'acc'
         }));
       }
@@ -10362,12 +10362,29 @@
   // sqrt(703826×1.09 × 241367×1.085 / 6) × 1.125 + 3600 ≈ 209 464
   const ACC_REF_TOTAL_AP = 209464;
   const ACC_REF_BASE_AP_PCT = 0.125;
-  // Coût (gold) d'un bijou de remplacement (2 lignes principales High) par type. Pas de source marché
-  // (hôtel des ventes) : estimation relevée en jeu sur EUC, à mettre à jour de temps en temps.
-  const ACC_UPGRADE_COST = { neck: 166000, ear: 166000, ring: 166000 };
+  // --- Gammes de bijoux de remplacement ---
+  // Valeurs Low / Mid / High de chaque ligne de polissage T4 (mêmes unités que computeAccessoryLinesBonus)
+  const ACC_LINE_TIERS = {
+    addDmg: [0.70, 1.60, 2.60], outDmg: [0.55, 1.20, 2.00], apPct: [0.40, 0.95, 1.55], wpPct: [0.80, 1.80, 3.00],
+    critPct: [0.40, 0.95, 1.55], cdmgPct: [1.10, 2.40, 4.00], apFlat: [80, 195, 390], wpFlat: [195, 480, 960],
+    brand: [2.15, 4.80, 8.00], identity: [1.60, 3.60, 6.00], allyAp: [1.35, 3.00, 5.00], allyDmg: [2.00, 4.50, 7.50]
+  };
+  // Les 2 lignes principales par rôle et type (support boucle : PA d'arme % + PA d'arme plate)
+  const ACC_MAIN_LINES = {
+    dps: { neck: ['addDmg', 'outDmg'], ear: ['apPct', 'wpPct'], ring: ['critPct', 'cdmgPct'] },
+    support: { neck: ['brand', 'identity'], ear: ['wpPct', 'wpFlat'], ring: ['allyAp', 'allyDmg'] }
+  };
+  // Gammes achetées à l'hôtel des ventes : tiers des 2 lignes principales (0 = Low, 1 = Mid, 2 = High),
+  // 3e ligne morte. Pas de source marché : prix EUC relevés en jeu (null = prix inconnu, gamme ignorée).
+  // Échantillon lostark.bible 1730+ (2026-09-30) : High / Mid est la combinaison la plus portée,
+  // 600 à 700 k à l'hôtel des ventes EUC selon le joueur (milieu retenu).
+  const ACC_PACKAGES = [
+    { id: 'HM', label: 'High / Mid', tiers: [2, 1], price: { neck: 650000, ear: 650000, ring: 650000 } }
+  ];
   const accessoryKind = slot => (slot === 'neck' ? 'neck' : (slot.startsWith('ear') ? 'ear' : 'ring'));
-  // Coût moyen d'un bijou, pour les comparaisons globales (Benchmark)
-  const ACC_UPGRADE_COST_AVG = Math.round((ACC_UPGRADE_COST.neck + 2 * ACC_UPGRADE_COST.ear + 2 * ACC_UPGRADE_COST.ring) / 5);
+  // Coût moyen d'un bijou de la gamme de référence, pour les comparaisons globales (Benchmark)
+  const ACC_UPGRADE_COST_AVG = ACC_PACKAGES[0].price.neck;
+
   // Taille d'astrogemmes épiques vers le palier suivant : coût (gold) et gain (%)
   const ASTRO_CUT_COST = 675000;
   const ASTRO_CUT_GAIN = 1.08;
@@ -10453,22 +10470,29 @@
     return (mult - 1) * 100;
   }
 
-  // Bijou dont le remplacement par ACC_TARGET_LINES rapporte le plus (gain relatif en %)
-  // Bijou à remplacer : meilleur ratio coût / gain, chaque type de bijou ayant son propre prix
+  // Remplacement de bijou au meilleur ratio : chaque slot × chaque gamme au prix connu,
+  // en plaçant le High sur la ligne principale où il rapporte le plus
   function findBestAccessoryUpgrade(slotLines, isSupport) {
     if (!slotLines) return null;
-    const lineSet = isSupport ? ACC_TARGET_LINES.support : ACC_TARGET_LINES.dps;
+    const role = isSupport ? 'support' : 'dps';
     const curPct = computeAccessoryLinesBonus(ACC_SLOTS.flatMap(s => slotLines[s] || []), isSupport);
     let best = null;
     ACC_SLOTS.forEach(slot => {
       const kind = accessoryKind(slot);
-      const target = lineSet[kind].map(([key, amount]) => ({ key, amount }));
+      const [m1, m2] = ACC_MAIN_LINES[role][kind];
       const others = ACC_SLOTS.filter(s => s !== slot).flatMap(s => slotLines[s] || []);
-      const nextPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
-      const gain = ((1 + nextPct / 100) / (1 + curPct / 100) - 1) * 100;
-      if (!(gain > 0)) return;
-      const cost = ACC_UPGRADE_COST[kind];
-      if (!best || cost / gain < best.cost / best.gain) best = { slot, kind, gain, cost, curPct, nextPct };
+      ACC_PACKAGES.forEach(pkg => {
+        const cost = pkg.price[kind];
+        if (!(cost > 0)) return;
+        const [t1, t2] = pkg.tiers;
+        [[t1, t2], [t2, t1]].forEach(([a, b]) => {
+          const target = [{ key: m1, amount: ACC_LINE_TIERS[m1][a] }, { key: m2, amount: ACC_LINE_TIERS[m2][b] }];
+          const nextPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
+          const gain = ((1 + nextPct / 100) / (1 + curPct / 100) - 1) * 100;
+          if (!(gain > 0)) return;
+          if (!best || cost / gain < best.cost / best.gain) best = { slot, kind, pkg, gain, cost, curPct, nextPct };
+        });
+      });
     });
     return best;
   }
