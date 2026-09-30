@@ -9,7 +9,9 @@ const BODY = JSON.stringify({
     'prime-oreha-fusion-material',
     'abidos-fusion-material',
     'destiny-destruction-stone',
-    'destiny-guardian-stone'
+    'destiny-guardian-stone',
+    'lavas-breath',
+    'glaciers-breath'
   ]
 });
 

@@ -494,7 +494,7 @@
   // État de l'application
   const state = {
     // Prix unitaires par défaut (EUC, 2026-09-30), remplacés au chargement par fetchMarketPrices()
-    marketPrices: { 'destiny-leapstone': 16, 'prime-oreha-fusion-material': 58, 'abidos-fusion-material': 124, 'destiny-destruction-stone': 5, 'destiny-guardian-stone': 0.58, 'destiny-shard': 0, 'gold': 1 },
+    marketPrices: { 'destiny-leapstone': 16, 'prime-oreha-fusion-material': 58, 'abidos-fusion-material': 124, 'destiny-destruction-stone': 5, 'destiny-guardian-stone': 0.58, 'destiny-shard': 0, 'lavas-breath': 411, 'glaciers-breath': 398, 'gold': 1 },
     role: 'support',
     currentIlvl: 1750.0,
     currentCp: 3369,
@@ -1323,6 +1323,72 @@
          totalValue: Math.round(tapCostGold * avgTaps),
          rawGold: Math.round(rawGold * avgTaps)
       };
+  }
+
+  // --- Affinage avancé T4 (wiki Lost Ark « Advanced Honing ») ---
+  // Coût d'une tentative, identique sur toute une tranche de 10 niveaux.
+  // Éclats et argent ignorés (comme pour l'affinage normal) ; Souffle = Lave (arme) ou Glacier (armure).
+  const ADV_HONING_ATTEMPT = {
+    weapon: {
+      10: { dest: 180, guard: 0, leap: 5, fusion: 8, gold: 563, breath: 4 },
+      20: { dest: 330, guard: 0, leap: 7, fusion: 9, gold: 1250, breath: 6 },
+      30: { dest: 1200, guard: 0, leap: 25, fusion: 28, gold: 3000, breath: 20 },
+      40: { dest: 1400, guard: 0, leap: 32, fusion: 30, gold: 4000, breath: 24 }
+    },
+    armor: {
+      10: { dest: 0, guard: 150, leap: 4, fusion: 5, gold: 475, breath: 4 },
+      20: { dest: 0, guard: 270, leap: 5, fusion: 5, gold: 900, breath: 6 },
+      30: { dest: 0, guard: 1000, leap: 18, fusion: 17, gold: 2000, breath: 20 },
+      40: { dest: 0, guard: 1200, leap: 23, fusion: 19, gold: 2400, breath: 24 }
+    }
+  };
+  // Tentatives moyennes [payées, totales] pour k niveaux restants avant la fin de la tranche (k = 1…10).
+  // Simulation Monte-Carlo (200 000 essais) : 100 XP/niveau, succès 10/20/40 XP à 80/15/5 %
+  // (souffle complet : 50/30/20 %), Grâce de l'ancêtre toutes les 4 tentatives (effets 1-20 et 21-40),
+  // Ciseau de Temer = tentative suivante gratuite (le souffle reste consommé).
+  const ADV_HONING_ATTEMPTS = {
+    low: {
+      plain: [[5.75, 6.11], [10.21, 11.07], [14.72, 16.08], [19.21, 21.05], [23.72, 26.05], [28.22, 31.06], [32.72, 36.04], [37.23, 41.04], [41.75, 46.05], [46.23, 51.04]],
+      breath: [[4.45, 4.69], [7.66, 8.26], [10.85, 11.79], [14.05, 15.34], [17.23, 18.87], [20.43, 22.43], [23.63, 25.97], [26.83, 29.52], [30.02, 33.07], [33.21, 36.6]]
+    },
+    high: {
+      plain: [[5.44, 5.71], [9.57, 10.18], [13.7, 14.65], [17.84, 19.12], [21.99, 23.6], [26.14, 28.1], [30.27, 32.54], [34.43, 37.05], [38.59, 41.54], [42.72, 46.01]],
+      breath: [[4.42, 4.6], [7.49, 7.93], [10.56, 11.24], [13.63, 14.57], [16.7, 17.89], [19.78, 21.21], [22.86, 24.55], [25.96, 27.89], [29.01, 31.19], [32.07, 34.5]]
+    }
+  };
+
+  /**
+   * Coût attendu (gold, prix du marché) pour finir la tranche d'affinage avancé en cours
+   * depuis le niveau `fromLvl` (0…39) d'UNE pièce. Retient l'option la moins chère : avec ou sans souffle.
+   */
+  function getAdvHoningCost(piece, fromLvl) {
+    const lvl = Math.max(0, Math.floor(fromLvl || 0));
+    if (lvl >= 40) return null;
+    const rangeEnd = Math.floor(lvl / 10) * 10 + 10;
+    const levels = rangeEnd - lvl;
+    const isWeapon = piece === 'weapon';
+    const a = ADV_HONING_ATTEMPT[isWeapon ? 'weapon' : 'armor'][rangeEnd];
+    const mp = state.marketPrices;
+    const attemptCost = a.gold +
+      a.dest * (mp['destiny-destruction-stone'] || 5) +
+      a.guard * (mp['destiny-guardian-stone'] || 0.58) +
+      a.leap * (mp['destiny-leapstone'] || 16) +
+      a.fusion * (mp['abidos-fusion-material'] || 124);
+    const breathCost = a.breath * (mp[isWeapon ? 'lavas-breath' : 'glaciers-breath'] || (isWeapon ? 411 : 398));
+    const table = ADV_HONING_ATTEMPTS[rangeEnd <= 20 ? 'low' : 'high'];
+    const [plainPaid] = table.plain[levels - 1];
+    const [breathPaid, breathTotal] = table.breath[levels - 1];
+    const plain = plainPaid * attemptCost;
+    const withBreath = breathPaid * attemptCost + breathTotal * breathCost;
+    const useBreath = withBreath < plain;
+    return {
+      from: lvl,
+      to: rangeEnd,
+      levels,
+      useBreath,
+      attempts: useBreath ? breathPaid : plainPaid,
+      totalValue: Math.round(useBreath ? withBreath : plain)
+    };
   }
 
   function updatePredictorView() {
@@ -2877,6 +2943,40 @@
         { from: aLvl, to: aLvl + 1 });
     }
 
+    // 2b. Affinage avancé : prochaine tranche de 10 niveaux (arme, puis armures les moins avancées).
+    // 1 niveau avancé = +1 iLvl sur la pièce = 1/5 d'un niveau d'affinage normal (même gain de stat par iLvl).
+    const advLv = getAdvHoningLevels(charObj);
+    if (advLv) {
+      const wAdv = getAdvHoningCost('weapon', advLv.weapon);
+      if (wAdv) {
+        const curWeaponPct = sys.weapon.bonusPct || 0;
+        const add = WEAPON_HONING_BONUS_PER_LVL * wAdv.levels / 5;
+        const dmgGain = ((1 + (curWeaponPct + add) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
+        pushRow('dyn_adv_weapon',
+          isEn ? `Advanced Honing — Weapon ${wAdv.from} ➔ ${wAdv.to}` : `Affinage avancé — Arme ${wAdv.from} ➔ ${wAdv.to}`,
+          isEn ? `+${wAdv.levels} item levels on the weapon` : `+${wAdv.levels} niveaux d'objet sur l'arme`,
+          dmgGain, wAdv.totalValue,
+          advHoningComment(wAdv, isEn),
+          { piece: 'weapon', from: wAdv.from, to: wAdv.to, breath: wAdv.useBreath });
+      }
+      const minArmor = Math.min(...advLv.armors);
+      const lagging = advLv.armors.filter(v => v === minArmor);
+      const aAdv = getAdvHoningCost('armor', minArmor);
+      if (aAdv) {
+        const curArmorPct = sys.armors.bonusPct || 0;
+        const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
+        // Le niveau moyen des 5 pièces monte de (pièces × niveaux) / 5, à 1/5 d'un niveau normal
+        const add = perLvl * (lagging.length * aAdv.levels / 5) / 5;
+        const dmgGain = ((1 + (curArmorPct + add) / 100) / (1 + curArmorPct / 100) - 1) * 100;
+        pushRow('dyn_adv_armor',
+          isEn ? `Advanced Honing — Armors ${aAdv.from} ➔ ${aAdv.to}` : `Affinage avancé — Armures ${aAdv.from} ➔ ${aAdv.to}`,
+          isEn ? `${lagging.length} piece(s) out of 5` : `${lagging.length} pièce(s) sur 5`,
+          dmgGain, aAdv.totalValue * lagging.length,
+          advHoningComment(aAdv, isEn),
+          { piece: 'armor', from: aAdv.from, to: aAdv.to, pieces: lagging.length, breath: aAdv.useBreath });
+      }
+    }
+
     // 3. Gems : une ligne par niveau présent, gain relatif sur le bonus moyen actuel du set
     const gemParts = extractCharacterGemParts(charObj);
     const gemCounts = (gemParts && gemParts.length > 0)
@@ -2960,6 +3060,27 @@
     return dynTable;
   }
 
+  // Niveaux d'affinage avancé par pièce, lus sur le profil importé.
+  // Anciens profils sans détail par pièce : la valeur globale advHoning s'applique à toutes les pièces.
+  function getAdvHoningLevels(charObj) {
+    const gear = (charObj && (charObj.gear || (charObj.rawProfile && charObj.rawProfile.gear))) || {};
+    const adv = gear.adv;
+    const fallback = charObj && charObj.advHoning !== undefined ? charObj.advHoning : undefined;
+    const pick = key => (adv && adv[key] !== undefined ? adv[key] : fallback);
+    const weapon = pick('weapon');
+    const armors = ['head', 'shoulder', 'chest', 'pants', 'gloves'].map(pick);
+    if (weapon === undefined || armors.some(v => v === undefined)) return null;
+    return { weapon, armors };
+  }
+
+  function advHoningComment(adv, isEn) {
+    const attempts = Math.round(adv.attempts);
+    if (isEn) {
+      return `Expected cost: ~${attempts} paid attempts ${adv.useBreath ? 'with' : 'without'} breath (cheaper at current prices), Ancestor's Grace included, market-priced materials. Shards and tempering not counted.`;
+    }
+    return `Coût attendu : ~${attempts} tentatives payées ${adv.useBreath ? 'avec' : 'sans'} souffle (moins cher aux prix actuels), Grâce de l'ancêtre incluse, matériaux au prix du marché. Éclats et trempe non comptés.`;
+  }
+
   function getTierFromRatio(ratio) {
     if (ratio <= 400000) return 's-plus';
     if (ratio <= 750000) return 's';
@@ -2976,8 +3097,9 @@
     const isSupport = role === 'support';
     
     let list = EUC_EFFICIENCY_DATA[role] || EUC_EFFICIENCY_DATA.support;
-    if (activeCharacterId && state.characters && state.characters[activeCharacterId]) {
-       list = getDynamicGpdTable(state.characters[activeCharacterId], role, isEnLang());
+    const activeChar = getCurrentActiveCharacter();
+    if (activeChar) {
+       list = getDynamicGpdTable(activeChar, role, isEnLang());
     }
 
     const isEn = isEnLang();
@@ -4009,6 +4131,18 @@
           category: 'gear',
           applyType: 'armors',
           targetVal: m.to
+        }));
+      } else if (d.id === 'dyn_adv_weapon' || d.id === 'dyn_adv_armor') {
+        const isW = d.id === 'dyn_adv_weapon';
+        const scope = isW ? '' : (isEn ? ` (${m.pieces}/5 pieces)` : ` (${m.pieces}/5 pièces)`);
+        rows.push(dynToMaster(d, {
+          icon: '',
+          system: isW ? (isEn ? 'Advanced honing — Weapon' : 'Affinage avancé — Arme') : (isEn ? 'Advanced honing — Armors' : 'Affinage avancé — Armures'),
+          whatItReads: `${isEn ? 'Adv.' : 'Avancé'} ${m.from}/40${scope}`,
+          wherePutsYou: `${m.from}/40`,
+          lastStep: '—',
+          nextStep: `${m.from} ➔ ${m.to}${m.breath ? (isEn ? ' (breath)' : ' (souffle)') : ''}`,
+          category: 'gear'
         }));
       } else if (d.id.startsWith('dyn_gems_')) {
         const mix = [10, 9, 8, 7].filter(l => m.counts[l] > 0).map(l => `${m.counts[l]}× ${lvlWord} ${l}`).join(', ');
@@ -6189,7 +6323,15 @@
           gear.shoulder = d.honing;
           if (isSerka) serkaArmorCount++;
         }
-        if (d.advancedHoning !== undefined) advHoning = d.advancedHoning;
+        if (d.advancedHoning !== undefined) {
+          advHoning = d.advancedHoning;
+          // Niveau d'affinage avancé par pièce (0 à 40), lu pour le GPD
+          const advKey = { weapon: 'weapon', head: 'head', upper_body: 'chest', lower_body: 'pants', hand: 'gloves', shoulder: 'shoulder' }[slot];
+          if (advKey) {
+            gear.adv = gear.adv || {};
+            gear.adv[advKey] = d.advancedHoning;
+          }
+        }
       });
     }
 
