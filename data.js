@@ -1276,18 +1276,22 @@ window.T4_ARMOR_UNLOCK = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0
 // `base` = effet de la gravure livres reliques au max (base + légendaire 4 + relique 4), même unité.
 // kind : dmg = case de dégâts multiplicative propre, critDmg / critRate = points de critique, ap = Puissance d'attaque %.
 // Capitaine de raid dépend du bonus de vitesse de déplacement : pris à +40 % (base et pierre × 0,4).
+// Recalés sur le Battle Point lostark.bible (valeurs relevées sur des joueurs réels, 2026-09-30) :
+// Super Charge / All-Out Attack comptent pour 0,8 × l'effet affiché (16,8 % au max, 18,6 % avec pierre niv. 3) ;
+// Master Brawler vaut 15,3 % au max légendaire et 18,1 % au max relique. Ambush Master : repris de Master Brawler
+// (gravure symétrique, pas encore relevée) ; pierre de Master Brawler non relevée.
 // Gravures absentes (défensives, utilitaires, support) : la pierre n'ajoute aucun dégât.
 window.ABILITY_STONE_EFFECTS = {
   'grudge': { kind: 'dmg', base: 21, stone: [3, 3.75, 5.25, 6] },
   'cursed doll': { kind: 'dmg', base: 17, stone: [3, 3.75, 5.25, 6] },
   'hit master': { kind: 'dmg', base: 17, stone: [3, 3.75, 5.25, 6] },
-  'super charge': { kind: 'dmg', base: 21, stone: [3, 3.75, 5.25, 6] },
+  'super charge': { kind: 'dmg', base: 16.8, stone: [2.4, 3, 4.2, 4.8] },
   'mass increase': { kind: 'dmg', base: 19, stone: [3, 3.75, 5.25, 6] },
   'barricade': { kind: 'dmg', base: 17, stone: [3, 3.75, 5.25, 6] },
-  'all-out attack': { kind: 'dmg', base: 21, stone: [3, 3.75, 5.25, 6] },
+  'all-out attack': { kind: 'dmg', base: 16.8, stone: [2.4, 3, 4.2, 4.8] },
   'stabilized status': { kind: 'dmg', base: 17, stone: [3, 3.75, 5.25, 6] },
-  'master brawler': { kind: 'dmg', base: 7.6, stone: [2.7, 3.4, 4.7, 5.4] },
-  'ambush master': { kind: 'dmg', base: 7.6, stone: [2.7, 3.4, 4.7, 5.4] },
+  'master brawler': { kind: 'dmg', base: 18.1, stone: [2.7, 3.4, 4.7, 5.4] },
+  'ambush master': { kind: 'dmg', base: 18.1, stone: [2.7, 3.4, 4.7, 5.4] },
   'raid captain': { kind: 'dmg', base: 19.2, stone: [3, 3.76, 5.28, 6] },
   'keen blunt weapon': { kind: 'critDmg', base: 52, stone: [7.5, 9.4, 13.2, 15] },
   'precise dagger': { kind: 'critRate', base: 21, stone: [3, 3.75, 5.25, 6] },
@@ -1300,17 +1304,18 @@ window.ABILITY_STONE_EFFECTS = {
 // 5 livres par niveau, 4 niveaux (20 livres). `relic` = bonus relique aux niveaux 1…4 (valeurs totales).
 // `base` = effet avec les livres légendaires au max (base + légendaire 4), relique 0. Mêmes `kind` que la pierre.
 // Adrénaline : le relique donne du taux critique (à stacks max). Contender : +1 stack par niveau (2,1 % PA/stack).
+// Super Charge, All-Out Attack et Master Brawler : recalés sur le Battle Point (cf. ABILITY_STONE_EFFECTS).
 window.RELIC_BOOK_EFFECTS = {
   'grudge': { kind: 'dmg', base: 18, relic: [0.75, 1.5, 2.25, 3] },
   'cursed doll': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
   'hit master': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
-  'super charge': { kind: 'dmg', base: 18, relic: [0.75, 1.5, 2.25, 3] },
+  'super charge': { kind: 'dmg', base: 14.4, relic: [0.6, 1.2, 1.8, 2.4] },
   'mass increase': { kind: 'dmg', base: 16, relic: [0.75, 1.5, 2.25, 3] },
   'barricade': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
-  'all-out attack': { kind: 'dmg', base: 18, relic: [0.75, 1.5, 2.25, 3] },
+  'all-out attack': { kind: 'dmg', base: 14.4, relic: [0.6, 1.2, 1.8, 2.4] },
   'stabilized status': { kind: 'dmg', base: 14, relic: [0.75, 1.5, 2.25, 3] },
-  'master brawler': { kind: 'dmg', base: 4.8, relic: [0.7, 1.4, 2.1, 2.8] },
-  'ambush master': { kind: 'dmg', base: 4.8, relic: [0.7, 1.4, 2.1, 2.8] },
+  'master brawler': { kind: 'dmg', base: 15.3, relic: [0.7, 1.4, 2.1, 2.8] },
+  'ambush master': { kind: 'dmg', base: 15.3, relic: [0.7, 1.4, 2.1, 2.8] },
   'raid captain': { kind: 'dmg', base: 16, relic: [0.8, 1.6, 2.4, 3.2] },
   'keen blunt weapon': { kind: 'critDmg', base: 44, relic: [2, 4, 6, 8] },
   'precise dagger': { kind: 'critRate', base: 18, relic: [0.75, 1.5, 2.25, 3] },
