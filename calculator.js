@@ -3484,6 +3484,18 @@
     { key: 'chaosMoon', prefix: '67311', fr: 'Chaos Lune', en: 'Chaos Moon' },
     { key: 'chaosStar', prefix: '67312', fr: 'Chaos Étoile', en: 'Chaos Star' }
   ];
+  // Cœurs de la Grille d'Ark, support : ce que rapportent les options 14 et 17 points, en % de dégâts de chaque
+  // allié. Mesures de Loseii (loastuff/loa-gpd, docs/METHODOLOGY.md) sur la feuille « Ark Grid Cores » de bebkok,
+  // passées dans son modèle de buff, Barde de référence : falaise à 17, presque plat en dessous ;
+  // Ordre Soleil / Lune 1,0 à 1,2 %, Chaos 0,5 à 0,9 % (milieux retenus) ; Ordre Étoile (jauge) 0,3 % à 14, 0,16 % à 17.
+  const SUPPORT_CORE_STEPS = {
+    orderSun: { t14: 0, t17: 1.1 },
+    orderMoon: { t14: 0, t17: 1.1 },
+    orderStar: { t14: 0.3, t17: 0.16 },
+    chaosSun: { t14: 0, t17: 0.7 },
+    chaosMoon: { t14: 0, t17: 0.7 },
+    chaosStar: { t14: 0, t17: 0.7 }
+  };
   const GPD_TIER_LABELS = { 's-plus': 'Rang S+', 's': 'Rang S', 'a': 'Rang A', 'b': 'Rang B', 'c': 'Rang C' };
 
   // Répartition des gemmes par niveau à partir des valeurs de gemParts (seuils DPS/Support)
@@ -3691,15 +3703,23 @@
         pts = has17 ? 17 : 10;
       }
       if (pts <= 0 || pts >= 17) return;
-      const cur = getArkGridCoreBonus(def.prefix, pts, isSupport, false);
-      const next = getArkGridCoreBonus(def.prefix, 17, isSupport, false);
-      // Les cœurs se cumulent multiplicativement (cf. evalCoreGroup)
-      const gain = ((1 + next / 100) / (1 + cur / 100) - 1) * 100;
+      let gain;
+      if (isSupport) {
+        // Support : paliers mesurés par Loseii, en % de dégâts de chaque allié (même échelle que bijoux et gemmes)
+        const m = SUPPORT_CORE_STEPS[def.key];
+        gain = (pts < 14 ? m.t14 : 0) + m.t17;
+      } else {
+        const cur = getArkGridCoreBonus(def.prefix, pts, isSupport, false);
+        const next = getArkGridCoreBonus(def.prefix, 17, isSupport, false);
+        // Les cœurs se cumulent multiplicativement (cf. evalCoreGroup)
+        gain = ((1 + next / 100) / (1 + cur / 100) - 1) * 100;
+      }
       pushRow(`dyn_core_${def.key}`,
         isEn ? `Ark Grid — ${def.en} core 17P` : `Grille d'Ark — Cœur ${def.fr} 17P`,
         isEn ? `From ${pts} points` : `Depuis ${pts} points`,
         gain, (17 - pts) * ARK_CORE_COST_PER_POINT,
-        isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`,
+        (isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`) +
+          (isSupport ? (isEn ? ' Buff measured by Loseii on a reference Bard (14 and 17-point options).' : ' Buff mesuré par Loseii sur un Barde de référence (options 14 et 17 points).') : ''),
         { key: def.key, label: isEn ? def.en : def.fr, pts });
     });
 
