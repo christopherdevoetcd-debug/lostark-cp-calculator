@@ -560,50 +560,21 @@ function extractCharacterCombatStatsDetails(c, isEn = false) {
     ? Number(((totalPts / 2500) * 100).toFixed(2))
     : Number((totalPts * 0.03).toFixed(2));
 
-  let swift = 0;
-  let specStat = 0;
-  let crit = 0;
-
-  const items = c.items || (canon && canon.items) || (c.loadout && c.loadout.items) || [];
-  let foundSwift = 0, foundSpec = 0, foundCrit = 0;
-  if (Array.isArray(items)) {
-    items.forEach(it => {
-      if (it && it.data && Array.isArray(it.data.stats)) {
-        it.data.stats.forEach(st => {
-          if (st.index === 15) foundCrit += st.value || 0;
-          else if (st.index === 16) foundSpec += st.value || 0;
-          else if (st.index === 17) foundSwift += st.value || 0;
-        });
-      }
-    });
-  }
-
-  if (foundSwift + foundSpec + foundCrit > 1000) {
-    swift = foundSwift;
-    specStat = foundSpec;
-    crit = foundCrit;
-  } else {
-    if (role === 'support') {
-      swift = Math.round(totalPts * 0.763);
-      specStat = totalPts - swift;
-      crit = 0;
-    } else if (spec.includes('executioner') || spec.includes('igniter') || spec.includes('surge') || spec.includes('brawler') || spec.includes('asura')) {
-      specStat = Math.round(totalPts * 0.74);
-      crit = totalPts - specStat;
-      swift = 0;
-    } else {
-      swift = Math.round(totalPts * 0.65);
-      crit = totalPts - swift;
-      specStat = 0;
-    }
-  }
+  // Stats de combat du profil (loadout.stats, types du jeu : 15 Crit, 16 Spécialisation, 18 Rapidité ;
+  // leur somme = total de la partie 26 du Battle Point). Sans elles : inconnues (« — »), pas de partage inventé.
+  const loadout = (c.rawProfile && c.rawProfile.loadout) || c.loadout
+    || (c.rawProfile && c.rawProfile.loadouts && c.rawProfile.loadouts[0]) || null;
+  const statsList = (loadout && Array.isArray(loadout.stats)) ? loadout.stats : [];
+  const statOf = type => { const s = statsList.find(x => x && x.type === type); return s ? Number(s.value) || 0 : null; };
+  const crit = statOf(15), specStat = statOf(16), swift = statOf(18);
+  const known = crit !== null && specStat !== null && swift !== null;
 
   return {
     totalPts: Math.round(totalPts),
     bonusPct,
-    swift: Math.round(swift),
-    specStat: Math.round(specStat),
-    crit: Math.round(crit),
+    swift: known ? swift : null,
+    specStat: known ? specStat : null,
+    crit: known ? crit : null,
     role
   };
 }
@@ -1275,6 +1246,11 @@ function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
   const tPct = (tSys.combatStats && tSys.combatStats.bonusPct) ? tSys.combatStats.bonusPct : 99.68;
   const deltaPct = Number((tPct - pPct).toFixed(2));
   const deltaPts = t.totalPts - p.totalPts;
+  // Stat inconnue (profil sans loadout.stats) : « — », jamais de valeur inventée.
+  const pts = v => (v === null || v === undefined) ? '—' : `${formatNumber(v)} pts`;
+  const known = (a, b) => a !== null && a !== undefined && b !== null && b !== undefined;
+  const lead = (tv, pv) => known(tv, pv) && tv > pv ? `<span class="line-cp-pill">+${tv - pv}</span>` : '';
+  const delta = (tv, pv) => known(tv, pv) ? `${tv >= pv ? '+' : ''}${tv - pv} pts` : '—';
 
   return `
       <div class="acc-breakdown-panel combatstats-breakdown-panel">
@@ -1340,18 +1316,16 @@ function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
             <div class="acc-piece-body">
               <div class="acc-line-badge high">
                 <span><strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.swift)} pts</span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${pts(p.swift)}</span>
               </div>
               <div class="acc-line-badge mid">
                 <span><strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
-                <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.specStat)} pts</span>
+                <span style="font-family:var(--font-mono); font-weight:700;">${pts(p.specStat)}</span>
               </div>
-              ${p.crit > 0 ? `
                 <div class="acc-line-badge low">
                   <span><strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
-                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(p.crit)} pts</span>
+                  <span style="font-family:var(--font-mono); font-weight:700;">${pts(p.crit)}</span>
                 </div>
-              ` : ''}
               <div class="acc-line-badge fixed">
                 <span><strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
                 <span style="font-family:var(--font-mono); font-weight:700; color:#E0A43A;">${formatNumber(p.totalPts)} pts</span>
@@ -1377,26 +1351,24 @@ function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
               <div class="acc-line-badge high">
                 <span><strong>${isEn ? 'Swiftness' : 'Rapidité'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.swift)} pts</span>
-                  ${t.swift > p.swift ? `<span class="line-cp-pill">+${t.swift - p.swift}</span>` : ''}
+                  <span style="font-family:var(--font-mono); font-weight:700;">${pts(t.swift)}</span>
+                  ${lead(t.swift, p.swift)}
                 </div>
               </div>
               <div class="acc-line-badge mid">
                 <span><strong>${isEn ? 'Specialization' : 'Spécialisation'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.specStat)} pts</span>
-                  ${t.specStat > p.specStat ? `<span class="line-cp-pill">+${t.specStat - p.specStat}</span>` : ''}
+                  <span style="font-family:var(--font-mono); font-weight:700;">${pts(t.specStat)}</span>
+                  ${lead(t.specStat, p.specStat)}
                 </div>
               </div>
-              ${t.crit > 0 ? `
                 <div class="acc-line-badge low">
                   <span><strong>${isEn ? 'Crit' : 'Critique'}</strong></span>
                   <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-family:var(--font-mono); font-weight:700;">${formatNumber(t.crit)} pts</span>
-                    ${t.crit > p.crit ? `<span class="line-cp-pill">+${t.crit - p.crit}</span>` : ''}
+                    <span style="font-family:var(--font-mono); font-weight:700;">${pts(t.crit)}</span>
+                    ${lead(t.crit, p.crit)}
                   </div>
                 </div>
-              ` : ''}
               <div class="acc-line-badge fixed">
                 <span><strong>${isEn ? 'Total Combat Stat Points' : 'Total Points de Combat'}</strong></span>
                 <div style="display:flex; align-items:center; gap:6px;">
@@ -1426,15 +1398,21 @@ function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
             <tbody>
               <tr>
                 <td><strong>${isEn ? 'Swiftness (CDR & Speed)' : 'Rapidité (CDR & Vitesse)'}</strong></td>
-                <td>${formatNumber(p.swift)} pts</td>
-                <td>${formatNumber(t.swift)} pts</td>
-                <td class="col-cp-gain">${t.swift >= p.swift ? `+${t.swift - p.swift} pts` : `${t.swift - p.swift} pts`}</td>
+                <td>${pts(p.swift)}</td>
+                <td>${pts(t.swift)}</td>
+                <td class="col-cp-gain">${delta(t.swift, p.swift)}</td>
               </tr>
               <tr>
                 <td><strong>${isEn ? 'Specialization (Identity & Aura)' : 'Spécialisation (Identité & Aura)'}</strong></td>
-                <td>${formatNumber(p.specStat)} pts</td>
-                <td>${formatNumber(t.specStat)} pts</td>
-                <td class="col-cp-gain">${t.specStat >= p.specStat ? `+${t.specStat - p.specStat} pts` : `${t.specStat - p.specStat} pts`}</td>
+                <td>${pts(p.specStat)}</td>
+                <td>${pts(t.specStat)}</td>
+                <td class="col-cp-gain">${delta(t.specStat, p.specStat)}</td>
+              </tr>
+              <tr>
+                <td><strong>${isEn ? 'Crit' : 'Critique'}</strong></td>
+                <td>${pts(p.crit)}</td>
+                <td>${pts(t.crit)}</td>
+                <td class="col-cp-gain">${delta(t.crit, p.crit)}</td>
               </tr>
               <tr>
                 <td><strong>${isEn ? 'Total Combined Points' : 'Total Points Combinés'}</strong></td>
