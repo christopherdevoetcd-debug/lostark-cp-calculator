@@ -32,12 +32,13 @@ node --no-warnings tools/rotation/analyze.mjs 4275 Neeverslayer [--json]
 
 ## Calculs
 
-- **Phases sans boss** : moins de la moitié du raid agit pendant plus de 4 s (boss absent, non ciblable, mécanique). Retirées du temps jouable, comme le temps à terre.
+- **Phases sans boss** : moins de la moitié du raid inflige des dégâts pendant plus de 4 s (boss absent, non ciblable, mécanique). Fondé sur les coups, pas sur les compétences lancées : le support continue de buffer et certains lancent dans le vide (G2 de la Cathédrale vers 7:40 : ~13 s sans aucun dégât). Retirées du temps jouable, comme le temps à terre.
+- **Pauses partagées** : trou d'au moins 5 s pendant lequel au moins 2 autres DPS (et un tiers d'entre eux) n'infligent presque rien (coups sur moins de 25 % du trou) : mécanique qui désigne certains joueurs (Kazeros : 3 joueurs de groupes différents arrêtés 14 s). Affichées à part, hors temps perdu. Avec 1 seul autre DPS, ou des trous plus courts, la coïncidence est fréquente (corrélation de l'activité 0,58 → 0,50).
 - **Temps perdu** : écarts entre deux utilisations au-delà de 1,5 s de battement. **Activité** = 1 − temps perdu ÷ temps jouable.
 - **Buffs** : part des dégâts (coups des compétences) sous PA du support et Marque à la fois.
 - **Placement** : part des dégâts des compétences à placement portés du bon côté.
 - **Note** (DPS seulement) : chaque critère = rang (0-100) parmi les logs de la même spé sur le même boss (8 au minimum, sinon la spé tous boss), sur les 120 derniers jours. Activité 30, compétences 35 (utilisations par minute des compétences clés, ≥ 3 % des dégâts et jouées par 60 % de la spé, pondérées par leur part), buffs 20, placement 15 (spés dont ≥ 20 % des dégâts sont à placement). Critère absent : poids redistribué.
-- Validation (2026-10-01, 649 combats récents) : corrélation de rang médiane avec DPS ÷ CP de 0,69 au sein d'une même spé, boss et difficulté (activité 0,60, compétences 0,55, placement 0,35, buffs 0,29) ; 0,25 avec le CP. Mesuré sur les mêmes logs que les références.
+- Validation (2026-10-01, 649 combats récents) : corrélation de rang médiane avec DPS ÷ CP de 0,68 au sein d'une même spé, boss et difficulté (activité 0,55, compétences 0,50, placement 0,35, buffs 0,29) ; 0,24 avec le CP. Mesuré sur les mêmes logs que les références.
 
 ## Pas encore fait
 

@@ -15,6 +15,8 @@ export const SUPPORT_SPECS = new Set(['Blessed Aura', 'Desperate Salvation', 'Fu
 export const DOWNTIME_GAP_MS = 4000; // moins de la moitié du raid frappe pendant plus de 4 s : boss absent, non ciblable ou mécanique
 export const DOWNTIME_BIN_MS = 500;
 export const IDLE_TOLERANCE_MS = 1500; // battement normal entre deux compétences (déplacement, animation après le dernier coup)
+export const SHARED_PAUSE_MIN_MS = 5000;
+export const SHARED_PAUSE_MAX_COVER = 0.25; // un autre DPS « en pause » : des coups sur moins de 25 % du trou
 export const BIG_SKILL_MIN_SHARE = 0.03;
 export const BIG_SKILL_MIN_INTERVAL_MS = 15000;
 
@@ -47,6 +49,14 @@ function castWindows(player) {
   return w.sort((a, b) => a[0] - b[0]);
 }
 
+function hitWindows(player) {
+  const w = [];
+  for (const s of Object.values(player.skills)) {
+    for (const c of s.skillCastLog || []) for (const h of c.hits || []) if (h.damage > 0) w.push([h.timestamp, h.timestamp]);
+  }
+  return w.sort((a, b) => a[0] - b[0]);
+}
+
 function mergeWindows(windows, joinGapMs) {
   const out = [];
   for (const [a, b] of windows) {
@@ -64,15 +74,16 @@ function overlap(a, b, intervals) {
 }
 
 // Périodes où personne dans le raid ne fait rien : boss absent, non ciblable, cinématique.
-// Périodes où moins de la moitié du raid agit : boss absent, non ciblable, cinématique ou mécanique de groupe.
-// (« Personne ne frappe » ratait les mécaniques où une partie du raid est occupée ailleurs.)
+// Périodes où moins de la moitié du raid inflige des dégâts : boss absent, non ciblable, cinématique ou mécanique.
+// Fondé sur les coups, pas sur les compétences lancées : un support qui buffe ou une compétence dans le vide
+// pendant une phase sans boss ne compte pas (vérifié sur la G2 de la Cathédrale, ~13 s sans dégâts vers 7:40).
 export function raidDowntime(encounter) {
   const bins = Math.ceil(encounter.timelineMs / DOWNTIME_BIN_MS) + 1;
   const active = new Uint8Array(bins);
   const players = encounter.players.filter(p => Object.values(p.skills).some(s => s.skillCastLog?.length));
   for (const p of players) {
     const seen = new Uint8Array(bins);
-    for (const [a, b] of mergeWindows(castWindows(p), IDLE_TOLERANCE_MS)) {
+    for (const [a, b] of mergeWindows(hitWindows(p), IDLE_TOLERANCE_MS)) {
       for (let i = Math.floor(a / DOWNTIME_BIN_MS); i <= Math.min(bins - 1, Math.floor((b + IDLE_TOLERANCE_MS) / DOWNTIME_BIN_MS)); i++) seen[i] = 1;
     }
     for (let i = 0; i < bins; i++) active[i] += seen[i];
@@ -105,7 +116,7 @@ export function quantile(sorted, q) {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
 }
 
-export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = classifyBuffs(encounter), downtime = raidDowntime(encounter) } = {}) {
+export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = classifyBuffs(encounter), downtime = raidDowntime(encounter), otherDps = dpsHitWindows(encounter) } = {}) {
   const durationMs = encounter.timelineMs;
   const downMs = downtime.reduce((t, [a, b]) => t + b - a, 0);
   const availableMs = Math.max(1, durationMs - downMs);
@@ -124,7 +135,18 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
     if (eff > IDLE_TOLERANCE_MS) gaps.push({ from: prev, to: a, lostMs: eff - IDLE_TOLERANCE_MS });
     prev = Math.max(prev, b);
   }
-  const lostMs = gaps.reduce((t, g) => t + g.lostMs, 0);
+  // Pause partagée : d'autres DPS sans dégâts au même moment (mécanique qui désigne certains joueurs, ex. Kazeros).
+  // Il en faut au moins 2 (les 2 autres DPS d'un raid à 4), sur un trou d'au moins 5 s : plus court ou avec un
+  // seul autre DPS, la coïncidence est fréquente (corrélation de l'activité avec DPS ÷ CP 0,58 → 0,50).
+  const others = (otherDps || []).filter(o => o.name !== player.name);
+  const need = Math.min(others.length, Math.max(2, Math.ceil(others.length / 3)));
+  for (const g of gaps) {
+    const span = g.to - g.from;
+    g.pausedWith = others.filter(o => overlap(g.from, g.to, o.windows) < SHARED_PAUSE_MAX_COVER * span).map(o => o.name);
+    g.shared = need >= 2 && span >= SHARED_PAUSE_MIN_MS && g.pausedWith.length >= need;
+  }
+  const lostMs = gaps.filter(g => !g.shared).reduce((t, g) => t + g.lostMs, 0);
+  const sharedPauseMs = gaps.filter(g => g.shared).reduce((t, g) => t + g.lostMs, 0);
 
   const totalDamage = player.damageStats.damageDealt || Object.values(player.skills).reduce((t, s) => t + (s.totalDamage || 0), 0);
   const skills = [];
@@ -178,7 +200,8 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
     name: player.name, className: player.className, spec: player.spec, support: isSupport(player),
     combatPower: player.combatPower, dps: player.damageStats.dps || Math.round(totalDamage / (durationMs / 1000)),
     durationMs, downtimeMs: downMs, availableMs,
-    deadMs, lostMs, activity: 1 - lostMs / Math.max(1, availableMs - deadMs), longestGaps: gaps.sort((a, b) => b.lostMs - a.lostMs).slice(0, 5),
+    deadMs, lostMs, sharedPauseMs, activity: 1 - lostMs / Math.max(1, availableMs - deadMs - sharedPauseMs),
+    longestGaps: gaps.sort((a, b) => b.lostMs - a.lostMs).slice(0, 6),
     deaths: player.damageStats.deaths || 0,
     apRate: r(acc.ap, acc.hitDmg), brandRate: r(acc.brand, acc.hitDmg), identityRate: r(acc.identity, acc.hitDmg),
     hatRate: r(acc.hat, acc.hitDmg), fullBuffRate: r(acc.full, acc.hitDmg),
@@ -188,12 +211,19 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
   };
 }
 
+// Coups des DPS (fenêtres fusionnées), pour repérer les pauses partagées.
+export function dpsHitWindows(encounter) {
+  return encounter.players.filter(p => !isSupport(p))
+    .map(p => ({ name: p.name, windows: mergeWindows(hitWindows(p), IDLE_TOLERANCE_MS) }));
+}
+
 export function analyzeEncounter(encounter, opts = {}) {
   const buffSets = classifyBuffs(encounter);
   const downtime = raidDowntime(encounter);
+  const otherDps = dpsHitWindows(encounter);
   return {
     downtime,
-    players: encounter.players.map(p => analyzePlayer(encounter, p, { ...opts, buffSets, downtime })),
+    players: encounter.players.map(p => analyzePlayer(encounter, p, { ...opts, buffSets, downtime, otherDps })),
   };
 }
 

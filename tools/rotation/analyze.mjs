@@ -64,8 +64,9 @@ if (a.score) {
   console.log(`  Activité ${p.activity ?? '—'} · Compétences ${p.skills ?? '—'} · Buffs ${p.buffs ?? '—'} · Placement ${p.positional ?? '—'}`);
 } else console.log(a.support ? 'Note : pas encore de note pour les supports (couverture des buffs du groupe, prochaine étape).' : 'Note : pas assez de logs de référence pour cette spé.');
 
-console.log(`\nTemps perdu : ${fmtTime(a.lostMs)} sur ${fmtTime(a.availableMs - a.deadMs)} jouables (activité ${pct(a.activity)})${a.deadMs ? `, ${fmtTime(a.deadMs)} à terre` : ''}`);
-for (const g of a.longestGaps.filter(g => g.lostMs >= 2000)) console.log(`  ${fmtTime(g.from)} → ${fmtTime(g.to)} : ${num(g.lostMs / 1000)} s sans compétence`);
+console.log(`\nTemps perdu : ${fmtTime(a.lostMs)} sur ${fmtTime(a.availableMs - a.deadMs)} jouables (activité ${pct(a.activity)})${a.deadMs >= 1000 ? `, ${fmtTime(a.deadMs)} à terre` : ''}`);
+if (a.sharedPauseMs >= 1000) console.log(`Pauses partagées avec d'autres DPS (mécanique probable, non comptées) : ${fmtTime(a.sharedPauseMs)}`);
+for (const g of a.longestGaps.filter(g => g.lostMs >= 2000)) console.log(`  ${fmtTime(g.from)} → ${fmtTime(g.to)} : ${num(g.lostMs / 1000)} s sans compétence${g.shared ? `  (pause partagée : ${g.pausedWith.join(', ')})` : ''}`);
 if (!a.support) {
   console.log(`\nBuffs : PA du support ${pct(a.apRate)}, Marque ${pct(a.brandRate)}, les deux ${pct(a.fullBuffRate)}, identité ${pct(a.identityRate)}, T ${pct(a.hatRate)} des dégâts`);
   if (a.bigSkillFullBuffRate != null) console.log(`  Gros sorts (≥ 3 % des dégâts, ≥ 15 s entre deux) sous PA + Marque : ${pct(a.bigSkillFullBuffRate)}`);

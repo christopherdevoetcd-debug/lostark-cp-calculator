@@ -192,5 +192,5 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 - Retirés (sans source) : explication de l'écart par festins / nourriture, « formule décompilée / 100 », note « Karma de transcendance », familier « 0,4 / 0,7 / 1,0 % », repli Buff Power = CP × 0,75 / soins × 0,60 sans profil.
 
 ### Analyseur de rotation (prototype, `tools/rotation/`, voir son README)
-- Hors de l'appli pour l'instant : analyse d'un combat de la base locale de LOA Logs (`encounters.db`, `skillCastLog` coup par coup avec les buffs actifs), note d'exécution 0-100 par rang parmi la même spé sur le même boss (120 derniers jours). Validé sur 649 combats : corrélation de rang 0,69 avec DPS ÷ CP. Supports non notés.
+- Hors de l'appli pour l'instant : analyse d'un combat de la base locale de LOA Logs (`encounters.db`, `skillCastLog` coup par coup avec les buffs actifs), note d'exécution 0-100 par rang parmi la même spé sur le même boss (120 derniers jours). Phases sans boss par les dégâts infligés (moins de la moitié du raid), pauses partagées (≥ 2 autres DPS arrêtés ≥ 5 s) hors temps perdu. Validé sur 649 combats : corrélation de rang 0,68 avec DPS ÷ CP. Supports non notés.
 - `data/rotation-skills.json` (recharge de base, placement) : `node tools/rotation/build-skill-meta.mjs`.
