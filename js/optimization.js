@@ -65,7 +65,7 @@ function accPackagePrice(kind, tiers) {
 
 /**
  * Résultat de la simulation sur le personnage : gain des bijoux et des gemmes (% DPS ou % de buff, 100 × ln), or
- * (gammes de bijoux achetées, montées de gemmes), CP (DPS seulement). null sans personnage importé.
+ * (gammes de bijoux achetées, montées de gemmes), CP (support : Battle Point, supportGpdCpModel). null sans personnage importé.
  */
 function computeOptimizationSim(charObj, isSupport) {
   if (!charObj || !charObj.rawProfile) return null;
@@ -74,6 +74,7 @@ function computeOptimizationSim(charObj, isSupport) {
   const slotLines = accEval && accEval.slotLines;
   const slots = [];
   let accGain = 0, accGold = 0, accUnpriced = false;
+  const supCp = { acc: 0, gems: 0 };
   if (slotLines) {
     const curAll = ACC_SLOTS.flatMap(s => slotLines[s] || []);
     const curPct = computeAccessoryLinesBonus(curAll, isSupport);
@@ -100,6 +101,11 @@ function computeOptimizationSim(charObj, isSupport) {
     });
     const nextPct = computeAccessoryLinesBonus(nextAll, isSupport);
     accGain = 100 * Math.log((1 + nextPct / 100) / (1 + curPct / 100));
+    // Support : CP par les parties bijoux du Battle Point, au prorata du buff (supportGpdCpModel)
+    if (isSupport && nextPct !== curPct) {
+      const model = supportGpdCpModel(charObj);
+      supCp.acc = model ? model.linesCp([15, 17], curPct, nextPct - curPct) : null;
+    }
   }
 
   const gemLevels = isSupport ? realGemLevels(charObj) : (realGems(charObj) || []).map(g => g.level);
@@ -108,6 +114,7 @@ function computeOptimizationSim(charObj, isSupport) {
     const to = gemLevels.map(l => Math.max(l, optSim.gemMin));
     const g = isSupport ? supportGemSetGain(charObj, to) : dpsGemSetGain(charObj, to);
     if (Number.isFinite(g)) gemGain = g;
+    if (isSupport) supCp.gems = supportGemCpDelta(charObj, gemLevels, to);
     gemLevels.forEach((l, i) => {
       if (to[i] > l) gemCount++;
       for (let k = l; k < to[i]; k++) gemGold += GEM_UPGRADE_COST[k] || 0;
@@ -120,7 +127,9 @@ function computeOptimizationSim(charObj, isSupport) {
     slots, accGain, accGold, accUnpriced, hasAcc: !!slotLines,
     gemLevels: gemLevels && gemLevels.length ? gemLevels : null, gemGain, gemGold, gemCount,
     total, gold: accGold + gemGold,
-    cpGain: !isSupport && cp > 0 ? cp * (Math.exp(total / 100) - 1) : null,
+    cpGain: isSupport
+      ? (Number.isFinite(supCp.acc) && Number.isFinite(supCp.gems) ? supCp.acc + supCp.gems : null)
+      : (cp > 0 ? cp * (Math.exp(total / 100) - 1) : null),
     bracelet: braceletBandOf(charObj, isSupport),
     braceletStep: braceletGpdStep(charObj, isSupport)
   };
@@ -224,8 +233,8 @@ function updateOptimizationView() {
   if (dom.optDpsGainDisplay) dom.optDpsGainDisplay.textContent = sim ? pct(sim.total) : '—';
   if (dom.optCpGainDisplay) {
     dom.optCpGainDisplay.textContent = !sim ? ''
-      : (sim.cpGain !== null ? `${sim.cpGain >= 0 ? '+' : '−'}${formatNumber(Math.round(Math.abs(sim.cpGain)))} CP`
-        : (isEn ? 'Support: the buff % does not convert to CP.' : 'Support : le % de buff ne se convertit pas en CP.'));
+      : (sim.cpGain !== null ? `${isSupport ? '~' : ''}${sim.cpGain >= 0 ? '+' : '−'}${formatNumber(Math.round(Math.abs(sim.cpGain)))} CP`
+        : (isEn ? 'CP: Battle Point unreadable on this profile.' : 'CP : Battle Point illisible sur ce profil.'));
   }
   if (dom.optBreakdownAcc) dom.optBreakdownAcc.textContent = sim && sim.hasAcc ? pct(sim.accGain) : '—';
   if (dom.optBreakdownGems) dom.optBreakdownGems.textContent = sim && sim.gemLevels ? pct(sim.gemGain) : '—';

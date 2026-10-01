@@ -58,6 +58,11 @@ function gemCpBonus(charObj, minLevel, count, isSupport) {
     const gain = dpsGemSetGain(charObj, to);
     return gain === null ? null : cp * (Math.exp(gain / 100) - 1);
   }
+  return supportGemCpDelta(charObj, levels, to);
+}
+
+// CP support d'un changement de niveaux de gemmes : partie type 22 (125 × niveau) et % de PA, branche buff
+function supportGemCpDelta(charObj, levels, to) {
   const br = supportBpBranches(charObj);
   const p1 = battlePointPartsOf(charObj).find(x => x.type === 1);
   if (!br || !p1) return null;
@@ -79,16 +84,28 @@ function gearRoleGain(charObj, ctx, changes, isSupport) {
  * son niveau et son affinage avancé. null si une donnée manque.
  */
 // Gain (DPS ou buff) de +k niveaux d'affinage sur l'arme ou les 5 armures, chaque pièce depuis son niveau (max +25)
+function honingChangesTo(charObj, ctx, piece, k) {
+  const g = ctx.gear;
+  const slots = piece === 'weapon' ? ['weapon'] : GEAR_ARMOR_SLOTS;
+  return slots.filter(sl => g[sl] >= 0 && g[sl] < 25)
+    .map(sl => ({ slot: sl, isSerka: pieceIsSerka(g, sl), lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: Math.min(25, g[sl] + k), toAdv: gearAdvOf(charObj, g, sl) }));
+}
 function honingGainTo(charObj, piece, isSerka, isSupport, k) {
   if (!(k > 0)) return 0;
   const ctx = gearStatContext(charObj);
   if (!ctx) return null;
-  const g = ctx.gear;
-  const slots = piece === 'weapon' ? ['weapon'] : GEAR_ARMOR_SLOTS;
-  const changes = slots.filter(sl => g[sl] >= 0 && g[sl] < 25)
-    .map(sl => ({ slot: sl, isSerka: pieceIsSerka(g, sl), lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: Math.min(25, g[sl] + k), toAdv: gearAdvOf(charObj, g, sl) }));
+  const changes = honingChangesTo(charObj, ctx, piece, k);
   if (!changes.length) return null;
   return gearRoleGain(charObj, ctx, changes, isSupport);
+}
+
+// CP du jeu de +k niveaux d'affinage (gearCpGain : DPS par l'attaque de base, support par les branches buff / défense)
+function honingCpTo(charObj, piece, isSupport, k) {
+  if (!(k > 0)) return 0;
+  const ctx = gearStatContext(charObj);
+  const changes = ctx ? honingChangesTo(charObj, ctx, piece, k) : [];
+  const r = changes.length ? gearDpsGain(ctx, changes) : null;
+  return r ? gearCpGain(charObj, ctx, r, isSupport) : null;
 }
 
 function honingDpsGain(charObj, piece, isSerka, isSupport) {

@@ -126,7 +126,7 @@ function gpdFollowUp(charObj, isSupport, isEn, base, k) {
 function buildGpdRoadmap(charObj, isSupport, isEn, masterRows, goal) {
   const avail = masterRows.map(r => ({ row: Object.assign({ chain: r.id, step: 1 }, r), k: 1 }));
   const plan = [];
-  let cum = 0, gold = 0, arkChain = null;
+  let cum = 0, cumCp = 0, gold = 0, arkChain = null;
   const currentCp = (charObj && (charObj.calculatedScore || charObj.inGameScore)) || state.currentCp || 0;
   while (avail.length && cum < goal && plan.length < 40) {
     avail.sort((a, b) => a.row.rate - b.row.rate);
@@ -136,15 +136,97 @@ function buildGpdRoadmap(charObj, isSupport, isEn, masterRows, goal) {
       arkChain = it.row.chain;
     }
     const row = it.row;
-    if (row.cpGain === undefined || it.k > 1) row.cpGain = Math.max(1, Math.round(currentCp * (row.dmgGain / 100)));
+    if (it.k > 1 || row.cpGain === undefined) {
+      row.cpGain = isSupport
+        ? (row.cpPerGain ? row.cpPerGain * row.dmgGain : null)
+        : currentCp * (Math.exp(row.dmgGain / 100) - 1);
+    }
     plan.push(row);
     gold += row.cost;
     cum += isSupport ? row.dmgGain : row.cpGain;
+    if (row.cpGain > 0) cumCp += row.cpGain;
     const base = masterRows.find(r => r.id === row.chain);
     const next = base && gpdFollowUp(charObj, isSupport, isEn, base, it.k + 1);
     if (next) avail.push({ row: next, k: it.k + 1 });
   }
-  return { plan, gold, cum, reached: cum >= goal };
+  return { plan, gold, cum, cumCp, reached: cum >= goal };
+}
+
+/**
+ * CP du jeu estimé d'une ligne du GPD pour un support. Le % de buff de Loseii ne se convertit pas en CP au même taux
+ * pour tous les systèmes (le Battle Point pèse les lignes support autrement), on passe donc par les branches buff (A)
+ * et défense (D) du Battle Point du personnage (supportBpBranches), système par système :
+ * - affinage : gearCpGain (√(puissance d'arme × stat principale), PV ∝ Vitalité) ; Karma : même chose, puissance d'arme ;
+ * - gemmes : partie type 22 (125 × niveau) et % de PA (supportGemCpDelta) ;
+ * - pierre : valeur de la gravure dans la table support (+20 au code par niveau de pierre) et PA de base +1,5 % ;
+ * - bijoux (parties 15 / 17), bracelet (19 / 20), astrogemmes (29 / 31) : parties réelles du système au prorata
+ *   du buff Loseii actuel du système, soit le rapport CP / buff propre au personnage.
+ * Repli (affinage avancé, système sans partie lisible) : rapport CP / buff de l'affinage de la même famille.
+ * null sans Battle Point.
+ */
+function supportGpdCpModel(charObj) {
+  const br = supportBpBranches(charObj);
+  const parts = battlePointPartsOf(charObj);
+  const p1 = parts.find(p => p.type === 1);
+  if (!br || !p1) return null;
+  const pool = (p1.attackPowerMultiplier || 0) / 100;
+  const offProd = types => parts.filter(p => types.includes(p.type) && !BP_DEF_TYPES.includes(p.type))
+    .reduce((m, p) => m * (1 + (Number.isFinite(p.value) ? p.value : 0) / 1e4), 1);
+  const linesCp = (types, cur, gain) => {
+    const prod = offProd(types);
+    if (!(cur > 0) || !(prod > 1)) return null;
+    return br.A * ((1 + (prod - 1) * (cur + gain) / cur) / prod - 1);
+  };
+  const stoneCp = () => {
+    const up = getAbilityStoneUpgrade(charObj, true);
+    if (!up) return null;
+    let cp = up.apBonus > 0 ? br.A * STONE_BASE_AP_BONUS / (1 + pool) : 0;
+    if (!up.anyOrder && bpSupportTable) {
+      const lo = (charObj.rawProfile && charObj.rawProfile.loadout) || {};
+      const e = (lo.engravings || []).find(x => x.id === 1000 + up.up.id);
+      const books = !e ? null : (e.grade === 'engrave_grade05' ? 13 : (e.grade === 'engrave_grade04' ? 9 + Math.floor((e.progress || 0) / 5) : null));
+      if (books !== null) {
+        [10, 11].forEach(t => {
+          const val = lvl => ((bpSupportTable[t] || []).find(v => v[0] === e.id && v[1] === 20 * lvl + books) || [])[2];
+          const v0 = val(up.up.level), v1 = val(up.upTo);
+          if (Number.isFinite(v0) && Number.isFinite(v1)) cp += (t === 10 ? br.A : br.D) * ((1 + v1 / 1e4) / (1 + v0 / 1e4) - 1);
+        });
+      }
+    }
+    return cp > 0 ? cp : null;
+  };
+  return { br, linesCp, stoneCp };
+}
+
+function supportGpdRowCp(charObj, model, d, factors) {
+  const m = d.meta || {};
+  const id = d.id;
+  let cp = null;
+  if (id === 'dyn_weapon' || id === 'dyn_armor') cp = honingCpTo(charObj, id === 'dyn_weapon' ? 'weapon' : 'armor', true, 1);
+  else if (id.startsWith('dyn_gems_')) {
+    const lv = realGemLevels(charObj);
+    if (lv) cp = supportGemCpDelta(charObj, lv, lv.map(l => (l === m.lvl ? l + 1 : l)));
+  } else if (id === 'dyn_karma') {
+    const st = karmaGpdStep(charObj, true);
+    const ctx = gearStatContext(charObj);
+    if (st && ctx) cp = gearCpGain(charObj, ctx, { dWp: st.dWp, dMs: 0, dVit: 0 }, true);
+  } else if (id === 'dyn_stone') cp = model.stoneCp();
+  else if (id.startsWith('dyn_acc')) cp = model.linesCp([15, 17], m.curPct, d.gainVal);
+  else if (id === 'dyn_brac') cp = model.linesCp([19, 20], m.curTotal, d.gainVal);
+  else if (id.startsWith('dyn_astro_')) {
+    const cur = astrogemGridDamage(true, { mean: m.mean, n: m.n });
+    cp = cur !== null ? model.linesCp([29, 31], cur, d.gainVal) : null;
+  }
+  if (Number.isFinite(cp) && cp > 0) return cp;
+  // Repli : rapport CP / buff de l'affinage (même famille pour l'avancé), sinon le premier disponible
+  const f = id === 'dyn_adv_weapon' ? factors.weapon : (id === 'dyn_adv_armor' ? factors.armor : (factors.weapon || factors.armor));
+  return f ? f * d.gainVal : null;
+}
+
+// CP d'une ligne, arrondi : décimale sous 10 CP (un support gagne souvent quelques CP par étape)
+function fmtCpGain(cp) {
+  if (!Number.isFinite(cp)) return '—';
+  return `+${cp < 10 ? cp.toFixed(1) : formatNumber(Math.round(cp))}`;
 }
 
 function buildMasterGpdData(charObj, isSupport, isEn) {
@@ -302,9 +384,26 @@ function buildMasterGpdData(charObj, isSupport, isEn) {
     }
   });
 
+  // CP estimé : DPS, chaque système est un multiplicateur du Battle Point (CP × (e^(gain/100) − 1)) ;
+  // support, Battle Point système par système (supportGpdRowCp)
+  const supModel = isSupport && charObj ? supportGpdCpModel(charObj) : null;
+  const factors = {};
+  if (supModel) {
+    dynRows.filter(d => d.id === 'dyn_weapon' || d.id === 'dyn_armor').forEach(d => {
+      const cp = supportGpdRowCp(charObj, supModel, d, {});
+      if (cp > 0 && d.gainVal > 0) factors[d.id === 'dyn_weapon' ? 'weapon' : 'armor'] = cp / d.gainVal;
+    });
+  }
   rows.forEach(r => {
-    r.cpGain = Math.max(1, Math.round(currentCp * (r.dmgGain / 100)));
-    r.roi = Math.round(r.cost / r.cpGain);
+    if (isSupport) {
+      const d = dynRows.find(x => x.id === r.id);
+      r.cpGain = supModel && d ? supportGpdRowCp(charObj, supModel, d, factors) : null;
+    } else {
+      r.cpGain = currentCp * (Math.exp(r.dmgGain / 100) - 1);
+    }
+    // Rapport CP / gain de la ligne, repris par les étapes suivantes de la feuille de route
+    r.cpPerGain = r.cpGain > 0 && r.dmgGain > 0 ? r.cpGain / r.dmgGain : null;
+    r.roi = r.cpGain > 0 ? Math.round(r.cost / r.cpGain) : null;
   });
 
   // Support : même unité que le tableau GPD, gold par 0.01% de buff (et non par 1%)
@@ -533,15 +632,14 @@ function renderAdvisorView() {
     if (dom.gpdNextContext) dom.gpdNextContext.textContent = `${isEn ? 'Current:' : 'Actuel :'} ${best.whatItReads}`;
     if (dom.gpdNextRate) dom.gpdNextRate.textContent = `${formatNumber(best.rate)} g`;
     if (dom.gpdNextGain) {
-      // Support : le % de buff ne se convertit pas en CP du jeu, pas de « +CP »
-      dom.gpdNextGain.textContent = isSupport
-        ? `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} % Buff`
-        : `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} % · +${best.cpGain} CP`;
+      // Support : CP estimé par le Battle Point support (supportGpdRowCp)
+      const cpTxt = Number.isFinite(best.cpGain) ? ` · ${isSupport ? '~' : ''}${fmtCpGain(best.cpGain)} CP` : '';
+      dom.gpdNextGain.textContent = `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} %${isSupport ? ' Buff' : ''}${cpTxt}`;
     }
   }
 
   // 2. Objectif : feuille de route par étapes enchaînées (buildGpdRoadmap). DPS : objectif en CP ;
-  // support : en % de buff allié (le % de buff ne se convertit pas en CP du jeu).
+  // support : en % de buff allié, CP estimé à côté (supportGpdRowCp).
   // Boutons d'objectif selon le rôle ; changement de rôle = retour à « Tous » (les unités diffèrent)
   const goalRole = isSupport ? 'support' : 'dps';
   if (advisorState.goalRole !== goalRole) {
@@ -575,7 +673,9 @@ function renderAdvisorView() {
     road.plan.forEach(r => chosenIds.add(r.id));
     tableRows = road.plan;
     const fmtBuff = v => (isEn ? v.toFixed(2) : v.toFixed(2).replace('.', ','));
-    const gainTxt = isSupport ? `+${fmtBuff(road.cum)} % Buff` : `+${formatNumber(road.cum)} CP`;
+    const gainTxt = isSupport
+      ? `+${fmtBuff(road.cum)} % Buff${road.cumCp > 0 ? ` (~${fmtCpGain(road.cumCp)} CP)` : ''}`
+      : `${fmtCpGain(road.cum)} CP`;
     if (dom.planSummaryGold) dom.planSummaryGold.textContent = `${isEn ? 'Cost:' : 'Coût :'} ${formatNumber(Math.round(road.gold))} g`;
     if (dom.planSummaryCp) {
       dom.planSummaryCp.textContent = `${isEn ? 'Gain:' : 'Gain :'} ${gainTxt}` +
@@ -631,7 +731,7 @@ function renderAdvisorView() {
                 <span class="gpd-rate-val">${formatNumber(row.rate)}</span>
               </div>
             </td>
-            <td class="col-num gpd-cp-val">${isSupport ? '—' : `+${row.cpGain}`}</td>
+            <td class="col-num gpd-cp-val"${isSupport && Number.isFinite(row.cpGain) ? ` title="${isEn ? 'Estimate from the support Battle Point' : 'Estimation par le Battle Point support'}"` : ''}>${Number.isFinite(row.cpGain) ? `${isSupport ? '~' : ''}${fmtCpGain(row.cpGain)}` : '—'}</td>
             <td class="col-num"><span class="gpd-tier tier-${tier}">${GPD_TIER_LABELS[tier].replace('Rang ', '')}</span></td>
             <td>${statusBadge}</td>
           </tr>

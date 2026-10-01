@@ -184,7 +184,7 @@ function karmaGpdStep(charObj, isSupport, lvlOverride) {
   // Le % de Karma s'applique à la puissance d'arme avant amplification
   const dWp = (ctx.wp / ctx.wpAmp) * (next.wp - here.wp) / 1e4;
   const gain = isSupport ? supportApGain(charObj, ctx, dWp, 0) : 50 * Math.log(1 + dWp / ctx.wp);
-  return { lvl, attempts, rate: here.prob / 100, cost: attempts * here.gold, gain, wpTotal: next.wp / 100 };
+  return { lvl, attempts, rate: here.prob / 100, cost: attempts * here.gold, gain, dWp, wpTotal: next.wp / 100 };
 }
 
 // Astrogemmes : effets et coût de base (8 / 9 / 10) d'après les options de la gemme (arkGridGems du jeu)
@@ -547,7 +547,7 @@ function getDynamicGpdTable(charObj, role, isEn) {
       (isEn
         ? `Loseii's bracelet ladder (score ${brac.cur.score.toFixed(1)} on the bracelet calculator's scale). A rolled bracelet cannot be improved in place: a fresh campaign priced from scratch, gain measured from the bracelet you wear. ${st.odds || ''} Unrolled bracelets and pheons at the prices set above the table.`
         : `Échelle du bracelet de Loseii (score ${brac.cur.score.toFixed(1)} sur l'échelle du calculateur de bracelet). Un bracelet relancé ne s'améliore pas sur place : campagne neuve chiffrée depuis zéro, gain mesuré depuis ton bracelet actuel. ${st.odds || ''} Bracelets non relancés et pheons aux prix réglés au-dessus du tableau.`).trim(),
-      { state: brac.cur.band, from: brac.cur.band, to: st.to, score: brac.cur.score });
+      { state: brac.cur.band, from: brac.cur.band, to: st.to, score: brac.cur.score, curTotal: brac.cur.total });
   }
 
   // 9. Pierre d'aptitude : taille exacte (chaîne de Markov), pierre non taillée = 9 pheons au prix réglable
