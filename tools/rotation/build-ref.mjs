@@ -43,6 +43,8 @@ for (const [i, id] of ids.entries()) {
       apOverlapPerMin: sd ? sd.apOverlapMs / 1000 / minutes : null,
       apGapPerMin: sd ? sd.apGapMs / 1000 / minutes : null,
       brandGapPerMin: sd ? sd.brandGapMs / 1000 / minutes : null,
+      shieldEfficiency: sd?.shields.efficiency ?? null, shieldProtected: sd?.shields.protectedShare ?? null,
+      shieldList: sd ? sd.shields.list.map(x => ({ id: x.id, eff: x.efficiency, given: x.given })) : [],
       skills: a.skills.filter(s => s.casts).map(s => ({ id: s.id, name: s.name, cpm: s.cpm, share: s.share, fast: s.fastIntervalMs, gemCd: s.gemCooldown })),
       build: a.build,
     });
@@ -90,7 +92,19 @@ function rhythm(rs) {
     ...(sup.length ? {
       support: Object.fromEntries(['ap', 'brand', 'identity', 'hat'].map(k => [k, toQuantiles(sup.map(r => r.coverage[k]))])),
       supportTiming: { apOverlapPerMin: q('apOverlapPerMin'), apGapPerMin: q('apGapPerMin'), brandGapPerMin: q('brandGapPerMin') },
+      shields: shieldRef(rs),
     } : {}),
+  };
+}
+
+// Boucliers : part utile (absorbé ÷ donné) au total et par bouclier, et part des dégâts du groupe évitée.
+function shieldRef(rs) {
+  const per = new Map();
+  for (const r of rs) for (const s of r.shieldList || []) { if (!per.has(s.id)) per.set(s.id, []); per.get(s.id).push(s.eff); }
+  const q = f => toQuantiles(rs.map(r => r[f]).filter(x => x != null));
+  return {
+    efficiency: q('shieldEfficiency'), protectedShare: q('shieldProtected'),
+    byShield: Object.fromEntries([...per].filter(([, v]) => v.length >= 5).map(([id, v]) => [id, { n: v.length, efficiency: toQuantiles(v) }])),
   };
 }
 

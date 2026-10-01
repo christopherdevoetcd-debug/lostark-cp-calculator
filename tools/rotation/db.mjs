@@ -40,7 +40,7 @@ export function raidIds(db) {
 export function loadEncounter(db, id) {
   const p = db.prepare(`SELECT p.*, s.upstream_id FROM encounter_preview p LEFT JOIN sync_logs s ON s.encounter_id = p.id WHERE p.id = ?`).get(id);
   if (!p) throw new Error(`Combat ${id} introuvable`);
-  const e = db.prepare('SELECT buffs, debuffs, misc, last_combat_packet FROM encounter WHERE id = ?').get(id);
+  const e = db.prepare('SELECT buffs, debuffs, misc, last_combat_packet, applied_shield_buffs FROM encounter WHERE id = ?').get(id);
   // support_* : pour un support, part des dégâts des DPS de son groupe (pondérée par leurs dégâts) faite sous son buff
   // de PA, sa Marque, son identité et sa T (compute_support_buffs de LOA Logs, groupes à un seul support).
   const players = db.prepare(`SELECT name, class, class_id, spec, combat_power, gear_score, skills, damage_stats, skill_stats,
@@ -60,6 +60,7 @@ export function loadEncounter(db, id) {
     timelineMs: Math.max(p.duration, (e.last_combat_packet || 0) - p.fight_start),
     localPlayer: p.local_player, bibleId: p.upstream_id || null,
     buffs: unpack(e.buffs) || {}, debuffs: unpack(e.debuffs) || {}, misc: unpack(e.misc) || {},
+    shieldBuffs: unpack(e.applied_shield_buffs) || {},
     players,
   };
 }

@@ -55,12 +55,12 @@ Chaque conseil : ce qui ne va pas (chiffres du joueur), pourquoi (gain estimé q
 - **Placement** (rang < 35) : les compétences à placement les moins bien placées.
 - **Build** : comparé aux 25 % de la spé qui font le plus de dégâts pour leur CP (supports : couverture de PA), tous boss : stats de l'Évolution (5 niveaux d'écart), gravures et nœuds d'Ark Passive (≥ 70 % des meilleurs, ou < 15 %), gemmes de recharge.
 - **Supports** : couverture PA / Marque / identité (rang < 35) avec les moments où le groupe a frappé sans (« tu étais à terre » si c'est le cas) ; buffs de PA relancés alors que le précédent est actif (même groupe, durée des tables du jeu ; au-dessus du 75e centile de la spé, moments à 2 s ou plus gaspillées ; la Marque n'est pas comptée, elle est réappliquée par beaucoup de coups) ; compétences de buff lancées moins souvent (rang < 25).
+- **Boucliers des supports** : par bouclier de classe (`applied_shield_buffs`, catégories classskill / arkpassive), total donné et absorbé sur les autres (`shieldsGivenBy` / `damageAbsorbedOnOthersBy`) ; part utile (absorbé ÷ donné) et part des dégâts du groupe évitée (absorbé ÷ (absorbé + dégâts reçus par le groupe)), comparées à la spé sur le même boss, bouclier par bouclier. Un bouclier peu utile n'est pas une faute en soi (God's Decree du Paladin : 2 % chez tous) ni quand le groupe esquive : conseil seulement si la part évitée est faible (rang < 35), en citant les boucliers qui servent moins que chez les autres. Le log ne date pas les coups reçus : pas de moments. 59 supports sur 182 récents.
 - Contrôle (150 combats, 748 joueurs, FR et EN) : aucun texte vide ou cassé ; conseils hors build par note : 6,2 (0-24), 3,5 (25-49), 1,2 (50-74), 0,4 (75-100).
 
 ## Pas encore fait
 
 - Bracelet et stats de combat (absents du log) : à croiser avec le profil lostark.bible dans l'appli.
-- Boucliers des supports (chevauchements, boucliers perdus).
 
 - Ouverture et cycle comparés à la référence, fenêtres de burst (gros sorts lancés juste avant le buff).
 - Références du top (logs de lostark.bible) : aujourd'hui, les joueurs de la base de l'utilisateur.

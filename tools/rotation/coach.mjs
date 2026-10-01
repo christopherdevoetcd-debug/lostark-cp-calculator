@@ -302,6 +302,8 @@ function supportAdvice(a, ref, L) {
     });
   }
 
+  out.push(...shieldAdvice(a, ref, L));
+
   for (const sc of a.score?.skillScores || []) {
     if (sc.absent || sc.rank == null || sc.rank >= 25) continue;
     const isBuff = sd.buffSkills.some(b => b.id === sc.id || b.id === sc.id - (sc.id % 10));
@@ -317,6 +319,40 @@ function supportAdvice(a, ref, L) {
     });
   }
   return out;
+}
+
+// Boucliers : problème seulement si le groupe a pris des coups non protégés (part évitée faible pour la spé sur ce
+// boss) ; un bouclier peu utile quand le groupe esquive bien n'est pas une faute. On cite alors les boucliers qui
+// servent moins que chez les autres. Le log ne date pas les coups reçus : pas de moments.
+function shieldAdvice(a, ref, L) {
+  const { tr, num, pct } = L;
+  const sh = a.supportDetails?.shields, rs = ref.shields;
+  if (!sh?.given || !rs?.protectedShare) return [];
+  const protRank = percentileRank(rs.protectedShare, sh.protectedShare);
+  if (protRank == null || protRank >= WEAK_RANK) return [];
+  const M = x => `${num(x / 1e6, 1)} M`;
+  const weak = sh.list.filter(s => {
+    const r = rs.byShield?.[s.id];
+    return r && s.given >= sh.given * 0.05 && percentileRank(r.efficiency, s.efficiency) < WEAK_RANK;
+  });
+  const how = weak.map(s => {
+    const r = rs.byShield[s.id];
+    return tr(`${s.name} : ${M(s.given)} de bouclier donnés, ${pct(s.efficiency, 1)} ont vraiment absorbé des dégâts. Chez les autres ${a.spec} sur ce boss, ce même bouclier sert à ${pct(r.efficiency[10], 1)} (meilleurs : ${pct(r.efficiency[18], 1)}). Le reste a disparu sans protéger personne.`,
+              `${s.name}: ${M(s.given)} of shields given, ${pct(s.efficiency, 1)} actually absorbed damage. For other ${a.spec} players on this boss, the same shield is ${pct(r.efficiency[10], 1)} useful (best: ${pct(r.efficiency[18], 1)}). The rest vanished without protecting anyone.`);
+  });
+  how.push(tr(`Garde tes boucliers pour les attaques du boss qui touchent tout le groupe : lance-les une ou deux secondes avant le coup, pas dès qu'ils sont prêts. Un bouclier qui expire avant le coup ne sert à rien.`,
+              `Keep your shields for boss attacks that hit the whole party: cast them one or two seconds before the hit, not as soon as they are ready. A shield that expires before the hit is wasted.`));
+  how.push(tr(`Le log ne dit pas à quel moment ton groupe a pris des coups : repère dans ta mémoire du combat les grosses attaques de groupe, c'est là que tes boucliers doivent arriver.`,
+              `The log does not say when your party took hits: recall the big party-wide attacks of the fight, that is when your shields should land.`));
+  return [{
+    kind: 'support-shield',
+    title: tr('Tes boucliers ne tombent pas au bon moment', 'Your shields do not land at the right time'),
+    what: tr(`Ton groupe a pris des dégâts sans protection : tes boucliers n'ont évité que ${pct(sh.protectedShare, 0)} des dégâts reçus par tes coéquipiers (médiane des ${a.spec} sur ce boss : ${pct(rs.protectedShare[10], 0)}). Pourtant, sur ${M(sh.given)} de boucliers donnés, seuls ${pct(sh.efficiency, 1)} ont servi.`,
+             `Your party took unprotected damage: your shields only prevented ${pct(sh.protectedShare, 0)} of the damage your teammates took (${a.spec} median on this boss: ${pct(rs.protectedShare[10], 0)}). Yet of ${M(sh.given)} shields given, only ${pct(sh.efficiency, 1)} were used.`),
+    why: tr(`Un bouclier au bon moment évite des morts et laisse tes DPS frapper au lieu de se soigner. Dans le vent, il ne sert à rien.`,
+            `A well-timed shield prevents deaths and lets your DPS keep attacking instead of healing. Wasted, it does nothing.`),
+    how, moments: [],
+  }];
 }
 
 export function coachPlayer(a, ref, build, { lang = 'fr', arkPassiveNames = {}, skillMeta = {} } = {}) {

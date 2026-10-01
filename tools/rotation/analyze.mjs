@@ -76,6 +76,11 @@ if (a.supportCoverage) {
   const med = k => (rs?.[k] ? ` (médiane ${pct(rs[k][10])}, top 10 % ${pct(rs[k][18])})` : '');
   console.log('\nCouverture du groupe (part des dégâts des DPS sous ton buff) :');
   console.log(`  PA ${pct(c.ap)}${med('ap')}\n  Marque ${pct(c.brand)}${med('brand')}\n  Identité ${pct(c.identity)}${med('identity')}\n  T ${pct(c.hat)}${med('hat')}`);
+  const sh = a.supportDetails?.shields, rsh = refs && pickReference(refs, a.spec, enc.boss).ref?.shields;
+  if (sh?.given) {
+    console.log(`Boucliers : ${num(sh.given / 1e6)} M donnés, ${pct(sh.efficiency)} utiles${rsh?.efficiency ? ` (médiane ${pct(rsh.efficiency[10])})` : ''} ; ${pct(sh.protectedShare)} des dégâts reçus par ton groupe évités${rsh?.protectedShare ? ` (médiane ${pct(rsh.protectedShare[10])})` : ''}`);
+    for (const s of sh.list) { const r = rsh?.byShield?.[s.id]; console.log(`  ${pad(s.name, 24)} ${lpad(num(s.given / 1e6), 6)} M  utile ${lpad(pct(s.efficiency), 7)}${r ? `  (médiane ${pct(r.efficiency[10])})` : ''}`); }
+  }
 }
 if (!a.support) {
   console.log(`\nBuffs : PA du support ${pct(a.apRate)}, Marque ${pct(a.brandRate)}, les deux ${pct(a.fullBuffRate)}, identité ${pct(a.identityRate)}, T ${pct(a.hatRate)} des dégâts`);

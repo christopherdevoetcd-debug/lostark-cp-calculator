@@ -233,6 +233,32 @@ function partySupportOf(encounter, player) {
   return sup ? { name: sup.name, spec: sup.spec, coverage: sup.supportCoverage?.ap != null ? sup.supportCoverage : null } : null;
 }
 
+// Boucliers du support : par bouclier de classe (compétence ou Ark Passive), total donné et total réellement absorbé
+// sur les autres joueurs (shieldsGivenBy / damageAbsorbedOnOthersBy de LOA Logs). Le log ne date pas les coups reçus :
+// on mesure la part utile, pas le moment.
+export const SHIELD_CATEGORIES = new Set(['classskill', 'arkpassive']);
+
+function supportShields(encounter, player, party) {
+  const ds = player.damageStats || {};
+  const given = ds.shieldsGivenBy || {}, absorbed = ds.damageAbsorbedOnOthersBy || {};
+  const skillName = id => Object.values(player.skills).find(s => s.id === id || s.id - (s.id % 10) === id)?.name;
+  const list = [];
+  for (const [id, g] of Object.entries(given)) {
+    const b = encounter.shieldBuffs?.[id];
+    if (!b || !SHIELD_CATEGORIES.has(b.buffCategory) || !(g > 0)) continue;
+    const skillId = b.source?.skill?.id || null;
+    list.push({ id: +id, skillId, name: (skillId && skillName(skillId)) || b.source?.skill?.name || b.source?.name || id, given: g, absorbed: absorbed[id] || 0, efficiency: (absorbed[id] || 0) / g });
+  }
+  const totalGiven = list.reduce((t, x) => t + x.given, 0), totalAbsorbed = list.reduce((t, x) => t + x.absorbed, 0);
+  // Dégâts reçus par le reste du groupe (après boucliers) : part que les boucliers du support ont évitée.
+  const taken = encounter.players.filter(p => party.includes(p.name) && p.name !== player.name).reduce((t, p) => t + (p.damageStats.damageTaken || 0), 0);
+  return {
+    list: list.sort((x, y) => y.given - x.given), given: totalGiven, absorbed: totalAbsorbed,
+    efficiency: totalGiven ? totalAbsorbed / totalGiven : null,
+    protectedShare: totalAbsorbed + taken ? totalAbsorbed / (totalAbsorbed + taken) : null,
+  };
+}
+
 // Évolution : nœuds de stats du palier 0 (50 points par niveau). Gravures et nœuds d'Éclairage / de Bond tels quels.
 export const EVOLUTION_STATS = { 1010100: 'crit', 1010200: 'specialization', 1010300: 'domination', 1010400: 'swiftness', 1010500: 'endurance' };
 
@@ -309,7 +335,7 @@ function supportDetails(encounter, player, { buffSets, buffMeta, excluded }) {
   }
   const sum = (a, f) => a.reduce((t, x) => t + x[f], 0);
   return {
-    partyDps: partyDps.map(p => p.name),
+    partyDps: partyDps.map(p => p.name), shields: supportShields(encounter, player, party),
     apGaps, apGapMs: sum(apGaps, 'ms'), brandGaps, brandGapMs: sum(brandGaps, 'ms'),
     overlaps, apOverlapMs: sum(overlaps.ap, 'wastedMs'), apBuffCasts: overlaps.ap.length,
     buffSkills: [...bySkill.entries()].map(([id, v]) => ({ id, ...v })),
