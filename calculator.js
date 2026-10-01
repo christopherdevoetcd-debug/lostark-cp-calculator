@@ -1521,7 +1521,11 @@
       sc.integrity = LOSEII_ASTROGEM_SRI;
       sc.crossOrigin = 'anonymous';
       sc.async = true;
-      sc.onload = () => refreshGpdViews();
+      sc.onload = () => {
+        refreshGpdViews();
+        // La carte Astrogemmes de la fiche prend la note de Loseii dès que le modèle est là
+        if (typeof updateActiveCharacterCard === 'function' && activeCharacterId) updateActiveCharacterCard(activeCharacterId);
+      };
       sc.onerror = () => console.warn('[LOSEII] Modèle astrogem.js indisponible, pas de note d\'astrogemmes');
       document.head.appendChild(sc);
     }
@@ -9792,9 +9796,10 @@
           astroBonusPct = isSupport ? 3.50 : 7.92;
         }
 
-        // Modèle Loseii pour les astrogemmes : 60 (C-) à 96.1 (S+)
-        // ~7.92% de dégâts correspond à la note 78.0 (B+)
-        const calcGrade = Math.min(99.9, Math.max(50.0, 60.0 + (astroBonusPct / 12.0) * 36.1));
+        // Note de Loseii (astrogem.js) : moyenne des gemmes taillées, même note que la ligne astrogemmes du GPD.
+        // Sans le modèle (pas encore chargé, gemmes illisibles) : estimation d'après le % du Battle Point.
+        const grid = astrogemGridBand(p, isSupport);
+        const calcGrade = grid ? grid.mean : Math.min(99.9, Math.max(50.0, 60.0 + (astroBonusPct / 12.0) * 36.1));
         const agScoreStr = calcGrade.toFixed(1);
 
         const ladder = [
@@ -9817,7 +9822,7 @@
         let agClass = "grade-b";
         let agColor = "#2A2B24";
         for (const [r, cut, cls, col] of ladder) {
-          if (calcGrade >= cut) {
+          if (grid ? r === grid.band : calcGrade >= cut) {
             agLetter = r;
             agClass = cls;
             agColor = col;
@@ -9825,6 +9830,8 @@
           }
         }
 
+        // Notes de Loseii sous D (D-, F…) : absentes de l'échelle de couleurs, badge D
+        if (grid && grid.band !== agLetter) { agLetter = grid.band; agClass = 'grade-d'; agColor = '#6A675C'; }
         if (dom.scoreAgGrade) {
           dom.scoreAgGrade.textContent = agLetter;
           dom.scoreAgGrade.className = 'score-grade-badge ' + agClass;
@@ -9836,7 +9843,9 @@
           dom.scoreAgPct.textContent = `+${astroBonusPct.toFixed(2)}% ${isSupport ? (isEn ? 'Party Buff' : 'Buff Groupe') : (isEn ? 'Grid Dmg' : 'Grille Dmg')}`;
         }
         if (dom.scoreAgDetail) {
-          dom.scoreAgDetail.textContent = isEn ? '24 Cut Gems • Ark Grid' : '24 Gemmes Taillées • Grille d\'Ark';
+          dom.scoreAgDetail.textContent = grid
+            ? (isEn ? `Mean of ${grid.n} cut gems (Loseii grade) • Ark Grid` : `Moyenne des ${grid.n} gemmes taillées (note Loseii) • Grille d'Ark`)
+            : (isEn ? 'Cut gems • Ark Grid (grade estimated)' : 'Gemmes taillées • Grille d\'Ark (note estimée)');
         }
       } catch (err) {
         console.warn('Error updating astrogems score card:', err);
