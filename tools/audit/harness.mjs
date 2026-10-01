@@ -12,11 +12,11 @@ export const CACHE = path.resolve(HERE, 'cache');
 const AUDIT_NAMES = ['getDynamicGpdTable', 'buildMasterGpdData', 'buildPieceByPieceData', 'astrogemGridBand', 'getAbilityStoneUpgrade',
   'braceletBandOf', 'extractPlayerSystems', 'detectCharacterRole', 'gearStatContext', 'supportInputs', 'realGems', 'realGemLevels',
   'weaponQualityUpgrade', 'karmaGpdStep', 'getRelicBookUpgrades', 'findBestAccessoryUpgrade', 'computeAccessoryLinesBonus',
-  'state', 'updateActiveCharacterCard', 'getAbilityStone', 'battlePointPartsOf', 'honingDpsGain', 'supportContribution',
+  'state', 'updateActiveCharacterCard', 'getAbilityStone', 'pieceIsSerka', 'battlePointPartsOf', 'honingDpsGain', 'supportContribution',
   'braceletGpdStep', 'getKarmaBonus', 'benchmarkGpdGains', 'computeDynamicGapsAndPlan', 'getArkGridCoreIds', 'loseiiGpd',
   'getBraceletRerollEstimate', 'getLevelCost', 'honingStepFor', 'getAdvHoningLevels', 'roleFromEngravings', 'hasMixedRaidProfile',
   'supportBraceletBuff', 'dpsGemUpgradeGain', 'supportGemUpgradeGain', 'weaponCoreGain', 'gearDpsGain', 'accessoryMaxBonusPct',
-  'getAccessoryLineKey', 'raidCombatPowerOf', 'arkGridBp', 'evaluateCharacterAccessories', 'advHoningDpsGain', 'getAdvHoningCost', 'arkCoreBpAt', 'ARK_CORE_DEFS', 'getArkGridStatus', 'accessoryGrade', 'supportBpBranches', 'buildGpdRoadmap', 'gpdFollowUp', 'hasIncompleteBattlePoint', 'battlePointCoherence', 'extractCharacterGemParts', 'isEnLang', 'activeCharacterId', 'getCurrentActiveCharacter', 'getUserRoster'];
+  'getAccessoryLineKey', 'raidCombatPowerOf', 'arkGridBp', 'evaluateCharacterAccessories', 'advHoningDpsGain', 'getAdvHoningCost', 'arkCoreBpAt', 'ARK_CORE_DEFS', 'getArkGridStatus', 'accessoryGrade', 'supportBpBranches', 'getBaselineCp', 'predictCp', 'predictHoningPath', 'gemCpBonus', 'getDynamicGemsForActiveCharacter', 'computeGearIlvl', 'honingGainTo', 'buildGpdRoadmap', 'gpdFollowUp', 'hasIncompleteBattlePoint', 'battlePointCoherence', 'extractCharacterGemParts', 'isEnLang', 'activeCharacterId', 'getCurrentActiveCharacter', 'getUserRoster'];
 
 function serveLocal(url) {
   const u = new URL(url, 'https://lostark-cp.pages.dev/');

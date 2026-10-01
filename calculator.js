@@ -634,8 +634,28 @@
     const diffIlvl = Math.max(0, targetIlvl - currentIlvl);
     let predictedCp, diffCp, slope, uncertainty;
 
+    // Personnage importé, à son iLvl réel : chemin d'affinage réel (predictHoningPath)
+    const realChar = getCurrentActiveCharacter();
+    const realPath = mode === 'honing' && realChar && Math.abs((realChar.ilvl || 0) - currentIlvl) < 0.5
+      ? predictHoningPath(realChar, targetIlvl, role === 'support') : null;
+    if (realPath && realPath.reached) {
+      const profileCp = (realChar.rawProfile && realChar.rawProfile.raidCombatPower) || realChar.cp || currentCp;
+      const honingGain = realPath.cpGain * (profileCp > 0 ? currentCp / profileCp : 1);
+      diffCp = Math.round(honingGain + gemBonus);
+      predictedCp = Math.round(currentCp + diffCp);
+      slope = parseFloat((honingGain / diffIlvl).toFixed(1));
+      // Modèle vérifié à quelques % près (gains d'affinage comparés à Loseii, CP reconstitué depuis le Battle Point)
+      uncertainty = Math.max(10, Math.round(Math.abs(diffCp) * 0.05));
+      return {
+        predictedCp, minCp: predictedCp - uncertainty, maxCp: predictedCp + uncertainty, diffCp,
+        diffIlvl: parseFloat(diffIlvl.toFixed(2)), slope, mode, path: realPath
+      };
+    }
+
     if (mode === 'honing') {
-      // 1. MODE AFFINAGE PUR (Gear Honing Seul)
+      // 1. MODE AFFINAGE PUR (Gear Honing Seul), sans personnage importé : estimation.
+      // Mesuré sur 68 profils réels : ce barème correspond au chemin le moins cher (armures surtout) ;
+      // monter l'arme rapporte environ 5 fois plus de CP par iLvl.
       // En T4, l'affinage pur d'équipement donne en moyenne ~10.5 CP / iLvl pour un DPS et ~9.8 CP / iLvl pour un Support
       // (1 arme = ~28-35 CP, 5 armures = ~6.8 CP/tap). S'indexe proportionnellement au CP de base du joueur.
       const cpScale = currentCp > 0 ? (currentCp / 3500) : 1.0;
@@ -672,15 +692,13 @@
   }
 
   /**
-   * Calcule l'iLvl exact résultant de l'équipement
-   * En Tier 4, chaque niveau individuel d'une pièce confère exactement +5 points d'iLvl (+5 / 6 = +0.8333 d'iLvl global).
-   * Formule exacte vérifiée sur lostark.bible :
-   * iLvl = 1635.00 + (somme_des_6_niveaux * 5) / 6 + affinage_avancé
+   * iLvl de l'équipement sans personnage importé (simulateur, repli) : pièces Serka, iLvl = 1675 + 5 × affinage
+   * (vérifié sur les profils lostark.bible ; l'affinage avancé ne change pas l'iLvl du Serka). Avec un personnage,
+   * le simulateur lit chaque pièce (Aegir : 1590 + 5 × affinage + avancé).
    */
-  function computeGearIlvl(gearObj, advHoning) {
+  function computeGearIlvl(gearObj) {
     const currentSum = gearObj.weapon + gearObj.head + gearObj.shoulder + gearObj.chest + gearObj.pants + gearObj.gloves;
-    const totalIlvl = 1635.00 + (currentSum * 5) / 6 + advHoning;
-    return parseFloat(totalIlvl.toFixed(2));
+    return parseFloat((1675 + (currentSum * 5) / 6).toFixed(2));
   }
 
   // --- 3. ÉLÉMENTS DU DOM ---
@@ -1177,7 +1195,15 @@
     const cId = (activeCharacterId || '').toLowerCase();
     const curChar = getCurrentActiveCharacter();
 
-    // Gemmes réellement lues sur le profil (gemParts ou profil brut lostark.bible)
+    // Gemmes T4 réelles : même modèle que le GPD (gemCpBonus)
+    if (curChar) {
+      const f = (lvl, n) => gemCpBonus(curChar, lvl, n, isSupport);
+      const full8 = f(8), full9 = f(9), full10 = f(10), major8 = f(8, 3);
+      if ([full8, full9, full10, major8].every(v => v !== null)) {
+        return { major8: Math.round(major8), full8: Math.round(full8), full9: Math.round(full9), full10: Math.round(full10) };
+      }
+    }
+    // Repli : gemmes lues sur gemParts, barème estimé
     const gemParts = curChar ? extractCharacterGemParts(curChar) : null;
     if (gemParts && gemParts.length > 0) {
       const t8Val = isSupport ? 9.60 : 5.70;
@@ -1609,6 +1635,13 @@
     return best;
   }
 
+  // Pièce Serka ou Aegir : type lu pièce par pièce sur le profil (gear.serka), sinon le type majoritaire
+  // (anciens rosters). Un set d'armures peut être mixte (ex. 3 Serka + 2 Aegir).
+  function pieceIsSerka(gear, slot) {
+    if (gear && gear.serka && typeof gear.serka[slot] === 'boolean') return gear.serka[slot];
+    return !!(gear && (slot === 'weapon' ? gear.isSerkaWeapon : gear.isSerkaArmors));
+  }
+
   // Étape d'affinage à chiffrer pour une pièce : recette Serka au niveau affiché quand elle est chargée,
   // sinon (repli) Serka estimé comme de l'Aegir au niveau effectif (+9). null au-delà de +25.
   function honingStepFor(piece, isSerka, lvl, effLvl) {
@@ -1914,6 +1947,84 @@
     return supportGemSetGain(charObj, gems.map(l => (l === lvl ? lvl + 1 : l)));
   }
 
+  // CP du jeu gagné par un changement de pièces (dWp, dMs, dVit de gearDpsGain). DPS : le CP suit l'attaque de base
+  // √(puissance d'arme × stat principale). Support : branche buff (même rapport) + branche défense (PV ∝ Vitalité).
+  function gearCpGain(charObj, ctx, r, isSupport) {
+    const cp = charObj && ((charObj.rawProfile && charObj.rawProfile.raidCombatPower) || charObj.cp);
+    if (!r || !ctx || !(cp > 0)) return null;
+    const atk = Math.sqrt((ctx.wp + r.dWp) * (ctx.ms + r.dMs) / (ctx.wp * ctx.ms));
+    if (!isSupport) return cp * (atk - 1);
+    const br = supportBpBranches(charObj);
+    if (!br) return null;
+    const vit = ctx.vit > 0 ? (ctx.vit + (r.dVit || 0)) / ctx.vit : 1;
+    return br.A * (atk - 1) + br.D * (vit - 1);
+  }
+
+  /**
+   * Prédicteur, mode affinage : chemin le moins cher en or jusqu'à l'iLvl visé, sur le vrai stuff du personnage.
+   * Chaque +1 d'une pièce vaut +5 iLvl sur la pièce (+0,83 au total) quelle qu'elle soit : on prend à chaque fois le
+   * palier le moins cher (recettes du jeu, prix du marché), à coût égal celui qui rapporte le plus. CP par le modèle
+   * validé (gearCpGain). null sans données (pas de personnage, table d'affinage absente).
+   */
+  function predictHoningPath(charObj, targetIlvl, isSupport) {
+    const ctx = gearStatContext(charObj);
+    if (!ctx || !honingT4) return null;
+    const g = ctx.gear;
+    const pieces = HONING_SIM_PIECES.map(slot => {
+      return { slot, isSerka: pieceIsSerka(g, slot), lvl: g[slot], adv: gearAdvOf(charObj, g, slot), to: g[slot] };
+    });
+    if (pieces.some(p => !(p.lvl >= 0))) return null;
+    const ilvlOf = p => (p.isSerka ? 1675 + 5 * p.to : 1590 + 5 * p.to + p.adv);
+    const avg = () => pieces.reduce((sum, p) => sum + ilvlOf(p), 0) / 6;
+    const startIlvl = avg();
+    let gold = 0;
+    const changes = () => pieces.map(p => ({ slot: p.slot, isSerka: p.isSerka, lvl: p.lvl, adv: p.adv, toLvl: p.to, toAdv: p.adv }));
+    while (avg() < targetIlvl - 1e-6) {
+      let best = null;
+      pieces.forEach(p => {
+        if (p.to >= 25) return;
+        const cost = getLevelCost(p.slot === 'weapon' ? 'weapon' : 'armor', p.to, p.isSerka ? 'serka' : 'aegir').totalValue;
+        if (!(cost > 0)) return;
+        if (!best || cost < best.cost - 1 || (Math.abs(cost - best.cost) <= 1 && p.slot === 'weapon')) best = { p, cost };
+      });
+      if (!best) break;
+      best.p.to++;
+      gold += best.cost;
+    }
+    const r = gearDpsGain(ctx, changes());
+    const cpGain = gearCpGain(charObj, ctx, r, isSupport);
+    if (cpGain === null) return null;
+    return {
+      cpGain, gold, startIlvl, reachedIlvl: avg(), reached: avg() >= targetIlvl - 1e-6,
+      steps: pieces.filter(p => p.to > p.lvl).map(p => ({ slot: p.slot, from: p.lvl, to: p.to }))
+    };
+  }
+
+  /**
+   * CP du jeu si les gemmes T4 du personnage montaient au moins au niveau `minLevel` (les `count` plus faibles
+   * seulement si count est donné). DPS : dégâts du GPD (dpsGemSetGain) ; support : partie gemmes du Battle Point
+   * (125 × niveau, branche buff) et % de PA des gemmes. null sans gemmes lisibles.
+   */
+  function gemCpBonus(charObj, minLevel, count, isSupport) {
+    const cp = charObj && ((charObj.rawProfile && charObj.rawProfile.raidCombatPower) || charObj.cp);
+    const levels = isSupport ? realGemLevels(charObj) : (realGems(charObj) || []).map(x => x.level);
+    if (!(cp > 0) || !levels || !levels.length) return null;
+    const order = levels.map((l, i) => i).sort((a, b) => levels[a] - levels[b]);
+    const pick = new Set(count ? order.slice(0, count) : order);
+    const to = levels.map((l, i) => (pick.has(i) ? Math.max(l, minLevel) : l));
+    if (!isSupport) {
+      const gain = dpsGemSetGain(charObj, to);
+      return gain === null ? null : cp * (Math.exp(gain / 100) - 1);
+    }
+    const br = supportBpBranches(charObj);
+    const p1 = battlePointPartsOf(charObj).find(x => x.type === 1);
+    if (!br || !p1) return null;
+    const apPool = (p1.attackPowerMultiplier || 0) / 100;
+    const gemBp = lv => lv.reduce((m, l) => m * (1 + SUPPORT_GEM_BP_PER_LEVEL * l / 1e4), 1);
+    const gemAp = lv => lv.reduce((sum, l) => sum + GEM_AP_PCT[l], 0) / 100;
+    return br.A * (gemBp(to) / gemBp(levels) * (1 + apPool + gemAp(to) - gemAp(levels)) / (1 + apPool) - 1);
+  }
+
   // Gain d'un changement de pièces selon le rôle : dégâts personnels (DPS) ou buff donné aux alliés (support)
   function gearRoleGain(charObj, ctx, changes, isSupport) {
     const r = gearDpsGain(ctx, changes);
@@ -1933,7 +2044,7 @@
     const g = ctx.gear;
     const slots = piece === 'weapon' ? ['weapon'] : GEAR_ARMOR_SLOTS;
     const changes = slots.filter(sl => g[sl] >= 0 && g[sl] < 25)
-      .map(sl => ({ slot: sl, isSerka, lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: Math.min(25, g[sl] + k), toAdv: gearAdvOf(charObj, g, sl) }));
+      .map(sl => ({ slot: sl, isSerka: pieceIsSerka(g, sl), lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: Math.min(25, g[sl] + k), toAdv: gearAdvOf(charObj, g, sl) }));
     if (!changes.length) return null;
     return gearRoleGain(charObj, ctx, changes, isSupport);
   }
@@ -1944,7 +2055,7 @@
     const g = ctx.gear;
     const slots = piece === 'weapon' ? ['weapon'] : GEAR_ARMOR_SLOTS;
     const changes = slots.filter(sl => g[sl] >= 0 && g[sl] < 25)
-      .map(sl => ({ slot: sl, isSerka, lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: g[sl] + 1, toAdv: gearAdvOf(charObj, g, sl) }));
+      .map(sl => ({ slot: sl, isSerka: pieceIsSerka(g, sl), lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: g[sl] + 1, toAdv: gearAdvOf(charObj, g, sl) }));
     if (!changes.length) return null;
     const gain = gearRoleGain(charObj, ctx, changes, isSupport);
     return gain > 0 ? gain : null;
@@ -1959,9 +2070,11 @@
     const ctx = gearStatContext(charObj);
     if (!ctx) return null;
     const g = ctx.gear;
-    const changes = slots.filter(sl => g[sl] >= 0 && g[sl] <= 25)
+    // L'avancé ne compte que sur les pièces Aegir (Serka : pas d'iLvl ni de stats)
+    const aegir = slots.filter(sl => !pieceIsSerka(g, sl));
+    const changes = aegir.filter(sl => g[sl] >= 0 && g[sl] <= 25)
       .map(sl => ({ slot: sl, isSerka: false, lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: g[sl], toAdv }));
-    if (changes.length !== slots.length) return null;
+    if (!changes.length || changes.length !== aegir.length) return null;
     const gain = gearRoleGain(charObj, ctx, changes, isSupport);
     return gain > 0 ? gain : null;
   }
@@ -2559,10 +2672,18 @@
         ? `You are at your current iLvl (${currentIlvl.toFixed(2)}). Select a higher target iLvl to view CP projection.`
         : `Tu es exactement sur ton iLvl actuel (${currentIlvl.toFixed(2)}). Choisis un iLvl cible supérieur pour voir la projection de CP.`;
     } else {
-      if (pred.mode === 'honing') {
+      if (pred.mode === 'honing' && pred.path) {
+        const names = isEn
+          ? { weapon: 'Weapon', head: 'Head', shoulder: 'Shoulders', chest: 'Chest', pants: 'Pants', gloves: 'Gloves' }
+          : { weapon: 'Arme', head: 'Tête', shoulder: 'Épaules', chest: 'Torse', pants: 'Jambes', gloves: 'Gants' };
+        const steps = pred.path.steps.map(st => `${names[st.slot]} +${st.from} ➔ +${st.to}`).join(', ');
         msg = isEn
-          ? `<strong>Pure Honing Gain (Gear Only):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) grants approx. <strong>+${formatNumber(pred.diffCp)} CP</strong> (realistic efficiency of <strong>${pred.slope} CP / iLvl</strong>). Strictly corresponds to upgrading your 6 gear pieces at the blacksmith (Weapon & Armors without changing gems or accessories).`
-          : `<strong>Gain d'Affinage Pur (Stuff Seul) :</strong> Passer de <strong>${currentIlvl.toFixed(2)}</strong> à <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) confère environ <strong>+${formatNumber(pred.diffCp)} CP</strong> (efficacité réaliste de <strong>${pred.slope} CP / iLvl</strong>). Ce calcul correspond strictement à l'augmentation de tes 6 pièces chez le forgeron (Arme & Armures sans changer de gemmes ni d'accessoires).`;
+          ? `<strong>Cheapest honing path on your real gear:</strong> ${steps}. Expected cost <strong>${formatNumber(Math.round(pred.path.gold))} g</strong> (game recipes, market prices), for <strong>+${formatNumber(pred.diffCp)} CP</strong> (${pred.slope} CP / iLvl). Every +1 is worth the same iLvl whatever the piece, so the cheapest steps (mostly armor) come first; raising the weapon gives about 5 times more CP per iLvl but costs much more.`
+          : `<strong>Chemin d'affinage le moins cher sur ton vrai stuff :</strong> ${steps}. Coût attendu <strong>${formatNumber(Math.round(pred.path.gold))} or</strong> (recettes du jeu, prix du marché), pour <strong>+${formatNumber(pred.diffCp)} CP</strong> (${pred.slope} CP / iLvl). Chaque +1 vaut le même iLvl quelle que soit la pièce : les paliers les moins chers (surtout les armures) passent d'abord ; l'arme rapporte environ 5 fois plus de CP par iLvl mais coûte bien plus cher.`;
+      } else if (pred.mode === 'honing') {
+        msg = isEn
+          ? `<strong>Pure Honing Gain (Gear Only):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) grants approx. <strong>+${formatNumber(pred.diffCp)} CP</strong> (<strong>${pred.slope} CP / iLvl</strong>, average for the cheapest path, mostly armor; the weapon gives about 5 times more per iLvl). Estimate without an imported character: import yours for the real path, its cost and its CP.`
+          : `<strong>Gain d'Affinage Pur (Stuff Seul) :</strong> Passer de <strong>${currentIlvl.toFixed(2)}</strong> à <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) confère environ <strong>+${formatNumber(pred.diffCp)} CP</strong> (<strong>${pred.slope} CP / iLvl</strong>, moyenne du chemin le moins cher, surtout des armures ; l'arme rapporte environ 5 fois plus par iLvl). Estimation sans personnage importé : importe le tien pour le chemin réel, son coût et son CP.`;
       } else {
         msg = isEn
           ? `<strong>Overall Build Projection (Endgame T4):</strong> Going from <strong>${currentIlvl.toFixed(2)}</strong> to <strong>${targetIlvl.toFixed(2)}</strong> (+${diff.toFixed(2)} iLvl) projects your character toward <strong>${formatNumber(pred.predictedCp)} CP</strong> (+${formatNumber(pred.diffCp)} CP). <em>Note: This global projection assumes parallel progression (Lvl. 9/10 Gems, T4 Karma, and Relic Engravings).</em>`
@@ -2602,7 +2723,7 @@
     const simChar = getCurrentActiveCharacter();
     const simCtx = gearStatContext(simChar);
     const simPieces = HONING_SIM_PIECES.map(slot => {
-      const isSerka = !!(simCtx && (slot === 'weapon' ? simCtx.gear.isSerkaWeapon : simCtx.gear.isSerkaArmors));
+      const isSerka = !!(simCtx && pieceIsSerka(simCtx.gear, slot));
       const adv = simCtx ? gearAdvOf(simChar, simCtx.gear, slot) : baseAdv;
       // Le sélecteur d'affinage avancé s'applique à toutes les pièces dès qu'on le change
       const toAdv = state.advHoning === baseAdv ? adv : state.advHoning;
@@ -4318,11 +4439,12 @@
       const dmgGain = realGain !== null ? realGain : ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
       // Coût attendu d'un palier sur chacune des 5 pièces, chacune depuis son propre niveau quand on le connaît
       const gearLv = charObj && charObj.gear;
-      const perPiece = honingT4 && gearLv && aStep.track === (sys.armors.isSerka ? 'serka' : 'aegir')
-        ? ['head', 'chest', 'pants', 'gloves', 'shoulder'].map(sl => gearLv[sl]).filter(l => l >= 10 && l < 25)
+      // Chaque pièce depuis son niveau, sur sa propre recette (Serka ou Aegir : un set peut être mixte)
+      const perPiece = honingT4 && gearLv
+        ? GEAR_ARMOR_SLOTS.map(sl => ({ l: gearLv[sl], track: pieceIsSerka(gearLv, sl) ? 'serka' : 'aegir' })).filter(x => x.l >= 10 && x.l < 25)
         : null;
       const cost = perPiece && perPiece.length === 5
-        ? perPiece.reduce((sum, l) => sum + getLevelCost('armor', l, aStep.track).totalValue, 0)
+        ? perPiece.reduce((sum, x) => sum + getLevelCost('armor', x.l, x.track).totalValue, 0)
         : getLevelCost('armor', aStep.lvl, aStep.track).totalValue * 5;
       pushRow('dyn_armor',
         isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
@@ -4338,7 +4460,7 @@
     if (advLv) {
       const wAdv = getAdvHoningCost('weapon', advLv.weapon);
       // Serka : l'avancé ne change pas l'iLvl (profils lostark.bible), aucun gain à chiffrer
-      if (wAdv && !sys.weapon.isSerka) {
+      if (wAdv && !pieceIsSerka(charObj && charObj.gear, 'weapon')) {
         const curWeaponPct = sys.weapon.bonusPct || 0;
         const add = WEAPON_HONING_BONUS_PER_LVL * wAdv.levels / 5;
         // Gain réel d'après la table itemLevel (DPS : dégâts, support : buff de PA) ; sinon estimation par niveau
@@ -4351,11 +4473,14 @@
           advHoningComment(wAdv, isEn),
           { piece: 'weapon', from: wAdv.from, to: wAdv.to, breath: wAdv.useBreath });
       }
-      const minArmor = Math.min(...advLv.armors);
-      const lagging = advLv.armors.filter(v => v === minArmor);
-      const laggingSlots = ADV_ARMOR_SLOTS.filter((sl, i) => advLv.armors[i] === minArmor);
-      const aAdv = getAdvHoningCost('armor', minArmor);
-      if (aAdv && !sys.armors.isSerka) {
+      // Avancé des armures : pièces Aegir seulement (sur le Serka il ne change ni l'iLvl ni les stats)
+      const gearAdv = charObj && charObj.gear;
+      const aegirIdx = ADV_ARMOR_SLOTS.map((sl, i) => i).filter(i => !pieceIsSerka(gearAdv, ADV_ARMOR_SLOTS[i]));
+      const minArmor = aegirIdx.length ? Math.min(...aegirIdx.map(i => advLv.armors[i])) : 40;
+      const laggingSlots = aegirIdx.filter(i => advLv.armors[i] === minArmor).map(i => ADV_ARMOR_SLOTS[i]);
+      const lagging = laggingSlots;
+      const aAdv = aegirIdx.length ? getAdvHoningCost('armor', minArmor) : null;
+      if (aAdv) {
         const curArmorPct = sys.armors.bonusPct || 0;
         const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
         // Le niveau moyen des 5 pièces monte de (pièces × niveaux) / 5, à 1/5 d'un niveau normal
@@ -5497,12 +5622,11 @@
       const g = (gearStatContext(charObj) || {}).gear;
       if (!g || !honingT4) return null;
       const slots = isW ? ['weapon'] : GEAR_ARMOR_SLOTS;
-      const levels = slots.map(sl => g[sl]).filter(l => l >= 0 && l + k - 1 < 25);
+      const levels = slots.map(sl => ({ l: g[sl], track: pieceIsSerka(g, sl) ? 'serka' : 'aegir' })).filter(x => x.l >= 0 && x.l + k - 1 < 25);
       if (!levels.length) return null;
       const g1 = honingGainTo(charObj, piece, isSerka, isSupport, k), g0 = honingGainTo(charObj, piece, isSerka, isSupport, k - 1);
       if (g1 === null || g0 === null) return null;
-      const track = isSerka ? 'serka' : 'aegir';
-      const cost = levels.reduce((sum, l) => sum + getLevelCost(isW ? 'weapon' : 'armor', l + k - 1, track).totalValue, 0);
+      const cost = levels.reduce((sum, x) => sum + getLevelCost(isW ? 'weapon' : 'armor', x.l + k - 1, x.track).totalValue, 0);
       const from = Math.floor(isW ? sys.weapon.wLvl : sys.armors.avgArmor) + k - 1;
       return mk(`+${from} ➔ +${from + 1}`, cost, g1 - g0, { targetVal: from + 1 });
     }
@@ -7895,6 +8019,9 @@
         const d = it.data;
         if (!d) return;
         const isSerka = !!(it.id && it.id.toString().startsWith('13462'));
+        // Type de chaque pièce (ID 13462… Serka, 13461… Aegir) : un set d'armures peut être mixte
+        const gearKey = { weapon: 'weapon', head: 'head', upper_body: 'chest', lower_body: 'pants', hand: 'gloves', shoulder: 'shoulder' }[slot];
+        if (gearKey && it.id && d.honing !== undefined) { gear.serka = gear.serka || {}; gear.serka[gearKey] = isSerka; }
         if (slot === 'weapon' && d.honing !== undefined) {
           gear.weapon = d.honing;
           if (isSerka) isSerkaWeapon = true;
@@ -12906,7 +13033,8 @@
     if (!ctx || !tg) return null;
     const slots = ['weapon', ...GEAR_ARMOR_SLOTS];
     const pieceOf = (c, g, sys, sl) => ({
-      isSerka: !!(sl === 'weapon' ? sys.weapon && sys.weapon.isSerka : sys.armors && sys.armors.isSerka),
+      isSerka: g.serka && typeof g.serka[sl] === 'boolean' ? g.serka[sl]
+        : !!(sl === 'weapon' ? sys.weapon && sys.weapon.isSerka : sys.armors && sys.armors.isSerka),
       lvl: g[sl],
       adv: gearAdvOf(c, g, sl)
     });
