@@ -1720,16 +1720,17 @@
   const GEM_AP_BY_VALUE = { 45: 6, 60: 7, 80: 8, 100: 9, 120: 10 };
   const GEM_AP_PCT = { 6: 0.45, 7: 0.60, 8: 0.80, 9: 1.00, 10: 1.20 };
 
-  // Niveaux des gemmes du profil (null si une gemme n'est pas reconnue)
+  // Niveaux des gemmes T4 du profil (effet PA de base, stat 150). Une gemme T3 (sans PA, ID 6502…) est ignorée :
+  // elle ne s'améliore pas en T4 ; avant, une seule T3 faisait retomber tout le set sur l'ancien barème.
+  // null si aucune gemme T4 n'est reconnue.
   function realGemLevels(charObj) {
     const raw = (charObj && charObj.rawProfile) || {};
     const gems = (raw.loadout && raw.loadout.gems) || [];
-    if (!gems.length) return null;
     const levels = gems.map(g => {
       const ap = (g.effects || []).find(e => e.type === 2 && e.id === 150);
       return ap ? GEM_AP_BY_VALUE[ap.value] : undefined;
-    });
-    return levels.every(l => l) ? levels : null;
+    }).filter(Boolean);
+    return levels.length ? levels : null;
   }
 
   // Gemmes du profil avec leur effet de compétence, en % : dégâts (type 5) ou recharge (type 27).
@@ -1742,8 +1743,9 @@
       const sk = (g.effects || []).find(e => [5, 34, 27, 35].includes(e.type));
       const level = ap ? GEM_AP_BY_VALUE[ap.value] : undefined;
       return level && sk ? { level, kind: sk.type === 27 || sk.type === 35 ? 'cd' : 'dmg', pct: sk.value / 100 } : null;
-    });
-    return out.length && out.every(Boolean) ? out : null;
+    }).filter(Boolean);
+    // Mêmes gemmes que realGemLevels (T4 seulement), dans le même ordre
+    return out.length ? out : null;
   }
 
   // Part des dégâts d'un DPS portée par des compétences à recharge (Loseii, lignes gemmes DPS)
@@ -1923,6 +1925,19 @@
    * Gain DPS (%) d'une étape d'affinage (+1) sur l'arme ou sur les 5 armures, chaque pièce depuis
    * son niveau et son affinage avancé. null si une donnée manque.
    */
+  // Gain (DPS ou buff) de +k niveaux d'affinage sur l'arme ou les 5 armures, chaque pièce depuis son niveau (max +25)
+  function honingGainTo(charObj, piece, isSerka, isSupport, k) {
+    if (!(k > 0)) return 0;
+    const ctx = gearStatContext(charObj);
+    if (!ctx) return null;
+    const g = ctx.gear;
+    const slots = piece === 'weapon' ? ['weapon'] : GEAR_ARMOR_SLOTS;
+    const changes = slots.filter(sl => g[sl] >= 0 && g[sl] < 25)
+      .map(sl => ({ slot: sl, isSerka, lvl: g[sl], adv: gearAdvOf(charObj, g, sl), toLvl: Math.min(25, g[sl] + k), toAdv: gearAdvOf(charObj, g, sl) }));
+    if (!changes.length) return null;
+    return gearRoleGain(charObj, ctx, changes, isSupport);
+  }
+
   function honingDpsGain(charObj, piece, isSerka, isSupport) {
     const ctx = gearStatContext(charObj);
     if (!ctx) return null;
@@ -2171,6 +2186,35 @@
     if (role === 'support') return bp.isSupport === false;
     if (role === 'dps') return bp.isSupport === true;
     return false;
+  }
+
+  /**
+   * Cohérence du Battle Point : CP raid ÷ CP reconstitué depuis les parties du profil. DPS : attaque de base (type 1)
+   * × produit des autres parties (1 + v / 10 000) ÷ 10 000 ; support : branche buff + branche défense
+   * (supportBpBranches). Mesuré sur 70 profils réels : 0,99 à 1,04 (DPS), 0,96 à 0,99 (support). Un profil hors de ces
+   * bornes a des parties manquantes sur lostark.bible (ex. cœurs absents, rapport 2,2) : ses écarts par système seraient
+   * faux. null si le profil n'a pas de Battle Point.
+   */
+  function battlePointCoherence(c, roleOverride) {
+    const parts = battlePointPartsOf(c);
+    const cp = c && ((c.rawProfile && c.rawProfile.raidCombatPower) || c.cp);
+    const t1 = parts.find(p => p.type === 1);
+    if (!(cp > 0) || !t1 || !(t1.value > 0)) return null;
+    const role = roleOverride || c.role;
+    if (role === 'support') {
+      const br = supportBpBranches(c);
+      return br && br.A + br.D > 0 ? cp / (br.A + br.D) : null;
+    }
+    const prod = parts.filter(p => p.type > 2).reduce((m, p) => m * (1 + ((('value' in p) ? p.value : p.min) || 0) / 1e4), 1);
+    return cp / (t1.value * prod / 1e4);
+  }
+  const BP_COHERENCE_RANGE = { dps: [0.95, 1.08], support: [0.92, 1.06] };
+  function hasIncompleteBattlePoint(c, roleOverride) {
+    const role = (roleOverride || (c && c.role)) === 'support' ? 'support' : 'dps';
+    const r = battlePointCoherence(c, role);
+    if (r === null) return false;
+    const [lo, hi] = BP_COHERENCE_RANGE[role];
+    return r < lo || r > hi;
   }
 
   // Karma T4 lu sur le Battle Point (part 8 = Évolution, part 9 = Bond, en centièmes de %).
@@ -3904,9 +3948,6 @@
   // Coût (gold) pour monter UNE gemme T4 du niveau clé au niveau suivant
   // Niv. 6 : trois gemmes niv. 6 font une niv. 7, donc 1/3 du coût du niveau 7
   const GEM_UPGRADE_COST = { 6: 92000, 7: 276000, 8: 813000, 9: 2415000 };
-  // Coût (gold) par point de cœur manquant pour atteindre 17 points.
-  // Calé sur l'ancien forfait de 80 898 g, interprété comme un passage 14 → 17 (3 points).
-  const ARK_CORE_COST_PER_POINT = Math.round(80898 / 3);
   // Bonus d'arme (échelle bonusPct de extractPlayerSystems) gagné par niveau d'affinage effectif
   const WEAPON_HONING_BONUS_PER_LVL = 1.20;
   // Bonus d'armure (échelle bonusPct) gagné par niveau moyen d'affinage effectif sur les 5 pièces
@@ -4074,9 +4115,9 @@
    * Karma d'Illumination, niveau suivant : 900 or par essai (la pierre du destin est gratuite), +0,10 % de puissance
    * d'arme. DPS : dégâts par √(puissance d'arme) ; support : buff de PA donné aux alliés. null au niveau 30 ou sans données.
    */
-  function karmaGpdStep(charObj, isSupport) {
+  function karmaGpdStep(charObj, isSupport, lvlOverride) {
     const lo = (charObj && charObj.rawProfile && charObj.rawProfile.loadout) || {};
-    const lvl = lo.karma && lo.karma.enlightenment;
+    const lvl = lvlOverride !== undefined ? lvlOverride : lo.karma && lo.karma.enlightenment;
     const here = karmaT4 && karmaT4[lvl], next = karmaT4 && karmaT4[lvl + 1];
     const ctx = gearStatContext(charObj);
     if (!here || !next || !(here.prob > 0) || !ctx) return null;
@@ -4132,7 +4173,21 @@
   }
 
   // Dégâts (ou buff) estimés de la grille du joueur d'après sa note moyenne : courbe note → dégâts des paliers
-  // (`tiers`) du modèle de compte de Loseii, épiques et rares du même axe réunis. null hors de la courbe.
+  // (`tiers`) du modèle de compte de Loseii, épiques et rares du même axe réunis, pour une grille pleine (24 gemmes).
+  // Sous le bas de la courbe : sa première valeur (estimation haute de l'actuel, donc gain prudent). Grille incomplète :
+  // au prorata des gemmes posées. null au-dessus de la courbe ou sans données.
+  function astrogemGridDamage(isSupport, grid) {
+    const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
+    const slots = (srcs.epic && srcs.epic.slots) || 24;
+    const lo = astrogemCurveLow(isSupport);
+    const d = astrogemDamageAtMean(isSupport, lo !== null ? Math.max(lo, grid.mean) : grid.mean);
+    return d === null ? null : d * Math.min(1, grid.n / slots);
+  }
+  function astrogemCurveLow(isSupport) {
+    const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
+    const means = ['epic', 'rare'].flatMap(r => ((srcs[r] && srcs[r].tiers) || []).map(t => t.mean)).filter(Number.isFinite);
+    return means.length ? Math.min(...means) : null;
+  }
   function astrogemDamageAtMean(isSupport, mean) {
     const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
     const pts = [];
@@ -4210,8 +4265,9 @@
     // Support : gold par 0.01% de buff ; DPS : gold par 1% de dégâts.
     // Le tier est toujours évalué sur le coût par 1% pour garder les mêmes seuils.
     const ratioUnit = isSupport ? 100 : 1;
+    // Gain sous 0,0001 % : bruit d'arrondi (ex. bijou remplacé par un équivalent), ratio absurde sinon
     const pushRow = (id, name, sub, gain, cost, comment, meta) => {
-      if (!(gain > 0) || !(cost > 0)) return;
+      if (!(gain >= 1e-4) || !(cost > 0)) return;
       const ratio = Math.round(cost / (gain * ratioUnit));
       const tier = getTierFromRatio(cost / gain);
       dynTable.push({
@@ -4363,60 +4419,9 @@
       });
     }
 
-    // 4. Ark Grid cores → 17 points (gain marginal depuis les points actuels)
-    const ark = getArkGridStatus(charObj);
-    const slots = ark.slots || {};
-    const hasSlotData = Object.values(slots).some(v => v > 0);
-    const coreIds = getArkGridCoreIds(charObj);
-    ARK_CORE_DEFS.forEach(def => {
-      let pts = slots[def.key] || 0;
-      if (!hasSlotData) {
-        // Pas de cœurs bruts : repli sur les drapeaux 17P, uniquement pour les cœurs d'Ordre
-        if (!def.key.startsWith('order')) return;
-        const has17 = def.key === 'orderSun' ? ark.hasSun17 : (def.key === 'orderMoon' ? ark.hasMoon17 : ark.hasStar17);
-        pts = has17 ? 17 : 10;
-      }
-      if (pts <= 0 || pts >= 17) return;
-      let gain;
-      const core = coreIds[def.key];
-      const isWeaponCore = !!(core && core.id.toString().startsWith(WEAPON_CORE_PREFIX));
-      if (isWeaponCore) {
-        // Cœur « Arme » : chiffré sur la puissance d'arme réelle du personnage ; pas de ligne si son rang n'atteint pas 17
-        gain = weaponCoreGain(charObj, core, 17, isSupport);
-        if (gain === null) return;
-      } else if (isSupport) {
-        // Support : paliers mesurés par Loseii, en % de dégâts de chaque allié (même échelle que bijoux et gemmes)
-        const m = SUPPORT_CORE_STEPS[def.key];
-        gain = (pts < 14 ? m.t14 : 0) + m.t17;
-      } else {
-        // DPS : Battle Point du cœur équipé (table du jeu), chaque partie = multiplicateur 1 + bp / 10 000
-        const tbl = arkGridBp && core && arkGridBp.dps[core.id];
-        if (tbl) {
-          const next = arkCoreBpAt(tbl, 17);
-          // Cœur dont le rang ne va pas jusqu'à 17 points : il faut un autre cœur, pas de ligne en points
-          if (next === null) return;
-          gain = 100 * Math.log((1 + next / 1e4) / (1 + (arkCoreBpAt(tbl, pts) || 0) / 1e4));
-        } else {
-          const cur = getArkGridCoreBonus(def.prefix, pts, isSupport, false);
-          const nextPct = getArkGridCoreBonus(def.prefix, 17, isSupport, false);
-          // Les cœurs se cumulent multiplicativement (cf. evalCoreGroup)
-          gain = ((1 + nextPct / 100) / (1 + cur / 100) - 1) * 100;
-        }
-      }
-      pushRow(`dyn_core_${def.key}`,
-        isEn ? `Ark Grid — ${def.en} core 17P` : `Grille d'Ark — Cœur ${def.fr} 17P`,
-        isEn ? `From ${pts} points` : `Depuis ${pts} points`,
-        gain, (17 - pts) * ARK_CORE_COST_PER_POINT,
-        (isEn ? `Marginal gain from ${pts} to 17 points (${17 - pts} missing points).` : `Gain marginal de ${pts} à 17 points (${17 - pts} points manquants).`) +
-          (isWeaponCore
-            ? (isEn ? " Weapon core: the game's weapon power options applied to your real weapon power." : " Cœur Arme : options de puissance d'arme du jeu appliquées à ta vraie puissance d'arme.")
-            : isSupport
-            ? (isEn ? ' Buff measured by Loseii on a reference Bard (14 and 17-point options).' : ' Buff mesuré par Loseii sur un Barde de référence (options 14 et 17 points).')
-            : (arkGridBp && coreIds[def.key] && arkGridBp.dps[coreIds[def.key].id]
-              ? (isEn ? " Damage from the game's own Battle Point table for your equipped core." : ' Dégâts d\'après la table Battle Point du jeu pour le cœur équipé.')
-              : '')),
-        { key: def.key, label: isEn ? def.en : def.fr, pts });
-    });
+    // 4. Cœurs de la Grille d'Ark : pas de ligne en or. Leurs points viennent des astrogemmes serties (points
+    // d'Ordre / Chaos de chaque gemme), déjà chiffrées par les lignes « taille d'épiques / de rares » (modèle de compte
+    // de Loseii, cœurs à 17-20 points dans ses paliers). Un prix par point serait inventé et compterait deux fois.
 
     // Bracelet, pierre d'aptitude, astrogemmes et Karma : obtenus en jeu (chaos, gardiens, Paradise, raids), pas achetés.
     // Pas de ligne en or ici ; leur état est affiché sur la fiche (updateActiveCharacterCard, cartes de score).
@@ -4524,14 +4529,19 @@
       // Palier qui part sous la note du joueur (ex. « ungraded ➔ B » pour une grille B-) : ses dégâts comptent la
       // grille entière depuis zéro. Gain = dégâts du palier visé − dégâts estimés de la grille actuelle ; l'or reste
       // celui du palier (taille depuis zéro, comme une campagne de bracelet neuve).
-      const below = fromGrid || gpdBandRank(st.from) < gpdBandRank(grid.band);
-      const curDmg = below && Number.isFinite(st.totalDamage) ? astrogemDamageAtMean(isSupport, grid.mean) : null;
+      // Grille incomplète (moins de 24 gemmes) : le palier de l'échelle suppose une grille pleine, on mesure aussi
+      // depuis la grille réelle, à l'or cumulé du palier (grille taillée depuis zéro).
+      const slots = (a.src && a.src.slots) || 24;
+      const partial = grid.n < slots;
+      const below = fromGrid || partial || gpdBandRank(st.from) < gpdBandRank(grid.band);
+      const curDmg = below && Number.isFinite(st.totalDamage) ? astrogemGridDamage(isSupport, grid) : null;
       const gain = curDmg !== null ? st.totalDamage - curDmg : st.damage;
+      const gold = curDmg !== null && partial && st.total > 0 ? st.total : st.gold;
       if (!(gain > 0)) return;
       pushRow(`dyn_astro_${rarity}`,
         isEn ? `Ark grid — ${word} ${grid.band} ➔ ${st.to}` : `Grille d'Ark — ${word} ${grid.band} ➔ ${st.to}`,
         isEn ? `mean of ${grid.n} cut gems: ${grid.mean.toFixed(1)}` : `moyenne des ${grid.n} gemmes taillées : ${grid.mean.toFixed(1)}`,
-        gain, st.gold,
+        gain, gold,
         (isEn
           ? `Loseii's account model: ${st.buy || 'astrogems cut and fused'}${st.gems ? `, about ${Math.round(st.gems)} gems` : ''}. Gold covers cutting and fusing; the raw astrogem is free.`
           : `Modèle de compte de Loseii : ${st.gems ? `environ ${Math.round(st.gems)} gemmes taillées, ` : ''}taille à la gemme la plus faible, ratés fusionnés. L'or couvre la taille et la fusion ; la gemme brute est gratuite.`) +
@@ -5467,6 +5477,103 @@
     return null;
   }
 
+  /**
+   * Étape k (k ≥ 2) d'une chaîne du GPD, une fois les k − 1 précédentes faites : affinage arme / armures (+1 niveau,
+   * gain marginal du modèle sur le personnage réel), gemmes (le même groupe monte encore d'un niveau), Karma, échelles
+   * de Loseii du bracelet et des astrogemmes (palier suivant, or et gain du palier). null en fin de chaîne ou pour les
+   * systèmes à une seule étape (bijoux, livres, qualité, pierre, affinage avancé).
+   */
+  function gpdFollowUp(charObj, isSupport, isEn, base, k) {
+    const ratioUnit = isSupport ? 100 : 1;
+    const mk = (nextStep, cost, gain, extra) => (gain >= 1e-4 && cost > 0 ? Object.assign({}, base, {
+      id: `${base.id}#${k}`, chain: base.id, step: k, nextStep, cost: Math.round(cost), dmgGain: Number(gain.toFixed(2)),
+      gainRaw: gain, rate: Math.round(cost / (gain * ratioUnit))
+    }, extra || {}) : null);
+    const sys = extractPlayerSystems(charObj, isEn);
+    if (base.id === 'dyn_weapon' || base.id === 'dyn_armor') {
+      const isW = base.id === 'dyn_weapon';
+      const piece = isW ? 'weapon' : 'armor';
+      const isSerka = isW ? sys.weapon.isSerka : sys.armors.isSerka;
+      const g = (gearStatContext(charObj) || {}).gear;
+      if (!g || !honingT4) return null;
+      const slots = isW ? ['weapon'] : GEAR_ARMOR_SLOTS;
+      const levels = slots.map(sl => g[sl]).filter(l => l >= 0 && l + k - 1 < 25);
+      if (!levels.length) return null;
+      const g1 = honingGainTo(charObj, piece, isSerka, isSupport, k), g0 = honingGainTo(charObj, piece, isSerka, isSupport, k - 1);
+      if (g1 === null || g0 === null) return null;
+      const track = isSerka ? 'serka' : 'aegir';
+      const cost = levels.reduce((sum, l) => sum + getLevelCost(isW ? 'weapon' : 'armor', l + k - 1, track).totalValue, 0);
+      const from = Math.floor(isW ? sys.weapon.wLvl : sys.armors.avgArmor) + k - 1;
+      return mk(`+${from} ➔ +${from + 1}`, cost, g1 - g0, { targetVal: from + 1 });
+    }
+    const gm = /^dyn_gems_(\d+)_\d+$/.exec(base.id);
+    if (gm) {
+      const L = +gm[1];
+      if (L + k > 10) return null;
+      const baseLv = isSupport ? realGemLevels(charObj) : (realGems(charObj) || []).map(x => x.level);
+      if (!baseLv || !baseLv.length) return null;
+      const at = j => baseLv.map(l => (l === L ? L + j : l));
+      const setGain = lv => (isSupport ? supportGemSetGain(charObj, lv) : dpsGemSetGain(charObj, lv));
+      const g1 = setGain(at(k)), g0 = setGain(at(k - 1));
+      if (g1 === null || g0 === null) return null;
+      const n = baseLv.filter(l => l === L).length;
+      return mk(`${n}× ${isEn ? 'Lv.' : 'Niv.'} ${L + k - 1} ➔ ${L + k}`, n * GEM_UPGRADE_COST[L + k - 1], g1 - g0);
+    }
+    if (base.id === 'dyn_karma') {
+      const lo = (charObj && charObj.rawProfile && charObj.rawProfile.loadout) || {};
+      const lvl = lo.karma && lo.karma.enlightenment;
+      if (!(lvl >= 0)) return null;
+      const st = karmaGpdStep(charObj, isSupport, lvl + k - 1);
+      return st ? mk(`${st.lvl} ➔ ${st.lvl + 1}`, st.cost, st.gain) : null;
+    }
+    if (base.id === 'dyn_brac' || base.id.startsWith('dyn_astro_')) {
+      // Échelle de Loseii : paliers suivants, or et gain propres à chaque palier
+      const ladder = base.id === 'dyn_brac'
+        ? (loseiiGpd.rows[isSupport ? 'support' : 'dps'] || []).filter(r => r.series === 'bracelet')
+        : ((loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'][base.id.replace('dyn_astro_', '')] || {}).rows || []);
+      let to = (/➔\s*(\S+)\s*$/.exec(base.nextStep) || [])[1];
+      let row = null;
+      for (let j = 2; j <= k; j++) {
+        row = ladder.find(x => x.from === to);
+        if (!row) return null;
+        to = row.to;
+      }
+      if (!row) return null;
+      const gold = row.gold * (base.id === 'dyn_brac' ? loseiiRepriceRatio(row) : 1);
+      return mk(`${row.from} ➔ ${row.to}`, gold, row.damage);
+    }
+    return null;
+  }
+
+  /**
+   * Feuille de route vers un objectif : à chaque tour, l'étape au meilleur ratio parmi les premières étapes du GPD et
+   * les étapes suivantes des chaînes déjà engagées. Taille d'épiques et de rares = deux chemins vers la même grille :
+   * le premier retenu exclut l'autre. Objectif en CP (DPS, gains en % de dégâts × CP actuel) ou en % de buff (support).
+   */
+  function buildGpdRoadmap(charObj, isSupport, isEn, masterRows, goal) {
+    const avail = masterRows.map(r => ({ row: Object.assign({ chain: r.id, step: 1 }, r), k: 1 }));
+    const plan = [];
+    let cum = 0, gold = 0, arkChain = null;
+    const currentCp = (charObj && (charObj.calculatedScore || charObj.inGameScore)) || state.currentCp || 0;
+    while (avail.length && cum < goal && plan.length < 40) {
+      avail.sort((a, b) => a.row.rate - b.row.rate);
+      const it = avail.shift();
+      if (it.row.category === 'arkGrid') {
+        if (arkChain && arkChain !== it.row.chain) continue;
+        arkChain = it.row.chain;
+      }
+      const row = it.row;
+      if (row.cpGain === undefined || it.k > 1) row.cpGain = Math.max(1, Math.round(currentCp * (row.dmgGain / 100)));
+      plan.push(row);
+      gold += row.cost;
+      cum += isSupport ? row.dmgGain : row.cpGain;
+      const base = masterRows.find(r => r.id === row.chain);
+      const next = base && gpdFollowUp(charObj, isSupport, isEn, base, it.k + 1);
+      if (next) avail.push({ row: next, k: it.k + 1 });
+    }
+    return { plan, gold, cum, reached: cum >= goal };
+  }
+
   function buildMasterGpdData(charObj, isSupport, isEn) {
     const currentCp = (charObj && (charObj.calculatedScore || charObj.inGameScore)) || state.currentCp || 6028;
     // Taille d'astrogemmes et Karma : obtenus en jeu, pas de ligne en or (cf. getDynamicGpdTable)
@@ -5853,33 +5960,58 @@
       if (dom.gpdNextContext) dom.gpdNextContext.textContent = `${isEn ? 'Current:' : 'Actuel :'} ${best.whatItReads}`;
       if (dom.gpdNextRate) dom.gpdNextRate.textContent = `${formatNumber(best.rate)} g`;
       if (dom.gpdNextGain) {
-        dom.gpdNextGain.textContent = `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} % · +${best.cpGain} CP`;
+        // Support : le % de buff ne se convertit pas en CP du jeu, pas de « +CP »
+        dom.gpdNextGain.textContent = isSupport
+          ? `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} % Buff`
+          : `${formatNumber(best.cost)} g · +${best.dmgGain.toFixed(2)} % · +${best.cpGain} CP`;
       }
     }
 
-    // 2. Goal filtering & Planning
+    // 2. Objectif : feuille de route par étapes enchaînées (buildGpdRoadmap). DPS : objectif en CP ;
+    // support : en % de buff allié (le % de buff ne se convertit pas en CP du jeu).
+    // Boutons d'objectif selon le rôle ; changement de rôle = retour à « Tous » (les unités diffèrent)
+    const goalRole = isSupport ? 'support' : 'dps';
+    if (advisorState.goalRole !== goalRole) {
+      advisorState.goalRole = goalRole;
+      advisorState.selectedGoal = 'all';
+      const fr = !isEn;
+      const goals = isSupport ? [0.5, 1, 2, 3] : [100, 200, 300, 500];
+      const pills = document.querySelectorAll('#gpdGoalButtons .btn-goal-pill:not([data-goal="all"])');
+      pills.forEach((b, i) => {
+        if (goals[i] === undefined) return;
+        b.setAttribute('data-goal', String(goals[i]));
+        b.textContent = isSupport ? `+${fr ? String(goals[i]).replace('.', ',') : goals[i]} % Buff` : `+${goals[i]} CP`;
+      });
+      document.querySelectorAll('#gpdGoalButtons .btn-goal-pill').forEach(b => b.classList.toggle('active', b.getAttribute('data-goal') === 'all'));
+      if (dom.gpdCustomCpInput) {
+        dom.gpdCustomCpInput.value = '';
+        dom.gpdCustomCpInput.placeholder = isSupport ? (fr ? '% Buff +' : 'Buff % +') : 'CP +';
+        dom.gpdCustomCpInput.step = isSupport ? '0.1' : '50';
+        dom.gpdCustomCpInput.min = isSupport ? '0.1' : '10';
+      }
+    }
     const goal = advisorState.selectedGoal || 'all';
     let chosenIds = new Set();
     advisorState.planItems = [];
+    let tableRows = masterData;
 
     if (goal !== 'all') {
-      const targetGoal = parseFloat(goal) || 100;
-      let cumCp = 0;
-      let cumGold = 0;
-
-      for (let i = 0; i < masterData.length; i++) {
-        const item = masterData[i];
-        chosenIds.add(item.id);
-        advisorState.planItems.push(item);
-        cumCp += item.cpGain;
-        cumGold += item.cost;
-        if (cumCp >= targetGoal) break;
+      const targetGoal = parseFloat(goal) || (isSupport ? 1 : 100);
+      const road = buildGpdRoadmap(curChar, isSupport, isEn, masterData, targetGoal);
+      advisorState.planItems = road.plan;
+      road.plan.forEach(r => chosenIds.add(r.id));
+      tableRows = road.plan;
+      const fmtBuff = v => (isEn ? v.toFixed(2) : v.toFixed(2).replace('.', ','));
+      const gainTxt = isSupport ? `+${fmtBuff(road.cum)} % Buff` : `+${formatNumber(road.cum)} CP`;
+      if (dom.planSummaryGold) dom.planSummaryGold.textContent = `${isEn ? 'Cost:' : 'Coût :'} ${formatNumber(Math.round(road.gold))} g`;
+      if (dom.planSummaryCp) {
+        dom.planSummaryCp.textContent = `${isEn ? 'Gain:' : 'Gain :'} ${gainTxt}` +
+          (road.reached ? '' : (isEn ? ' (goal out of reach with these steps)' : ' (objectif hors de portée avec ces étapes)'));
       }
-
-      const avgRoi = cumCp > 0 ? Math.round(cumGold / cumCp) : 0;
-      if (dom.planSummaryGold) dom.planSummaryGold.textContent = `${isEn ? 'Cost:' : 'Coût :'} ${formatNumber(cumGold)} g`;
-      if (dom.planSummaryCp) dom.planSummaryCp.textContent = `${isEn ? 'Gain:' : 'Gain :'} +${formatNumber(cumCp)} CP`;
-      if (dom.planSummaryRoi) dom.planSummaryRoi.textContent = `${formatNumber(avgRoi)} g / CP`;
+      if (dom.planSummaryRoi) {
+        const per = road.cum > 0 ? Math.round(road.gold / (isSupport ? road.cum * 100 : road.cum)) : 0;
+        dom.planSummaryRoi.textContent = `${formatNumber(per)} g / ${isSupport ? '0,01 %' : 'CP'}`;
+      }
       if (dom.gpdPlanSummary) dom.gpdPlanSummary.style.display = 'flex';
     } else {
       if (dom.gpdPlanSummary) dom.gpdPlanSummary.style.display = 'none';
@@ -5887,12 +6019,12 @@
 
     // 3. Render Master Table (Ledger : tableau dense, barre log du ratio, rang par luminosité)
     if (dom.gpdMasterTableBody) {
-      const rates = masterData.map(r => r.rate).filter(r => r > 0);
+      const rates = tableRows.map(r => r.rate).filter(r => r > 0);
       const logLo = Math.log(Math.min(...rates));
       const logHi = Math.log(Math.max(...rates));
       const barPct = (rate) => (logHi > logLo ? 6 + 94 * (Math.log(rate) - logLo) / (logHi - logLo) : 50).toFixed(1);
       let rowsHtml = '';
-      masterData.forEach((row, idx) => {
+      tableRows.forEach((row, idx) => {
         const isChosen = chosenIds.has(row.id);
         const planIdx = advisorState.planItems.findIndex(x => x.id === row.id);
         const trClass = isChosen ? 'gpd-row plan-selected' : 'gpd-row';
@@ -5926,7 +6058,7 @@
                 <span class="gpd-rate-val">${formatNumber(row.rate)}</span>
               </div>
             </td>
-            <td class="col-num gpd-cp-val">+${row.cpGain}</td>
+            <td class="col-num gpd-cp-val">${isSupport ? '—' : `+${row.cpGain}`}</td>
             <td class="col-num"><span class="gpd-tier tier-${tier}">${GPD_TIER_LABELS[tier].replace('Rang ', '')}</span></td>
             <td>${statusBadge}</td>
           </tr>
@@ -9631,6 +9763,14 @@
           ? `Lost Ark only saves the Ark Passive tree when the character logs out, so lostark.bible computed this raid profile in DPS mode. Your engravings are support ones: the app recalculated the Battle Point in support mode from your real gear, with the game's own table (checked identical on correct support profiles). Nothing to do on your side.`
           : `Lost Ark n'enregistre l'arbre d'Ark Passive qu'à la déconnexion du personnage : lostark.bible a donc calculé ce profil raid en mode DPS. Tes gravures sont celles d'un support : l'appli a recalculé le Battle Point en mode support à partir de ton vrai stuff, avec la table du jeu (vérifiée à l'identique sur des profils support corrects). Rien à faire de ton côté.`;
         dom.charCardMixedPill.hidden = false;
+      } else if (hasIncompleteBattlePoint(p, isSupport ? 'support' : 'dps')) {
+        dom.charCardMixedPill.innerHTML = isEn
+          ? `<strong>Incomplete Battle Point</strong> · comparisons skipped`
+          : `<strong>Battle Point incomplet</strong> · comparaisons suspendues`;
+        dom.charCardMixedPill.title = isEn
+          ? `The Battle Point parts lostark.bible gives for this raid profile do not add up to its Combat Power (some systems are missing, often the Ark Grid cores). The GPD still works on your gear, but system-by-system comparisons would be wrong. Update the character on lostark.bible.`
+          : `Les parties du Battle Point données par lostark.bible pour ce profil raid ne reconstituent pas son Combat Power (des systèmes manquent, souvent les cœurs de la Grille d'Ark). Le GPD fonctionne toujours sur ton stuff, mais les comparaisons système par système seraient fausses. Mets le personnage à jour sur lostark.bible.`;
+        dom.charCardMixedPill.hidden = false;
       } else {
         dom.charCardMixedPill.hidden = true;
       }
@@ -11764,7 +11904,7 @@
           const target = [{ key: m1, amount: ACC_LINE_TIERS[m1][a] }, { key: m2, amount: ACC_LINE_TIERS[m2][b] }];
           const nextPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
           const gain = ((1 + nextPct / 100) / (1 + curPct / 100) - 1) * 100;
-          if (!(gain > 0)) return;
+          if (!(gain >= 1e-4)) return;
           if (!best || cost / gain < best.cost / best.gain) best = { slot, kind, pkg, gain, cost, curPct, nextPct };
         });
       });
@@ -12853,7 +12993,7 @@
       // le plan d'achat ne garde que les points, sur le cœur du joueur (le grade s'obtient en jeu)
       const bpP = pIds[key] ? benchCoreBp(pIds[key], from) : 0, bpT = tIds[key] ? benchCoreBp(tIds[key], to) : 0;
       acc.net += !isSupport && bpP !== null && bpT !== null ? 100 * Math.log((1 + bpT / 1e4) / (1 + bpP / 1e4)) : g;
-      if (to > from && g > 0) { acc.buy += g; acc.cost += (to - from) * ARK_CORE_COST_PER_POINT; }
+      // Points de cœur = astrogemmes serties : écart affiché, hors plan d'achat (pas de prix par point)
       return acc;
     }, { net: 0, buy: 0, cost: 0 });
     return {
@@ -13118,13 +13258,6 @@
     const ratioUnit = isSupport ? 100 : 1;
     const ratioLabel = isSupport ? (isEn ? '0.01% Buff' : '0,01 % Buff') : (isEn ? '1% DPS' : '1 % DPS');
 
-    // Repli sans données détaillées : cœurs à un point par cœur lu jusqu'à 20 (forfait de 3 points sans cœurs)
-    const coreSlots = getArkGridStatus(player).slots || {};
-    const coreGroupCost = (orderKey, chaosKey) => {
-      const pts = [orderKey, chaosKey].map(k => coreSlots[k] || 0);
-      if (pts.every(v => v === 0)) return 3 * ARK_CORE_COST_PER_POINT;
-      return pts.filter(v => v > 0 && v < 20).length * ARK_CORE_COST_PER_POINT;
-    };
     // Repli affinage : coût attendu de chaque palier jusqu'au niveau de la référence (1 palier si inconnu)
     const honingPathCost = (piece, fromLvl, toLvl, pieces, track = 'aegir') => {
       const from = Math.floor(fromLvl);
@@ -13141,9 +13274,9 @@
     };
 
     const systemMeta = [
-      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", cost: () => coreGroupCost('orderSun', 'chaosSun') },
-      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", cost: () => coreGroupCost('orderMoon', 'chaosMoon') },
-      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", cost: () => coreGroupCost('orderStar', 'chaosStar') },
+      { key: 'arkGridSun', title: isEn ? "Ark Grid: Sun Cores (Order & Chaos)" : "Ark Grid : Cœurs Soleil (Ordre & Chaos)", cost: () => 0 }, // points des cœurs = astrogemmes serties : écart affiché, hors plan d'achat
+      { key: 'arkGridMoon', title: isEn ? "Ark Grid: Moon Cores (Order & Chaos)" : "Ark Grid : Cœurs Lune (Ordre & Chaos)", cost: () => 0 },
+      { key: 'arkGridStar', title: isEn ? "Ark Grid: Star Cores (Order & Chaos)" : "Ark Grid : Cœurs Étoile (Ordre & Chaos)", cost: () => 0 },
       { key: 'arkGridAstrogems', title: isEn ? "Ark Grid: Astrogems (Substats)" : "Ark Grid : Astrogemmes (Sous-stats)", cost: () => 0 }, // obtenues en jeu : écart affiché, hors plan d'achat
       { key: 'accessories', title: isEn ? "T4 Accessory Lines (High Rolls)" : "Lignes d'Accessoires T4 (High Rolls)", cost: () => ACC_UPGRADE_COST_AVG },
       { key: 'weapon', title: isEn ? "T4 Weapon Honing" : "Affinage Arme T4", cost: () => honingGapCost('weapon', pSys.weapon || {}, tSys.weapon || {}, 'wLvl', 'effWLvl', 1) },
@@ -16992,7 +17125,7 @@
         if (!b || !b.isLive) return;
         if (normalizeClassName(b.className || '').toLowerCase().replace(/[^a-z]/g, '') !== cls) return;
         if ((b.role || role) !== role || (b.name || '').toLowerCase() === pName) return;
-        if (hasMixedRaidProfile(b, role)) return;
+        if (hasMixedRaidProfile(b, role) || hasIncompleteBattlePoint(b, role)) return;
         if ((b.cp || 0) > pCp) above.push(b);
       });
     }
@@ -17377,7 +17510,10 @@
     const pSys = extractPlayerSystems(player, isEn);
     const tSys = resolveTargetSystems(target, isEn);
     // Profil raid mélangé (d'un côté ou de l'autre) : aucun écart système par système
-    const mixedProfiles = hasMixedRaidProfile(player) || hasMixedRaidProfile(target, player.role);
+    const mixedOnly = hasMixedRaidProfile(player) || hasMixedRaidProfile(target, player.role);
+    // Battle Point incomplet d'un côté : mêmes conséquences (écarts système par système faux)
+    const incompleteWho = hasIncompleteBattlePoint(player) ? 'player' : (hasIncompleteBattlePoint(target, player.role) ? 'target' : null);
+    const mixedProfiles = mixedOnly || !!incompleteWho;
     if (mixedProfiles) [pSys, tSys].forEach(sys => Object.values(sys).forEach(v => { if (v && typeof v === 'object') v.estimated = true; }));
     const cpPerPct = (player.cp && player.cp > 1000) ? (player.cp / 100) : 38;
     const directCpGap = Math.round((target.cp || 0) - (player.cp || 0));
@@ -17389,7 +17525,16 @@
     const reconEl = document.getElementById('benchmarkCpReconciliation');
     if (gapsGrid) {
       const activeGaps = gaps.filter(g => g.gainCp > 0 || g.priority === 'player_lead');
-      if (mixedProfiles) {
+      if (mixedProfiles && !mixedOnly) {
+        gapsGrid.innerHTML = `
+          <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px; border-color: var(--accent-gold);">
+            <h4 style="margin: 0 0 6px 0; color: var(--accent-gold);">${isEn ? 'Incomplete Battle Point: comparison skipped' : 'Battle Point incomplet : comparaison suspendue'}</h4>
+            <p style="font-size: 14px; color: var(--text-muted); margin: 0;">${isEn
+              ? `${incompleteWho === 'player' ? 'Your' : 'The reference\'s'} raid profile on lostark.bible has Battle Point parts that do not add up to its Combat Power (some systems are missing, often the Ark Grid cores). System gaps would be wrong. Pick another reference or update the character on lostark.bible.`
+              : `${incompleteWho === 'player' ? 'Ton profil raid' : 'Le profil raid de la référence'} sur lostark.bible a des parties de Battle Point qui ne reconstituent pas son Combat Power (des systèmes manquent, souvent les cœurs de la Grille d'Ark). Les écarts par système seraient faux. Choisis une autre référence ou mets le personnage à jour sur lostark.bible.`}</p>
+          </div>
+        `;
+      } else if (mixedProfiles) {
         const who = hasMixedRaidProfile(player) ? (isEn ? 'Your' : 'Ton') : (isEn ? 'The reference\'s' : 'Le');
         gapsGrid.innerHTML = `
           <div class="bench-gap-card" style="grid-column: 1 / -1; text-align: center; padding: 24px; border-color: var(--accent-gold);">

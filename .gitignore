@@ -5,3 +5,6 @@ node_modules/
 .env
 package.json
 package-lock.json
+tools/audit/cache/
+tools/audit/report.json
+tools/audit/sample.json
