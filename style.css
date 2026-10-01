@@ -4455,26 +4455,6 @@ select optgroup {
   color: #E0A43A;
 }
 
-.char-role-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-  line-height: 1.2;
-}
-
-.char-role-badge.badge-support {
-  background: rgba(232, 230, 220, 0.15);
-  color: #E0A43A;
-  border: 1px solid rgba(232, 230, 220, 0.3);
-}
-
-.char-role-badge.badge-dps {
-  background: rgba(224, 122, 99, 0.12);
-  color: #E07A63;
-  border: 1px solid rgba(224, 122, 99, 0.25);
-}
-
 /* Actions rapides et badge gold de la carte */
 .char-header-right {
   display: flex;

@@ -445,7 +445,6 @@ function renderRaidTrackerView() {
       const isDemo = Object.prototype.hasOwnProperty.call(FACE_AVATARS, cKey);
       const classIconFallback = getClassIconUrl(ch.className, ch.role);
       const fallbackFace = isDemo ? FACE_AVATARS[cKey] : classIconFallback;
-      const roleText = isSupp ? t('role_support') : t('role_dps');
 
       html += `
           <div class="char-raid-card" data-char="${cKey}">
@@ -463,8 +462,6 @@ function renderRaidTrackerView() {
                     <span class="char-class-txt">${escapeHtml(ch.className || '')}</span>
                     <span class="char-sep">•</span>
                     <span class="char-raid-ilvl">${(ch.ilvl || 1700).toFixed(2)}</span>
-                    <span class="char-sep">•</span>
-                    <span class="char-role-badge ${isSupp ? 'badge-support' : 'badge-dps'}">${roleText}</span>
                   </div>
                 </div>
               </div>
