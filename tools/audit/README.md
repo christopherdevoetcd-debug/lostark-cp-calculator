@@ -13,4 +13,12 @@ par le même chemin d'import que le site, sans aucun accès réseau pendant les 
    cartes de la fiche). Résultat détaillé dans `tools/audit/report.json`.
 3. `node tools/audit/bench.mjs` : Benchmark, chaque personnage contre un autre de même classe et de même rôle.
 
+4. Comparaison avant / après une modification de calcul :
+   - avant : `node tools/audit/audit.mjs --save-baseline` et `node tools/audit/bench.mjs --save-baseline`
+     (références `baseline-audit.json` / `baseline-bench.json`, ignorées par Git car liées au cache local) ;
+   - après : mêmes commandes avec `--compare`. Résumé par valeur (lignes du GPD en pleine précision : gain, coût,
+     ratio, rang ; feuilles de route, cartes, prédicteur, gemmes, brassard, signalements ; Benchmark : lignes par
+     système et plan d'achat), plage et médiane des écarts, exemples. Code de sortie 1 si un chiffre a bougé :
+     si c'est voulu, réenregistrer la référence.
+
 Ne jamais marteler lostark.bible, Loseii ou Maxroll : appels séquentiels et espacés seulement.

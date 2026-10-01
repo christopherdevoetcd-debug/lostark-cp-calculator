@@ -1,12 +1,14 @@
 // Audit du Benchmark : chaque personnage contre un autre de même classe et même rôle, au CP plus élevé.
 import fs from 'fs';
 import { loadApp, bibleFiles } from './harness.mjs';
+import { finishSnapshot } from './snapshot.mjs';
 const { win, A } = await loadApp();
 const chars = [];
 for (const b of bibleFiles()) {
   try { const c = win.__applyLoadedProfile(JSON.parse(fs.readFileSync(b.file)), b.name, b.region, true); if (c) { c.role = A.detectCharacterRole(c); chars.push(c); } } catch (e) {}
 }
 const issues = {}; const add = (k, m) => (issues[k] = issues[k] || []).push(m);
+const snap = {};
 let n = 0;
 for (const p of chars) {
   const peers = chars.filter(t => t !== p && t.className === p.className && t.role === p.role && (t.cp || 0) > (p.cp || 0));
@@ -16,6 +18,10 @@ for (const p of chars) {
   let res;
   try { res = win.__computeDynamicGapsAndPlan(p, t, null, null, true); } catch (e) { add('throw', `${p.name}→${t.name}: ${e.stack.split('\n').slice(0, 2).join(' | ')}`); continue; }
   const { gaps, plan, rows } = res;
+  snap[`${p.name}→${t.name}`] = {
+    rows: Object.fromEntries(Object.entries(rows).map(([k, r]) => [k, { delta: r.delta, gapCp: r.gapCp, buy: r.buy, cost: r.cost, fromGpd: r.fromGpd }])),
+    plan: plan.map(s => ({ id: s.title, cost: s.cost, gain: s.gain, roi: s.roi }))
+  };
   Object.entries(rows).forEach(([k, r]) => {
     if (![r.delta, r.gapCp, r.cost].every(Number.isFinite)) add('nan-row', `${p.name}→${t.name} ${k} ${JSON.stringify(r)}`);
     if (r.buy < -1e-9) add('buy-neg', `${p.name} ${k} ${r.buy}`);
@@ -32,4 +38,5 @@ for (const p of chars) {
 }
 for (const [k, v] of Object.entries(issues)) { console.log(`\n## ${k} — ${v.length}`); v.slice(0, 12).forEach(x => console.log('  ' + x)); }
 console.log('paires', n);
-process.exit(0);
+Object.entries(issues).forEach(([k, v]) => v.forEach(m => { snap.issues = snap.issues || {}; snap.issues[`${k}: ${m}`] = true; }));
+process.exit(finishSnapshot('bench', snap));

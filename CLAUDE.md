@@ -78,7 +78,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    - `getUserRoster()` guérit automatiquement les rôles obsolètes en appelant `detectCharacterRole(c)`.
 3. **Vérification de Syntaxe avant Déploiement** :
    - Toujours exécuter `node -c calculator.js` pour s'assurer de l'absence totale d'erreur de parsing JavaScript.
-4. **Banc d'audit** (`tools/audit/`, voir son README) : l'appli complète dans jsdom sur ~70 profils réels en cache (toutes les classes), sans réseau. Le relancer (`node tools/audit/audit.mjs` puis `bench.mjs`) après toute modification d'un calcul. Récolte espacée seulement (6 s entre deux appels).
+4. **Banc d'audit** (`tools/audit/`, voir son README) : l'appli complète dans jsdom sur ~70 profils réels en cache (toutes les classes), sans réseau. Avant toute modification d'un calcul : `node tools/audit/audit.mjs --save-baseline` et `bench.mjs --save-baseline` ; après : les mêmes avec `--compare` (code 1 et résumé de chaque chiffre qui a bougé ; réenregistrer si c'est voulu). Récolte espacée seulement (6 s entre deux appels).
 
 ---
 

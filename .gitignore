@@ -8,3 +8,4 @@ package-lock.json
 tools/audit/cache/
 tools/audit/report.json
 tools/audit/sample.json
+tools/audit/baseline-*.json

@@ -1,6 +1,7 @@
 // Audit automatique : chaque personnage en cache passe par le vrai chemin d'import, puis contrôles d'invariants.
 import fs from 'fs';
 import { loadApp, bibleFiles, CACHE } from './harness.mjs';
+import { positional, finishSnapshot } from './snapshot.mjs';
 const sample = JSON.parse(fs.readFileSync(new URL('./sample.json', import.meta.url)));
 const expect = {};
 sample.forEach(s => { expect[`${s.region}_${s.name}`] = s; });
@@ -8,7 +9,7 @@ const { win, logs, A } = await loadApp();
 const loseiiDps = JSON.parse(fs.readFileSync(CACHE + '/loseii/rows-dps.json')).rows;
 const loseiiSup = JSON.parse(fs.readFileSync(CACHE + '/loseii/rows.json')).rows;
 const report = [];
-const only = process.argv[2];
+const only = positional[0];
 for (const b of bibleFiles()) {
   if (only && b.name !== only) continue;
   const issues = [];
@@ -109,6 +110,13 @@ for (const b of bibleFiles()) {
     const pb = pieces.find(p => /Bracelet/.test(p.name));
     if (bb && pb && !pb.ladder.includes(bb.score.toFixed(1))) add('MED', 'brac-piece', `pièce ${pb.ladder} vs ${bb.score.toFixed(1)}`);
   } catch (e) { add('ERR', 'card-throw', e.stack.split('\n').slice(0, 2).join(' | ')); }
+  // --- Calculs hors GPD, pour la comparaison avant / après (--compare) ---
+  try {
+    const ph = A.predictHoningPath(c, c.ilvl + 10, isSup);
+    const gems = A.gemCpBonus(c, 9, undefined, isSup);
+    const brac = (lv, from) => { const s = win.__simulateBracerImpact(c, lv, isSup, from); return s && { gain: isSup ? s.allyBuffPct : s.dpsGainPct, cp: s.cpGain, value: s.costs && s.costs.value }; };
+    out.extra = { predictor: ph && { cp: ph.cpGain, gold: ph.gold }, gemsLv9Cp: gems, bracer0to10: brac(10, 0), bracerNoneTo21: brac(21, -1) };
+  } catch (e) { add('ERR', 'extra-throw', e.stack.split('\n').slice(0, 2).join(' | ')); }
   report.push(out);
 }
 fs.writeFileSync(new URL('./report.json', import.meta.url), JSON.stringify(report, null, 1));
@@ -116,4 +124,14 @@ const byCode = {};
 report.forEach(r => r.issues.forEach(i => { (byCode[i.sev + ' ' + i.code] = byCode[i.sev + ' ' + i.code] || []).push(`${r.name}(${r.cls || '?'}/${r.role || '?'}): ${i.msg}`); }));
 for (const [k, v] of Object.entries(byCode).sort()) { console.log(`\n## ${k} — ${v.length}`); v.slice(0, 8).forEach(x => console.log('  ' + x)); }
 console.log('\npersos', report.length, 'logs page', logs.filter(l => l[0] !== 'jsdomError').slice(0, 5));
-process.exit(0);
+// Instantané en pleine précision (le rapport arrondit les gains) : comparaison avant / après
+const snap = {};
+report.forEach(r => {
+  snap[`${r.region}_${r.name}`] = {
+    role: r.role, ilvl: r.ilvl, cp: r.cp,
+    rows: (r.rows || []).map(x => ({ id: x.id, gain: x.gain, cost: x.cost, ratio: x.ratio, tier: x.tier })),
+    road100: r.road100, road500: r.road500, road0_5: r['road0.5'], road2: r.road2, cards: r.cards, extra: r.extra,
+    issues: Object.fromEntries((r.issues || []).map(i => [`${i.sev} ${i.code}: ${i.msg}`, true]))
+  };
+});
+process.exit(finishSnapshot(only ? `audit-${only}` : 'audit', snap));
