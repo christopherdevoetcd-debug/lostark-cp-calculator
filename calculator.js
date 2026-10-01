@@ -4081,6 +4081,26 @@
     return step ? { step, src } : null;
   }
 
+  // Dégâts (ou buff) estimés de la grille du joueur d'après sa note moyenne : courbe note → dégâts des paliers
+  // (`tiers`) du modèle de compte de Loseii, épiques et rares du même axe réunis. null hors de la courbe.
+  function astrogemDamageAtMean(isSupport, mean) {
+    const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
+    const pts = [];
+    ['epic', 'rare'].forEach(r => ((srcs[r] && srcs[r].tiers) || []).forEach(t => {
+      if (Number.isFinite(t.mean) && Number.isFinite(t.damage)) pts.push([t.mean, t.damage]);
+    }));
+    if (pts.length < 2 || !Number.isFinite(mean)) return null;
+    pts.sort((a, b) => a[0] - b[0]);
+    // Courbe croissante : un palier d'une rareté ne descend pas sous un palier de note plus basse
+    for (let i = 1; i < pts.length; i++) pts[i][1] = Math.max(pts[i][1], pts[i - 1][1]);
+    if (mean < pts[0][0] || mean > pts[pts.length - 1][0]) return null;
+    for (let i = 1; i < pts.length; i++) {
+      const [m0, d0] = pts[i - 1], [m1, d1] = pts[i];
+      if (mean <= m1) return m1 > m0 ? d0 + (d1 - d0) * (mean - m0) / (m1 - m0) : d1;
+    }
+    return pts[pts.length - 1][1];
+  }
+
   const GPD_TIER_LABELS = { 's-plus': 'Rang S+', 's': 'Rang S', 'a': 'Rang A', 'b': 'Rang B', 'c': 'Rang C', 'd': 'Rang D' };
 
   // Où en est le personnage sur le système d'une ligne du GPD (note de Loseii quand l'échelle en a une)
@@ -4449,14 +4469,25 @@
       if (!a) return;
       const st = a.step;
       const fromGrid = st.from === 'ungraded';
+      // Palier qui part sous la note du joueur (ex. « ungraded ➔ B » pour une grille B-) : ses dégâts comptent la
+      // grille entière depuis zéro. Gain = dégâts du palier visé − dégâts estimés de la grille actuelle ; l'or reste
+      // celui du palier (taille depuis zéro, comme une campagne de bracelet neuve).
+      const below = fromGrid || gpdBandRank(st.from) < gpdBandRank(grid.band);
+      const curDmg = below && Number.isFinite(st.totalDamage) ? astrogemDamageAtMean(isSupport, grid.mean) : null;
+      const gain = curDmg !== null ? st.totalDamage - curDmg : st.damage;
+      if (!(gain > 0)) return;
       pushRow(`dyn_astro_${rarity}`,
         isEn ? `Ark grid — ${word} ${grid.band} ➔ ${st.to}` : `Grille d'Ark — ${word} ${grid.band} ➔ ${st.to}`,
         isEn ? `mean of ${grid.n} cut gems: ${grid.mean.toFixed(1)}` : `moyenne des ${grid.n} gemmes taillées : ${grid.mean.toFixed(1)}`,
-        st.damage, st.gold,
+        gain, st.gold,
         (isEn
           ? `Loseii's account model: ${st.buy || 'astrogems cut and fused'}${st.gems ? `, about ${Math.round(st.gems)} gems` : ''}. Gold covers cutting and fusing; the raw astrogem is free.`
           : `Modèle de compte de Loseii : ${st.gems ? `environ ${Math.round(st.gems)} gemmes taillées, ` : ''}taille à la gemme la plus faible, ratés fusionnés. L'or couvre la taille et la fusion ; la gemme brute est gratuite.`) +
-          (fromGrid ? (isEn ? ' Your grade is below the ladder: priced as a build from an empty grid.' : ' Ta note est sous le bas de l\'échelle : chiffré comme une grille bâtie depuis zéro.') : ''),
+          (curDmg !== null
+            ? (isEn
+              ? ` This rung starts below your grade: gold of a grid cut from scratch, gain = ${st.totalDamage.toFixed(2)}% of the target grid − ~${curDmg.toFixed(2)}% for yours (Loseii's grade → damage curve).`
+              : ` Ce palier part sous ta note : or d'une grille taillée depuis zéro, gain = ${st.totalDamage.toFixed(2)} % de la grille visée − ~${curDmg.toFixed(2)} % pour la tienne (courbe note → dégâts de Loseii).`)
+            : fromGrid ? (isEn ? ' Your grade is below the ladder: priced as a build from an empty grid.' : ' Ta note est sous le bas de l\'échelle : chiffré comme une grille bâtie depuis zéro.') : ''),
         { state: grid.band, from: grid.band, to: st.to, mean: grid.mean, n: grid.n, rarity });
     });
 
