@@ -116,7 +116,7 @@ export function quantile(sorted, q) {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
 }
 
-export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = classifyBuffs(encounter), downtime = raidDowntime(encounter), otherDps = dpsHitWindows(encounter) } = {}) {
+export function analyzePlayer(encounter, player, { skillMeta = {}, buffMeta = {}, buffSets = classifyBuffs(encounter), downtime = raidDowntime(encounter), otherDps = dpsHitWindows(encounter) } = {}) {
   const durationMs = encounter.timelineMs;
   const downMs = downtime.reduce((t, [a, b]) => t + b - a, 0);
   const availableMs = Math.max(1, durationMs - downMs);
@@ -160,6 +160,11 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
     const times = casts.map(c => c.timestamp).sort((a, b) => a - b);
     const iv = times.slice(1).map((t, i) => t - times[i]).sort((a, b) => a - b);
     const k = { hitDmg: 0, ap: 0, brand: 0, identity: 0, hat: 0, full: 0, posOk: 0 };
+    const castBuffs = []; // par utilisation : PA et Marque présents sur son premier coup
+    for (const c of casts) {
+      const h = (c.hits || []).find(x => x.damage > 0);
+      if (h) castBuffs.push({ t: c.timestamp, ap: (h.buffedBy || []).some(b => buffSets.ap.has(b)), brand: (h.debuffedBy || []).some(b => buffSets.brand.has(b)) });
+    }
     for (const c of casts) for (const h of c.hits || []) {
       const d = h.damage || 0;
       const buffs = h.buffedBy || [], debuffs = h.debuffedBy || [];
@@ -183,7 +188,12 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
       positional: mask ? (mask === 1 ? 'back' : mask === 2 ? 'front' : 'any') : null,
       positionalRate: mask && k.hitDmg ? k.posOk / k.hitDmg : null,
       apRate: k.hitDmg ? k.ap / k.hitDmg : null, fullBuffRate: k.hitDmg ? k.full / k.hitDmg : null,
-      isHyperAwakening: !!s.isHyperAwakening, big, firstCasts: times.slice(0, 3),
+      isHyperAwakening: !!s.isHyperAwakening, big, firstCasts: times.slice(0, 3), times,
+      // Rythme le plus rapide (10 % des écarts) : approche la recharge réelle, une fois l'identité, les gemmes,
+      // la Rapidité et l'Ark Passive pris en compte.
+      fastIntervalMs: quantile(iv, 0.1),
+      gemCooldown: s.gemCooldown || 0, gemDamage: s.gemDamage || 0,
+      unbuffedCasts: big && encounter.players.some(isSupport) ? castBuffs.filter(c => !c.ap || !c.brand) : [],
     });
     for (const f of ['hitDmg', 'ap', 'brand', 'identity', 'hat', 'full']) acc[f] += k[f];
     if (mask) { acc.posDmg += k.hitDmg; acc.posOk += k.posOk; }
@@ -202,13 +212,107 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
     combatPower: player.combatPower, dps: player.damageStats.dps || Math.round(totalDamage / (durationMs / 1000)),
     durationMs, downtimeMs: downMs, availableMs,
     deadMs, lostMs, sharedPauseMs, activity: 1 - lostMs / Math.max(1, availableMs - deadMs - sharedPauseMs),
-    longestGaps: gaps.sort((a, b) => b.lostMs - a.lostMs).slice(0, 6),
+    longestGaps: [...gaps].sort((a, b) => b.lostMs - a.lostMs).slice(0, 6),
+    deadWindows: dead,
+    // Périodes à ignorer pour juger le joueur : phases sans boss, temps à terre, pauses partagées.
+    excludedWindows: mergeWindows([...excluded, ...gaps.filter(g => g.shared).map(g => [g.from, g.to])].sort((x, y) => x[0] - y[0]), 0),
     deaths: player.damageStats.deaths || 0,
     apRate: r(acc.ap, acc.hitDmg), brandRate: r(acc.brand, acc.hitDmg), identityRate: r(acc.identity, acc.hitDmg),
     hatRate: r(acc.hat, acc.hitDmg), fullBuffRate: r(acc.full, acc.hitDmg),
     bigSkillFullBuffRate: r(acc.bigFull, acc.bigDmg),
     positionalShare: r(acc.posDmg, acc.hitDmg), positionalRate: r(acc.posOk, acc.posDmg),
-    skills, opener,
+    skills, opener, build: playerBuild(player), partySupport: partySupportOf(encounter, player),
+    supportDetails: isSupport(player) ? supportDetails(encounter, player, { buffSets, buffMeta, excluded }) : null,
+  };
+}
+
+// Support du groupe du joueur et sa couverture (pour faire la part entre le timing du DPS et celui du support).
+function partySupportOf(encounter, player) {
+  const party = Object.values(encounter.misc?.partyInfo || {}).find(p => p.includes(player.name));
+  const sup = party && encounter.players.find(p => party.includes(p.name) && isSupport(p) && p.name !== player.name);
+  return sup ? { name: sup.name, spec: sup.spec, coverage: sup.supportCoverage?.ap != null ? sup.supportCoverage : null } : null;
+}
+
+// Évolution : nœuds de stats du palier 0 (50 points par niveau). Gravures et nœuds d'Éclairage / de Bond tels quels.
+export const EVOLUTION_STATS = { 1010100: 'crit', 1010200: 'specialization', 1010300: 'domination', 1010400: 'swiftness', 1010500: 'endurance' };
+
+export function playerBuild(player) {
+  const ap = player.arkPassive || {};
+  const evo = { crit: 0, specialization: 0, swiftness: 0, domination: 0, endurance: 0 };
+  for (const n of ap.evolution || []) if (EVOLUTION_STATS[n.id]) evo[EVOLUTION_STATS[n.id]] = n.lv;
+  const nodes = {};
+  for (const tree of ['evolution', 'enlightenment', 'leap']) for (const n of ap[tree] || []) if (!EVOLUTION_STATS[n.id]) nodes[n.id] = n.lv;
+  return { evolution: evo, nodes, engravings: player.engravings || [] };
+}
+
+// Supports : chevauchement de leurs propres buffs (relancer un buff du même groupe encore actif gaspille la durée
+// restante) et moments où les DPS du groupe ont frappé sans le buff de PA ou la Marque.
+export const COVERAGE_GAP_MIN_MS = 2000;
+
+function supportDetails(encounter, player, { buffSets, buffMeta, excluded }) {
+  const party = Object.values(encounter.misc?.partyInfo || {}).find(p => p.includes(player.name)) || encounter.players.map(p => p.name);
+  const partyDps = encounter.players.filter(p => party.includes(p.name) && !isSupport(p));
+
+  const gapsOf = test => {
+    const hits = [];
+    for (const p of partyDps) for (const s of Object.values(p.skills)) for (const c of s.skillCastLog || []) for (const h of c.hits || []) {
+      if (h.damage > 0) hits.push([h.timestamp, test(h)]);
+    }
+    hits.sort((a, b) => a[0] - b[0]);
+    const out = [];
+    let start = null, last = null;
+    const close = () => {
+      if (start != null && last - start >= COVERAGE_GAP_MIN_MS) {
+        const missing = last - start - overlap(start, last, excluded);
+        if (missing >= COVERAGE_GAP_MIN_MS) out.push({ from: start, to: last, ms: missing });
+      }
+      start = null;
+    };
+    for (const [t, ok] of hits) {
+      if (!ok) { if (start == null) start = t; last = t; } else close();
+    }
+    close();
+    return out;
+  };
+  const apGaps = gapsOf(h => (h.buffedBy || []).some(b => buffSets.ap.has(b)));
+  const brandGaps = gapsOf(h => (h.debuffedBy || []).some(b => buffSets.brand.has(b)));
+
+  // Compétences du support qui posent un buff de PA ou la Marque, et durée de ce buff (tables du jeu).
+  const bySkill = new Map();
+  const collect = (map, kind, set) => {
+    for (const [id, b] of Object.entries(map || {})) {
+      const skillId = b.source?.skill?.id;
+      const d = buffMeta[id]?.d;
+      if (!set.has(+id) || !skillId || !(d > 0)) continue;
+      if (!bySkill.has(skillId) || bySkill.get(skillId).d < d) bySkill.set(skillId, { kind, d, buff: b.source.name });
+    }
+  };
+  collect(encounter.buffs, 'ap', buffSets.ap);
+  collect(encounter.debuffs, 'brand', buffSets.brand);
+
+  // Seulement le buff de PA : la Marque est réappliquée par beaucoup de coups, la relancer est normal.
+  const overlaps = { ap: [] };
+  for (const kind of ['ap']) {
+    const casts = [];
+    for (const s of Object.values(player.skills)) {
+      const info = bySkill.get(s.id) || bySkill.get(s.id - (s.id % 10));
+      if (info?.kind === kind) for (const c of s.skillCastLog || []) casts.push({ t: c.timestamp, d: info.d, name: s.name });
+    }
+    casts.sort((a, b) => a.t - b.t);
+    let until = 0, prevName = null;
+    for (const c of casts) {
+      const wasted = until - c.t;
+      if (wasted > 500) overlaps[kind].push({ t: c.t, name: c.name, previous: prevName, wastedMs: wasted });
+      until = c.t + c.d;
+      prevName = c.name;
+    }
+  }
+  const sum = (a, f) => a.reduce((t, x) => t + x[f], 0);
+  return {
+    partyDps: partyDps.map(p => p.name),
+    apGaps, apGapMs: sum(apGaps, 'ms'), brandGaps, brandGapMs: sum(brandGaps, 'ms'),
+    overlaps, apOverlapMs: sum(overlaps.ap, 'wastedMs'), apBuffCasts: overlaps.ap.length,
+    buffSkills: [...bySkill.entries()].map(([id, v]) => ({ id, ...v })),
   };
 }
 

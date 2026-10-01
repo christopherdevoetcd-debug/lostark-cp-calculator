@@ -44,12 +44,13 @@ export function loadEncounter(db, id) {
   // support_* : pour un support, part des dégâts des DPS de son groupe (pondérée par leurs dégâts) faite sous son buff
   // de PA, sa Marque, son identité et sa T (compute_support_buffs de LOA Logs, groupes à un seul support).
   const players = db.prepare(`SELECT name, class, class_id, spec, combat_power, gear_score, skills, damage_stats, skill_stats,
-      support_ap, support_brand, support_identity, support_hyper, rdps_damage_given
+      support_ap, support_brand, support_identity, support_hyper, rdps_damage_given, engravings, ark_passive_data
     FROM entity WHERE encounter_id = ? AND entity_type = 'PLAYER'`).all(id).map(r => ({
       name: r.name, className: r.class, classId: r.class_id, spec: r.spec || null,
       combatPower: r.combat_power, gearScore: r.gear_score,
       supportCoverage: { ap: r.support_ap, brand: r.support_brand, identity: r.support_identity, hat: r.support_hyper },
       rdpsGiven: r.rdps_damage_given || 0,
+      engravings: unpack(r.engravings) || [], arkPassive: unpack(r.ark_passive_data) || null,
       skills: unpack(r.skills) || {}, damageStats: unpack(r.damage_stats) || {}, skillStats: unpack(r.skill_stats) || {},
     }));
   return {

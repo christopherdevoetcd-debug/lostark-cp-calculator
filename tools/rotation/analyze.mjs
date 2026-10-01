@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openDb, listRaids, loadEncounter } from './db.mjs';
 import { analyzeEncounter, pickReference, scorePlayer } from './metrics.mjs';
+import { coachPlayer } from './coach.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -32,11 +33,13 @@ if (flag('--list')) {
 const id = +positional[0];
 if (!id) { console.error('Usage : analyze.mjs <id> [joueur] [--json] | --list [--player Nom] [--boss Texte]'); process.exit(1); }
 const enc = loadEncounter(db, id);
-const skillMeta = JSON.parse(readFileSync(path.join(HERE, '..', '..', 'data', 'rotation-skills.json'), 'utf8')).skills;
+const DATA = JSON.parse(readFileSync(path.join(HERE, '..', '..', 'data', 'rotation-skills.json'), 'utf8'));
+const skillMeta = DATA.skills;
 const refFile = opt('--ref', path.join(HERE, '..', 'samples', 'rotation-ref.json'));
-const refs = existsSync(refFile) ? JSON.parse(readFileSync(refFile, 'utf8')).refs : null;
+const refData = existsSync(refFile) ? JSON.parse(readFileSync(refFile, 'utf8')) : null;
+const refs = refData?.refs || null;
 
-const result = analyzeEncounter(enc, { skillMeta });
+const result = analyzeEncounter(enc, { skillMeta, buffMeta: DATA.buffs });
 const who = positional[1] || enc.localPlayer;
 for (const a of result.players) {
   const { ref, scope } = pickReference(refs, a.spec, enc.boss);
@@ -89,3 +92,18 @@ for (const s of a.skills.filter(s => (a.support ? s.casts > 0 && (scored.has(s.i
 for (const s of (a.score?.skillScores || []).filter(s => s.absent)) console.log(`${pad(s.name, 25)} absente (jouée par la plupart des ${a.spec} : ${num(s.refCpmMedian)} /min en médiane)`);
 
 console.log(`\nOuverture : ${a.opener.map(o => `${o.name} (${num(o.t / 1000)} s)`).join(' → ')}`);
+
+const lang = flag('--en') ? 'en' : 'fr';
+const advice = coachPlayer(a, pickReference(refs, a.spec, enc.boss).ref, refData?.builds?.[a.spec], { lang, arkPassiveNames: DATA.arkPassive, skillMeta });
+console.log(`\n${'='.repeat(20)} ${lang === 'en' ? 'HOW TO IMPROVE' : 'COMMENT PROGRESSER'} ${'='.repeat(20)}`);
+if (!advice.length) console.log(lang === 'en' ? 'Nothing stands out: you play like the best of your spec on this boss.' : 'Rien ne ressort : tu joues comme les meilleurs de ta spé sur ce boss.');
+const MAX_ADVICE = 5; // au-delà, trop d'un coup : les plus importants d'abord, le build à part
+const main = advice.filter(c => c.kind !== 'build'), shown = [...main.slice(0, MAX_ADVICE), ...advice.filter(c => c.kind === 'build')];
+shown.forEach((c, i) => {
+  console.log(`\n${i + 1}. ${c.title}${c.gainPct != null ? `  (≈ +${lang === 'en' ? c.gainPct.toFixed(1) + '%' : c.gainPct.toFixed(1).replace('.', ',') + ' %'} ${lang === 'en' ? 'damage' : 'de dégâts'})` : ''}`);
+  console.log(`   ${c.what}`);
+  console.log(`   ${c.why}`);
+  for (const h of c.how) console.log(`   → ${h}`);
+  for (const m of c.moments) console.log(`      • ${m.text}`);
+});
+if (main.length > MAX_ADVICE) console.log(`\n${lang === 'en' ? `…and ${main.length - MAX_ADVICE} smaller points: work on these first.` : `…et ${main.length - MAX_ADVICE} points moins importants : commence par ceux-là.`}`);
