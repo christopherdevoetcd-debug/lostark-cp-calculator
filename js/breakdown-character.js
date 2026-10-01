@@ -569,14 +569,98 @@ function extractCharacterCombatStatsDetails(c, isEn = false) {
   const crit = statOf(15), specStat = statOf(16), swift = statOf(18);
   const known = crit !== null && specStat !== null && swift !== null;
 
+  // Sources par stat (vérifié sur 70 profils) : Évolution palier 0 de l'Ark Passive (nœuds 1010100 Crit,
+  // 1010200 Spécialisation, 1010400 Rapidité, 50 pts par niveau, 40 niveaux pour tous), lignes du bracelet
+  // (index 15 / 16 / 18) ; le reste n'est pas détaillé par le profil. Arbre enregistré différent des stats
+  // (Ark Passive enregistré à la déconnexion) : reste négatif, pas de détail.
+  let sources = null;
+  if (known) {
+    const keys = { crit: 15, specStat: 16, swift: 18 };
+    const apNodes = { 1010100: 'crit', 1010200: 'specStat', 1010400: 'swift' };
+    const ap = { crit: 0, specStat: 0, swift: 0 }, bracelet = { crit: 0, specStat: 0, swift: 0 };
+    const evo = (loadout && loadout.arkPassive && Array.isArray(loadout.arkPassive.evolution)) ? loadout.arkPassive.evolution : [];
+    evo.forEach(n => { if (n && apNodes[n.id]) ap[apNodes[n.id]] += 50 * (Number(n.level) || 0); });
+    const br = (loadout && Array.isArray(loadout.items)) ? loadout.items.find(it => it && it.slot === 'bracelet') : null;
+    ((br && br.data && br.data.stats) || []).forEach(st => {
+      Object.keys(keys).forEach(k => { if (st.type === 2 && st.index === keys[k]) bracelet[k] += Number(st.value) || 0; });
+    });
+    const values = { crit, specStat, swift };
+    const other = {};
+    Object.keys(keys).forEach(k => { other[k] = values[k] - ap[k] - bracelet[k]; });
+    if (Object.values(other).every(v => v >= 0)) sources = { ap, bracelet, other };
+  }
+
   return {
     totalPts: Math.round(totalPts),
     bonusPct,
     swift: known ? swift : null,
     specStat: known ? specStat : null,
     crit: known ? crit : null,
+    sources,
     role
   };
+}
+
+// Écart stat par stat et par source (Ark Passive, bracelet, autres), lu sur les deux profils.
+function buildCombatStatsSourcesHtml(player, target, p, t, isEn) {
+  const title = `<div style="font-size:14px; font-weight:700; color:#E8E6DC; margin-bottom:8px;">${isEn ? 'Where the gap comes from, stat by stat' : 'D\'où vient l\'écart, stat par stat'}</div>`;
+  if (!p.sources || !t.sources) {
+    return `<div style="margin-top: 14px;">${title}<div class="acc-breakdown-subtitle">${isEn
+      ? 'Source detail unavailable: a profile has no combat stats, or its saved Ark Passive tree does not match its stats (the tree is only saved when the character logs out).'
+      : 'Détail par source indisponible : un profil n\'a pas ses stats de combat, ou son arbre d\'Ark Passive enregistré ne correspond pas à ses stats (l\'arbre n\'est enregistré qu\'à la déconnexion du personnage).'}</div></div>`;
+  }
+  const stats = [
+    ['crit', isEn ? 'Crit' : 'Critique'],
+    ['specStat', isEn ? 'Specialization' : 'Spécialisation'],
+    ['swift', isEn ? 'Swiftness' : 'Rapidité']
+  ];
+  const srcs = [
+    ['ap', isEn ? 'Ark Passive (Evolution tier 0)' : 'Ark Passive (Évolution palier 0)'],
+    ['bracelet', isEn ? 'Bracelet' : 'Bracelet'],
+    ['other', isEn ? 'Other sources' : 'Autres sources']
+  ];
+  const signed = v => `${v > 0 ? '+' : ''}${formatNumber(v)}`;
+  const cell = (pv, tv) => `${formatNumber(pv)} → ${formatNumber(tv)}${tv !== pv ? ` <span class="col-cp-gain">(${signed(tv - pv)})</span>` : ''}`;
+  const rows = stats.map(([k, label]) => `
+              <tr>
+                <td><strong>${label}</strong></td>
+                ${srcs.map(([src]) => `<td>${cell(p.sources[src][k], t.sources[src][k])}</td>`).join('')}
+                <td class="col-cp-gain" style="text-align:right;"><strong>${signed(t[k] - p[k])} pts</strong></td>
+              </tr>`).join('');
+  const srcTotal = (c, src) => stats.reduce((sum, [k]) => sum + c.sources[src][k], 0);
+  const totals = srcs.map(([src]) => `<td><strong>${cell(srcTotal(p, src), srcTotal(t, src))}</strong></td>`).join('');
+  const dBr = srcTotal(t, 'bracelet') - srcTotal(p, 'bracelet');
+  const dOther = srcTotal(t, 'other') - srcTotal(p, 'other');
+  const dAp = srcTotal(t, 'ap') - srcTotal(p, 'ap');
+  const pName = escapeHtml(player.name || (isEn ? 'you' : 'toi'));
+  const tName = escapeHtml((target && target.name) || (isEn ? 'the reference' : 'la référence'));
+  const note = isEn
+    ? `Ark Passive gives the same number of points to everyone (40 Evolution tier 0 levels × 50 pts${dAp ? `; here ${signed(dAp)} pts, a tree not fully spent` : ''}): only the split between Crit, Specialization and Swiftness changes, it is a build choice. The total gap comes from the bracelet (${signed(dBr)} pts) and from other sources (${signed(dOther)} pts), which the lostark.bible profile does not detail. Values: ${pName} → ${tName}.`
+    : `L'Ark Passive donne le même nombre de points à tout le monde (40 niveaux d'Évolution palier 0 × 50 pts${dAp ? ` ; ici ${signed(dAp)} pts, un arbre pas entièrement dépensé` : ''}) : seule la répartition entre Critique, Spécialisation et Rapidité change, c'est un choix de build. L'écart de total vient du bracelet (${signed(dBr)} pts) et des autres sources (${signed(dOther)} pts), que le profil lostark.bible ne détaille pas. Valeurs : ${pName} → ${tName}.`;
+  return `
+        <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
+          ${title}
+          <table class="astrogems-compare-table">
+            <thead>
+              <tr>
+                <th>${isEn ? 'Stat' : 'Stat'}</th>
+                ${srcs.map(([, label]) => `<th>${label}</th>`).join('')}
+                <th style="text-align:right;">${isEn ? 'Gap' : 'Écart'}</th>
+              </tr>
+            </thead>
+            <tbody>${rows}
+            </tbody>
+            <tfoot>
+              <tr class="row-total">
+                <td><strong>Total</strong></td>
+                ${totals}
+                <td class="col-cp-gain total" style="text-align:right;"><strong>${signed(t.totalPts - p.totalPts)} pts</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="acc-breakdown-subtitle" style="margin-top:8px;">${note}</div>
+        </div>
+`;
 }
 
 function buildBaseAtkBreakdownHtml(player, target, cpImpact, isEn) {
@@ -1436,37 +1520,8 @@ function buildCombatStatsBreakdownHtml(player, target, cpImpact, isEn) {
           </table>
         </div>
 
-        <!-- 3 Raisons de l'écart de points -->
-        <div style="margin-top: 14px;">
-          <div style="font-size:14px; font-weight:700; color:#E8E6DC; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-            <span></span> <span>${isEn ? 'Why does the reference profile have +' + deltaPts + ' more Combat Stat points?' : 'Pourquoi la référence a-t-elle +' + deltaPts + ' points de Combat Stats en plus ?'}</span>
-          </div>
-          <div class="stats-factor-grid">
-            <div class="stats-factor-card">
-              <strong>${isEn ? 'T4 Accessory Quality (Neck/Ear/Ring)' : 'Qualité des 5 Bijoux T4 (Collier/Boucles/Anneaux)'}</strong>
-              <span>${isEn ? 'Accessory stats directly scale with Quality (0-100). High quality (90-100) vs mid quality (65-75) yields ~70-110 extra combat stat points across all 5 pieces.' : 'Les stats des bijoux sont indexées sur la Qualité (0-100). Des bijoux qualité 90-100 vs qualité 65-75 apportent ~70 à 110 points de combat stat en plus sur les 5 bijoux.'}</span>
-            </div>
-            <div class="stats-factor-card">
-              <strong>${isEn ? 'T4 Bracelet Stat Rolls' : 'Rolls de Stats sur Bracelet T4'}</strong>
-              <span>${isEn ? 'A top-tier bracelet with double high combat stat rolls (+100 to +120 Swift/Spec) provides an immediate +40-60 point lead over a bracelet with mid rolls.' : 'Un bracelet avec double roll de stats de combat élevées (+100 à +120 Rapide/Spé) creuse une avance immédiate de 40 à 60 points sur un bracelet moyen.'}</span>
-            </div>
-            <div class="stats-factor-card">
-              <strong>${isEn ? 'Permanent Stat Potions (Codex)' : 'Potions de Combat Permanentes (Codex)'}</strong>
-              <span>${isEn ? 'Adventurer\'s Tome completion (80-90% brackets), Giant Hearts, and Una reputations grant ~30-50 permanent combat stat points across your roster.' : 'Les Tomes d\'Aventurier (paliers 80-90%), Cœurs de Géants et réputations offrent ~30 à 50 points de combat stats permanents sur le compte.'}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recommandation Finale -->
-        <div class="astrogems-verdict-banner" style="margin-top:14px; border-left-color:#8CC084;">
-          <span class="verdict-icon"></span>
-          <div class="verdict-content">
-            <strong style="color:#8CC084;">${isEn ? 'Optimization Recommendation:' : 'Recommandation d\'Optimisation :'}</strong>
-            <span>${isEn
-              ? `To bridge the +${cpImpact} CP gap: prioritize acquiring high-quality (85-100) T4 accessories on your main stats (Swiftness/Spec), roll a bracelet with dual high combat stat lines, and verify missing permanent combat stat potions in your Codex (Alt+D).`
-              : `Pour combler les +${cpImpact} CP d'écart : viser des bijoux T4 de haute qualité (85 à 100) sur vos stats maîtresses (Rapidité / Spécialisation), chercher un bracelet avec double roll de stats de combat élevées, et vérifier les potions permanentes de combat stats non validées dans votre Codex (Alt+D).`}</span>
-          </div>
-        </div>
+        <!-- Écart réel stat par stat, par source -->
+        ${buildCombatStatsSourcesHtml(player, target, p, t, isEn)}
       </div>
     `;
 }
