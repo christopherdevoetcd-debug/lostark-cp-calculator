@@ -1,0 +1,651 @@
+{
+ "generatedAt": "2026-10-01T12:07:21.837Z",
+ "sources": {
+  "official": "https://m-lostark.game.onstove.com/News/GMNote/Views/1225",
+  "inven": "https://www.inven.co.kr/board/lostark/6271/3790814",
+  "estimate": [
+   "https://www.inven.co.kr/board/lostark/4821/110391",
+   "https://arca.live/b/lostark/178285665"
+  ],
+  "apStep": "https://www.inven.co.kr/board/lostark/4821/110391",
+  "raid": "https://www.loa.kakao.gg/guides/로스트아크-완갑-효율-공략-10강20강25강-강화-우선순위와-준비-재료",
+  "limitItem": "https://lostark.inven.co.kr/dataninfo/item/?code=52810002"
+ },
+ "note": "levels[N] = brassard +N ; steps[N] = passage de +N à +N+1, taux en 0,01 % ; src = official | inven | estimate",
+ "anchorLevel": 21,
+ "mainStatMult": 1.09,
+ "limitBreak": {
+  "10": {
+   "grade": "legendary",
+   "remnant": 200,
+   "deathHand": 100
+  },
+  "15": {
+   "grade": "relic",
+   "remnant": 240,
+   "deathHand": 120
+  },
+  "20": {
+   "grade": "ancient",
+   "remnant": null,
+   "deathHand": 150
+  }
+ },
+ "raidGates": {
+  "normal": 1750,
+  "hard": 1770,
+  "nightmare": 1780
+ },
+ "levels": [
+  {
+   "mainStat": 29883,
+   "weaponPower": 12399,
+   "vitality": 3337,
+   "flatAp": 3412,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 30666,
+   "weaponPower": 12724,
+   "vitality": 3389,
+   "flatAp": 3501,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 31476,
+   "weaponPower": 13059,
+   "vitality": 3442,
+   "flatAp": 3594,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 32314,
+   "weaponPower": 13407,
+   "vitality": 3496,
+   "flatAp": 3690,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 33181,
+   "weaponPower": 13766,
+   "vitality": 3551,
+   "flatAp": 3789,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 34079,
+   "weaponPower": 14139,
+   "vitality": 3607,
+   "flatAp": 3891,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 35009,
+   "weaponPower": 14524,
+   "vitality": 3665,
+   "flatAp": 3997,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 35971,
+   "weaponPower": 14923,
+   "vitality": 3723,
+   "flatAp": 4107,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 36966,
+   "weaponPower": 15336,
+   "vitality": 3782,
+   "flatAp": 4221,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 37997,
+   "weaponPower": 15763,
+   "vitality": 3842,
+   "flatAp": 4338,
+   "apPct": 0,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 39063,
+   "weaponPower": 16205,
+   "vitality": 3904,
+   "flatAp": 4460,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 40167,
+   "weaponPower": 16663,
+   "vitality": 3966,
+   "flatAp": 4586,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 41310,
+   "weaponPower": 17136,
+   "vitality": 4030,
+   "flatAp": 4716,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 42492,
+   "weaponPower": 17626,
+   "vitality": 4094,
+   "flatAp": 4851,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 43716,
+   "weaponPower": 18134,
+   "vitality": 4160,
+   "flatAp": 4991,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 44982,
+   "weaponPower": 18659,
+   "vitality": 4227,
+   "flatAp": 5136,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 46294,
+   "weaponPower": 19203,
+   "vitality": 4295,
+   "flatAp": 5285,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 47452,
+   "weaponPower": 19683,
+   "vitality": 4355,
+   "flatAp": 5417,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 48639,
+   "weaponPower": 20175,
+   "vitality": 4415,
+   "flatAp": 5553,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 49856,
+   "weaponPower": 20679,
+   "vitality": 4476,
+   "flatAp": 5692,
+   "apPct": 1,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 51103,
+   "weaponPower": 21196,
+   "vitality": 4537,
+   "flatAp": 5834,
+   "apPct": 2,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 52381,
+   "weaponPower": 21726,
+   "vitality": 4600,
+   "flatAp": 5980,
+   "apPct": 2,
+   "src": "inven"
+  },
+  {
+   "mainStat": 53691,
+   "weaponPower": 22269,
+   "vitality": 4664,
+   "flatAp": 6130,
+   "apPct": 2,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 55034,
+   "weaponPower": 22826,
+   "vitality": 4728,
+   "flatAp": 6283,
+   "apPct": 2,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 56410,
+   "weaponPower": 23396,
+   "vitality": 4793,
+   "flatAp": 6440,
+   "apPct": 2,
+   "src": "estimate"
+  },
+  {
+   "mainStat": 57821,
+   "weaponPower": 23981,
+   "vitality": 4859,
+   "flatAp": 6601,
+   "apPct": 2,
+   "src": "estimate"
+  }
+ ],
+ "steps": [
+  {
+   "success": 1500,
+   "failBonus": 150,
+   "failMax": 1500,
+   "threshold": 21500,
+   "gold": 5200,
+   "silver": 80000,
+   "shards": 14500,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 600,
+    "destiny-crystallized-guardian-stone": 1800,
+    "great-destiny-leapstone": 30,
+    "superior-abidos-fusion-material": 22
+   },
+   "src": "official"
+  },
+  {
+   "success": 1500,
+   "failBonus": 150,
+   "failMax": 1500,
+   "threshold": 21500,
+   "gold": 5417,
+   "silver": 80000,
+   "shards": 14984,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 777,
+    "destiny-crystallized-guardian-stone": 2348,
+    "great-destiny-leapstone": 35,
+    "superior-abidos-fusion-material": 22
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1500,
+   "failBonus": 150,
+   "failMax": 1500,
+   "threshold": 21500,
+   "gold": 5633,
+   "silver": 80000,
+   "shards": 15467,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 955,
+    "destiny-crystallized-guardian-stone": 2896,
+    "great-destiny-leapstone": 37,
+    "superior-abidos-fusion-material": 22
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1500,
+   "failBonus": 150,
+   "failMax": 1500,
+   "threshold": 21500,
+   "gold": 6175,
+   "silver": 80000,
+   "shards": 15951,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 1132,
+    "destiny-crystallized-guardian-stone": 3443,
+    "great-destiny-leapstone": 42,
+    "superior-abidos-fusion-material": 31
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1500,
+   "failBonus": 150,
+   "failMax": 1500,
+   "threshold": 21500,
+   "gold": 6717,
+   "silver": 80000,
+   "shards": 16918,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 1309,
+    "destiny-crystallized-guardian-stone": 3991,
+    "great-destiny-leapstone": 42,
+    "superior-abidos-fusion-material": 31
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1000,
+   "failBonus": 100,
+   "failMax": 1000,
+   "threshold": 21500,
+   "gold": 7367,
+   "silver": 80000,
+   "shards": 17886,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 1405,
+    "destiny-crystallized-guardian-stone": 4304,
+    "great-destiny-leapstone": 42,
+    "superior-abidos-fusion-material": 31
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1000,
+   "failBonus": 100,
+   "failMax": 1000,
+   "threshold": 21500,
+   "gold": 8125,
+   "silver": 88000,
+   "shards": 18853,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 1582,
+    "destiny-crystallized-guardian-stone": 4852,
+    "great-destiny-leapstone": 46,
+    "superior-abidos-fusion-material": 42
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1000,
+   "failBonus": 100,
+   "failMax": 1000,
+   "threshold": 21500,
+   "gold": 8992,
+   "silver": 88000,
+   "shards": 20304,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 1759,
+    "destiny-crystallized-guardian-stone": 5400,
+    "great-destiny-leapstone": 46,
+    "superior-abidos-fusion-material": 42
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1000,
+   "failBonus": 100,
+   "failMax": 1000,
+   "threshold": 21500,
+   "gold": 10075,
+   "silver": 88000,
+   "shards": 21271,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 1855,
+    "destiny-crystallized-guardian-stone": 5713,
+    "great-destiny-leapstone": 53,
+    "superior-abidos-fusion-material": 53
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 1000,
+   "failBonus": 100,
+   "failMax": 1000,
+   "threshold": 21500,
+   "gold": 11267,
+   "silver": 88000,
+   "shards": 22732,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 2032,
+    "destiny-crystallized-guardian-stone": 6339,
+    "great-destiny-leapstone": 53,
+    "superior-abidos-fusion-material": 53
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 500,
+   "failBonus": 50,
+   "failMax": 500,
+   "threshold": 21500,
+   "gold": 12675,
+   "silver": 88000,
+   "shards": 24194,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 2223,
+    "destiny-crystallized-guardian-stone": 6965,
+    "great-destiny-leapstone": 53,
+    "superior-abidos-fusion-material": 64
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 500,
+   "failBonus": 50,
+   "failMax": 500,
+   "threshold": 21500,
+   "gold": 14083,
+   "silver": 88000,
+   "shards": 25655,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 2318,
+    "destiny-crystallized-guardian-stone": 7278,
+    "great-destiny-leapstone": 65,
+    "superior-abidos-fusion-material": 64
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 500,
+   "failBonus": 50,
+   "failMax": 500,
+   "threshold": 21500,
+   "gold": 15600,
+   "silver": 88000,
+   "shards": 28416,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 2577,
+    "destiny-crystallized-guardian-stone": 8061,
+    "great-destiny-leapstone": 72,
+    "superior-abidos-fusion-material": 73
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 500,
+   "failBonus": 50,
+   "failMax": 500,
+   "threshold": 21500,
+   "gold": 17117,
+   "silver": 88000,
+   "shards": 31177,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 2836,
+    "destiny-crystallized-guardian-stone": 8765,
+    "great-destiny-leapstone": 78,
+    "superior-abidos-fusion-material": 79
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 500,
+   "failBonus": 50,
+   "failMax": 500,
+   "threshold": 21500,
+   "gold": 18742,
+   "silver": 88000,
+   "shards": 34139,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 3095,
+    "destiny-crystallized-guardian-stone": 9704,
+    "great-destiny-leapstone": 85,
+    "superior-abidos-fusion-material": 88
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 300,
+   "failBonus": 30,
+   "failMax": 300,
+   "threshold": 21500,
+   "gold": 20258,
+   "silver": 88000,
+   "shards": 36910,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 3355,
+    "destiny-crystallized-guardian-stone": 10409,
+    "great-destiny-leapstone": 92,
+    "superior-abidos-fusion-material": 95
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 300,
+   "failBonus": 30,
+   "failMax": 300,
+   "threshold": 21500,
+   "gold": 22100,
+   "silver": 104000,
+   "shards": 40265,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 3668,
+    "destiny-crystallized-guardian-stone": 11348,
+    "great-destiny-leapstone": 104,
+    "superior-abidos-fusion-material": 101
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 300,
+   "failBonus": 30,
+   "failMax": 300,
+   "threshold": 21500,
+   "gold": 23833,
+   "silver": 104000,
+   "shards": 43419,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 3955,
+    "destiny-crystallized-guardian-stone": 12209,
+    "great-destiny-leapstone": 111,
+    "superior-abidos-fusion-material": 112
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 300,
+   "failBonus": 30,
+   "failMax": 300,
+   "threshold": 21500,
+   "gold": 25675,
+   "silver": 104000,
+   "shards": 46775,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 4241,
+    "destiny-crystallized-guardian-stone": 13304,
+    "great-destiny-leapstone": 120,
+    "superior-abidos-fusion-material": 119
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 300,
+   "failBonus": 30,
+   "failMax": 300,
+   "threshold": 21500,
+   "gold": 27517,
+   "silver": 144000,
+   "shards": 50130,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 4555,
+    "destiny-crystallized-guardian-stone": 14165,
+    "great-destiny-leapstone": 127,
+    "superior-abidos-fusion-material": 130
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 150,
+   "failBonus": 15,
+   "failMax": 150,
+   "threshold": 21500,
+   "gold": 29467,
+   "silver": 144000,
+   "shards": 53687,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 4868,
+    "destiny-crystallized-guardian-stone": 15261,
+    "great-destiny-leapstone": 138,
+    "superior-abidos-fusion-material": 136
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 150,
+   "failBonus": 15,
+   "failMax": 150,
+   "threshold": 21500,
+   "gold": 31417,
+   "silver": 192000,
+   "shards": 57234,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 5182,
+    "destiny-crystallized-guardian-stone": 16278,
+    "great-destiny-leapstone": 145,
+    "superior-abidos-fusion-material": 147
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 150,
+   "failBonus": 15,
+   "failMax": 150,
+   "threshold": 21500,
+   "gold": 33258,
+   "silver": 192000,
+   "shards": 60600,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 5495,
+    "destiny-crystallized-guardian-stone": 17217,
+    "great-destiny-leapstone": 157,
+    "superior-abidos-fusion-material": 154
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 150,
+   "failBonus": 15,
+   "failMax": 150,
+   "threshold": 21500,
+   "gold": 35208,
+   "silver": 240000,
+   "shards": 64147,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 5809,
+    "destiny-crystallized-guardian-stone": 18235,
+    "great-destiny-leapstone": 164,
+    "superior-abidos-fusion-material": 165
+   },
+   "src": "estimate"
+  },
+  {
+   "success": 150,
+   "failBonus": 15,
+   "failMax": 150,
+   "threshold": 21500,
+   "gold": 37050,
+   "silver": 240000,
+   "shards": 67512,
+   "mats": {
+    "destiny-crystallized-destruction-stone": 6136,
+    "destiny-crystallized-guardian-stone": 19174,
+    "great-destiny-leapstone": 175,
+    "superior-abidos-fusion-material": 176
+   },
+   "src": "estimate"
+  }
+ ]
+}
