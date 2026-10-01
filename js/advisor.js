@@ -160,7 +160,7 @@ function buildGpdRoadmap(charObj, isSupport, isEn, masterRows, goal) {
  * - gemmes : partie type 22 (125 × niveau) et % de PA (supportGemCpDelta) ;
  * - pierre : valeur de la gravure dans la table support (+20 au code par niveau de pierre) et PA de base +1,5 % ;
  * - bijoux (parties 15 / 17), bracelet (19 / 20), astrogemmes (29 / 31) : parties réelles du système au prorata
- *   du buff Loseii actuel du système, soit le rapport CP / buff propre au personnage.
+ *   du buff Loseii actuel du système, soit le rapport CP / buff propre au personnage ; cœurs bornés à leur dernier palier.
  * Repli (affinage avancé, système sans partie lisible) : rapport CP / buff de l'affinage de la même famille.
  * null sans Battle Point.
  */
@@ -176,6 +176,30 @@ function supportGpdCpModel(charObj) {
     const prod = offProd(types);
     if (!(cur > 0) || !(prod > 1)) return null;
     return br.A * ((1 + (prod - 1) * (cur + gain) / cur) / prod - 1);
+  };
+  // Astrogemmes : options support (partie 31) au prorata du buff ; cœurs (partie 29) au prorata aussi, mais bornés au
+  // CP qui leur reste jusqu'à leur dernier palier (10 / 14 / 17 / 18 / 19 / 20 points, selon le rang du cœur) : un cœur
+  // à 20 points ne rapporte plus rien, mieux tailler ne change que les options.
+  const coreRoom = () => {
+    const T = bpSupportTable && bpSupportTable[29];
+    const cores = (charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.arkGridCores) || [];
+    if (!T || !cores.length) return null;
+    return cores.reduce((m, c) => {
+      const rows = T.filter(v => v[0] === c.id && Number.isFinite(v[2]));
+      if (!rows.length) return m;
+      const points = (c.gems || []).reduce((sum, g) => sum + (g.corePoints || 0), 0);
+      let cur = 0;
+      [10, 14, 17, 18, 19, 20].forEach((st, i) => { const r = rows.find(v => v[1] === i + 1); if (points >= st && r) cur = r[2]; });
+      const max = Math.max(...rows.map(v => v[2]));
+      return m * (1 + max / 1e4) / (1 + cur / 1e4);
+    }, 1);
+  };
+  const astroCp = (cur, gain) => {
+    if (!(cur > 0)) return null;
+    const share = types => { const prod = offProd(types); return br.A * (prod - 1) * (gain / cur) / prod; };
+    const room = coreRoom();
+    const cores = share([29]);
+    return share([31]) + (room !== null ? Math.min(cores, br.A * (room - 1)) : cores);
   };
   const stoneCp = () => {
     const up = getAbilityStoneUpgrade(charObj, true);
@@ -195,7 +219,7 @@ function supportGpdCpModel(charObj) {
     }
     return cp > 0 ? cp : null;
   };
-  return { br, linesCp, stoneCp };
+  return { br, linesCp, astroCp, stoneCp };
 }
 
 function supportGpdRowCp(charObj, model, d, factors) {
@@ -215,7 +239,7 @@ function supportGpdRowCp(charObj, model, d, factors) {
   else if (id === 'dyn_brac') cp = model.linesCp([19, 20], m.curTotal, d.gainVal);
   else if (id.startsWith('dyn_astro_')) {
     const cur = astrogemGridDamage(true, { mean: m.mean, n: m.n });
-    cp = cur !== null ? model.linesCp([29, 31], cur, d.gainVal) : null;
+    cp = cur !== null ? model.astroCp(cur, d.gainVal) : null;
   }
   if (Number.isFinite(cp) && cp > 0) return cp;
   // Repli : rapport CP / buff de l'affinage (même famille pour l'avancé), sinon le premier disponible
