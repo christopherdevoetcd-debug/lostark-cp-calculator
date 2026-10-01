@@ -52,6 +52,7 @@ async function initApp() {
     renderBenchmarkTab();
     renderMarketTab();
     updateBelgardinView();
+    renderSavedRosterManager();
   });
 
   // Initialisation des modules

@@ -76,6 +76,8 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    - `js/app-state.js` référence des éléments du DOM dans l'objet `dom` initialisé au chargement.
    - Ne jamais supprimer un identifiant DOM sans vérifier toutes ses références dans `js/`.
    - Toutes les fonctions clés appelées par les gestionnaires d'événements ou inline HTML sont exportées sur `window.__nomDeFonction`.
+   - Langue par défaut : anglais (`getStoredLang`). Tout texte visible passe par une clé `data-i18n` (+ `data-i18n-placeholder`) d'i18n.js, ou par `trLang(fr, en)` (js/oauth-roster.js) / `isEnLang()` dans le JS ; jamais de texte en dur dans une seule langue.
+   - OAuth lostark.bible : client choisi automatiquement (`getOAuthClientId` : production sur le site public, développement sur localhost / réseau local), pas de sélecteur dans la modale.
 2. **Gestion du Cache & Roster** :
    - Le roster actif de l'utilisateur est stocké dans `localStorage.getItem('lostark_user_roster')`.
    - `getUserRoster()` guérit automatiquement les rôles obsolètes en appelant `detectCharacterRole(c)`.

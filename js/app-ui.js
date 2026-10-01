@@ -383,7 +383,7 @@ function bindEvents() {
         if (dom.importStatus) {
           dom.importStatus.className = 'modal-status error';
           dom.importStatus.style.display = 'block';
-          dom.importStatus.textContent = 'Veuillez renseigner le pseudo de votre personnage.';
+          dom.importStatus.textContent = trLang('Renseigne le pseudo de ton personnage.', 'Please enter your character name.');
         }
         return;
       }
@@ -403,7 +403,7 @@ function bindEvents() {
       } catch (e) {
         if (dom.importStatus) {
           dom.importStatus.className = 'modal-status error';
-          dom.importStatus.textContent = 'Format JSON invalide. Assure-toi de copier l\'intégralité du texte.';
+          dom.importStatus.textContent = trLang('Format JSON invalide. Assure-toi de copier l\'intégralité du texte.', 'Invalid JSON. Make sure you copied the whole text.');
         }
       }
     });
@@ -414,46 +414,7 @@ function bindEvents() {
     dom.btnOAuthLogin.addEventListener('click', () => startOAuthFlow());
   }
 
-  // Toggle Environnement OAuth (Prod vs Dev)
-  const btnEnvProd = document.getElementById('btnOAuthEnvProd');
-  const btnEnvDev = document.getElementById('btnOAuthEnvDev');
-  const uriPreview = document.getElementById('oauthRedirectUriPreview');
-  const btnCopyUri = document.getElementById('btnCopyRedirectUri');
-
-  if (uriPreview) {
-    uriPreview.textContent = getOAuthRedirectUri();
-  }
-
-  if (btnCopyUri) {
-    btnCopyUri.addEventListener('click', () => {
-      const uri = getOAuthRedirectUri();
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(uri).then(() => {
-          btnCopyUri.textContent = 'Copié.';
-          setTimeout(() => { btnCopyUri.textContent = 'Copier'; }, 2000);
-        });
-      }
-    });
-  }
-
-  function syncOAuthEnvButtons() {
-    const currentId = getOAuthClientId();
-    const isDev = (currentId === OAUTH_CONFIG.devClientId);
-    if (btnEnvProd) btnEnvProd.classList.toggle('active', !isDev);
-    if (btnEnvDev) btnEnvDev.classList.toggle('active', isDev);
-  }
-
-  if (btnEnvProd && btnEnvDev) {
-    syncOAuthEnvButtons();
-    btnEnvProd.addEventListener('click', () => {
-      selectedOAuthEnv = 'prod';
-      syncOAuthEnvButtons();
-    });
-    btnEnvDev.addEventListener('click', () => {
-      selectedOAuthEnv = 'dev';
-      syncOAuthEnvButtons();
-    });
-  }
+  // Client OAuth choisi automatiquement (getOAuthClientId : production en ligne, développement sur le réseau local)
 
   if (dom.btnOAuthRefresh) {
     dom.btnOAuthRefresh.addEventListener('click', () => {
@@ -557,12 +518,12 @@ function initWelcomeModal() {
       const loaded = await fetchBibleProfile(region, name, true);
       if (loaded) {
         closeModal();
-        showToast(`${loaded.name} (${loaded.className} ${loaded.ilvl.toFixed(1)}) importé avec succès.`);
+        showToast(`${loaded.name} (${loaded.className} ${loaded.ilvl.toFixed(1)}) ${trLang('importé', 'imported')}.`);
       } else {
         if (statusEl) {
           statusEl.className = 'modal-status error';
           statusEl.style.display = 'block';
-          statusEl.innerHTML = `Personnage <strong>${escapeHtml(name)}</strong> introuvable sur lostark.bible (${escapeHtml(region)}). Vérifiez l'orthographe ou essayez une suggestion.`;
+          statusEl.innerHTML = trLang(`Personnage <strong>${escapeHtml(name)}</strong> introuvable sur lostark.bible (${escapeHtml(region)}). Vérifie l'orthographe ou essaie une suggestion.`, `Character <strong>${escapeHtml(name)}</strong> not found on lostark.bible (${escapeHtml(region)}). Check the spelling or try a suggestion.`);
         }
       }
     });

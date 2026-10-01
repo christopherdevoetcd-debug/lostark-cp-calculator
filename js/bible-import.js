@@ -861,7 +861,7 @@ async function fetchBibleProfile(region, name, autoAdd = null) {
   if (statusEl) {
     statusEl.className = 'modal-status info';
     statusEl.style.display = 'block';
-    statusEl.innerHTML = `Interrogation de <strong>${escapeHtml(cleanName)} (${escapeHtml(region.toUpperCase())})</strong> en cours...`;
+    statusEl.innerHTML = trLang(`Interrogation de <strong>${escapeHtml(cleanName)} (${escapeHtml(region.toUpperCase())})</strong> en cours…`, `Fetching <strong>${escapeHtml(cleanName)} (${escapeHtml(region.toUpperCase())})</strong>…`);
   }
 
   const reg = region.toUpperCase();
@@ -891,9 +891,13 @@ async function fetchBibleProfile(region, name, autoAdd = null) {
     console.warn('fetchBibleProfile error:', err);
     if (statusEl) {
       statusEl.className = 'modal-status error';
-      statusEl.innerHTML = `<strong>Impossible d'interroger lostark.bible pour ${escapeHtml(cleanName)} :</strong><br>
-        1. Vérifiez l'orthographe exacte du pseudo et la région (${escapeHtml(reg)}).<br>
-        2. Option de secours : ouvrez <a href="${escapeHtml(directUrl)}" target="_blank" rel="noopener noreferrer" style="color:#E8E6DC; text-decoration:underline;">ce lien</a>, copiez tout le texte JSON et collez-le dans <strong>Option manuelle</strong> ci-dessous.`;
+      const link = `<a href="${escapeHtml(directUrl)}" target="_blank" rel="noopener noreferrer" style="color:#E8E6DC; text-decoration:underline;">${trLang('ce lien', 'this link')}</a>`;
+      statusEl.innerHTML = trLang(`<strong>Impossible d'interroger lostark.bible pour ${escapeHtml(cleanName)} :</strong><br>
+        1. Vérifie l'orthographe exacte du pseudo et la région (${escapeHtml(reg)}).<br>
+        2. Option de secours : ouvre ${link}, copie tout le texte JSON et colle-le dans <strong>Option manuelle</strong> ci-dessous.`,
+        `<strong>Could not reach lostark.bible for ${escapeHtml(cleanName)}:</strong><br>
+        1. Check the exact spelling of the name and the region (${escapeHtml(reg)}).<br>
+        2. Fallback: open ${link}, copy all the JSON text and paste it in <strong>Manual option</strong> below.`);
     }
     return null;
   }
@@ -919,7 +923,7 @@ function applyLoadedProfile(json, characterName = null, region = 'CE', autoAddTo
   if (!profile) {
     if (statusEl) {
       statusEl.className = 'modal-status error';
-      statusEl.textContent = 'Données de profil introuvables ou format de raid invalide.';
+      statusEl.textContent = trLang('Données de profil introuvables ou format de raid invalide.', 'Profile data not found or invalid raid format.');
     }
     return null;
   }
@@ -1012,8 +1016,8 @@ function applyLoadedProfile(json, characterName = null, region = 'CE', autoAddTo
 
   if (statusEl) {
     statusEl.className = 'modal-status success';
-    statusEl.innerHTML = `<strong>${escapeHtml(charObj.name)}</strong> (${escapeHtml(charObj.className)} ${charObj.ilvl.toFixed(1)}) chargé avec succès.<br>
-      Combat Power : <strong>${formatNumber(charObj.cp)} CP</strong> • Portrait officiel Lost Ark lié.`;
+    statusEl.innerHTML = `<strong>${escapeHtml(charObj.name)}</strong> (${escapeHtml(charObj.className)} ${charObj.ilvl.toFixed(1)}) ${trLang('chargé', 'loaded')}.<br>
+      Combat Power : <strong>${formatNumber(charObj.cp)} CP</strong>`;
   }
 
   // Basculer sur l'onglet Moteur Canonique si on est dans la page principale

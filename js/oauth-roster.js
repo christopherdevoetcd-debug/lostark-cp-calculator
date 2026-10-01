@@ -2,16 +2,15 @@
 // Scripts classiques de js/ chargés dans l'ordre d'index.html, qui partagent leurs déclarations de premier niveau.
 'use strict';
 
+// Texte selon la langue de l'interface (anglais par défaut, i18n.js)
+const trLang = (fr, en) => (isEnLang() ? en : fr);
+
 // --- 4c. INTÉGRATION OFFICIELLE OAUTH 2.0 PKCE (LOSTARK.BIBLE) ---
 
 
 
-let selectedOAuthEnv = 'auto'; // 'auto' | 'prod' | 'dev'
-
+// Client OAuth : production sur le site public ; développement (seul enregistré pour ces adresses) sur le réseau local
 function getOAuthClientId() {
-  if (selectedOAuthEnv === 'dev') return OAUTH_CONFIG.devClientId;
-  if (selectedOAuthEnv === 'prod') return OAUTH_CONFIG.prodClientId;
-
   const host = (window.location && window.location.hostname) || '';
   // Sur localhost, 127.0.0.1 ou IP LAN, basculer par défaut sur devClientId
   if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local')) {
@@ -162,7 +161,7 @@ async function startOAuthFlow() {
     if (dom.importStatus) {
       dom.importStatus.className = 'modal-status info';
       dom.importStatus.style.display = 'block';
-      dom.importStatus.textContent = 'Redirection vers lostark.bible...';
+      dom.importStatus.textContent = trLang('Redirection vers lostark.bible…', 'Redirecting to lostark.bible…');
     }
 
     window.location.href = `${OAUTH_CONFIG.authUrl}?${params.toString()}`;
@@ -191,7 +190,7 @@ async function checkOAuthCallback() {
     if (dom.importStatus) {
       dom.importStatus.className = 'modal-status error';
       dom.importStatus.style.display = 'block';
-      dom.importStatus.textContent = `Autorisation lostark.bible refusée : ${errDesc}`;
+      dom.importStatus.textContent = trLang(`Autorisation lostark.bible refusée : ${errDesc}`, `lostark.bible authorization denied: ${errDesc}`);
     }
     if (dom.importModal) dom.importModal.classList.add('active');
     return;
@@ -216,7 +215,7 @@ async function checkOAuthCallback() {
     if (dom.importStatus) {
       dom.importStatus.className = 'modal-status info';
       dom.importStatus.style.display = 'block';
-      dom.importStatus.textContent = 'Échange du code d\'autorisation OAuth en cours...';
+      dom.importStatus.textContent = trLang('Échange du code d\'autorisation OAuth en cours…', 'Exchanging the OAuth authorization code…');
       if (dom.importModal) dom.importModal.classList.add('active');
     }
 
@@ -237,7 +236,7 @@ async function checkOAuthCallback() {
     if (!res.ok) {
       const errJson = await res.json().catch(() => null);
       const errMsg = errJson?.error_description || errJson?.error || `HTTP ${res.status}`;
-      throw new Error(`Échange de jeton refusé (${errMsg})`);
+      throw new Error(trLang(`Échange de jeton refusé (${errMsg})`, `Token exchange refused (${errMsg})`));
     }
     const data = await res.json();
 
@@ -249,12 +248,12 @@ async function checkOAuthCallback() {
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status success';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = 'Connexion OAuth 2.0 réussie. Chargement de vos rosters…';
+        dom.importStatus.textContent = trLang('Connexion OAuth 2.0 réussie. Chargement de vos rosters…', 'OAuth 2.0 sign-in successful. Loading your rosters…');
       }
 
       await fetchOAuthUserData(data.access_token);
     } else {
-      throw new Error('Aucun jeton d\'accès reçu.');
+      throw new Error(trLang('Aucun jeton d\'accès reçu.', 'No access token received.'));
     }
   } catch (err) {
     console.error('OAuth Callback Error:', err);
@@ -270,7 +269,7 @@ async function checkOAuthCallback() {
 function extractOAuthUsername(data) {
   if (!data) return 'Utilisateur';
   const u = data.user || data.data || data.discord || data;
-  return u.global_name || u.globalName || u.username || u.name || u.displayName || u.discord_name || (u.id ? `ID #${u.id}` : 'Connecté');
+  return u.global_name || u.globalName || u.username || u.name || u.displayName || u.discord_name || (u.id ? `ID #${u.id}` : trLang('Connecté', 'Connected'));
 }
 
 function extractRostersList(data) {
@@ -299,7 +298,7 @@ async function fetchOAuthUserData(token) {
       if (dom.importStatus) {
         dom.importStatus.className = 'modal-status error';
         dom.importStatus.style.display = 'block';
-        dom.importStatus.textContent = 'Session OAuth expirée ou invalide. Veuillez vous reconnecter avec lostark.bible.';
+        dom.importStatus.textContent = trLang('Session OAuth expirée ou invalide. Reconnecte-toi avec lostark.bible.', 'OAuth session expired or invalid. Please sign in again with lostark.bible.');
       }
       return;
     }
@@ -363,7 +362,7 @@ function renderOAuthRosters(rostersRaw) {
   currentOAuthRosters = rosters;
   if (!dom.oauthRosterList) return;
   if (rosters.length === 0) {
-    dom.oauthRosterList.innerHTML = `<div style="font-size:13px; color:var(--text-dim);">Aucun roster ou personnage synchronisé.</div>`;
+    dom.oauthRosterList.innerHTML = `<div style="font-size:13px; color:var(--text-dim);">${trLang('Aucun roster ou personnage synchronisé.', 'No roster or character synced.')}</div>`;
     return;
   }
 
@@ -393,10 +392,10 @@ function renderOAuthRosters(rostersRaw) {
             </div>
             <div style="display: flex; gap: 6px;">
               <button type="button" class="btn-add-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(140, 192, 132, 0.15); border: 1px solid rgba(140, 192, 132, 0.4); color: #8CC084; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
-                + Ajouter
+                + ${trLang('Ajouter', 'Add')}
               </button>
               <button type="button" class="btn-load-oauth-char" data-name="${charName}" data-region="${region}" style="background: rgba(232, 230, 220, 0.15); border: 1px solid rgba(232, 230, 220, 0.4); color: #E0A43A; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; cursor: pointer;">
-                Charger
+                ${trLang('Charger', 'Load')}
               </button>
             </div>
           </div>
@@ -432,7 +431,7 @@ async function syncAllOAuthCharacters(rostersRaw) {
   if (statusEl) {
     statusEl.className = 'modal-status info';
     statusEl.style.display = 'block';
-    statusEl.innerHTML = `Préparation de la synchronisation de votre Roster...`;
+    statusEl.innerHTML = trLang('Préparation de la synchronisation de ton roster…', 'Preparing your roster sync…');
   }
 
   const rosters = extractRostersList(rostersRaw);
@@ -460,7 +459,7 @@ async function syncAllOAuthCharacters(rostersRaw) {
   if (topChars.length === 0) {
     if (statusEl) {
       statusEl.className = 'modal-status error';
-      statusEl.textContent = 'Aucun personnage trouvé dans vos données lostark.bible.';
+      statusEl.textContent = trLang('Aucun personnage trouvé dans tes données lostark.bible.', 'No character found in your lostark.bible data.');
     }
     return;
   }
@@ -469,7 +468,7 @@ async function syncAllOAuthCharacters(rostersRaw) {
   for (let i = 0; i < topChars.length; i++) {
     const tc = topChars[i];
     if (statusEl) {
-      statusEl.innerHTML = `Synchronisation (${i + 1}/${topChars.length}) : <strong>${escapeHtml(tc.name)}</strong> (${tc.ilvl.toFixed(1)})...`;
+      statusEl.innerHTML = `${trLang('Synchronisation', 'Syncing')} (${i + 1}/${topChars.length}) : <strong>${escapeHtml(tc.name)}</strong> (${tc.ilvl.toFixed(1)})...`;
     }
     try {
       const charObj = await fetchBibleProfile(tc.region, tc.name, false);
@@ -489,8 +488,8 @@ async function syncAllOAuthCharacters(rostersRaw) {
 
     if (statusEl) {
       statusEl.className = 'modal-status success';
-      statusEl.innerHTML = `<strong>Roster synchronisé avec succès.</strong><br>
-        Vos ${importedList.length} personnages sont disponibles dans la barre du haut avec leurs images officielles.`;
+      statusEl.innerHTML = trLang(`<strong>Roster synchronisé.</strong><br>Tes ${importedList.length} personnages sont disponibles dans la barre du haut.`,
+        `<strong>Roster synced.</strong><br>Your ${importedList.length} characters are available in the top bar.`);
     }
   }
 }
@@ -545,12 +544,12 @@ async function refreshAllUserRosterCharacters() {
   if (statusEl) {
     statusEl.className = 'modal-status info';
     statusEl.style.display = 'block';
-    statusEl.innerHTML = `Réactualisation de vos ${list.length} personnages...`;
+    statusEl.innerHTML = trLang(`Réactualisation de tes ${list.length} personnages…`, `Refreshing your ${list.length} characters…`);
   }
 
   for (let i = 0; i < list.length; i++) {
     const c = list[i];
-    if (statusEl) statusEl.innerHTML = `Réactualisation (${i + 1}/${list.length}) : <strong>${escapeHtml(c.name)}</strong>...`;
+    if (statusEl) statusEl.innerHTML = `${trLang('Réactualisation', 'Refreshing')} (${i + 1}/${list.length}) : <strong>${escapeHtml(c.name)}</strong>...`;
     try {
       const updated = await fetchBibleProfile(c.region || 'CE', c.name, false);
       if (updated) {
@@ -568,7 +567,7 @@ async function refreshAllUserRosterCharacters() {
 
   if (statusEl) {
     statusEl.className = 'modal-status success';
-    statusEl.innerHTML = `Vos ${list.length} personnages ont été mis à jour avec succès.`;
+    statusEl.innerHTML = trLang(`Tes ${list.length} personnages sont à jour.`, `Your ${list.length} characters are up to date.`);
   }
 }
 
@@ -618,10 +617,10 @@ function renderSavedRosterManager() {
           </div>
           <div style="display: flex; gap: 6px;">
             <button type="button" class="btn-select-roster-char" data-id="${cId}" style="background: rgba(232, 230, 220,0.15); border: 1px solid rgba(232, 230, 220,0.4); color: #E0A43A; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
-              Charger
+              ${trLang('Charger', 'Load')}
             </button>
             <button type="button" class="btn-delete-roster-char" data-id="${cId}" style="background: rgba(224, 122, 99,0.15); border: 1px solid rgba(224, 122, 99,0.4); color: #E07A63; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
-             
+              ${trLang('Retirer', 'Remove')}
             </button>
           </div>
         </div>
@@ -663,6 +662,6 @@ function logoutOAuth() {
   currentOAuthRosters = null;
   if (dom.oauthDisconnectedView) dom.oauthDisconnectedView.style.display = 'block';
   if (dom.oauthConnectedView) dom.oauthConnectedView.style.display = 'none';
-  if (dom.oauthUsername) dom.oauthUsername.textContent = 'Connecté';
+  if (dom.oauthUsername) dom.oauthUsername.textContent = trLang('Connecté', 'Connected');
   if (dom.oauthRosterList) dom.oauthRosterList.innerHTML = '';
 }
