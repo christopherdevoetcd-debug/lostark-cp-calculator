@@ -14,7 +14,7 @@ Elle s'appuie sur la calibration réelle des courbes de `lostark.bible` et les m
 
 | Fichier | Rôle & Contenu |
 |---|---|
-| `calculator.js` | **Cœur de l'application (~17k lignes)** : Moteur de calcul CP, affinage (honing), simulateur Ark Passive, diagnostic des bracelets, algorithme GPD (Gold Per Damage / Buff), gestion du Roster local, parsing des données JSON `lostark.bible`, exports globaux `window.__*`. |
+| `js/*.js` | **Cœur de l'application (~18k lignes en 30 scripts classiques)**, chargés dans l'ordre d'index.html et partageant leurs déclarations de premier niveau (pas d'IIFE ni de build) : `core.js` (rôles, roster), `app-state.js` (état, `dom`), `game-tables.js` (tables chargées en direct), `models.js` (modèles de gain), `honing.js`, `upgrades.js`, `gpd.js`, `advisor.js`, `bible-import.js` (parsing `lostark.bible`, `BIBLE_CORES`), `benchmark-*.js` / `breakdown-*.js` (Benchmark), un fichier par onglet (`tab-predictor.js`, `optimization.js`, `ark-passive.js`, `market.js`, `belgardin.js`…), `main.js` (démarrage, exports `window.__*`). Le code exécuté au chargement ne doit référencer que des fichiers déjà chargés (les fonctions sont appelées après `DOMContentLoaded`). |
 | `data.js` | Constantes de jeu, coûts d'affinage T4 (`HONING_COSTS`), XP, bonus des cœurs d'Ark Grid (`getArkGridCoreBonus`), dictionnaires du jeu (spés, gravures, stats). Aucune donnée de démo. |
 | `bracelet-model.js` | Modèle mathématique complet de simulation des lignes de bracelet T4 (effets uniques, rolls fixes et combinatoires). |
 | `bracelet-worker.js` | Web Worker : lance le solveur exact de `bracelet-model.js` (gain espéré d'une nouvelle campagne de bracelet) hors du fil principal, résultat en cache `localStorage` (`lostark_bracelet_ev`). |
@@ -70,14 +70,14 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 ## 🛠️ Règles de Développement & Bonnes Pratiques
 
 1. **Intégrité du DOM & Reactivité** :
-   - `calculator.js` référence des éléments du DOM dans l'objet `dom` initialisé au chargement.
-   - Ne jamais supprimer un identifiant DOM sans vérifier toutes ses références dans `calculator.js`.
+   - `js/app-state.js` référence des éléments du DOM dans l'objet `dom` initialisé au chargement.
+   - Ne jamais supprimer un identifiant DOM sans vérifier toutes ses références dans `js/`.
    - Toutes les fonctions clés appelées par les gestionnaires d'événements ou inline HTML sont exportées sur `window.__nomDeFonction`.
 2. **Gestion du Cache & Roster** :
    - Le roster actif de l'utilisateur est stocké dans `localStorage.getItem('lostark_user_roster')`.
    - `getUserRoster()` guérit automatiquement les rôles obsolètes en appelant `detectCharacterRole(c)`.
 3. **Vérification de Syntaxe avant Déploiement** :
-   - Toujours exécuter `node -c calculator.js` pour s'assurer de l'absence totale d'erreur de parsing JavaScript.
+   - Toujours exécuter `for f in js/*.js; do node -c "$f"; done` pour s'assurer de l'absence totale d'erreur de parsing JavaScript.
 4. **Banc d'audit** (`tools/audit/`, voir son README) : l'appli complète dans jsdom sur ~70 profils réels en cache (toutes les classes), sans réseau. Avant toute modification d'un calcul : `node tools/audit/audit.mjs --save-baseline` et `bench.mjs --save-baseline` ; après : les mêmes avec `--compare` (code 1 et résumé de chaque chiffre qui a bougé ; réenregistrer si c'est voulu). Récolte espacée seulement (6 s entre deux appels).
 
 ---
@@ -87,7 +87,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 À chaque modification :
 1. **Incrémenter le cache-busting** dans `index.html` :
    - `style.css?v=X.Y`
-   - `calculator.js?v=X.Y`
+   - `js/*.js?v=X.Y` (même version sur les 30 balises)
 2. **Pousser sur Git (main et master)** :
    ```bash
    git commit -am "feat/fix: description des changements" && git push origin main && git push origin main:master
@@ -96,7 +96,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    ```bash
    ./deploy.sh
    ```
-   *(Ce script autonome vérifie la syntaxe JS, synchronise CT 104 + Nginx, déploie sur Cloudflare Pages via Wrangler et vérifie la mise en ligne : sur les deux sites, mêmes octets que les fichiers locaux (index.html, calculator.js, style.css, i18n.js, data.js, données) et versions de cache-busting d'index.html, jusqu'à 2 min de propagation ; sinon code de sortie 1)*
+   *(Ce script autonome vérifie la syntaxe JS, synchronise CT 104 + Nginx, déploie sur Cloudflare Pages via Wrangler et vérifie la mise en ligne : sur les deux sites, mêmes octets que les fichiers locaux (index.html, js/*.js, style.css, i18n.js, data.js, données) et versions de cache-busting d'index.html, jusqu'à 2 min de propagation ; sinon code de sortie 1)*
    - Le token Cloudflare est lu dans `.env` (ignoré par Git) ou l'environnement : `CLOUDFLARE_API_TOKEN=...`. Ne jamais l'écrire dans un fichier versionné, le dépôt est public.
 
 ### Recettes d'affinage T4 (Maxroll)
@@ -180,7 +180,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 ### Moteur canonique (onglet Battle Point)
 - Lignes = parties du Battle Point du profil (`parseBibleCharacter`), score calculé = valeur de base × ∏ (1 + partie ÷ 10 000) ÷ 10 000. Valeur de base = PA de base × 2,88 (DPS) / × 1,24 (support), PA de base = √(stat × puissance d'arme ÷ 6) × (1 + % PA) : exact sur les 70 profils.
 - Gemmes libellées par leur effet réel lu sur le profil (`canonGemLabeler` : dégâts 5 / 34, recharge 27 / 35), jamais par la famille de l'ID (65041… porte aussi des gemmes de dégâts). `refreshCanonicalItems` corrige à l'affichage les profils importés avant.
-- Noms des cœurs (`BIBLE_CORES`) : noms du jeu tirés de `items.json` du planificateur Maxroll par `node tools/fetch-maxroll-names.mjs` (réécrit le dictionnaire dans calculator.js ; 2 232 cœurs, 92 noms faux corrigés le 2026-10-01). À relancer après un patch qui ajoute des cœurs. Les calculs passent par les IDs, jamais par les noms.
+- Noms des cœurs (`BIBLE_CORES`) : noms du jeu tirés de `items.json` du planificateur Maxroll par `node tools/fetch-maxroll-names.mjs` (réécrit le dictionnaire dans js/bible-import.js ; 2 232 cœurs, 92 noms faux corrigés le 2026-10-01). À relancer après un patch qui ajoute des cœurs. Les calculs passent par les IDs, jamais par les noms.
 - Collier « Outgoing Damage » (combatEffectDesc 621000000-002 de Maxroll) : % lu sur la partie type 17 du Battle Point (55 / 120 / 200).
 - Effets de bracelet (`BIBLE_BRACELET_PERKS`) : texte entre parenthèses = texte du jeu (vérifié sur la table `engraving` de Maxroll) ; les noms « Précision », « Marteau »… n'existent pas dans les données T4 du jeu, ce sont les noms T3 repris par la communauté.
 - Retirés (sans source) : explication de l'écart par festins / nourriture, « formule décompilée / 100 », note « Karma de transcendance », familier « 0,4 / 0,7 / 1,0 % », repli Buff Power = CP × 0,75 / soins × 0,60 sans profil.

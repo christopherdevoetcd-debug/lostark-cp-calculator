@@ -16,12 +16,12 @@ fi
 
 echo "=== [1/4] Vérification de la syntaxe JS ==="
 # node -c ne vérifie que le premier fichier passé : une commande par fichier
-for f in *.js functions/api/market/prices.js; do node -c "$f"; done
+for f in *.js js/*.js functions/api/market/prices.js; do node -c "$f"; done
 echo "Syntaxe JS : OK"
 
 echo "=== [2/4] Synchronisation CT 104 (Docker Nginx) ==="
 scp -q *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/
-scp -rq images data root@192.168.1.104:/opt/lostark-cp/public/ 2>/dev/null || true
+scp -rq images data js root@192.168.1.104:/opt/lostark-cp/public/ 2>/dev/null || true
 # nginx.conf est monté seul dans le conteneur : réécrit en place (même inode), un scp ne serait pas vu
 ssh root@192.168.1.104 "cat > /opt/lostark-cp/nginx.conf" < nginx.conf
 ssh root@192.168.1.104 "docker exec lostark-cp nginx -t && docker exec lostark-cp nginx -s reload" >/dev/null
@@ -38,7 +38,7 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 cp *.js *.html *.css "$WORK/"
-cp -r images data "$WORK/" 2>/dev/null || true
+cp -r images data js "$WORK/" 2>/dev/null || true
 
 npx -y wrangler pages deploy "$WORK" --project-name lostark-cp --commit-dirty=true --branch master
 
@@ -46,7 +46,7 @@ echo "=== [4/4] Vérification en ligne ==="
 # Chaque site doit servir les versions d'index.html et les mêmes octets que les fichiers locaux
 # (paramètre anti-cache ; Cloudflare peut mettre quelques secondes à propager). Échec = code de sortie 1.
 sha() { sha256sum | cut -d' ' -f1; }
-FILES="index.html calculator.js style.css i18n.js data.js data/bracer-t4.json data/honing-t4.json"
+FILES="index.html $(ls js/*.js | tr '\n' ' ')style.css i18n.js data.js data/bracer-t4.json data/honing-t4.json"
 verify_site() {
   local base="$1" f bust
   bust="nocache=$(date +%s%N)"
@@ -55,8 +55,8 @@ verify_site() {
   done
   # Versions de cache-busting annoncées par la page servie
   local want got
-  want=$(grep -o 'calculator\.js?v=[0-9.]*\|style\.css?v=[0-9.]*' index.html | sort | tr '\n' ' ')
-  got=$(curl -fsS -L "$base/?$bust" | grep -o 'calculator\.js?v=[0-9.]*\|style\.css?v=[0-9.]*' | sort | tr '\n' ' ')
+  want=$(grep -o 'js/main\.js?v=[0-9.]*\|style\.css?v=[0-9.]*' index.html | sort | tr '\n' ' ')
+  got=$(curl -fsS -L "$base/?$bust" | grep -o 'js/main\.js?v=[0-9.]*\|style\.css?v=[0-9.]*' | sort | tr '\n' ' ')
   [ "$want" = "$got" ] || { echo "  $base : versions servies « $got », attendues « $want »"; return 1; }
 }
 FAILED=0
@@ -66,7 +66,7 @@ for site in http://192.168.1.104:8080 https://lostark-cp.pages.dev; do
     if out=$(verify_site "$site" 2>&1); then ok=1; break; fi
     sleep 10
   done
-  if [ "$ok" = 1 ]; then echo "$site : à jour ($(grep -o 'calculator\.js?v=[0-9.]*' index.html))"
+  if [ "$ok" = 1 ]; then echo "$site : à jour ($(grep -o 'js/main\.js?v=[0-9.]*' index.html))"
   else echo "$site : PAS à jour après 2 min"; echo "$out"; FAILED=1; fi
 done
 if [ "$FAILED" = 1 ]; then echo "❌ Déploiement non vérifié" >&2; exit 1; fi

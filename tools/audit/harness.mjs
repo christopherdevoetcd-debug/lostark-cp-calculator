@@ -28,10 +28,10 @@ function serveLocal(url) {
     const f = path.join(REPO, p);
     if (fs.existsSync(f) && fs.statSync(f).isFile()) {
       let buf = fs.readFileSync(f);
-      if (p === '/calculator.js') {
+      if (p === '/js/main.js') {
         const exp = AUDIT_NAMES.map(n => `get ${n}() { return typeof ${n} !== 'undefined' ? ${n} : null; }`).join(', ');
-        buf = Buffer.from(buf.toString().replace('  window.__initApp = initApp;',
-          `  window.__initApp = initApp;\n  window.__audit = { ${exp}, get active() { return activeCharacterId; } };`));
+        buf = Buffer.from(buf.toString().replace('window.__initApp = initApp;',
+          `window.__initApp = initApp;\nwindow.__audit = { ${exp}, get active() { return activeCharacterId; } };`));
       }
       return buf;
     }

@@ -1,11 +1,11 @@
 // Noms des cœurs de la Grille d'Ark, tirés de la table des objets du planificateur Maxroll (noms du jeu, client anglais).
-// Réécrit le dictionnaire BIBLE_CORES de calculator.js (ID du cœur → « Order Sun Core: Ominous »).
+// Réécrit le dictionnaire BIBLE_CORES de js/bible-import.js (ID du cœur → « Order Sun Core: Ominous »).
 // Usage : node tools/fetch-maxroll-names.mjs [items.json local]   (sans argument : téléchargé, ~11 Mo)
 // À relancer après un patch qui ajoute ou renomme des cœurs, puis redéployer.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const FEED = 'https://assets-ng.maxroll.gg/laplanner/game/items.json';
-const CALC = new URL('../calculator.js', import.meta.url);
+const CALC = new URL('../js/bible-import.js', import.meta.url);
 
 const local = process.argv[2];
 const items = local
@@ -21,7 +21,7 @@ if (Object.keys(cores).length < 1000) throw new Error(`Seulement ${Object.keys(c
 
 const src = readFileSync(CALC, 'utf8');
 const re = /const BIBLE_CORES = \{.*?\};/;
-if (!re.test(src)) throw new Error('BIBLE_CORES introuvable dans calculator.js');
+if (!re.test(src)) throw new Error('BIBLE_CORES introuvable dans js/bible-import.js');
 const sorted = Object.fromEntries(Object.entries(cores).sort(([a], [b]) => a.localeCompare(b)));
 writeFileSync(CALC, src.replace(re, () => `const BIBLE_CORES = ${JSON.stringify(sorted)};`));
 console.log(`BIBLE_CORES réécrit : ${Object.keys(sorted).length} cœurs (source ${local || FEED})`);

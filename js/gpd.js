@@ -1,0 +1,787 @@
+// GPD : barèmes, qualité d'arme, paliers de Loseii (bracelet, Karma, astrogemmes), tableau GPD.
+// Scripts classiques de js/ chargés dans l'ordre d'index.html, qui partagent leurs déclarations de premier niveau.
+'use strict';
+
+// Bonus CP% moyen par niveau de gemme T4 (même échelle que extractPlayerSystems)
+const GEM_LEVEL_BONUS_PCT = { 7: 31.5, 8: 36.0, 9: 40.5, 10: 48.0 };
+// Coût (gold) pour monter UNE gemme T4 du niveau clé au niveau suivant
+// Niv. 6 : trois gemmes niv. 6 font une niv. 7, donc 1/3 du coût du niveau 7
+const GEM_UPGRADE_COST = { 6: 92000, 7: 276000, 8: 813000, 9: 2415000 };
+// Bonus d'arme (échelle bonusPct de extractPlayerSystems) gagné par niveau d'affinage effectif
+const WEAPON_HONING_BONUS_PER_LVL = 1.20;
+// Bonus d'armure (échelle bonusPct) gagné par niveau moyen d'affinage effectif sur les 5 pièces
+const ARMOR_HONING_BONUS_PER_LVL = { dps: 1.37, support: 1.50 };
+const ARK_CORE_DEFS = [
+  { key: 'orderSun', prefix: '67300', fr: 'Ordre Soleil', en: 'Order Sun' },
+  { key: 'orderMoon', prefix: '67301', fr: 'Ordre Lune', en: 'Order Moon' },
+  { key: 'orderStar', prefix: '67302', fr: 'Ordre Étoile', en: 'Order Star' },
+  { key: 'chaosSun', prefix: '67310', fr: 'Chaos Soleil', en: 'Chaos Sun' },
+  { key: 'chaosMoon', prefix: '67311', fr: 'Chaos Lune', en: 'Chaos Moon' },
+  { key: 'chaosStar', prefix: '67312', fr: 'Chaos Étoile', en: 'Chaos Star' }
+];
+// Cœurs de la Grille d'Ark, support : ce que rapportent les options 14 et 17 points, en % de dégâts de chaque
+// allié. Mesures de Loseii (loastuff/loa-gpd, docs/METHODOLOGY.md) sur la feuille « Ark Grid Cores » de bebkok,
+// passées dans son modèle de buff, Barde de référence : falaise à 17, presque plat en dessous ;
+// Ordre Soleil / Lune 1,0 à 1,2 %, Chaos 0,5 à 0,9 % (milieux retenus) ; Ordre Étoile (jauge) 0,3 % à 14, 0,16 % à 17.
+const SUPPORT_CORE_STEPS = {
+  orderSun: { t14: 0, t17: 1.1 },
+  orderMoon: { t14: 0, t17: 1.1 },
+  orderStar: { t14: 0.3, t17: 0.16 },
+  chaosSun: { t14: 0, t17: 0.7 },
+  chaosMoon: { t14: 0, t17: 0.7 },
+  chaosStar: { t14: 0, t17: 0.7 }
+};
+// Qualité d'arme (Relique / Ancien, wiki Lost Ark « Quality upgrade », vérifié en jeu : 94 → 0,45 %, 97 → 0,23 %).
+// Chaque essai tire une qualité avec des chances fixes, quelle que soit la qualité actuelle ; elle n'est gardée que si
+// elle est plus haute. Tranche 0-10, 11-20 … 91-100, puis 10 % par qualité de la tranche. Coût : 800 or + 3 pierres du
+// chaos (obtenues en jeu, non comptées). Effet : dégâts additionnels 10 % + 0,002 % × qualité² (partie type 4 du Battle Point).
+const WEAPON_QUALITY_BANDS = [25.19, 21.41, 17.63, 13.85, 10.08, 6.30, 2.52, 1.26, 1.01, 0.76];
+const WEAPON_QUALITY_TAP_GOLD = 800;
+const weaponQualityChance = q => (q <= 10 ? WEAPON_QUALITY_BANDS[0] / 11 : WEAPON_QUALITY_BANDS[Math.min(9, Math.floor((q - 1) / 10))] / 10) / 100;
+const weaponQualityAddDmg = q => 0.10 + 0.00002 * q * q;
+
+/**
+ * Prochaine amélioration de qualité d'arme d'un DPS : chance par essai de dépasser la qualité actuelle, coût moyen
+ * (800 or ÷ chance) et gain moyen une fois réussie (qualité tirée au-dessus de l'actuelle, pondérée par ses chances).
+ * Les dégâts additionnels s'additionnent entre eux : gain dilué dans le pool de bracelet-model.js
+ * (familier, astrogemmes, collier), avec la vraie qualité à la place de la qualité 100. null si rien à gagner.
+ */
+// Qualité d'arme lue sur la partie type 4 du Battle Point (null si absente)
+function weaponQualityOf(charObj) {
+  const qp = battlePointPartsOf(charObj).find(p => p.type === 4);
+  return qp && Number.isFinite(qp.quality) ? qp.quality : null;
+}
+
+// Gain DPS (%) de la qualité q à q2 : dégâts additionnels dilués dans le pool de bracelet-model.js
+function weaponQualityGain(q, q2) {
+  if (!window.Bracelet) return null;
+  const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
+  const pool = window.Bracelet.addDamagePool(prof) - (prof.addDamage.weaponQuality || 0) + weaponQualityAddDmg(q);
+  return 100 * Math.log((1 + pool - weaponQualityAddDmg(q) + weaponQualityAddDmg(q2)) / (1 + pool));
+}
+
+// Chance par essai de tirer au moins la qualité q (chances fixes, la qualité n'est gardée que si elle monte)
+function weaponQualityChanceAtLeast(q) {
+  let c = 0;
+  for (let n = Math.max(0, q); n <= 100; n++) c += weaponQualityChance(n);
+  return c;
+}
+
+function weaponQualityUpgrade(charObj) {
+  if (!window.Bracelet) return null;
+  const q = weaponQualityOf(charObj);
+  if (q === null || q >= 100) return null;
+  let chance = 0, gainSum = 0;
+  for (let n = q + 1; n <= 100; n++) {
+    const c = weaponQualityChance(n);
+    chance += c;
+    gainSum += c * weaponQualityGain(q, n);
+  }
+  if (!(chance > 0)) return null;
+  return { quality: q, chance, taps: 1 / chance, cost: WEAPON_QUALITY_TAP_GOLD / chance, gain: gainSum / chance };
+}
+
+// Notes des échelles de Loseii (bracelet, astrogemmes), de la plus basse à la plus haute
+const GPD_BANDS = ['F-', 'F', 'F+', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+', 'S-', 'S', 'S+'];
+const gpdBandRank = b => GPD_BANDS.indexOf(b);
+
+/**
+ * Prochaine étape d'une échelle de Loseii depuis la note `band` : la ligne qui part de cette note ; sous le bas
+ * de l'échelle, la première ligne qui monte au-dessus (depuis une grille ou un bracelet de départ). null en haut.
+ */
+function loseiiNextStep(rows, band) {
+  if (!rows || !rows.length) return null;
+  const exact = rows.find(x => x.from === band);
+  if (exact) return exact;
+  const r = gpdBandRank(band);
+  return rows.find(x => gpdBandRank(x.to) > r && (x.from === 'ungraded' || gpdBandRank(x.from) < r)) || null;
+}
+
+/**
+ * Rapport entre l'or d'une ligne de Loseii à nos prix et à leurs prix : leurs achats (`mats`, depuis zéro) repris
+ * au prix réglé par l'utilisateur, pheons et bracelets 90/90 non relancés (les 100/100 et 120/120 gardent le prix
+ * de Loseii). 1 sans prix saisi : on retombe exactement sur leurs chiffres.
+ */
+function loseiiRepriceRatio(row) {
+  if (!Array.isArray(row.mats) || !row.mats.length) return 1;
+  let baked = 0, ours = 0;
+  row.mats.forEach(([name, n, g]) => {
+    if (typeof n !== 'number' || !(g > 0)) return;
+    baked += g;
+    if (/pheon/i.test(name)) ours += g * gpdUnitPrice('pheon') / GPD_DEFAULT_PRICES.pheon;
+    else if (/90\/90 bracelet/i.test(name)) ours += g * gpdUnitPrice('bracelet') / GPD_DEFAULT_PRICES.bracelet;
+    else ours += g;
+  });
+  return baked > 0 ? ours / baked : 1;
+}
+
+// Bracelet porté, décodé (lignes, traits, grade) ; null sans bracelet lisible
+function braceletDecoded(charObj) {
+  if (!window.Bracelet) return null;
+  const items = (charObj && charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.items) || [];
+  const item = items.find(i => i.slot === 'bracelet');
+  const stats = getBraceletStats(charObj) || (item && item.data && Array.isArray(item.data.stats) ? item.data.stats : null);
+  if (!stats) return null;
+  const dec = window.Bracelet.decodeBibleBracelet(stats);
+  if (!dec || !Array.isArray(dec.lines) || !dec.lines.length) return null;
+  const TRAIT_KEYS = { crit: 'crit', spec: 'spec', swiftness: 'swift' };
+  const traits = { crit: 0, spec: 0, swift: 0 };
+  const lines = [];
+  dec.lines.forEach(l => { if (l.cat === 'trait' && TRAIT_KEYS[l.family]) traits[TRAIT_KEYS[l.family]] = l.value; else lines.push(l); });
+  return { lines, traits, grade: dec.grade || 'ancient' };
+}
+
+// Note du bracelet sur l'échelle du calculateur de bracelet (Subrank), comme Loseii
+function braceletBandOf(charObj, isSupport) {
+  const dec = braceletDecoded(charObj);
+  if (!dec || !window.Subrank) return null;
+  try {
+    const sc = window.Subrank.braceletScore({ grade: dec.grade, lines: dec.lines, traits: dec.traits,
+      profile: window.Bracelet.normalizeProfile({ role: isSupport ? 'support' : 'dps' }) });
+    return sc && sc.band ? { band: sc.band.key, score: sc.score, damagePct: sc.damagePct, total: sc.total } : null;
+  } catch (e) { return null; }
+}
+
+/**
+ * Bracelet : note suivante de l'échelle de Loseii. Un bracelet relancé ne s'améliore pas sur place : c'est une
+ * campagne neuve, chiffrée depuis zéro (total de l'échelle jusqu'à cette note, bracelets non relancés et pheons
+ * à nos prix), et son gain se mesure depuis le bracelet porté (dégâts de la note − dégâts du bracelet actuel).
+ */
+function braceletGpdStep(charObj, isSupport) {
+  const cur = braceletBandOf(charObj, isSupport);
+  const rows = (loseiiGpd.rows[isSupport ? 'support' : 'dps'] || []).filter(r => r.series === 'bracelet');
+  if (!cur || !rows.length) return null;
+  const r = gpdBandRank(cur.band);
+  const step = rows.find(x => gpdBandRank(x.to) > r);
+  if (!step) return null;
+  const scale = loseiiRepriceRatio(step);
+  const fromScratch = step.total != null && step.totalDamage != null && Number.isFinite(cur.total);
+  const gold = (fromScratch ? step.total : step.gold) * scale;
+  const gain = fromScratch ? step.totalDamage - cur.total : step.damage;
+  return gain > 0 ? { cur, step, gold, gain } : null;
+}
+
+// Karma d'Illumination : essais attendus d'un niveau (jauge d'énergie : essai garanti à 100 %), comme Loseii
+function karmaExpectedAttempts(prob, care) {
+  const p = prob / 1e4;
+  if (p >= 1) return 1;
+  const cap = care > 0 ? Math.ceil(1e4 / care) + 1 : Infinity;
+  if (p <= 0) return cap;
+  return isFinite(cap) ? (1 - Math.pow(1 - p, cap)) / p : 1 / p;
+}
+
+/**
+ * Karma d'Illumination, niveau suivant : 900 or par essai (la pierre du destin est gratuite), +0,10 % de puissance
+ * d'arme. DPS : dégâts par √(puissance d'arme) ; support : buff de PA donné aux alliés. null au niveau 30 ou sans données.
+ */
+function karmaGpdStep(charObj, isSupport, lvlOverride) {
+  const lo = (charObj && charObj.rawProfile && charObj.rawProfile.loadout) || {};
+  const lvl = lvlOverride !== undefined ? lvlOverride : lo.karma && lo.karma.enlightenment;
+  const here = karmaT4 && karmaT4[lvl], next = karmaT4 && karmaT4[lvl + 1];
+  const ctx = gearStatContext(charObj);
+  if (!here || !next || !(here.prob > 0) || !ctx) return null;
+  const attempts = karmaExpectedAttempts(here.prob, here.care);
+  // Le % de Karma s'applique à la puissance d'arme avant amplification
+  const dWp = (ctx.wp / ctx.wpAmp) * (next.wp - here.wp) / 1e4;
+  const gain = isSupport ? supportApGain(charObj, ctx, dWp, 0) : 50 * Math.log(1 + dWp / ctx.wp);
+  return { lvl, attempts, rate: here.prob / 100, cost: attempts * here.gold, gain, wpTotal: next.wp / 100 };
+}
+
+// Astrogemmes : effets et coût de base (8 / 9 / 10) d'après les options de la gemme (arkGridGems du jeu)
+const ASTRO_EFFECT_NAMES = { 2001: 'Attack Power', 2002: 'Additional Damage', 2003: 'Boss Damage',
+  2011: 'Ally Damage Enh.', 2012: 'Brand Power', 2013: 'Ally Attack Enh.' };
+const ASTRO_BASE_COST_OPTS = [[8, [2001, 2002, 2011, 2012]], [9, [2001, 2003, 2011, 2013]], [10, [2002, 2003, 2012, 2013]]];
+
+/**
+ * Note moyenne des astrogemmes taillées (modèle astrogem.js de Loseii, note DPS ou support) et sa lettre.
+ * Ordre / Chaos d'après le cœur qui porte la gemme (ID 6730… Ordre, 6731… Chaos). null sans modèle ni gemmes.
+ */
+function astrogemGridBand(charObj, isSupport) {
+  const A = window.Astrogem;
+  const cores = (charObj && charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.arkGridCores) || [];
+  if (!A || !cores.length) return null;
+  const grades = [];
+  cores.forEach(c => {
+    const gemType = String(c.id).startsWith('6731') ? 'chaos' : 'order';
+    (c.gems || []).forEach(g => {
+      const o = g.opts || [];
+      if (o.length < 2) return;
+      const ids = o.map(x => x.id);
+      const base = ASTRO_BASE_COST_OPTS.find(([, set]) => ids.every(i => set.includes(i)));
+      if (!base) return;
+      const cfg = { baseCost: base[0], gemType, willpowerLevel: g.costReduc, orderLevel: g.corePoints,
+        effect1: ASTRO_EFFECT_NAMES[ids[0]], effect1Level: o[0].level, effect2: ASTRO_EFFECT_NAMES[ids[1]], effect2Level: o[1].level };
+      try {
+        if (A.validateConfig && !A.validateConfig(cfg).valid) return;
+        const gr = isSupport && A.supportGrade ? A.supportGrade(cfg) : A.grade(cfg);
+        if (Number.isFinite(gr)) grades.push(gr);
+      } catch (e) {}
+    });
+  });
+  if (!grades.length) return null;
+  const mean = grades.reduce((a, b) => a + b, 0) / grades.length;
+  const band = isSupport && A.supportRankFromGrade ? A.supportRankFromGrade(mean) : A.rankFromGrade(mean);
+  return { mean, band, n: grades.length };
+}
+
+// Astrogemmes : prochaine note de l'échelle de Loseii pour la taille d'épiques ou de rares
+function astrogemGpdStep(grid, isSupport, rarity) {
+  const src = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'][rarity];
+  const step = grid && src && loseiiNextStep(src.rows, grid.band);
+  return step ? { step, src } : null;
+}
+
+// Dégâts (ou buff) estimés de la grille du joueur d'après sa note moyenne : courbe note → dégâts des paliers
+// (`tiers`) du modèle de compte de Loseii, épiques et rares du même axe réunis, pour une grille pleine (24 gemmes).
+// Sous le bas de la courbe : sa première valeur (estimation haute de l'actuel, donc gain prudent). Grille incomplète :
+// au prorata des gemmes posées. null au-dessus de la courbe ou sans données.
+function astrogemGridDamage(isSupport, grid) {
+  const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
+  const slots = (srcs.epic && srcs.epic.slots) || 24;
+  const lo = astrogemCurveLow(isSupport);
+  const d = astrogemDamageAtMean(isSupport, lo !== null ? Math.max(lo, grid.mean) : grid.mean);
+  return d === null ? null : d * Math.min(1, grid.n / slots);
+}
+function astrogemCurveLow(isSupport) {
+  const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
+  const means = ['epic', 'rare'].flatMap(r => ((srcs[r] && srcs[r].tiers) || []).map(t => t.mean)).filter(Number.isFinite);
+  return means.length ? Math.min(...means) : null;
+}
+function astrogemDamageAtMean(isSupport, mean) {
+  const srcs = loseiiGpd.arkgrid[isSupport ? 'support' : 'dps'] || {};
+  const pts = [];
+  ['epic', 'rare'].forEach(r => ((srcs[r] && srcs[r].tiers) || []).forEach(t => {
+    if (Number.isFinite(t.mean) && Number.isFinite(t.damage)) pts.push([t.mean, t.damage]);
+  }));
+  if (pts.length < 2 || !Number.isFinite(mean)) return null;
+  pts.sort((a, b) => a[0] - b[0]);
+  // Courbe croissante : un palier d'une rareté ne descend pas sous un palier de note plus basse
+  for (let i = 1; i < pts.length; i++) pts[i][1] = Math.max(pts[i][1], pts[i - 1][1]);
+  if (mean < pts[0][0] || mean > pts[pts.length - 1][0]) return null;
+  for (let i = 1; i < pts.length; i++) {
+    const [m0, d0] = pts[i - 1], [m1, d1] = pts[i];
+    if (mean <= m1) return m1 > m0 ? d0 + (d1 - d0) * (mean - m0) / (m1 - m0) : d1;
+  }
+  return pts[pts.length - 1][1];
+}
+
+const GPD_TIER_LABELS = { 's-plus': 'Rang S+', 's': 'Rang S', 'a': 'Rang A', 'b': 'Rang B', 'c': 'Rang C', 'd': 'Rang D' };
+
+// Où en est le personnage sur le système d'une ligne du GPD (note de Loseii quand l'échelle en a une)
+function gpdRowState(row, isEn) {
+  const m = row.meta || {};
+  if (m.state !== undefined) return String(m.state);
+  if (row.id === 'dyn_weapon' || row.id === 'dyn_armor') return `+${m.from}`;
+  if (row.id.startsWith('dyn_adv_')) return `${m.from}/40`;
+  if (row.id.startsWith('dyn_gems_')) return isEn ? `Lv. ${m.lvl}` : `Niv. ${m.lvl}`;
+  if (row.id.startsWith('dyn_core_')) return `${m.pts} pts`;
+  if (row.id.startsWith('dyn_relic_')) return isEn ? `Relic ${m.lvl}` : `Relique ${m.lvl}`;
+  if (row.id === 'dyn_quality') return isEn ? `Quality ${m.quality}` : `Qualité ${m.quality}`;
+  return '—';
+}
+
+// Répartition des gemmes par niveau à partir des valeurs de gemParts (seuils DPS/Support)
+function countGemLevels(parts, isSupport) {
+  const counts = { 7: 0, 8: 0, 9: 0, 10: 0 };
+  const l10 = isSupport ? 12.00 : 7.00;
+  const l9 = isSupport ? 10.80 : 6.35;
+  const l8 = isSupport ? 9.60 : 5.70;
+  parts.forEach(g => {
+    if (g >= l10 - 0.05) counts[10]++;
+    else if (g >= l9 - 0.05) counts[9]++;
+    else if (g >= l8 - 0.05) counts[8]++;
+    else counts[7]++;
+  });
+  return counts;
+}
+
+// Repli sur le libellé de getCharacterGemSummary : "3x Niv. 9", "Full Gemmes 8 T4"...
+function countGemLevelsFromLabel(label) {
+  const counts = { 7: 0, 8: 0, 9: 0, 10: 0 };
+  let found = false;
+  const re = /(\d+)x\s*(?:Lv\.|Niv\.)\s*(\d+)/g;
+  let m;
+  while ((m = re.exec(label))) {
+    const lvl = parseInt(m[2], 10);
+    if (counts[lvl] !== undefined) { counts[lvl] += parseInt(m[1], 10); found = true; }
+  }
+  if (!found) {
+    const full = /Full.*?(?:Lv\.|Gemmes)\s*(10|[789])\b/.exec(label);
+    if (!full) return null;
+    counts[parseInt(full[1], 10)] = 11;
+  }
+  return counts;
+}
+
+function getDynamicGpdTable(charObj, role, isEn) {
+  const charRole = (charObj && detectCharacterRole(charObj)) || role || 'dps';
+  if (!charObj) return [];
+  const isSupport = charRole === 'support';
+  const sys = extractPlayerSystems(charObj, isEn);
+
+  let dynTable = [];
+
+  // Support : gold par 0.01% de buff ; DPS : gold par 1% de dégâts.
+  // Le tier est toujours évalué sur le coût par 1% pour garder les mêmes seuils.
+  const ratioUnit = isSupport ? 100 : 1;
+  // Gain sous 0,0001 % : bruit d'arrondi (ex. bijou remplacé par un équivalent), ratio absurde sinon
+  const pushRow = (id, name, sub, gain, cost, comment, meta) => {
+    if (!(gain >= 1e-4) || !(cost > 0)) return;
+    const ratio = Math.round(cost / (gain * ratioUnit));
+    const tier = getTierFromRatio(cost / gain);
+    dynTable.push({
+      id,
+      name,
+      sub,
+      gainText: `+${gain.toFixed(2)}% ${isSupport ? 'Buff' : 'DPS'}`,
+      gainVal: Number(gain.toFixed(2)),
+      cost: Math.round(cost),
+      ratioText: formatNumber(ratio) + ' g',
+      ratioVal: ratio,
+      tier,
+      tierLabel: GPD_TIER_LABELS[tier],
+      comment,
+      meta: meta || {}
+    });
+  };
+
+  // 1. Weapon Honing
+  let wLvl = sys.weapon.wLvl || 12;
+  // Serka : sa propre recette au niveau affiché (Maxroll) ; sans elle, estimation Aegir au niveau effectif (+9)
+  const wStep = honingStepFor('weapon', sys.weapon.isSerka, wLvl, sys.weapon.effWLvl);
+  if (wStep) {
+    // Gain relatif : +1 niveau ajoute WEAPON_HONING_BONUS_PER_LVL au bonus d'arme actuel
+    const curWeaponPct = sys.weapon.bonusPct || 0;
+    // Gain réel sur le personnage : dégâts (DPS) ou buff de PA donné aux alliés (support) ; estimation par niveau si une donnée manque
+    const realGain = honingDpsGain(charObj, 'weapon', sys.weapon.isSerka, isSupport);
+    const dmgGain = realGain !== null ? realGain : ((1 + (curWeaponPct + WEAPON_HONING_BONUS_PER_LVL) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
+    // Coût attendu du palier : tentatives moyennes (artisan) × matériaux au prix du marché
+    const cost = getLevelCost('weapon', wStep.lvl, wStep.track).totalValue;
+    pushRow('dyn_weapon',
+      isEn ? `Honing — Weapon +${wLvl + 1}` : `Affinage — Arme +${wLvl + 1}`,
+      isEn ? `From +${wLvl}` : `Depuis +${wLvl}`,
+      dmgGain, cost,
+      isEn ? 'Expected cost (average taps with artisan energy, market-priced materials).' : 'Coût attendu (nombre moyen de tentatives avec artisanat, matériaux au prix du marché).',
+      { from: wLvl, to: wLvl + 1 });
+  }
+
+  // 2. Armor Honing
+  let aLvl = Math.floor(sys.armors.avgArmor || 12);
+  // Serka : même logique que l'arme
+  const aStep = honingStepFor('armor', sys.armors.isSerka, aLvl, sys.armors.effAvgArmor !== undefined ? Math.floor(sys.armors.effAvgArmor) : undefined);
+  if (aStep) {
+    // Gain relatif : +1 niveau moyen ajoute ARMOR_HONING_BONUS_PER_LVL au bonus d'armure actuel
+    const curArmorPct = sys.armors.bonusPct || 0;
+    const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
+    const realGain = honingDpsGain(charObj, 'armor', sys.armors.isSerka, isSupport);
+    const dmgGain = realGain !== null ? realGain : ((1 + (curArmorPct + perLvl) / 100) / (1 + curArmorPct / 100) - 1) * 100;
+    // Coût attendu d'un palier sur chacune des 5 pièces, chacune depuis son propre niveau quand on le connaît
+    const gearLv = charObj && charObj.gear;
+    // Chaque pièce depuis son niveau, sur sa propre recette (Serka ou Aegir : un set peut être mixte)
+    const perPiece = honingT4 && gearLv
+      ? GEAR_ARMOR_SLOTS.map(sl => ({ l: gearLv[sl], track: pieceIsSerka(gearLv, sl) ? 'serka' : 'aegir' })).filter(x => x.l >= 10 && x.l < 25)
+      : null;
+    const cost = perPiece && perPiece.length === 5
+      ? perPiece.reduce((sum, x) => sum + getLevelCost('armor', x.l, x.track).totalValue, 0)
+      : getLevelCost('armor', aStep.lvl, aStep.track).totalValue * 5;
+    pushRow('dyn_armor',
+      isEn ? `Honing — Armors +${aLvl + 1}` : `Affinage — Armures +${aLvl + 1}`,
+      isEn ? `From +${aLvl} on 5 pieces` : `Depuis +${aLvl} sur 5 pièces`,
+      dmgGain, cost,
+      isEn ? 'Expected cost for all 5 pieces (average taps with artisan energy, market-priced materials).' : 'Coût attendu sur les 5 pièces (nombre moyen de tentatives avec artisanat, matériaux au prix du marché).',
+      { from: aLvl, to: aLvl + 1 });
+  }
+
+  // 2b. Affinage avancé : prochaine tranche de 10 niveaux (arme, puis armures les moins avancées).
+  // 1 niveau avancé = +1 iLvl sur la pièce = 1/5 d'un niveau d'affinage normal (même gain de stat par iLvl).
+  const advLv = getAdvHoningLevels(charObj);
+  if (advLv) {
+    const wAdv = getAdvHoningCost('weapon', advLv.weapon);
+    // Serka : l'avancé ne change pas l'iLvl (profils lostark.bible), aucun gain à chiffrer
+    if (wAdv && !pieceIsSerka(charObj && charObj.gear, 'weapon')) {
+      const curWeaponPct = sys.weapon.bonusPct || 0;
+      const add = WEAPON_HONING_BONUS_PER_LVL * wAdv.levels / 5;
+      // Gain réel d'après la table itemLevel (DPS : dégâts, support : buff de PA) ; sinon estimation par niveau
+      const realGain = advHoningDpsGain(charObj, ['weapon'], false, wAdv.to, isSupport);
+      const dmgGain = realGain !== null ? realGain : ((1 + (curWeaponPct + add) / 100) / (1 + curWeaponPct / 100) - 1) * 100;
+      pushRow('dyn_adv_weapon',
+        isEn ? `Advanced Honing — Weapon ${wAdv.from} ➔ ${wAdv.to}` : `Affinage avancé — Arme ${wAdv.from} ➔ ${wAdv.to}`,
+        isEn ? `+${wAdv.levels} item levels on the weapon` : `+${wAdv.levels} niveaux d'objet sur l'arme`,
+        dmgGain, wAdv.totalValue,
+        advHoningComment(wAdv, isEn),
+        { piece: 'weapon', from: wAdv.from, to: wAdv.to, breath: wAdv.useBreath });
+    }
+    // Avancé des armures : pièces Aegir seulement (sur le Serka il ne change ni l'iLvl ni les stats)
+    const gearAdv = charObj && charObj.gear;
+    const aegirIdx = ADV_ARMOR_SLOTS.map((sl, i) => i).filter(i => !pieceIsSerka(gearAdv, ADV_ARMOR_SLOTS[i]));
+    const minArmor = aegirIdx.length ? Math.min(...aegirIdx.map(i => advLv.armors[i])) : 40;
+    const laggingSlots = aegirIdx.filter(i => advLv.armors[i] === minArmor).map(i => ADV_ARMOR_SLOTS[i]);
+    const lagging = laggingSlots;
+    const aAdv = aegirIdx.length ? getAdvHoningCost('armor', minArmor) : null;
+    if (aAdv) {
+      const curArmorPct = sys.armors.bonusPct || 0;
+      const perLvl = isSupport ? ARMOR_HONING_BONUS_PER_LVL.support : ARMOR_HONING_BONUS_PER_LVL.dps;
+      // Le niveau moyen des 5 pièces monte de (pièces × niveaux) / 5, à 1/5 d'un niveau normal
+      const add = perLvl * (lagging.length * aAdv.levels / 5) / 5;
+      // Gain réel pièce par pièce (chacune a sa propre courbe de stat principale)
+      const realGain = advHoningDpsGain(charObj, laggingSlots, false, aAdv.to, isSupport);
+      const dmgGain = realGain !== null ? realGain : ((1 + (curArmorPct + add) / 100) / (1 + curArmorPct / 100) - 1) * 100;
+      pushRow('dyn_adv_armor',
+        isEn ? `Advanced Honing — Armors ${aAdv.from} ➔ ${aAdv.to}` : `Affinage avancé — Armures ${aAdv.from} ➔ ${aAdv.to}`,
+        isEn ? `${lagging.length} piece(s) out of 5` : `${lagging.length} pièce(s) sur 5`,
+        dmgGain, aAdv.totalValue * lagging.length,
+        advHoningComment(aAdv, isEn),
+        { piece: 'armor', from: aAdv.from, to: aAdv.to, pieces: lagging.length, breath: aAdv.useBreath });
+    }
+  }
+
+  // 3. Gems : une ligne par niveau présent
+  // Vraies gemmes du profil : buff du modèle Loseii (support) ou dégâts, recharge et PA (DPS) ;
+  // sinon (profil sans gemmes détaillées) gain relatif sur le bonus moyen du set
+  const supGems = realGemLevels(charObj);
+  if (supGems) {
+    const counts = { 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
+    supGems.forEach(l => { counts[l]++; });
+    [6, 7, 8, 9].forEach(lvl => {
+      const n = counts[lvl];
+      if (!n) return;
+      const gain = isSupport ? supportGemUpgradeGain(charObj, lvl) : dpsGemUpgradeGain(charObj, lvl);
+      if (gain === null) return;
+      pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
+        isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
+        isEn ? `${n} gem(s) out of ${supGems.length}` : `${n} gemme(s) sur ${supGems.length}`,
+        gain, n * GEM_UPGRADE_COST[lvl],
+        isSupport
+          ? (isEn
+            ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced. Buff (Loseii model): ally buffs +1 point per set level, real base AP per gem, cooldown turned into Specialization.`
+            : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées. Buff (modèle Loseii) : +1 point de buffs alliés par niveau du set, vraie PA de base par gemme, recharge convertie en Spécialisation.`)
+          : (isEn
+            ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced. Damage gems +4% skill damage, cooldown gems -2% cooldown (70% of damage on cooldown), plus each gem's base attack power.`
+            : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées. Gemmes de dégâts +4 % de dégâts de compétence, gemmes de recharge −2 % de recharge (70 % des dégâts sous recharge), plus la PA de base de chaque gemme.`),
+        { lvl, n, counts, total: supGems.length });
+    });
+  }
+  const gemParts = supGems ? null : extractCharacterGemParts(charObj);
+  const gemCounts = (gemParts && gemParts.length > 0)
+    ? countGemLevels(gemParts, isSupport)
+    : countGemLevelsFromLabel((sys.gems && sys.gems.label) || '');
+  if (gemCounts && !supGems) {
+    const totalGems = gemCounts[7] + gemCounts[8] + gemCounts[9] + gemCounts[10];
+    const curGemPct = [7, 8, 9, 10].reduce((s, l) => s + gemCounts[l] * GEM_LEVEL_BONUS_PCT[l], 0) / totalGems;
+    [7, 8, 9].forEach(lvl => {
+      const n = gemCounts[lvl];
+      if (!n) return;
+      const delta = n * (GEM_LEVEL_BONUS_PCT[lvl + 1] - GEM_LEVEL_BONUS_PCT[lvl]) / totalGems;
+      const gain = ((1 + (curGemPct + delta) / 100) / (1 + curGemPct / 100) - 1) * 100;
+      pushRow(`dyn_gems_${lvl}_${lvl + 1}`,
+        isEn ? `Skill gems — Lv. ${lvl} ➔ ${lvl + 1}` : `Gemmes de Compétences — Niv. ${lvl} ➔ ${lvl + 1}`,
+        isEn ? `${n} gem(s) out of ${totalGems}` : `${n} gemme(s) sur ${totalGems}`,
+        gain, n * GEM_UPGRADE_COST[lvl],
+        isEn ? `Only the ${n} gem(s) currently at Lv. ${lvl} are priced.` : `Seules les ${n} gemme(s) actuellement Niv. ${lvl} sont comptées.`,
+        { lvl, n, counts: gemCounts, total: totalGems });
+    });
+  }
+
+  // 4. Cœurs de la Grille d'Ark : pas de ligne en or. Leurs points viennent des astrogemmes serties (points
+  // d'Ordre / Chaos de chaque gemme), déjà chiffrées par les lignes « taille d'épiques / de rares » (modèle de compte
+  // de Loseii, cœurs à 17-20 points dans ses paliers). Un prix par point serait inventé et compterait deux fois.
+
+  // Bracelet, pierre d'aptitude, astrogemmes et Karma : obtenus en jeu (chaos, gardiens, Paradise, raids), pas achetés.
+  // Pas de ligne en or ici ; leur état est affiché sur la fiche (updateActiveCharacterCard, cartes de score).
+
+  // 6c. Livres de gravure reliques : les livres restants jusqu'au niveau relique 4, au prix du marché
+  getRelicBookUpgrades(charObj, isSupport).forEach(r => {
+    const name = isEn ? r.en : r.fr;
+    pushRow(`dyn_relic_${r.id}`,
+      isEn ? `Relic books — ${name} Lv. ${r.lvl} ➔ 4` : `Livres reliques — ${name} niv. ${r.lvl} ➔ 4`,
+      isEn ? `${r.books} books × ${formatNumber(Math.round(r.price))} g` : `${r.books} livres × ${formatNumber(Math.round(r.price))} g`,
+      r.gain, r.cost,
+      isEn
+        ? `Relic book market price (EUC). ${r.read}/20 books already read; the gain per level is nearly linear, so every level has about the same ratio.`
+        : `Prix du livre relique au marché (EUC). ${r.read}/20 livres déjà lus ; le gain par niveau est quasi linéaire, chaque niveau a donc à peu près le même ratio.`,
+      { engraving: name, lvl: r.lvl, books: r.books, read: r.read });
+  });
+
+  // 6d. Qualité d'arme (DPS) : les dégâts additionnels ne profitent qu'au porteur, rien pour le buff d'un support
+  // (le Battle Point support compte la qualité à 0)
+  const wq = isSupport ? null : weaponQualityUpgrade(charObj);
+  if (wq) {
+    const pct = (wq.chance * 100).toFixed(2);
+    pushRow('dyn_quality',
+      isEn ? `Weapon quality ${wq.quality} ➔ higher` : `Qualité d'arme ${wq.quality} ➔ supérieure`,
+      isEn ? `${pct}% per attempt, ~${Math.round(wq.taps)} attempts` : `${pct} % par essai, ~${Math.round(wq.taps)} essais`,
+      wq.gain, wq.cost,
+      isEn
+        ? `Official odds (fixed, whatever the current quality): ${pct}% per attempt to beat ${wq.quality}. Average cost ${formatNumber(Math.round(wq.cost))} gold (800 gold per attempt; the 3 chaos stones come from content and are not counted). Gain: average additional damage of the higher qualities (10% + 0.002% × quality²), diluted in the additional damage pool.`
+        : `Chances officielles (fixes, quelle que soit la qualité actuelle) : ${pct} % par essai de dépasser ${wq.quality}. Coût moyen ${formatNumber(Math.round(wq.cost))} or (800 or par essai ; les 3 pierres du chaos viennent du contenu et ne sont pas comptées). Gain : dégâts additionnels moyens des qualités supérieures (10 % + 0,002 % × qualité²), dilués dans le pool de dégâts additionnels.`,
+      { quality: wq.quality, chance: wq.chance, taps: wq.taps });
+  }
+
+  // 7. Accessoires : une ligne par type (collier, boucles, anneaux), le bijou au meilleur ratio de ce type
+  const accEval = evaluateCharacterAccessories(charObj, isSupport, isEn);
+  if (accEval.slotLines) {
+    const slotNames = accessorySlotNames(isEn);
+    const accGrade = accessoryGrade(accEval.bonusPct || 0, isSupport).grade;
+    [['neck', isEn ? 'Necklace' : 'Collier'], ['ear', isEn ? 'Earring' : 'Boucle d\'oreille'], ['ring', isEn ? 'Ring' : 'Anneau']].forEach(([kind, kindName]) => {
+      const best = findBestAccessoryUpgrade(accEval.slotLines, isSupport, kind);
+      if (!best) return;
+      pushRow(`dyn_acc_${kind}`,
+        isEn ? `${kindName} — ${slotNames[best.slot]} ➔ ${best.pkg.label}` : `${kindName} — ${slotNames[best.slot]} ➔ ${best.pkg.label}`,
+        isEn ? `➔ ${best.pkg.label} + 1 dead line` : `➔ ${best.pkg.label} + 1 ligne morte`,
+        best.gain, best.cost,
+        isEn
+          ? `Best ${kindName.toLowerCase()} to replace (the weaker one when you wear two), lines valued with the Arsonistic slopes. Price per accessory type is an in-game estimate (no market source).`
+          : `Meilleur remplacement de ce type (le plus faible quand tu en portes deux), lignes valorisées avec les pentes Arsonistic. Prix par type de bijou estimé en jeu (pas de source marché).`,
+        { slot: best.slot, slotName: slotNames[best.slot], kind, curPct: best.curPct, pkg: best.pkg.label, state: accGrade });
+    });
+  }
+
+  // 8. Bracelet : prochaine note de l'échelle de Loseii, bracelets non relancés et pheons à nos prix réglables
+  const brac = braceletGpdStep(charObj, isSupport);
+  if (brac) {
+    const st = brac.step;
+    pushRow('dyn_brac',
+      isEn ? `Bracelet ${brac.cur.band} ➔ ${st.to}` : `Bracelet ${brac.cur.band} ➔ ${st.to}`,
+      st.minimum || (isEn ? `Next grade: ${st.to}` : `Note suivante : ${st.to}`),
+      brac.gain, brac.gold,
+      (isEn
+        ? `Loseii's bracelet ladder (score ${brac.cur.score.toFixed(1)} on the bracelet calculator's scale). A rolled bracelet cannot be improved in place: a fresh campaign priced from scratch, gain measured from the bracelet you wear. ${st.odds || ''} Unrolled bracelets and pheons at the prices set above the table.`
+        : `Échelle du bracelet de Loseii (score ${brac.cur.score.toFixed(1)} sur l'échelle du calculateur de bracelet). Un bracelet relancé ne s'améliore pas sur place : campagne neuve chiffrée depuis zéro, gain mesuré depuis ton bracelet actuel. ${st.odds || ''} Bracelets non relancés et pheons aux prix réglés au-dessus du tableau.`).trim(),
+      { state: brac.cur.band, from: brac.cur.band, to: st.to, score: brac.cur.score });
+  }
+
+  // 9. Pierre d'aptitude : taille exacte (chaîne de Markov), pierre non taillée = 9 pheons au prix réglable
+  // La taille coûte de l'argent (non comptée) ; l'or = pierres non taillées achetées
+  const stoneUp = getAbilityStoneUpgrade(charObj, isSupport);
+  if (stoneUp && stoneUp.stones <= STONE_GPD_MAX_STONES) {
+    const upName = isEn ? stoneUp.up.en : stoneUp.up.fr;
+    const odds = Math.round(stoneUp.stones);
+    const stoneGold = formatNumber(Math.round(abilityStonePrice()));
+    pushRow('dyn_stone',
+      isEn ? `Ability stone ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}` : `Pierre d'aptitude ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}`,
+      stoneUp.anyOrder
+        ? (isEn ? `5 levels in total (base Atk. Power +1.5%), 1 stone in ${formatNumber(odds)}` : `5 niveaux au total (PA de base +1,5 %), 1 pierre sur ${formatNumber(odds)}`)
+        : (isEn ? `${upName} Lv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 stone in ${formatNumber(odds)}` : `${upName} niv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 pierre sur ${formatNumber(odds)}`),
+      stoneUp.gain, stoneUp.cost,
+      isEn
+        ? `Exact odds with optimal faceting: 1 stone in ${formatNumber(odds)} reaches ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)}%). Cost = ${formatNumber(odds)} uncut stones × ${stoneGold} g (${ABILITY_STONE_PHEONS} pheons each); faceting costs silver, not counted.${stoneUp.apBonus > 0 ? ' Includes the +1.5% base Atk. Power at 5 levels.' : ''}`
+        : `Probabilité exacte avec une taille optimale : 1 pierre sur ${formatNumber(odds)} atteint ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)} %). Coût = ${formatNumber(odds)} pierres non taillées × ${stoneGold} or (${ABILITY_STONE_PHEONS} pheons chacune) ; la taille coûte de l'argent, non comptée.${stoneUp.apBonus > 0 ? ' Inclut la PA de base +1,5 % à 5 niveaux.' : ''}`,
+      { state: stoneUp.fromLabel, from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: stoneUp.anyOrder ? (isEn ? 'base Atk. Power' : 'PA de base') : upName, odds, stoneGold });
+  }
+
+  // 10. Karma d'Illumination : niveau suivant, 900 or par essai
+  const karma = karmaGpdStep(charObj, isSupport);
+  if (karma) {
+    pushRow('dyn_karma',
+      isEn ? `Karma — Enlightenment ${karma.lvl} ➔ ${karma.lvl + 1}` : `Karma — Illumination ${karma.lvl} ➔ ${karma.lvl + 1}`,
+      isEn ? `${karma.rate.toFixed(2)}% per try, ~${karma.attempts.toFixed(1)} tries` : `${karma.rate.toFixed(2)} % par essai, ~${karma.attempts.toFixed(1)} essais`,
+      karma.gain, karma.cost,
+      isEn
+        ? `Game table: 900 gold per try (the Destiny Stone is not counted), energy bar guarantees the try at 100%. +0.10% weapon power (${karma.wpTotal.toFixed(2)}% in total).`
+        : `Table du jeu : 900 or par essai (la pierre du destin n'est pas comptée), la jauge d'énergie garantit l'essai à 100 %. +0,10 % de puissance d'arme (${karma.wpTotal.toFixed(2)} % au total).`,
+      { state: isEn ? `lv ${karma.lvl}` : `niv. ${karma.lvl}`, lvl: karma.lvl });
+  }
+
+  // 11. Astrogemmes : taille d'épiques et de rares, échelles de Loseii par note moyenne des gemmes
+  const grid = astrogemGridBand(charObj, isSupport);
+  [['epic', isEn ? 'cutting epics' : 'taille d\'épiques'], ['rare', isEn ? 'cutting rares' : 'taille de rares']].forEach(([rarity, word]) => {
+    const a = astrogemGpdStep(grid, isSupport, rarity);
+    if (!a) return;
+    const st = a.step;
+    const fromGrid = st.from === 'ungraded';
+    // Palier qui part sous la note du joueur (ex. « ungraded ➔ B » pour une grille B-) : ses dégâts comptent la
+    // grille entière depuis zéro. Gain = dégâts du palier visé − dégâts estimés de la grille actuelle ; l'or reste
+    // celui du palier (taille depuis zéro, comme une campagne de bracelet neuve).
+    // Grille incomplète (moins de 24 gemmes) : le palier de l'échelle suppose une grille pleine, on mesure aussi
+    // depuis la grille réelle, à l'or cumulé du palier (grille taillée depuis zéro).
+    const slots = (a.src && a.src.slots) || 24;
+    const partial = grid.n < slots;
+    const below = fromGrid || partial || gpdBandRank(st.from) < gpdBandRank(grid.band);
+    const curDmg = below && Number.isFinite(st.totalDamage) ? astrogemGridDamage(isSupport, grid) : null;
+    const gain = curDmg !== null ? st.totalDamage - curDmg : st.damage;
+    const gold = curDmg !== null && partial && st.total > 0 ? st.total : st.gold;
+    if (!(gain > 0)) return;
+    pushRow(`dyn_astro_${rarity}`,
+      isEn ? `Ark grid — ${word} ${grid.band} ➔ ${st.to}` : `Grille d'Ark — ${word} ${grid.band} ➔ ${st.to}`,
+      isEn ? `mean of ${grid.n} cut gems: ${grid.mean.toFixed(1)}` : `moyenne des ${grid.n} gemmes taillées : ${grid.mean.toFixed(1)}`,
+      gain, gold,
+      (isEn
+        ? `Loseii's account model: ${st.buy || 'astrogems cut and fused'}${st.gems ? `, about ${Math.round(st.gems)} gems` : ''}. Gold covers cutting and fusing; the raw astrogem is free.`
+        : `Modèle de compte de Loseii : ${st.gems ? `environ ${Math.round(st.gems)} gemmes taillées, ` : ''}taille à la gemme la plus faible, ratés fusionnés. L'or couvre la taille et la fusion ; la gemme brute est gratuite.`) +
+        (curDmg !== null
+          ? (isEn
+            ? ` This rung starts below your grade: gold of a grid cut from scratch, gain = ${st.totalDamage.toFixed(2)}% of the target grid − ~${curDmg.toFixed(2)}% for yours (Loseii's grade → damage curve).`
+            : ` Ce palier part sous ta note : or d'une grille taillée depuis zéro, gain = ${st.totalDamage.toFixed(2)} % de la grille visée − ~${curDmg.toFixed(2)} % pour la tienne (courbe note → dégâts de Loseii).`)
+          : fromGrid ? (isEn ? ' Your grade is below the ladder: priced as a build from an empty grid.' : ' Ta note est sous le bas de l\'échelle : chiffré comme une grille bâtie depuis zéro.') : ''),
+      { state: grid.band, from: grid.band, to: st.to, mean: grid.mean, n: grid.n, rarity });
+  });
+
+  // Sort by most efficient (lowest ratio)
+  dynTable.sort((a, b) => a.ratioVal - b.ratioVal);
+
+  return dynTable;
+}
+
+// Niveaux d'affinage avancé par pièce, lus sur le profil importé.
+// Anciens profils sans détail par pièce : la valeur globale advHoning s'applique à toutes les pièces.
+const ADV_ARMOR_SLOTS = ['head', 'shoulder', 'chest', 'pants', 'gloves'];
+function getAdvHoningLevels(charObj) {
+  const gear = (charObj && (charObj.gear || (charObj.rawProfile && charObj.rawProfile.gear))) || {};
+  const adv = gear.adv;
+  const fallback = charObj && charObj.advHoning !== undefined ? charObj.advHoning : undefined;
+  const pick = key => (adv && adv[key] !== undefined ? adv[key] : fallback);
+  const weapon = pick('weapon');
+  const armors = ADV_ARMOR_SLOTS.map(pick);
+  if (weapon === undefined || armors.some(v => v === undefined)) return null;
+  return { weapon, armors };
+}
+
+function advHoningComment(adv, isEn) {
+  const attempts = Math.round(adv.attempts);
+  if (isEn) {
+    return `Expected cost: ~${attempts} paid attempts ${adv.useBreath ? 'with' : 'without'} breath (cheaper at current prices), Ancestor's Grace included, market-priced materials. Shards and tempering not counted.`;
+  }
+  return `Coût attendu : ~${attempts} tentatives payées ${adv.useBreath ? 'avec' : 'sans'} souffle (moins cher aux prix actuels), Grâce de l'ancêtre incluse, matériaux au prix du marché. Éclats et trempe non comptés.`;
+}
+
+function getTierFromRatio(ratio) {
+  if (ratio <= 400000) return 's-plus';
+  if (ratio <= 750000) return 's';
+  if (ratio <= 1200000) return 'a';
+  if (ratio <= 2500000) return 'b';
+  if (ratio <= 6000000) return 'c';
+  return 'd';
+}
+
+/**
+ * Génère et injecte dynamiquement le tableau d'arbitrage EUC (Onglet 3)
+ */
+function renderEfficiencyTable() {
+  const role = state.role || 'support';
+  const isSupport = role === 'support';
+  
+  // Uniquement le GPD du personnage actif : sans personnage importé, état vide (aucun tableau figé)
+  const activeChar = getCurrentActiveCharacter();
+  const list = activeChar ? getDynamicGpdTable(activeChar, role, isEnLang()) : [];
+
+  const isEn = isEnLang();
+  if (dom.effRoleBadge) {
+    dom.effRoleBadge.textContent = isSupport
+      ? (isEn ? 'Support: Cost per 0.01% Raid Buff' : 'Support : Coût par 0.01% Buff Alliés')
+      : (isEn ? 'DPS: Cost per 1.00% Personal DPS' : 'DPS : Coût par 1.00% DPS Personnel');
+    dom.effRoleBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
+    dom.effRoleBadge.style.borderColor = isSupport ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
+  }
+
+  if (dom.effColGainHeader) {
+    dom.effColGainHeader.textContent = isSupport 
+      ? (isEn ? 'Raid Buff Gain' : 'Gain Buff Groupe') 
+      : (isEn ? 'Net DPS Gain' : 'Gain DPS Net');
+  }
+  const stateHeader = document.getElementById('effColStateHeader');
+  if (stateHeader) stateHeader.textContent = isEn ? 'Where you are' : 'Ton état';
+  renderGpdPriceInputs(isEn);
+  if (dom.effColRatioHeader) {
+    dom.effColRatioHeader.textContent = isSupport 
+      ? (isEn ? 'Cost / 0.01% Buff' : 'Coût / 0.01% Buff') 
+      : (isEn ? 'Cost / 1% DPS' : 'Coût / 1% DPS');
+  }
+
+  // Meilleure amélioration : première ligne (tableau déjà trié par ratio)
+  const nextBest = list[0] || null;
+
+  if (dom.effNextBestDesc) {
+    if (nextBest) {
+      const unit = isSupport 
+        ? (isEn ? '0.01% Raid Buff' : '0.01% Buff Alliés') 
+        : (isEn ? '1% Personal DPS' : '1% DPS');
+      dom.effNextBestDesc.innerHTML = isEn
+        ? `<strong>${nextBest.name}</strong> (${nextBest.gainText}) for an estimated cost of <strong>${formatNumber(nextBest.cost)} gold</strong>, i.e. a cost-efficiency ratio of <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nextBest.comment}</em></span>`
+        : `<strong>${nextBest.name}</strong> (${nextBest.gainText}) pour un coût estimé de <strong>${formatNumber(nextBest.cost)} gold</strong>, soit un ratio de rentabilité de <strong>${nextBest.ratioText} / ${unit}</strong>.<br><span style="color:var(--text-muted); font-size:14px;"><em>${nextBest.comment}</em></span>`;
+    } else if (!activeChar) {
+      dom.effNextBestDesc.innerHTML = isEn
+        ? `Import a character from lostark.bible to rank its upgrades by gold per gain.`
+        : `Importe un personnage depuis lostark.bible pour classer ses améliorations par or dépensé.`;
+    } else {
+      dom.effNextBestDesc.innerHTML = isEn
+        ? `No upgrade can be priced on this character right now.`
+        : `Aucune amélioration chiffrable sur ce personnage pour l'instant.`;
+    }
+  }
+
+  if (dom.effTableBody) {
+    let rowsHtml = '';
+    list.forEach((item, idx) => {
+      const isTop = nextBest && nextBest.id === item.id;
+      const itemTierLabel = isEn 
+        ? item.tierLabel.replace('Rang S+', 'Tier S+').replace('Rang S', 'Tier S').replace('Rang A', 'Tier A').replace('Rang B', 'Tier B').replace('Rang C', 'Tier C').replace('Rang D', 'Tier D').replace('Piège à Gold', 'Gold Trap').replace('Luxe Extrême', 'Extreme Luxury')
+        : item.tierLabel;
+      rowsHtml += `
+          <tr class="eff-row ${isTop ? 'top-pick' : ''}">
+            <td class="col-rank">${idx + 1}</td>
+            <td class="col-name">
+              <div><strong>${item.name}</strong></div>
+              <span class="eff-subtext">${item.sub}</span>
+            </td>
+            <td class="col-state">${escapeHtml(gpdRowState(item, isEn))}</td>
+            <td class="col-gain">${item.gainText}</td>
+            <td class="col-cost">${formatNumber(item.cost)} g</td>
+            <td class="col-ratio">${item.ratioText}</td>
+            <td class="col-prio">
+              <span class="prio-badge ${item.tier}">${itemTierLabel}</span>
+            </td>
+          </tr>
+        `;
+    });
+    if (!list.length) {
+      rowsHtml = `<tr class="eff-row"><td colspan="7" class="eff-empty">${activeChar
+          ? (isEn ? 'No priced upgrade for this character.' : 'Aucune amélioration chiffrée pour ce personnage.')
+          : (isEn ? 'No character imported yet.' : 'Aucun personnage importé.')}</td></tr>`;
+    }
+    dom.effTableBody.innerHTML = rowsHtml;
+  }
+}
+
+// Prix hors marché réglables (pheon, bracelet non relancé) au-dessus du tableau GPD ; vide = défaut Loseii
+function renderGpdPriceInputs(isEn) {
+  const box = document.getElementById('gpdPriceInputs');
+  if (!box) return;
+  const fields = [
+    ['pheon', isEn ? 'Pheon (gold)' : 'Pheon (or)'],
+    ['bracelet', isEn ? 'Unrolled 90/90 bracelet (gold)' : 'Bracelet 90/90 non relancé (or)']
+  ];
+  if (!box.dataset.bound) {
+    box.innerHTML = fields.map(([k, label]) => `
+        <label class="gpd-price-field">
+          <span data-label="${k}">${label}</span>
+          <input type="number" min="0" step="1" inputmode="numeric" data-price="${k}">
+        </label>`).join('');
+    box.querySelectorAll('input[data-price]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const v = Number(inp.value);
+        state.gpdPrices = state.gpdPrices || {};
+        if (v > 0) state.gpdPrices[inp.dataset.price] = v; else delete state.gpdPrices[inp.dataset.price];
+        saveGpdPrices();
+        refreshGpdViews();
+      });
+    });
+    box.dataset.bound = '1';
+  }
+  fields.forEach(([k, label]) => {
+    const inp = box.querySelector(`input[data-price="${k}"]`);
+    const lab = box.querySelector(`span[data-label="${k}"]`);
+    if (lab) lab.textContent = label;
+    if (!inp) return;
+    const own = state.gpdPrices && state.gpdPrices[k] > 0 ? state.gpdPrices[k] : '';
+    if (document.activeElement !== inp) inp.value = own;
+    inp.placeholder = `${formatNumber(GPD_DEFAULT_PRICES[k])} (Loseii)`;
+  });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// --- 4a-bis. SMART UPGRADE ADVISOR (PLANIFICATEUR RENTABLE DE PROGRESSION) ---
+
+const advisorState = {};

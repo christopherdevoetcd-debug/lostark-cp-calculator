@@ -369,7 +369,7 @@ window.CLASS_NAME_MAP = {
 
 // Pentes des lignes de bijoux T4 (tables Arsonistic) : valeur de la ligne (pct) et gain qu'elle apporte, en % de dégâts
 // (dps) ou en % de buff allié (buffDmg). Seuls le rapport gain / valeur au tier High et la ligne plate 960 servent
-// (getAccessoryLineSlopes dans calculator.js : GPD, Benchmark, simulateur de l'onglet Optimisation).
+// (getAccessoryLineSlopes dans js/accessories.js : GPD, Benchmark, simulateur de l'onglet Optimisation).
 window.ARSONISTIC_DATA = {
     support: {
       brand: { high: { pct: 8.00, buffDmg: 0.70 } },

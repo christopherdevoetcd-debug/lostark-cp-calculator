@@ -53,7 +53,7 @@
             <span class="roster-status-badge" id="rosterStatusBadge" data-i18n="roster_badge_demo">Démo</span>
           </div>
           <div class="presets-list" id="presetsList">
-            <!-- Injecté dynamiquement par calculator.js -->
+            <!-- Injecté dynamiquement par js/ -->
           </div>
         </div>
 
@@ -464,7 +464,7 @@
                   </tr>
                 </thead>
                 <tbody id="gpdMasterTableBody">
-                  <!-- Injecté dynamiquement par calculator.js -->
+                  <!-- Injecté dynamiquement par js/ -->
                 </tbody>
               </table>
             </div>
@@ -491,7 +491,7 @@
                   </tr>
                 </thead>
                 <tbody id="gpdPiecesTableBody">
-                  <!-- Injecté dynamiquement par calculator.js -->
+                  <!-- Injecté dynamiquement par js/ -->
                 </tbody>
               </table>
             </div>
@@ -1094,7 +1094,7 @@
                 </tr>
               </thead>
               <tbody id="effTableBody">
-                <!-- Rempli dynamiquement par calculator.js -->
+                <!-- Rempli dynamiquement par js/ -->
               </tbody>
             </table>
           </div>
@@ -1276,7 +1276,7 @@
 
           <!-- Grille des Personnages du Roster -->
           <div class="roster-raids-grid" id="rosterRaidsGrid">
-            <!-- Rempli dynamiquement par calculator.js -->
+            <!-- Rempli dynamiquement par js/ -->
           </div>
 
         </div>
@@ -1464,7 +1464,7 @@
 
           <!-- Carte Hero : Face à Face & Delta CP -->
           <div class="card benchmark-hero-card" id="benchmarkHeroCard">
-            <!-- Rendu dynamique par calculator.js -->
+            <!-- Rendu dynamique par js/ -->
           </div>
 
           <!-- Section Diagnostic : D'où vient l'écart de CP ? -->
@@ -1481,7 +1481,7 @@
               <!-- Injecté dynamiquement -->
             </div>
             <div id="benchmarkCpReconciliation" class="benchmark-cp-reconciliation">
-              <!-- Injecté dynamiquement par calculator.js -->
+              <!-- Injecté dynamiquement par js/ -->
             </div>
           </div>
 
@@ -1870,7 +1870,37 @@
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=53.2"></script>
+  <!-- Appli : scripts de js/, dans cet ordre (ils partagent leurs déclarations de premier niveau) -->
+  <script src="js/core.js?v=54.0"></script>
+  <script src="js/app-state.js?v=54.0"></script>
+  <script src="js/game-tables.js?v=54.0"></script>
+  <script src="js/models.js?v=54.0"></script>
+  <script src="js/honing.js?v=54.0"></script>
+  <script src="js/upgrades.js?v=54.0"></script>
+  <script src="js/tab-predictor.js?v=54.0"></script>
+  <script src="js/optimization.js?v=54.0"></script>
+  <script src="js/gpd.js?v=54.0"></script>
+  <script src="js/ark-grid.js?v=54.0"></script>
+  <script src="js/bracelet.js?v=54.0"></script>
+  <script src="js/advisor.js?v=54.0"></script>
+  <script src="js/ark-passive.js?v=54.0"></script>
+  <script src="js/astrogem-grader.js?v=54.0"></script>
+  <script src="js/bible-import.js?v=54.0"></script>
+  <script src="js/oauth-roster.js?v=54.0"></script>
+  <script src="js/app-ui.js?v=54.0"></script>
+  <script src="js/raid-tracker.js?v=54.0"></script>
+  <script src="js/benchmark-core.js?v=54.0"></script>
+  <script src="js/accessories.js?v=54.0"></script>
+  <script src="js/benchmark-systems.js?v=54.0"></script>
+  <script src="js/benchmark-gains.js?v=54.0"></script>
+  <script src="js/breakdown-acc-bracelet.js?v=54.0"></script>
+  <script src="js/breakdown-character.js?v=54.0"></script>
+  <script src="js/breakdown-cores.js?v=54.0"></script>
+  <script src="js/benchmark-peers.js?v=54.0"></script>
+  <script src="js/benchmark-tab.js?v=54.0"></script>
+  <script src="js/market.js?v=54.0"></script>
+  <script src="js/belgardin.js?v=54.0"></script>
+  <script src="js/main.js?v=54.0"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>
