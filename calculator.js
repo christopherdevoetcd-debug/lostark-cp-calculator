@@ -539,38 +539,6 @@
     baselineAdvHoning: 40,
     baselineIlvl: 1750.0,
     baselineCp: 3369,
-    // Optimisation T4 Arsonistic
-    opt: {
-      // Support
-      supBrand: 'high',
-      supAllyDmg: 'high',
-      supAllyAp: 'high',
-      supWp: 'mid',
-      supWpFlat: '960',
-      supQuality: 'mid',
-      supBracePerk: 'crit_ap',
-      supBraceWp: '9000',
-      supBraceStat: '14000',
-      supBraceSwift: '100',
-      // DPS
-      dpsAddDmg: 'high',
-      dpsOutDmg: 'high',
-      dpsAp: 'high',
-      dpsCrit: 'mid',
-      dpsCdmg: 'mid',
-      dpsWp: 'mid',
-      dpsQuality: 'mid',
-      dpsBracePerk: 'crit_cdmg',
-      dpsBraceWp: '9000',
-      dpsBraceStat: '14000',
-      dpsBraceSub: '100',
-      // Gems
-      gemsDeck: 'lvl8',
-      // Passifs Karma & Ark Grid
-      karmaEnlight: true,
-      karmaEvo: true,
-      arkGrid: true
-    }
   };
 
   // --- 2. FONCTIONS MATHÉMATIQUES DE MODÉLISATION ---
@@ -819,173 +787,28 @@
     scoreGpdDetail: document.getElementById('scoreGpdDetail'),
 
     // Onglet 3 : Optimisation T4 Arsonistic & Arbitrage EUC
-    optSupportControls: document.getElementById('optSupportControls'),
-    optDpsControls: document.getElementById('optDpsControls'),
     
     // Support Inputs
-    optSupBrand: document.getElementById('optSupBrand'),
-    optSupAllyDmg: document.getElementById('optSupAllyDmg'),
-    optSupAllyAp: document.getElementById('optSupAllyAp'),
-    optSupWp: document.getElementById('optSupWp'),
-    optSupWpFlat: document.getElementById('optSupWpFlat'),
-    optSupQuality: document.getElementById('optSupQuality'),
-    optSupBracePerk: document.getElementById('optSupBracePerk'),
-    optSupBraceWp: document.getElementById('optSupBraceWp'),
-    optSupBraceStat: document.getElementById('optSupBraceStat'),
-    optSupBraceSwift: document.getElementById('optSupBraceSwift'),
 
     // DPS Inputs
-    optDpsAddDmg: document.getElementById('optDpsAddDmg'),
-    optDpsOutDmg: document.getElementById('optDpsOutDmg'),
-    optDpsAp: document.getElementById('optDpsAp'),
-    optDpsCrit: document.getElementById('optDpsCrit'),
-    optDpsCdmg: document.getElementById('optDpsCdmg'),
-    optDpsWp: document.getElementById('optDpsWp'),
-    optDpsQuality: document.getElementById('optDpsQuality'),
-    optDpsBracePerk: document.getElementById('optDpsBracePerk'),
-    optDpsBraceWp: document.getElementById('optDpsBraceWp'),
-    optDpsBraceStat: document.getElementById('optDpsBraceStat'),
-    optDpsBraceSub: document.getElementById('optDpsBraceSub'),
 
     // Gems Input
-    optGemsDeck: document.getElementById('optGemsDeck'),
 
     // Option C : Per-Skill Gem Simulator
-    btnGemPresetCurrent: document.getElementById('btnGemPresetCurrent'),
-    btnGemPresetMetaSupport: document.getElementById('btnGemPresetMetaSupport'),
-    btnGemPresetFull8: document.getElementById('btnGemPresetFull8'),
-    btnGemPresetFull9: document.getElementById('btnGemPresetFull9'),
-    btnGemPresetFull10: document.getElementById('btnGemPresetFull10'),
-    gemLvl_hb: document.getElementById('gemLvl_hb'),
-    gemLvl_wog: document.getElementById('gemLvl_wog'),
-    gemLvl_brand: document.getElementById('gemLvl_brand'),
-    gemLvl_hp: document.getElementById('gemLvl_hp'),
-    gemLvl_other: document.getElementById('gemLvl_other'),
-    dispCd_hb: document.getElementById('dispCd_hb'),
-    dispStatus_hb: document.getElementById('dispStatus_hb'),
-    dispCd_wog: document.getElementById('dispCd_wog'),
-    dispStatus_wog: document.getElementById('dispStatus_wog'),
-    dispCd_brand: document.getElementById('dispCd_brand'),
-    dispStatus_brand: document.getElementById('dispStatus_brand'),
-    dispCd_hp: document.getElementById('dispCd_hp'),
-    dispStatus_hp: document.getElementById('dispStatus_hp'),
-    dispCd_other: document.getElementById('dispCd_other'),
-    dispStatus_other: document.getElementById('dispStatus_other'),
-    dispGemApUptime: document.getElementById('dispGemApUptime'),
-    dispGemApGap: document.getElementById('dispGemApGap'),
-    dispGemBrandUptime: document.getElementById('dispGemBrandUptime'),
-    dispGemGaugeRate: document.getElementById('dispGemGaugeRate'),
-    dispGemTotalCp: document.getElementById('dispGemTotalCp'),
-    dispGemCpDelta: document.getElementById('dispGemCpDelta'),
-    gemAdvisorText: document.getElementById('gemAdvisorText'),
-    dispSuppAdvisorTitle: document.getElementById('dispSuppAdvisorTitle'),
-    dispSuppSkill1Name: document.getElementById('dispSuppSkill1Name'),
-    dispSuppSkill1Sub: document.getElementById('dispSuppSkill1Sub'),
-    dispSuppSkill1Tag: document.getElementById('dispSuppSkill1Tag'),
-    dispSuppSkill2Name: document.getElementById('dispSuppSkill2Name'),
-    dispSuppSkill2Sub: document.getElementById('dispSuppSkill2Sub'),
-    dispSuppSkill2Tag: document.getElementById('dispSuppSkill2Tag'),
-    dispSuppSkill3Name: document.getElementById('dispSuppSkill3Name'),
-    dispSuppSkill3Sub: document.getElementById('dispSuppSkill3Sub'),
-    dispSuppSkill3Tag: document.getElementById('dispSuppSkill3Tag'),
-    dispSuppSkill4Name: document.getElementById('dispSuppSkill4Name'),
-    dispSuppSkill4Sub: document.getElementById('dispSuppSkill4Sub'),
-    dispSuppSkill4Tag: document.getElementById('dispSuppSkill4Tag'),
 
     // DPS Gem Simulator Elements
-    gemContainerSupport: document.getElementById('gemContainerSupport'),
-    gemContainerDps: document.getElementById('gemContainerDps'),
-    btnGemDpsPresetCurrent: document.getElementById('btnGemDpsPresetCurrent'),
-    btnGemDpsPresetMeta: document.getElementById('btnGemDpsPresetMeta'),
-    btnGemDpsPresetFull8: document.getElementById('btnGemDpsPresetFull8'),
-    btnGemDpsPresetFull9: document.getElementById('btnGemDpsPresetFull9'),
-    btnGemDpsPresetFull10: document.getElementById('btnGemDpsPresetFull10'),
-    gemLvl_dps1: document.getElementById('gemLvl_dps1'),
-    gemLvl_dps2: document.getElementById('gemLvl_dps2'),
-    gemLvl_dps3: document.getElementById('gemLvl_dps3'),
-    gemLvl_dpsCd: document.getElementById('gemLvl_dpsCd'),
-    gemLvl_dpsOther: document.getElementById('gemLvl_dpsOther'),
-    dispDpsSkill1Name: document.getElementById('dispDpsSkill1Name'),
-    dispDpsSkill1Sub: document.getElementById('dispDpsSkill1Sub'),
-    dispDpsSkill1Tag: document.getElementById('dispDpsSkill1Tag'),
-    dispDpsSkill1Val: document.getElementById('dispDpsSkill1Val'),
-    dispDpsSkill2Name: document.getElementById('dispDpsSkill2Name'),
-    dispDpsSkill2Sub: document.getElementById('dispDpsSkill2Sub'),
-    dispDpsSkill2Tag: document.getElementById('dispDpsSkill2Tag'),
-    dispDpsSkill2Val: document.getElementById('dispDpsSkill2Val'),
-    dispDpsSkill3Name: document.getElementById('dispDpsSkill3Name'),
-    dispDpsSkill3Sub: document.getElementById('dispDpsSkill3Sub'),
-    dispDpsSkill3Tag: document.getElementById('dispDpsSkill3Tag'),
-    dispDpsSkill3Val: document.getElementById('dispDpsSkill3Val'),
-    dispDpsCdName: document.getElementById('dispDpsCdName'),
-    dispDpsCdSub: document.getElementById('dispDpsCdSub'),
-    dispDpsCdTag: document.getElementById('dispDpsCdTag'),
-    dispDpsCdVal: document.getElementById('dispDpsCdVal'),
-    dispDpsGemBurstGain: document.getElementById('dispDpsGemBurstGain'),
-    dispDpsGemTotalDps: document.getElementById('dispDpsGemTotalDps'),
-    dispDpsGemAvgCd: document.getElementById('dispDpsGemAvgCd'),
-    dispDpsGemTotalCp: document.getElementById('dispDpsGemTotalCp'),
-    dispDpsGemCpDelta: document.getElementById('dispDpsGemCpDelta'),
-    gemDpsAdvisorText: document.getElementById('gemDpsAdvisorText'),
 
     // Conseiller de Taillage Loseii Bellman DP
-    cutRoleBadge: document.getElementById('cutRoleBadge'),
-    cutSlotSelect: document.getElementById('cutSlotSelect'),
-    cutStatQuintile: document.getElementById('cutStatQuintile'),
-    cut1Effect: document.getElementById('cut1Effect'),
-    cut1Tier: document.getElementById('cut1Tier'),
-    cut2Status: document.getElementById('cut2Status'),
-    cut2DetailsGroup: document.getElementById('cut2DetailsGroup'),
-    cut2Effect: document.getElementById('cut2Effect'),
-    cut2Tier: document.getElementById('cut2Tier'),
-    cutDecisionBanner: document.getElementById('cutDecisionBanner'),
-    cutDecisionIcon: document.getElementById('cutDecisionIcon'),
-    cutDecisionTitle: document.getElementById('cutDecisionTitle'),
-    cutDecisionSub: document.getElementById('cutDecisionSub'),
-    cutEvVal: document.getElementById('cutEvVal'),
-    cutMarketVal: document.getElementById('cutMarketVal'),
-    cutProbSuccess: document.getElementById('cutProbSuccess'),
-    cutNextCost: document.getElementById('cutNextCost'),
-    cutAnalysisText: document.getElementById('cutAnalysisText'),
-    btnCutPresetJackpot: document.getElementById('btnCutPresetJackpot'),
-    btnCutPresetMid: document.getElementById('btnCutPresetMid'),
-    btnCutPresetLow: document.getElementById('btnCutPresetLow'),
-    btnCutPresetTrash: document.getElementById('btnCutPresetTrash'),
 
     // Passifs Karma & Ark Grid
-    optKarmaEnlight: document.getElementById('optKarmaEnlight'),
-    optKarmaEvo: document.getElementById('optKarmaEvo'),
-    optArkGrid: document.getElementById('optArkGrid'),
 
     // Optimization Outputs
     optBadge: document.getElementById('optBadge'),
     optResultTypeLabel: document.getElementById('optResultTypeLabel'),
     optDpsGainDisplay: document.getElementById('optDpsGainDisplay'),
-    optDpsUnit: document.getElementById('optDpsUnit'),
     optCpGainDisplay: document.getElementById('optCpGainDisplay'),
     optBreakdownAcc: document.getElementById('optBreakdownAcc'),
-    optBreakdownBrace: document.getElementById('optBreakdownBrace'),
     optBreakdownGems: document.getElementById('optBreakdownGems'),
-    optTotalCpVal: document.getElementById('optTotalCpVal'),
-
-    barLabel1: document.getElementById('barLabel1'),
-    barVal1: document.getElementById('barVal1'),
-    barFill1: document.getElementById('barFill1'),
-
-    barLabel2: document.getElementById('barLabel2'),
-    barVal2: document.getElementById('barVal2'),
-    barFill2: document.getElementById('barFill2'),
-
-    barLabel3: document.getElementById('barLabel3'),
-    barVal3: document.getElementById('barVal3'),
-    barFill3: document.getElementById('barFill3'),
-
-    barLabel4: document.getElementById('barLabel4'),
-    barVal4: document.getElementById('barVal4'),
-    barFill4: document.getElementById('barFill4'),
-
-    barVal5: document.getElementById('barVal5'),
-    barFill5: document.getElementById('barFill5'),
 
     optAdviceText: document.getElementById('optAdviceText'),
 
@@ -2916,45 +2739,6 @@
     dom.honingAdviceText.innerHTML = advice;
   }
 
-  /**
-   * Synchronise les sélecteurs du DOM avec l'état d'optimisation
-   */
-  function syncOptimizationInputs() {
-    const o = state.opt;
-    if (!o) return;
-
-    if (dom.optSupBrand) dom.optSupBrand.value = o.supBrand || 'high';
-    if (dom.optSupAllyDmg) dom.optSupAllyDmg.value = o.supAllyDmg || 'high';
-    if (dom.optSupAllyAp) dom.optSupAllyAp.value = o.supAllyAp || 'high';
-    if (dom.optSupWp) dom.optSupWp.value = o.supWp || 'mid';
-    if (dom.optSupWpFlat) dom.optSupWpFlat.value = o.supWpFlat || '960';
-    if (dom.optSupQuality) dom.optSupQuality.value = o.supQuality || 'mid';
-    if (dom.optSupBracePerk) dom.optSupBracePerk.value = o.supBracePerk || 'crit_ap';
-    if (dom.optSupBraceWp) dom.optSupBraceWp.value = o.supBraceWp || '9000';
-    if (dom.optSupBraceStat) dom.optSupBraceStat.value = o.supBraceStat || '14000';
-    if (dom.optSupBraceSwift) dom.optSupBraceSwift.value = o.supBraceSwift || '100';
-
-    if (dom.optDpsAddDmg) dom.optDpsAddDmg.value = o.dpsAddDmg || 'high';
-    if (dom.optDpsOutDmg) dom.optDpsOutDmg.value = o.dpsOutDmg || 'high';
-    if (dom.optDpsAp) dom.optDpsAp.value = o.dpsAp || 'high';
-    if (dom.optDpsCrit) dom.optDpsCrit.value = o.dpsCrit || 'mid';
-    if (dom.optDpsCdmg) dom.optDpsCdmg.value = o.dpsCdmg || 'mid';
-    if (dom.optDpsWp) dom.optDpsWp.value = o.dpsWp || 'mid';
-    if (dom.optDpsQuality) dom.optDpsQuality.value = o.dpsQuality || 'mid';
-    if (dom.optDpsBracePerk) dom.optDpsBracePerk.value = o.dpsBracePerk || 'crit_cdmg';
-    if (dom.optDpsBraceWp) dom.optDpsBraceWp.value = o.dpsBraceWp || '9000';
-    if (dom.optDpsBraceStat) dom.optDpsBraceStat.value = o.dpsBraceStat || '14000';
-    if (dom.optDpsBraceSub) dom.optDpsBraceSub.value = o.dpsBraceSub || '100';
-
-    if (dom.optGemsDeck) dom.optGemsDeck.value = o.gemsDeck || 'lvl8';
-
-    if (dom.optKarmaEnlight) dom.optKarmaEnlight.checked = o.karmaEnlight !== false;
-    if (dom.optKarmaEvo) dom.optKarmaEvo.checked = o.karmaEvo !== false;
-    if (dom.optArkGrid) dom.optArkGrid.checked = o.arkGrid !== false;
-  }
-
-  // --- MODULE SIMULATEUR DE GEMMES AVANCÉ PAR COMPÉTENCE (OPTION C) ---
-
   function getCharacterClassKey(curChar) {
     if (!curChar) return 'shadowhunter';
     const raw = String(curChar.className || curChar.classId || curChar.class || curChar.name || '').toLowerCase().trim();
@@ -2972,1097 +2756,244 @@
     return 'shadowhunter';
   }
 
-  const SUPPORT_CLASS_SKILLS = {
-    paladin: {
-      s1: { name: 'Bénédiction Céleste', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 30s', tag: 'Bottleneck AP #1' },
-      s2: { name: 'Colère Divine', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s', tag: 'Buff PA #2' },
-      s3: { name: 'Foi Sacrée / Choc Lumineux', sub: 'Brand Power (+10% dégâts subis) • Durée : 6.0s • Base CD : 8s', tag: 'Marque Alliés' },
-      s4: { name: 'Protection Sacrée', sub: 'Shield & Divine Wave • Base CD : 30s • Génère de la True Gauge pour l\'Aura', tag: 'Bouclier & True Gauge' },
-      advisorTitle: 'Recommandation Gemmes Support Paladin (All-In-One Guide 2026) :',
-      advisorText: 'Votre configuration actuelle (Bénédiction Céleste Niv. 8 + Colère Divine Niv. 8) assure un temps de rechargement sous les 16.0 secondes, garantissant un uptime d\'AP théorique à 100%. <strong>Priorité d\'upgrade :</strong> Si vous investissez dans une gemme Niveau 9, montez exclusivement <em>Bénédiction Céleste</em> pour sécuriser la rotation même en cas d\'interruption. Monter <em>Colère Divine</em> au niveau 9 n\'apporte que du CP brut mais aucun gain d\'uptime effectif.',
-      baseCdHb: 30,
-      baseCdWog: 22,
-      baseCdBrand: 8,
-      baseCdHp: 30
-    },
-    bard: {
-      s1: { name: 'Mélodie Céleste (Heavenly Tune)', sub: 'Buff PA Groupe (+16% PA + 8% AP) + Vitesse • Durée : 8.0s • Base CD : 30s', tag: 'Bottleneck AP #1' },
-      s2: { name: 'Vibration Sonore (Sonic Vibration)', sub: 'Buff PA Groupe de zone • Durée : 6.0s • Base CD : 24s', tag: 'Buff PA #2' },
-      s3: { name: 'Harpe Sonore / Stigma (Sound Shock)', sub: 'Brand Power (+10% dégâts subis) • Durée : 4-6s • Base CD : 8s', tag: 'Marque Alliés' },
-      s4: { name: 'Rhapsodie du Vent / Mur de Son', sub: 'Bouclier Réactif & Génération de Bulles de Sérénade', tag: 'Bouclier & Sérénade' },
-      advisorTitle: 'Recommandation Gemmes Support Barde (Meta 2026) :',
-      advisorText: 'Priorité à <em>Mélodie Céleste</em> Niv. 9/10 pour réduire le bottleneck d\'uptime de buff d\'Attaque et assurer la synergie de vitesse d\'attaque du groupe de raid.',
-      baseCdHb: 30,
-      baseCdWog: 24,
-      baseCdBrand: 8,
-      baseCdHp: 28
-    },
-    artist: {
-      s1: { name: 'Lever de Soleil (Sunsketch)', sub: 'Buff PA Groupe (+16% PA + 8% AP) + Réduction Dégâts • Durée : 8.0s • Base CD : 27s', tag: 'Bottleneck AP #1' },
-      s2: { name: 'Puits de Lumière (Sun Well)', sub: 'Buff PA Groupe de zone • Durée : 6.0s • Base CD : 24s', tag: 'Buff PA #2' },
-      s3: { name: 'Orchidée (Drawing Orchids)', sub: 'Brand Power (+10% dégâts subis) • Durée : 8.0s • Base CD : 8s', tag: 'Marque Alliés' },
-      s4: { name: 'Trémie / Porte dimensionnelle', sub: 'Bouclier Réactif & Génération d\'Harmonie', tag: 'Bouclier & Harmonie' },
-      advisorTitle: 'Recommandation Gemmes Support Artiste (Meta 2026) :',
-      advisorText: 'Priorité à <em>Lever de Soleil</em> Niv. 9/10 pour sécuriser l\'alternance de buff PA avec <em>Puits de Lumière</em> sans le moindre temps mort.',
-      baseCdHb: 27,
-      baseCdWog: 24,
-      baseCdBrand: 8,
-      baseCdHp: 26
-    },
-    valkyrie: {
-      s1: { name: 'Bénédiction Lumineuse (Light Blessing)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 28s', tag: 'Bottleneck AP #1' },
-      s2: { name: 'Épée de Justice (Sword of Justice)', sub: 'Buff PA Groupe (+16% PA + 8% AP) • Durée : 8.0s • Base CD : 22s', tag: 'Buff PA #2' },
-      s3: { name: 'Châtiment Sacré (Holy Smite)', sub: 'Brand Power (+10% dégâts subis) • Durée : 8.0s • Base CD : 8s', tag: 'Marque Alliés' },
-      s4: { name: 'Sanctuaire de Grâce (Grace Sanctuary)', sub: 'Bouclier Réactif & Génération de Foi', tag: 'Bouclier & Jauge de Foi' },
-      advisorTitle: 'Recommandation Gemmes Support Valkyrie (Liberator) :',
-      advisorText: 'Priorité à <em>Bénédiction Lumineuse</em> Niv. 8/9 pour sécuriser le temps de recharge et garantir 100% d\'uptime de buff PA allié.',
-      baseCdHb: 28,
-      baseCdWog: 22,
-      baseCdBrand: 8,
-      baseCdHp: 28
-    }
+  // --- ONGLET OPTIMISATION : SIMULATEUR BIJOUX, GEMMES & BRACELET (personnage importé) ---
+  // Mêmes modèles que le GPD : lignes de bijoux par les pentes Arsonistic (computeAccessoryLinesBonus), prix des gammes
+  // ACC_PACKAGES ; gemmes réelles (dpsGemSetGain / supportGemSetGain, GEM_UPGRADE_COST) ; bracelet noté par Subrank et
+  // chiffré par braceletGpdStep. Rien n'est simulé sans personnage importé.
+
+  const ACC_LINE_NAMES = {
+    addDmg: ['Dégâts additionnels', 'Additional Damage'], outDmg: ['Dégâts infligés', 'Damage to enemies'],
+    apPct: ['PA %', 'Attack Power %'], wpPct: ["Puissance d'arme %", 'Weapon Power %'],
+    critPct: ['Taux critique', 'Crit Rate'], cdmgPct: ['Dégâts critiques', 'Crit Damage'],
+    brand: ['Puissance de marque', 'Brand Power'], identity: ["Gain de jauge d'identité", 'Identity Gain'],
+    allyAp: ['Amplification PA alliée', 'Ally Attack Enh.'], allyDmg: ['Dégâts alliés', 'Ally Damage Enh.'],
+    wpFlat: ["Puissance d'arme plate", 'Flat Weapon Power']
   };
+  const ACC_TIER_NAMES = ['Low', 'Mid', 'High'];
 
-  const DPS_CLASS_SKILLS = {
-    shadowhunter: {
-      s1: { name: 'Massacre Sanglant (Blood Massacre)', sub: 'Top Burst Démoniaque #1 • ~35% du DPS', tag: 'Burst #1' },
-      s2: { name: 'Faucheuse Cruelle (Cruel Cutter)', sub: 'Compétence Majeure Démoniaque #2 • ~25% du DPS', tag: 'Burst #2' },
-      s3: { name: 'Éruption Démoniaque (Demonic Ruin)', sub: 'Compétence Finition #3 • ~15% du DPS', tag: 'Burst #3' },
-      s4: { name: 'Tranche Démoniaque (Demonic Slash)', sub: 'Mobilité & Synergie de Cycle • Réduction CD', tag: 'Cooldown Pivot' }
-    },
-    souleater: {
-      s1: { name: 'Moisson des Âmes (Vestige)', sub: 'Top Dégâts Faucheuse / Mort #1 • ~35% du DPS', tag: 'Burst #1' },
-      s2: { name: 'Faux Spectrale (Guillotine Reaper)', sub: 'Compétence Rose Majeure #2 • ~26% du DPS', tag: 'Burst #2' },
-      s3: { name: 'Épine Mortelle (Lethal Spinning)', sub: 'Compétence d\'Entaille Mortelle • ~18% du DPS', tag: 'Burst #3' },
-      s4: { name: 'Pas Fantomatique (Lunatic Edge)', sub: 'Mobilité & Réduction CD de Cycle', tag: 'Cooldown Pivot' }
-    },
-    slayer: {
-      s1: { name: 'Lame Brutale (Brutal Impact)', sub: 'Top Dégâts Furie #1 • ~35% du DPS', tag: 'Furie #1' },
-      s2: { name: 'Épée Volcanique (Volcanic Eruption)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: 'Furie #2' },
-      s3: { name: 'Lame Guillotine (Guillotine)', sub: 'Finition de Burst • ~20% du DPS', tag: 'Furie #3' },
-      s4: { name: 'Fureur Sauvage (Wild Stomp)', sub: 'Synergie de Groupe & Jauge de Furie', tag: 'Cooldown Pivot' }
-    },
-    breaker: {
-      s1: { name: 'Coup de Poing Destructeur (Buster Surge)', sub: 'Top Dégâts Poing / Asura #1 • ~38% du DPS', tag: 'Burst #1' },
-      s2: { name: 'Poing d\'Asura (Asura Destruction)', sub: 'Rafale Dévastatrice #2 • ~30% du DPS', tag: 'Burst #2' },
-      s3: { name: 'Frappe Céleste (Falling Star)', sub: 'Impact Lourd & Neutralisation • ~18% du DPS', tag: 'Burst #3' },
-      s4: { name: 'Frappe Éclair (Lightning Palm)', sub: 'Mobilité & Rotation Fluide • Réduction CD', tag: 'Cooldown Pivot' }
-    },
-    destroyer: {
-      s1: { name: 'Frappe Sismique (Seismic Hammer)', sub: 'Top Dégâts Libération #1 • ~38% du DPS', tag: 'Burst #1' },
-      s2: { name: 'Mangeur Parfait (Perfect Swing)', sub: 'Coup Massif Libération #2 • ~32% du DPS', tag: 'Burst #2' },
-      s3: { name: 'Vague de Terre (Earth Eater)', sub: 'Compétence Neutralisation & Dégâts', tag: 'Burst #3' },
-      s4: { name: 'Saut Endurant (Endure Pain)', sub: 'Génération de Noyaux & Super Armure', tag: 'Cooldown Pivot' }
-    },
-    reaper: {
-      s1: { name: 'Rage Rouge (Rage Spear)', sub: 'Top Attaque Chaos / Trébuchement #1', tag: 'Burst #1' },
-      s2: { name: 'Moisson Lumineuse (Glowing Brand)', sub: 'Compétence d\'Ombre Majeure #2', tag: 'Burst #2' },
-      s3: { name: 'Vortex de Danse (Dance of Fury)', sub: 'Attaque Finale de Burst', tag: 'Burst #3' },
-      s4: { name: 'Ombre de Cauchemar (Nightmare)', sub: 'Téléportation & Maintien de Synergie', tag: 'Cooldown Pivot' }
-    },
-    valkyrie: {
-      s1: { name: 'Épée de Jugement (Judgment Sword)', sub: 'Top Dégâts Libératrice #1 • ~35% du DPS', tag: 'Burst #1' },
-      s2: { name: 'Rayon Céleste (Celestial Beam)', sub: 'Compétence Majeure #2 • ~28% du DPS', tag: 'Burst #2' },
-      s3: { name: 'Lame d\'Espoir (Blade of Hope)', sub: 'Finition de Burst • ~20% du DPS', tag: 'Burst #3' },
-      s4: { name: 'Élan Sacré (Holy Rush)', sub: 'Mobilité & Réduction CD de Rotation', tag: 'Cooldown Pivot' }
-    }
-  };
-  DPS_CLASS_SKILLS.demonic = DPS_CLASS_SKILLS.shadowhunter;
-  DPS_CLASS_SKILLS.generic = {
-    s1: { name: 'Compétence Majeure #1 (Top Burst #1)', sub: 'Top Dégâts T4 #1 • ~35% du DPS', tag: 'Burst #1' },
-    s2: { name: 'Compétence Majeure #2 (Core Rotation #2)', sub: 'Compétence Principale #2 • ~25% du DPS', tag: 'Burst #2' },
-    s3: { name: 'Compétence Majeure #3 (Burst Finisher #3)', sub: 'Compétence Finition #3 • ~15% du DPS', tag: 'Burst #3' },
-    s4: { name: 'Compétence Utilitaire (Utility & CDR)', sub: 'Mobilité & Synergie de Cycle • Réduction CD', tag: 'Cooldown Pivot' }
-  };
+  // Cibles choisies : { [slot]: [cible ligne 1, cible ligne 2] } (-1 = actuel, 0/1/2 = Low/Mid/High) ; gemmes : niveau minimal
+  const optSim = { charKey: null, acc: {}, gemMin: 0 };
 
-  const perSkillGemsState = {
-    hbLvl: 8,
-    wogLvl: 8,
-    brandLvl: 7,
-    hpLvl: 8,
-    otherLvl: 7,
-    // DPS slots
-    dps1Lvl: 8,
-    dps2Lvl: 8,
-    dps3Lvl: 8,
-    dpsCdLvl: 8,
-    dpsOtherLvl: 8
-  };
-
-  function calcPerSkillGems() {
-    const curChar = getCurrentActiveCharacter();
-    const isSupport = state.role === 'support';
-    
-    // Swiftness & Cooldown Reduction
-    const swiftness = isSupport ? 1800 : 1600;
-    const swiftCdr = (swiftness * 0.02148) / 100; // ~38.66%
-
-    const gemCdrMap = { 7: 0.18, 8: 0.20, 9: 0.22, 10: 0.24 };
-
-    function getSkillCd(baseCd, lvl) {
-      const cdr = gemCdrMap[lvl] || 0.18;
-      return baseCd * (1 - swiftCdr) * (1 - cdr);
-    }
-
-    // 1. Heavenly Blessing (30.0s base CD avec trépied Préparation Rapide)
-    const hbCd = getSkillCd(30.0, perSkillGemsState.hbLvl);
-    // 2. Wrath of God (22.0s base CD avec trépied)
-    const wogCd = getSkillCd(22.0, perSkillGemsState.wogLvl);
-    
-    // Fenêtre totale du Buff d'Attaque = 16.0s (8.0s HB + 8.0s WoG)
-    const totalApWindow = 16.0;
-    const hbGap = Math.max(0, hbCd - totalApWindow);
-    const apCycle = Math.max(totalApWindow, hbCd);
-    const apUptime = Math.min(100, (totalApWindow / apCycle) * 100);
-
-    // 3. Brand / Foi Sacrée / Choc Lumineux (8.0s base CD, 6.0s durée)
-    const brandCd = getSkillCd(8.0, perSkillGemsState.brandLvl);
-    const brandUptime = Math.min(100, (6.0 / brandCd) * 100);
-
-    // 4. Holy Protection (30.0s base CD)
-    const hpCd = getSkillCd(30.0, perSkillGemsState.hpLvl);
-    const gaugeRateBoost = (30.0 / hpCd - 1) * 100;
-
-    // 5. Calcul CP exact Smilegate (lostark.bible)
-    // T7 = 0 bonus, T8 = +32.2 CP, T9 = +68.3 CP, T10 = +108.6 CP
-    const gemCpStep = { 7: 0, 8: 32.2, 9: 68.3, 10: 108.6 };
-    const hbCp = gemCpStep[perSkillGemsState.hbLvl];
-    const wogCp = gemCpStep[perSkillGemsState.wogLvl];
-    const brandCp = gemCpStep[perSkillGemsState.brandLvl];
-    const hpCp = gemCpStep[perSkillGemsState.hpLvl];
-    const otherCp = 7 * gemCpStep[perSkillGemsState.otherLvl];
-    const totalGemCp = Math.round(hbCp + wogCp + brandCp + hpCp + otherCp);
-
-    // Baseline dynamique basée sur l'équipement réel du personnage
-    let baselineGemCp = (isSupport ? 199 : 312);
-    const activeGemParts = (typeof extractCharacterGemParts === 'function') ? extractCharacterGemParts(curChar) : (curChar && curChar.gemParts);
-    if (activeGemParts && Array.isArray(activeGemParts) && activeGemParts.length > 0) {
-      const step78 = isSupport ? 32.2 : 30.4;
-      const step89 = isSupport ? 36.1 : 32.3;
-      const step910 = isSupport ? 40.3 : 34.5;
-      const t8 = isSupport ? 9.20 : 5.50;
-      const t9 = isSupport ? 10.40 : 6.10;
-      const t10 = isSupport ? 11.50 : 6.70;
-      baselineGemCp = Math.round(activeGemParts.reduce((acc, rawG) => {
-        const g = rawG > 20 ? rawG / 100 : rawG;
-        if (g >= t10) return acc + step78 + step89 + step910;
-        if (g >= t9) return acc + step78 + step89;
-        if (g >= t8) return acc + step78;
-        return acc;
-      }, 0));
-    }
-    const deltaCp = totalGemCp - baselineGemCp;
-
-    return {
-      hbCd,
-      hbGap,
-      apUptime,
-      wogCd,
-      brandCd,
-      brandUptime,
-      hpCd,
-      gaugeRateBoost,
-      totalGemCp,
-      deltaCp
-    };
+  // Tier (0/1/2) le plus proche d'une valeur de ligne, null si la stat n'a pas d'échelle
+  function accTierOf(key, amount) {
+    const t = ACC_LINE_TIERS[key];
+    if (!t) return null;
+    let best = 0;
+    t.forEach((v, i) => { if (Math.abs(v - amount) < Math.abs(t[best] - amount)) best = i; });
+    return best;
   }
 
-  function updatePerSkillGemsView() {
-    const curChar = getCurrentActiveCharacter();
-    const classKey = getCharacterClassKey(curChar);
-    const suppData = SUPPORT_CLASS_SKILLS[classKey] || SUPPORT_CLASS_SKILLS.paladin;
-
-    // Mise à jour des labels dynamiques de support
-    const isEnGems = isEnLang();
-    if (dom.dispSuppSkill1Name) dom.dispSuppSkill1Name.textContent = isEnGems ? 'Heavenly Blessing' : suppData.s1.name;
-    if (dom.dispSuppSkill1Sub) dom.dispSuppSkill1Sub.textContent = isEnGems ? 'Party AP Buff (+16% PA + 8% AP) • Duration: 8.0s • Base CD: 30s' : suppData.s1.sub;
-    if (dom.dispSuppSkill1Tag) dom.dispSuppSkill1Tag.textContent = isEnGems ? 'AP Bottleneck #1' : suppData.s1.tag;
-
-    if (dom.dispSuppSkill2Name) dom.dispSuppSkill2Name.textContent = isEnGems ? 'Wrath of God' : suppData.s2.name;
-    if (dom.dispSuppSkill2Sub) dom.dispSuppSkill2Sub.textContent = isEnGems ? 'Party AP Buff (+16% PA + 8% AP) • Duration: 8.0s • Base CD: 22s' : suppData.s2.sub;
-    if (dom.dispSuppSkill2Tag) dom.dispSuppSkill2Tag.textContent = isEnGems ? 'AP Buff #2' : suppData.s2.tag;
-
-    if (dom.dispSuppSkill3Name) dom.dispSuppSkill3Name.textContent = isEnGems ? 'Holy Area / Light Shock' : suppData.s3.name;
-    if (dom.dispSuppSkill3Sub) dom.dispSuppSkill3Sub.textContent = isEnGems ? 'Brand Power (+10% dmg taken) • Duration: 6.0s • Base CD: 8s' : suppData.s3.sub;
-    if (dom.dispSuppSkill3Tag) dom.dispSuppSkill3Tag.textContent = isEnGems ? 'Ally Brand' : suppData.s3.tag;
-
-    if (dom.dispSuppSkill4Name) dom.dispSuppSkill4Name.textContent = isEnGems ? 'Holy Protection' : suppData.s4.name;
-    if (dom.dispSuppSkill4Sub) dom.dispSuppSkill4Sub.textContent = isEnGems ? 'Shield & Divine Wave • Base CD: 30s • Generates True Gauge for Aura' : suppData.s4.sub;
-    if (dom.dispSuppSkill4Tag) dom.dispSuppSkill4Tag.textContent = isEnGems ? 'Shield & True Gauge' : suppData.s4.tag;
-
-    if (dom.dispSuppAdvisorTitle) dom.dispSuppAdvisorTitle.textContent = isEnGems ? 'Paladin Support Gem Recommendation (All-In-One Guide 2026):' : suppData.advisorTitle;
-
-    const res = calcPerSkillGems();
-
-    if (dom.gemLvl_hb) dom.gemLvl_hb.value = perSkillGemsState.hbLvl.toString();
-    if (dom.gemLvl_wog) dom.gemLvl_wog.value = perSkillGemsState.wogLvl.toString();
-    if (dom.gemLvl_brand) dom.gemLvl_brand.value = perSkillGemsState.brandLvl.toString();
-    if (dom.gemLvl_hp) dom.gemLvl_hp.value = perSkillGemsState.hpLvl.toString();
-    if (dom.gemLvl_other) dom.gemLvl_other.value = perSkillGemsState.otherLvl.toString();
-
-    const isEn = isEnLang();
-    if (dom.dispCd_hb) dom.dispCd_hb.textContent = `${res.hbCd.toFixed(1)}s CD`;
-    if (dom.dispStatus_hb) {
-      if (res.hbGap <= 0.05) {
-        dom.dispStatus_hb.textContent = 'Gapless';
-        dom.dispStatus_hb.className = 'gem-metric-status ok';
-      } else {
-        dom.dispStatus_hb.textContent = isEn ? `Gap: ${res.hbGap.toFixed(1)}s` : `Trou : ${res.hbGap.toFixed(1)}s`;
-        dom.dispStatus_hb.className = 'gem-metric-status warn';
-      }
-    }
-
-    if (dom.dispCd_wog) dom.dispCd_wog.textContent = `${res.wogCd.toFixed(1)}s CD`;
-    if (dom.dispStatus_wog) {
-      dom.dispStatus_wog.textContent = res.wogCd <= 16.0 
-        ? (isEn ? 'Guaranteed Uptime' : 'Uptime Garanti') 
-        : (isEn ? 'Misalignment' : 'Décalage');
-      dom.dispStatus_wog.className = res.wogCd <= 16.0 ? 'gem-metric-status ok' : 'gem-metric-status warn';
-    }
-
-    if (dom.dispCd_brand) dom.dispCd_brand.textContent = `${res.brandCd.toFixed(1)}s CD`;
-    if (dom.dispStatus_brand) {
-      dom.dispStatus_brand.textContent = res.brandCd <= 6.0 
-        ? (isEn ? '100% Brand' : '100% Marque') 
-        : (isEn ? 'Misalignment' : 'Décalage');
-      dom.dispStatus_brand.className = res.brandCd <= 6.0 ? 'gem-metric-status ok' : 'gem-metric-status warn';
-    }
-
-    if (dom.dispCd_hp) dom.dispCd_hp.textContent = `${res.hpCd.toFixed(1)}s CD`;
-
-    if (dom.dispGemApUptime) dom.dispGemApUptime.textContent = `${res.apUptime.toFixed(1)}%`;
-    if (dom.dispGemBrandUptime) dom.dispGemBrandUptime.textContent = `${res.brandUptime.toFixed(1)}%`;
-    if (dom.dispGemCycleGain) dom.dispGemCycleGain.textContent = `+${res.cycleGain.toFixed(1)}%`;
-
-    if (dom.dispGemTotalCp) dom.dispGemTotalCp.textContent = `+${formatNumber(res.totalGemCp)} CP`;
-    if (dom.dispGemCpDelta) {
-      const sign = res.deltaCp > 0 ? '+' : (res.deltaCp < 0 ? '-' : '+');
-      dom.dispGemCpDelta.textContent = isEn
-        ? `${sign}${formatNumber(Math.abs(res.deltaCp))} CP vs current profile`
-        : `${sign}${formatNumber(Math.abs(res.deltaCp))} CP vs profil actuel`;
-    }
-
-    if (dom.gemAdvisorText) {
-      if (classKey === 'paladin') {
-        if (isEn) {
-          if (perSkillGemsState.hbLvl >= 9 && perSkillGemsState.wogLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '<strong>Optimal Paladin Setup:</strong> Both major Attack buffs are covered at Level 9+. <em>Heavenly Blessings</em> has a safety margin of over 1.8s against boss knockbacks and movement.';
-          } else if (perSkillGemsState.hbLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '<strong>Goal Reached:</strong> Your <em>Heavenly Blessings</em> is at Level 9 (-22% CD), guaranteeing a smooth 100% AP rotation even in raid conditions. Raising <em>Wrath of God</em> to Level 9 gives raw CP, but uptime is already secured.';
-          } else {
-            dom.gemAdvisorText.innerHTML = 'Your current setup (Heavenly Blessings Lvl. 8 + Wrath of God Lvl. 8) keeps cooldowns under 16.0s, ensuring a theoretical 100% AP uptime. <strong>Upgrade Priority:</strong> Upgrade exclusively <em>Heavenly Blessings</em> to Level 9 to secure buff uptime in actual raids.';
-          }
-        } else {
-          if (perSkillGemsState.hbLvl >= 9 && perSkillGemsState.wogLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '<strong>Configuration Paladin Optimale :</strong> Vos 2 buffs d\'Attaque majeurs sont couverts au niveau 9+. <em>Bénédiction Céleste</em> dispose d\'une marge de sécurité de plus de 1.8s contre les déplacements et interruptions de boss.';
-          } else if (perSkillGemsState.hbLvl >= 9) {
-            dom.gemAdvisorText.innerHTML = '<strong>Objectif Atteint :</strong> Votre <em>Bénédiction Céleste</em> est au Niveau 9 (-22% CD), garantissant une rotation fluide à 100% d\'AP même en situation réelle. Monter <em>Colère Divine</em> au niveau 9 apportera du CP brut mais l\'uptime est déjà sécurisé.';
-          } else {
-            dom.gemAdvisorText.innerHTML = 'Votre configuration actuelle (Bénédiction Céleste Niv. 8 + Colère Divine Niv. 8) assure un temps de rechargement sous les 16.0 secondes, garantissant un uptime d\'AP théorique à 100%. <strong>Priorité d\'upgrade :</strong> Monter exclusivement <em>Bénédiction Céleste</em> au niveau 9 pour sécuriser le buff en situation réelle de raid.';
-          }
-        }
-      } else {
-        dom.gemAdvisorText.innerHTML = suppData.advisorText;
-      }
-    }
-  }
-
-  function updateDpsGemsView() {
-    const curChar = getCurrentActiveCharacter();
-    const classKey = getCharacterClassKey(curChar);
-    const skills = DPS_CLASS_SKILLS[classKey] || DPS_CLASS_SKILLS.generic || DPS_CLASS_SKILLS.shadowhunter;
-
-    // Met à jour les libellés de compétences selon la classe
-    const isEnDps = isEnLang();
-    function formatDpsSkillName(name) {
-      if (!isEnDps || !name) return name;
-      const match = name.match(/\(([^)]+)\)/);
-      return match ? match[1].trim() : name;
-    }
-    if (dom.dispDpsSkill1Name) dom.dispDpsSkill1Name.textContent = formatDpsSkillName(skills.s1.name);
-    if (dom.dispDpsSkill1Sub) dom.dispDpsSkill1Sub.textContent = isEnDps ? 'T4 Major Damage Gem • Maximized Burst' : skills.s1.sub;
-    if (dom.dispDpsSkill1Tag) dom.dispDpsSkill1Tag.textContent = isEnDps ? 'Top Burst #1' : skills.s1.tag;
-
-    if (dom.dispDpsSkill2Name) dom.dispDpsSkill2Name.textContent = formatDpsSkillName(skills.s2.name);
-    if (dom.dispDpsSkill2Sub) dom.dispDpsSkill2Sub.textContent = isEnDps ? 'T4 Major Damage Gem • Core Rotation' : skills.s2.sub;
-    if (dom.dispDpsSkill2Tag) dom.dispDpsSkill2Tag.textContent = isEnDps ? 'Burst #2' : skills.s2.tag;
-
-    if (dom.dispDpsSkill3Name) dom.dispDpsSkill3Name.textContent = formatDpsSkillName(skills.s3.name);
-    if (dom.dispDpsSkill3Sub) dom.dispDpsSkill3Sub.textContent = isEnDps ? 'T4 Damage Gem • Cycle Finisher' : skills.s3.sub;
-    if (dom.dispDpsSkill3Tag) dom.dispDpsSkill3Tag.textContent = isEnDps ? 'Burst #3' : skills.s3.tag;
-
-    if (dom.dispDpsCdName) dom.dispDpsCdName.textContent = formatDpsSkillName(skills.s4.name);
-    if (dom.dispDpsCdSub) dom.dispDpsCdSub.textContent = isEnDps ? 'Cooldown Reduction • Burst Alignment' : skills.s4.sub;
-    if (dom.dispDpsCdTag) dom.dispDpsCdTag.textContent = isEnDps ? 'Rotation Pivot' : skills.s4.tag;
-
-    // Valeurs de gemmes
-    const dmgMap = { 7: 32, 8: 36, 9: 40, 10: 44 };
-    const cdrMap = { 7: 18, 8: 20, 9: 22, 10: 24 };
-    const cpMap = { 7: 0, 8: 28.35, 9: 60.35, 10: 98.35 };
-
-    const s1Dmg = dmgMap[perSkillGemsState.dps1Lvl] || 36;
-    const s2Dmg = dmgMap[perSkillGemsState.dps2Lvl] || 36;
-    const s3Dmg = dmgMap[perSkillGemsState.dps3Lvl] || 36;
-    const s4Cd = cdrMap[perSkillGemsState.dpsCdLvl] || 20;
-
-    if (dom.gemLvl_dps1) dom.gemLvl_dps1.value = perSkillGemsState.dps1Lvl.toString();
-    if (dom.gemLvl_dps2) dom.gemLvl_dps2.value = perSkillGemsState.dps2Lvl.toString();
-    if (dom.gemLvl_dps3) dom.gemLvl_dps3.value = perSkillGemsState.dps3Lvl.toString();
-    if (dom.gemLvl_dpsCd) dom.gemLvl_dpsCd.value = perSkillGemsState.dpsCdLvl.toString();
-    if (dom.gemLvl_dpsOther) dom.gemLvl_dpsOther.value = perSkillGemsState.dpsOtherLvl.toString();
-
-    if (dom.dispDpsSkill1Val) dom.dispDpsSkill1Val.textContent = `+${s1Dmg}.0% Dmg`;
-    if (dom.dispDpsSkill2Val) dom.dispDpsSkill2Val.textContent = `+${s2Dmg}.0% Dmg`;
-    if (dom.dispDpsSkill3Val) dom.dispDpsSkill3Val.textContent = `+${s3Dmg}.0% Dmg`;
-    if (dom.dispDpsCdVal) dom.dispDpsCdVal.textContent = `-${s4Cd}.0% CD`;
-
-    // Métriques globales DPS
-    const totalGemCp = Math.round(
-      cpMap[perSkillGemsState.dps1Lvl] +
-      cpMap[perSkillGemsState.dps2Lvl] +
-      cpMap[perSkillGemsState.dps3Lvl] +
-      cpMap[perSkillGemsState.dpsCdLvl] +
-      (7 * cpMap[perSkillGemsState.dpsOtherLvl])
-    );
-
-    let baselineCp = 312;
-    const activeGemPartsDps = (typeof extractCharacterGemParts === 'function') ? extractCharacterGemParts(curChar) : (curChar && curChar.gemParts);
-    if (activeGemPartsDps && Array.isArray(activeGemPartsDps) && activeGemPartsDps.length > 0) {
-      baselineCp = Math.round(activeGemPartsDps.reduce((acc, rawG) => {
-        const g = rawG > 20 ? rawG / 100 : rawG;
-        if (g >= 6.70) return acc + 98.35;
-        if (g >= 6.10) return acc + 60.35;
-        if (g >= 5.50) return acc + 28.35;
-        return acc;
-      }, 0));
-    }
-    const deltaCp = totalGemCp - baselineCp;
-
-    const weightedDpsGain = (s1Dmg * 0.35) + (s2Dmg * 0.25) + (s3Dmg * 0.15) + (dmgMap[perSkillGemsState.dpsOtherLvl] * 0.25);
-
-    if (dom.dispDpsGemBurstGain) dom.dispDpsGemBurstGain.textContent = `+${s1Dmg}.0%`;
-    if (dom.dispDpsGemTotalDps) dom.dispDpsGemTotalDps.textContent = `+${(weightedDpsGain * 0.65).toFixed(1)}%`;
-    if (dom.dispDpsGemAvgCd) dom.dispDpsGemAvgCd.textContent = `-${s4Cd}.0%`;
-    if (dom.dispDpsGemTotalCp) dom.dispDpsGemTotalCp.textContent = `+${formatNumber(totalGemCp)} CP`;
-    if (dom.dispDpsGemCpDelta) {
-      const sign = deltaCp > 0 ? '+' : (deltaCp < 0 ? '-' : '+');
-      dom.dispDpsGemCpDelta.textContent = isEnLang()
-        ? `${sign}${formatNumber(Math.abs(deltaCp))} CP vs current profile`
-        : `${sign}${formatNumber(Math.abs(deltaCp))} CP vs profil actuel`;
-    }
-
-    if (dom.gemDpsAdvisorText) {
-      const s1Short = skills.s1.name.split('(')[0].trim();
-      const s2Short = skills.s2.name.split('(')[0].trim();
-      if (perSkillGemsState.dps1Lvl >= 9 && perSkillGemsState.dps2Lvl >= 9) {
-        dom.gemDpsAdvisorText.innerHTML = isEnLang()
-          ? `<strong>DPS setup:</strong> your 2 main burst skills (<em>${s1Short}</em> and <em>${s2Short}</em>) already have Lv. 9/10 gems (+40%/+44%), the best damage multiplier per gold spent.`
-          : `<strong>Configuration DPS :</strong> Vos 2 compétences de burst majeures (<em>${s1Short}</em> et <em>${s2Short}</em>) sont équipées en gemmes Niveau 9/10 (+40%/+44%), garantissant le meilleur multiplicateur de dégâts par gold investi.`;
-      } else {
-        dom.gemDpsAdvisorText.innerHTML = isEnLang()
-          ? `<strong>DPS priority:</strong> raise the <em>${s1Short}</em> gem to Lv. 9 (+40% damage) first. It is the most cost-effective skill in your rotation.`
-          : `<strong>Priorité Stratégique DPS :</strong> Montez en priorité la gemme de <em>${s1Short}</em> au Niveau 9 (+40% Dégâts). C'est votre compétence la plus rentable du cycle de combat.`;
-      }
-    }
-  }
-
-  function initPerSkillGemsEvents() {
-    const bindSelect = (el, key) => {
-      if (el) {
-        el.addEventListener('change', (e) => {
-          perSkillGemsState[key] = parseInt(e.target.value, 10) || 7;
-          updatePerSkillGemsView();
-          updateOptimizationView();
-        });
-      }
-    };
-
-    bindSelect(dom.gemLvl_hb, 'hbLvl');
-    bindSelect(dom.gemLvl_wog, 'wogLvl');
-    bindSelect(dom.gemLvl_brand, 'brandLvl');
-    bindSelect(dom.gemLvl_hp, 'hpLvl');
-    bindSelect(dom.gemLvl_other, 'otherLvl');
-
-    // Bind DPS gem controls
-    bindSelect(dom.gemLvl_dps1, 'dps1Lvl');
-    bindSelect(dom.gemLvl_dps2, 'dps2Lvl');
-    bindSelect(dom.gemLvl_dps3, 'dps3Lvl');
-    bindSelect(dom.gemLvl_dpsCd, 'dpsCdLvl');
-    bindSelect(dom.gemLvl_dpsOther, 'dpsOtherLvl');
-
-    // DPS Presets
-    if (dom.btnGemDpsPresetCurrent) {
-      dom.btnGemDpsPresetCurrent.addEventListener('click', () => {
-        perSkillGemsState.dps1Lvl = 8;
-        perSkillGemsState.dps2Lvl = 8;
-        perSkillGemsState.dps3Lvl = 8;
-        perSkillGemsState.dpsCdLvl = 8;
-        perSkillGemsState.dpsOtherLvl = 8;
-        updateDpsGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemDpsPresetMeta) {
-      dom.btnGemDpsPresetMeta.addEventListener('click', () => {
-        perSkillGemsState.dps1Lvl = 9;
-        perSkillGemsState.dps2Lvl = 9;
-        perSkillGemsState.dps3Lvl = 8;
-        perSkillGemsState.dpsCdLvl = 8;
-        perSkillGemsState.dpsOtherLvl = 8;
-        updateDpsGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemDpsPresetFull8) {
-      dom.btnGemDpsPresetFull8.addEventListener('click', () => {
-        perSkillGemsState.dps1Lvl = 8;
-        perSkillGemsState.dps2Lvl = 8;
-        perSkillGemsState.dps3Lvl = 8;
-        perSkillGemsState.dpsCdLvl = 8;
-        perSkillGemsState.dpsOtherLvl = 8;
-        updateDpsGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemDpsPresetFull9) {
-      dom.btnGemDpsPresetFull9.addEventListener('click', () => {
-        perSkillGemsState.dps1Lvl = 9;
-        perSkillGemsState.dps2Lvl = 9;
-        perSkillGemsState.dps3Lvl = 9;
-        perSkillGemsState.dpsCdLvl = 9;
-        perSkillGemsState.dpsOtherLvl = 9;
-        updateDpsGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemDpsPresetFull10) {
-      dom.btnGemDpsPresetFull10.addEventListener('click', () => {
-        perSkillGemsState.dps1Lvl = 10;
-        perSkillGemsState.dps2Lvl = 10;
-        perSkillGemsState.dps3Lvl = 10;
-        perSkillGemsState.dpsCdLvl = 10;
-        perSkillGemsState.dpsOtherLvl = 10;
-        updateDpsGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    // Preset Buttons
-    if (dom.btnGemPresetCurrent) {
-      dom.btnGemPresetCurrent.addEventListener('click', () => {
-        perSkillGemsState.hbLvl = 8;
-        perSkillGemsState.wogLvl = 8;
-        perSkillGemsState.brandLvl = 7;
-        perSkillGemsState.hpLvl = 8;
-        perSkillGemsState.otherLvl = 7;
-        if (dom.optGemsDeck) dom.optGemsDeck.value = 'current';
-        updatePerSkillGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemPresetMetaSupport) {
-      dom.btnGemPresetMetaSupport.addEventListener('click', () => {
-        perSkillGemsState.hbLvl = 9;
-        perSkillGemsState.wogLvl = 8;
-        perSkillGemsState.brandLvl = 7;
-        perSkillGemsState.hpLvl = 8;
-        perSkillGemsState.otherLvl = 7;
-        if (dom.optGemsDeck) dom.optGemsDeck.value = 'lvl8';
-        updatePerSkillGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemPresetFull8) {
-      dom.btnGemPresetFull8.addEventListener('click', () => {
-        perSkillGemsState.hbLvl = 8;
-        perSkillGemsState.wogLvl = 8;
-        perSkillGemsState.brandLvl = 8;
-        perSkillGemsState.hpLvl = 8;
-        perSkillGemsState.otherLvl = 8;
-        if (dom.optGemsDeck) dom.optGemsDeck.value = 'lvl8';
-        updatePerSkillGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemPresetFull9) {
-      dom.btnGemPresetFull9.addEventListener('click', () => {
-        perSkillGemsState.hbLvl = 9;
-        perSkillGemsState.wogLvl = 9;
-        perSkillGemsState.brandLvl = 9;
-        perSkillGemsState.hpLvl = 9;
-        perSkillGemsState.otherLvl = 9;
-        if (dom.optGemsDeck) dom.optGemsDeck.value = 'lvl9';
-        updatePerSkillGemsView();
-        updateOptimizationView();
-      });
-    }
-
-    if (dom.btnGemPresetFull10) {
-      dom.btnGemPresetFull10.addEventListener('click', () => {
-        perSkillGemsState.hbLvl = 10;
-        perSkillGemsState.wogLvl = 10;
-        perSkillGemsState.brandLvl = 10;
-        perSkillGemsState.hpLvl = 10;
-        perSkillGemsState.otherLvl = 10;
-        if (dom.optGemsDeck) dom.optGemsDeck.value = 'lvl10';
-        updatePerSkillGemsView();
-        updateOptimizationView();
-      });
-    }
-  }
-
-  // --- MODULE ASSISTANT DE TAILLAGE D'ACCESSOIRES T4 (LOSEII BELLMAN DP) ---
-
-  const cuttingAdvisorState = {
-    slot: 'neck',
-    quintile: 'mid',
-    cut1Effect: 'primary',
-    cut1Tier: 'mid',
-    cut2Status: 'not_cut', // 'not_cut' ou 'done'
-    cut2Effect: 'primary',
-    cut2Tier: 'mid'
-  };
-
-  const CUT_COST = 1200;
-
-  // Ancres de marché issues de l'étude empirique de loseii.com (nettes des phéons)
-  // Neck: HM = 250k Sup / 500k DPS, HH = 1.2M Sup / 3.2M DPS
-  // Ring: ~75% de la valeur collier
-  // Earring: ~55% de la valeur collier
-  const BASE_MARKET_VALUES = {
-    neck: {
-      support: { hh: 1200000, hm: 250000, hl: 45000, mm: 65000, ml: 12000, ll: 0 },
-      dps: { hh: 3200000, hm: 500000, hl: 80000, mm: 140000, ml: 25000, ll: 0 }
-    },
-    earring: {
-      support: { hh: 650000, hm: 140000, hl: 28000, mm: 40000, ml: 8000, ll: 0 },
-      dps: { hh: 1800000, hm: 320000, hl: 55000, mm: 95000, ml: 18000, ll: 0 }
-    },
-    ring: {
-      support: { hh: 900000, hm: 200000, hl: 38000, mm: 55000, ml: 10000, ll: 0 },
-      dps: { hh: 2400000, hm: 420000, hl: 70000, mm: 120000, ml: 22000, ll: 0 }
-    }
-  };
-
-  const STAT_QUINTILE_MULT = {
-    min: 0.85,
-    low: 0.92,
-    mid: 1.00,
-    high: 1.08,
-    max: 1.18
-  };
-
-  function evaluateCutState({
-    slot = 'neck',
-    role = 'support',
-    quintile = 'mid',
-    cut1Type = 'primary',
-    cut1Tier = 'mid',
-    cut2Done = false,
-    cut2Type = 'trash',
-    cut2Tier = 'none'
-  }) {
-    const slotData = BASE_MARKET_VALUES[slot] || BASE_MARKET_VALUES.neck;
-    const m = slotData[role] || slotData.support;
-    const qMult = STAT_QUINTILE_MULT[quintile] || 1.0;
-
-    const pHigh = 0.007; // 0.7% proba
-    const pMid = 0.030;  // 3.0% proba
-    const pLow = 0.063;  // 6.3% proba
-
-    let decision = 'STOP';
-    let subtitle = '';
-    let ev = 0;
-    let estimatedMarketVal = 0;
-    let probSuccess = '3.70%';
-    let nextCost = 1200;
-    let explanation = '';
-    let bannerClass = 'stop';
-    let icon = '';
-
-    const isEn = isEnLang();
-    if (!cut2Done) {
-      // Décision après le 1er Cut
-      if (cut1Tier === 'high' && cut1Type === 'primary') {
-        decision = isEn ? 'CONTINUE (HIGH ON PRIMARY)' : 'CONTINUER (HIGH SUR LIGNE PRIMAIRE)';
-        subtitle = isEn ? 'Positive expected value (EV >> 0): the 1,200 g cut pays off.' : 'Espérance positive (EV >> 0) : le cut à 1 200 g est rentable.';
-        ev = Math.round((m.hh * pHigh * 2 + m.hm * pMid * 2 + m.hl * pLow * 2) * qMult - (CUT_COST * 2));
-        estimatedMarketVal = Math.round(m.hm * qMult);
-        probSuccess = '3.70%';
-        bannerClass = 'jackpot';
-        icon = '';
-        explanation = isEn 
-          ? `First cut: Tier High on a primary line. Good combined odds of a High/High or High/Mid piece. With the ${quintile.toUpperCase()} quintile effect, projected market value net of pheon tax is ~ ${estimatedMarketVal.toLocaleString()} g. Net mathematical expected value is +${ev.toLocaleString()} g. Continue.`
-          : `Premier cut : Tier High sur une ligne primaire. Bonne probabilité cumulée d'obtenir un bijou High/High ou High/Mid. Avec l'effet du quintile (${quintile.toUpperCase()}), la valeur marchande projetée nette de taxe phéons est d'environ ${estimatedMarketVal.toLocaleString()} g. L'espérance mathématique nette de taillage s'élève à +${ev.toLocaleString()} g. Continuez.`;
-      } else if (cut1Tier === 'mid' && cut1Type === 'primary') {
-        decision = isEn ? 'CONTINUE CUTTING' : 'CONTINUER À TAILLER';
-        subtitle = isEn ? 'Positive net expected value (EV > 0). Paying 1,200g is mathematically profitable.' : 'Espérance de gain nette positive (EV > 0). Payer 1 200 g est mathématiquement rentable.';
-        ev = Math.round((m.hm * pHigh * 2 + m.mm * pMid * 2 + m.ml * pLow * 2) * qMult - (CUT_COST * 2));
-        estimatedMarketVal = Math.round(m.mm * qMult);
-        probSuccess = '3.70%';
-        bannerClass = 'continue';
-        icon = '';
-        explanation = isEn
-          ? `Successful first cut (Primary Line Tier Mid). High chance of finalizing a quality sellable or equippable piece (High/Mid or Mid/Mid). Residual net EV is positive (+${ev.toLocaleString()} g net). Bellman Recommendation: Pay the 2nd cut for 1,200 g.`
-          : `Premier cut réussi (Ligne Primaire Tier Mid). Vous avez de grandes chances de finaliser une pièce vendable ou équipable de qualité (High/Mid ou Mid/Mid). L'EV nette résiduelle est positive (+${ev.toLocaleString()} g net). Recommandation Bellman : Payez le 2ᵉ cut à 1 200 g.`;
-      } else if (cut1Tier === 'low' && cut1Type === 'primary') {
-        decision = isEn ? 'STOP IMMEDIATELY & DISMANTLE' : 'STOP IMMÉDIAT & RECYCLER';
-        subtitle = isEn ? 'Negative expected value (EV ≤ 0). Cutting further will lose gold.' : 'Espérance de gain négative (EV ≤ 0). Tailler davantage vous fera perdre des golds.';
-        ev = -CUT_COST;
-        estimatedMarketVal = 0;
-        probSuccess = '0.70%';
-        bannerClass = 'stop';
-        icon = '';
-        explanation = isEn
-          ? `First cut in Tier Low on primary line. Even with a High or Mid tier on the next cut, the piece will have capped value (High/Low or Mid/Low) failing to cover cumulative cutting costs (2,400g remaining) and the 60k gold pheon resale tax. Cut your losses and dismantle for powders.`
-          : `Premier cut en Tier Low sur la ligne primaire. Même si vous touchez un Tier High ou Mid au cut suivant, la pièce aura une valeur bridée (High/Low ou Mid/Low) qui ne couvrira pas le coût cumulé du taillage (2 400 g restants) et les 60k g de taxe phéons à la revente. Arrêtez les frais et recyclez le bijou pour récupérer vos poudres.`;
-      } else {
-        decision = isEn ? 'STOP IMMEDIATELY & DISMANTLE' : 'STOP IMMÉDIAT & RECYCLER';
-        subtitle = isEn ? 'Useless or missed line on first cut. High risk of gold waste.' : 'Ligne inutile ou ratée au premier cut. Risque de ruine mathématique.';
-        ev = -CUT_COST;
-        estimatedMarketVal = 0;
-        probSuccess = '0.00%';
-        bannerClass = 'stop';
-        icon = '';
-        explanation = isEn
-          ? `The first cut missed a useful major primary line. Spending an additional 1,200g is statistically a dead loss according to the Loseii Bellman model. Dismantle immediately.`
-          : `Le premier cut n'a pas touché une ligne primaire majeure utile. Dépenser 1 200 g supplémentaires est statistiquement une perte sèche d'après le modèle Loseii. Le bijou ne pourra jamais rentabiliser l'investissement. Recyclez-le immédiatement.`;
-      }
-    } else {
-      // Décision après le 2e Cut (Évaluation du Cut 3)
-      const hasHighPrimary = (cut1Type === 'primary' && cut1Tier === 'high') || (cut2Type === 'primary' && cut2Tier === 'high');
-      const hasMidPrimary1 = (cut1Type === 'primary' && cut1Tier === 'mid');
-      const hasMidPrimary2 = (cut2Type === 'primary' && cut2Tier === 'mid');
-
-      if (hasHighPrimary) {
-        decision = isEn ? 'FINALIZE 3RD CUT' : 'FINALISER LE 3ᵉ CUT';
-        subtitle = isEn ? 'Tier High secured on a primary line. Take the final cut.' : 'Tier High sécurisé sur une ligne primaire. Tentez le dernier cut.';
-        ev = Math.round(m.hl * qMult - CUT_COST);
-        estimatedMarketVal = Math.round(m.hm * qMult);
-        probSuccess = '3.70%';
-        bannerClass = 'jackpot';
-        icon = '';
-        explanation = isEn
-          ? `You secured at least one Tier High on a primary line. Only one cut left at 1,200g to unlock High/High or a useful 3rd line (Flat AP / HP). Expected value is positive: finalize the piece.`
-          : `Vous avez sécurisé au moins un Tier High sur une ligne primaire. Il ne reste qu'un seul cut à 1 200 g pour tenter de débloquer le tier High/High ou une 3ᵉ ligne utile (Flat AP / HP). L'espérance est positive : finalisez le bijou.`;
-      } else if (hasMidPrimary1 && hasMidPrimary2) {
-        decision = isEn ? 'FINALIZE 3RD CUT (GUARANTEED MID/MID)' : 'FINALISER LE 3ᵉ CUT (MID/MID SÉCURISÉ)';
-        subtitle = isEn ? 'Mid/Mid secured. The piece is already sellable and equippable.' : 'Mid/Mid sécurisé. Le bijou est déjà vendable et équipable.';
-        ev = Math.round(m.mm * qMult - CUT_COST);
-        estimatedMarketVal = Math.round(m.mm * qMult);
-        probSuccess = '100%';
-        bannerClass = 'continue';
-        icon = '';
-        explanation = isEn
-          ? `Mid/Mid secured on both primary lines. Sellable immediately on the market or equippable for your T4 roster. Finalize the 3rd cut to target the 3rd bonus line (Flat Weapon Power or Vitality).`
-          : `Mid/Mid sécurisé sur les deux lignes primaires. La pièce est directement vendable au marché ou équipable pour votre roster T4. Finalisez le 3ᵉ cut pour chercher la 3ᵉ ligne bonus (Puissance d'Arme flat ou Vitalité).`;
-      } else if (hasMidPrimary1 || hasMidPrimary2) {
-        const secondaryUseful = (cut1Type === 'flat' || cut1Type === 'hp' || cut2Type === 'flat' || cut2Type === 'hp') && (cut1Tier !== 'none' && cut2Tier !== 'none');
-        if (secondaryUseful) {
-          decision = isEn ? 'FINALIZE 3RD CUT (UTILITY PIECE)' : 'FINALISER LE 3ᵉ CUT (BIJOU UTILITAIRE)';
-          subtitle = isEn ? 'Decent transition piece with useful flat secondary line.' : 'Pièce de transition acceptable avec ligne secondaire flat utile.';
-          ev = Math.round(m.ml * qMult - CUT_COST);
-          estimatedMarketVal = Math.round(m.ml * qMult);
-          probSuccess = '22.2%';
-          bannerClass = 'continue';
-          icon = '';
-          explanation = isEn
-            ? `You secured a Mid primary line supplemented by a useful flat line. The 3rd cut at 1,200g can unlock an extra synergy for a small cost.`
-            : `Vous avez sécurisé une ligne primaire Mid complétée par une ligne flat utile. Le 3ᵉ cut à 1 200 g peut débloquer une synergie supplémentaire pour un coût modique.`;
-        } else {
-          decision = isEn ? 'ABANDON ACCESSORY' : 'ABANDONNER LE BIJOU';
-          subtitle = isEn ? 'Weak combination after 2 cuts. Save the 3rd cut gold.' : 'Combinaison trop faible après 2 cuts. Économisez le 3ᵉ taillage.';
-          ev = -CUT_COST;
-          estimatedMarketVal = 0;
-          probSuccess = '0.70%';
-          bannerClass = 'stop';
-          icon = '';
-          explanation = isEn
-            ? `After 2 cuts, only one Mid line is present without viable secondary synergy. Paying 1,200g more has a negligible chance to rescue the piece. Dismantle the accessory.`
-            : `Après 2 cuts, une seule ligne Mid est présente sans accompagnement viable. Payer 1 200 g de plus n'a qu'une probabilité infime de sauver la pièce. Recyclez le bijou.`;
-        }
-      } else {
-        decision = isEn ? 'ABANDON ACCESSORY' : 'ABANDONNER LE BIJOU';
-        subtitle = isEn ? 'No viable primary tier after 2 cuts.' : 'Aucun tier primaire viable après 2 cuts.';
-        ev = -CUT_COST;
-        estimatedMarketVal = 0;
-        probSuccess = '0.00%';
-        bannerClass = 'stop';
-        icon = '';
-        explanation = isEn
-          ? `After 2 cuts, no viable Mid/Mid or High primary combination is possible. Do not pay 1,200g for the 3rd cut. Sell or dismantle immediately.`
-          : `Après 2 cuts, aucune combinaison primaire Mid/Mid ou High n'est possible. Ne payez surtout pas les 1 200 g du 3ᵉ cut. Vendez au marchand ou recyclez en poudres.`;
-      }
-    }
-
-    return {
-      decision,
-      subtitle,
-      ev,
-      estimatedMarketVal,
-      probSuccess,
-      nextCost,
-      explanation,
-      bannerClass,
-      icon
-    };
-  }
-
-  function updateCuttingAdvisorView() {
-    const role = state.role || 'support';
-    const isSupport = role === 'support';
-
-    const isEn = isEnLang();
-    if (dom.cutRoleBadge) {
-      dom.cutRoleBadge.textContent = isSupport 
-        ? (isEn ? 'Support T4 (Sell / Equip)' : 'Support T4 (Vente / Équipement)') 
-        : (isEn ? 'DPS T4 (Sell / Equip)' : 'DPS T4 (Vente / Équipement)');
-      dom.cutRoleBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
-    }
-
-    if (dom.cutSlotSelect) dom.cutSlotSelect.value = cuttingAdvisorState.slot;
-    if (dom.cutStatQuintile) dom.cutStatQuintile.value = cuttingAdvisorState.quintile;
-    if (dom.cut1Effect) dom.cut1Effect.value = cuttingAdvisorState.cut1Effect;
-    if (dom.cut1Tier) dom.cut1Tier.value = cuttingAdvisorState.cut1Tier;
-    if (dom.cut2Status) dom.cut2Status.value = cuttingAdvisorState.cut2Status;
-    if (dom.cut2Effect) dom.cut2Effect.value = cuttingAdvisorState.cut2Effect;
-    if (dom.cut2Tier) dom.cut2Tier.value = cuttingAdvisorState.cut2Tier;
-
-    const cut2Done = cuttingAdvisorState.cut2Status === 'done';
-    if (dom.cut2DetailsGroup) {
-      dom.cut2DetailsGroup.style.display = cut2Done ? 'block' : 'none';
-    }
-
-    const res = evaluateCutState({
-      slot: cuttingAdvisorState.slot,
-      role: role,
-      quintile: cuttingAdvisorState.quintile,
-      cut1Type: cuttingAdvisorState.cut1Effect,
-      cut1Tier: cuttingAdvisorState.cut1Tier,
-      cut2Done: cut2Done,
-      cut2Type: cuttingAdvisorState.cut2Effect,
-      cut2Tier: cuttingAdvisorState.cut2Tier
+  // Lignes d'un bijou acheté (même hypothèse que le GPD, findBestAccessoryUpgrade) : les 2 lignes principales du rôle,
+  // à leur cible ou à leur tier actuel, 3e ligne morte
+  function simulatedSlotLines(lines, mains, targets) {
+    const out = [];
+    mains.forEach((k, i) => {
+      if (targets[i] >= 0) out.push({ key: k, amount: ACC_LINE_TIERS[k][targets[i]] });
+      else out.push(...lines.filter(l => l.key === k));
     });
-
-    if (dom.cutDecisionBanner) {
-      dom.cutDecisionBanner.className = `cutting-decision-banner ${res.bannerClass}`;
-    }
-    if (dom.cutDecisionIcon) dom.cutDecisionIcon.textContent = res.icon;
-    if (dom.cutDecisionTitle) dom.cutDecisionTitle.textContent = res.decision;
-    if (dom.cutDecisionSub) dom.cutDecisionSub.textContent = res.subtitle;
-
-    if (dom.cutEvVal) {
-      dom.cutEvVal.textContent = res.ev >= 0 ? `+${res.ev.toLocaleString()} g` : `${res.ev.toLocaleString()} g`;
-      dom.cutEvVal.className = `cut-kpi-val ${res.ev >= 0 ? 'highlight' : 'negative'}`;
-    }
-    if (dom.cutMarketVal) {
-      dom.cutMarketVal.textContent = res.estimatedMarketVal > 0 ? `~${res.estimatedMarketVal.toLocaleString()} g` : '0 g';
-    }
-    if (dom.cutProbSuccess) {
-      dom.cutProbSuccess.textContent = res.probSuccess;
-    }
-    if (dom.cutNextCost) {
-      dom.cutNextCost.textContent = `${res.nextCost.toLocaleString()} g`;
-    }
-    if (dom.cutAnalysisText) {
-      dom.cutAnalysisText.textContent = res.explanation;
-    }
+    return out;
   }
 
-  function initCuttingAdvisorEvents() {
-    if (dom.cutSlotSelect) {
-      dom.cutSlotSelect.addEventListener('change', (e) => {
-        cuttingAdvisorState.slot = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-    if (dom.cutStatQuintile) {
-      dom.cutStatQuintile.addEventListener('change', (e) => {
-        cuttingAdvisorState.quintile = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-    if (dom.cut1Effect) {
-      dom.cut1Effect.addEventListener('change', (e) => {
-        cuttingAdvisorState.cut1Effect = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-    if (dom.cut1Tier) {
-      dom.cut1Tier.addEventListener('change', (e) => {
-        cuttingAdvisorState.cut1Tier = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-    if (dom.cut2Status) {
-      dom.cut2Status.addEventListener('change', (e) => {
-        cuttingAdvisorState.cut2Status = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-    if (dom.cut2Effect) {
-      dom.cut2Effect.addEventListener('change', (e) => {
-        cuttingAdvisorState.cut2Effect = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-    if (dom.cut2Tier) {
-      dom.cut2Tier.addEventListener('change', (e) => {
-        cuttingAdvisorState.cut2Tier = e.target.value;
-        updateCuttingAdvisorView();
-      });
-    }
-
-    function setPresetActive(activeBtn) {
-      [dom.btnCutPresetJackpot, dom.btnCutPresetMid, dom.btnCutPresetLow, dom.btnCutPresetTrash].forEach(b => {
-        if (b) b.classList.remove('active');
-      });
-      if (activeBtn) activeBtn.classList.add('active');
-    }
-
-    if (dom.btnCutPresetJackpot) {
-      dom.btnCutPresetJackpot.addEventListener('click', () => {
-        cuttingAdvisorState.cut1Effect = 'primary';
-        cuttingAdvisorState.cut1Tier = 'high';
-        cuttingAdvisorState.cut2Status = 'not_cut';
-        setPresetActive(dom.btnCutPresetJackpot);
-        updateCuttingAdvisorView();
-      });
-    }
-
-    if (dom.btnCutPresetMid) {
-      dom.btnCutPresetMid.addEventListener('click', () => {
-        cuttingAdvisorState.cut1Effect = 'primary';
-        cuttingAdvisorState.cut1Tier = 'mid';
-        cuttingAdvisorState.cut2Status = 'not_cut';
-        setPresetActive(dom.btnCutPresetMid);
-        updateCuttingAdvisorView();
-      });
-    }
-
-    if (dom.btnCutPresetLow) {
-      dom.btnCutPresetLow.addEventListener('click', () => {
-        cuttingAdvisorState.cut1Effect = 'primary';
-        cuttingAdvisorState.cut1Tier = 'low';
-        cuttingAdvisorState.cut2Status = 'not_cut';
-        setPresetActive(dom.btnCutPresetLow);
-        updateCuttingAdvisorView();
-      });
-    }
-
-    if (dom.btnCutPresetTrash) {
-      dom.btnCutPresetTrash.addEventListener('click', () => {
-        cuttingAdvisorState.cut1Effect = 'trash';
-        cuttingAdvisorState.cut1Tier = 'none';
-        cuttingAdvisorState.cut2Status = 'not_cut';
-        setPresetActive(dom.btnCutPresetTrash);
-        updateCuttingAdvisorView();
-      });
-    }
-
-    updateCuttingAdvisorView();
+  // Prix d'une gamme (ACC_PACKAGES) pour ces tiers, quel que soit l'ordre ; null si la gamme n'a pas de prix
+  function accPackagePrice(kind, tiers) {
+    const pkg = ACC_PACKAGES.find(p => (p.tiers[0] === tiers[0] && p.tiers[1] === tiers[1]) || (p.tiers[0] === tiers[1] && p.tiers[1] === tiers[0]));
+    return pkg && pkg.price[kind] > 0 ? pkg.price[kind] : null;
   }
 
   /**
-   * Met à jour l'affichage de l'onglet 3 : Optimisation T4 (Arsonistic Engine)
+   * Résultat de la simulation sur le personnage : gain des bijoux et des gemmes (% DPS ou % de buff, 100 × ln), or
+   * (gammes de bijoux achetées, montées de gemmes), CP (DPS seulement). null sans personnage importé.
+   */
+  function computeOptimizationSim(charObj, isSupport) {
+    if (!charObj || !charObj.rawProfile) return null;
+    const role = isSupport ? 'support' : 'dps';
+    const accEval = evaluateCharacterAccessories(charObj, isSupport, false);
+    const slotLines = accEval && accEval.slotLines;
+    const slots = [];
+    let accGain = 0, accGold = 0, accUnpriced = false;
+    if (slotLines) {
+      const curAll = ACC_SLOTS.flatMap(s => slotLines[s] || []);
+      const curPct = computeAccessoryLinesBonus(curAll, isSupport);
+      const nextAll = [];
+      ACC_SLOTS.forEach(slot => {
+        const lines = slotLines[slot];
+        if (!lines) return;
+        const kind = accessoryKind(slot);
+        const mains = ACC_MAIN_LINES[role][kind];
+        const cur = mains.map(k => {
+          const l = lines.find(x => x.key === k);
+          return l ? accTierOf(k, l.amount) : null;
+        });
+        const targets = (optSim.acc[slot] || [-1, -1]).slice(0, 2);
+        const changed = targets.some((t, i) => t >= 0 && t !== cur[i]);
+        nextAll.push(...(changed ? simulatedSlotLines(lines, mains, targets) : lines));
+        let price = null;
+        if (changed) {
+          price = accPackagePrice(kind, targets.map((t, i) => (t >= 0 ? t : cur[i])));
+          if (price === null) accUnpriced = true; else accGold += price;
+        }
+        const others = lines.filter(l => !mains.includes(l.key) && ACC_LINE_NAMES[l.key]);
+        slots.push({ slot, kind, mains, cur, targets, changed, price, others });
+      });
+      const nextPct = computeAccessoryLinesBonus(nextAll, isSupport);
+      accGain = 100 * Math.log((1 + nextPct / 100) / (1 + curPct / 100));
+    }
+
+    const gemLevels = isSupport ? realGemLevels(charObj) : (realGems(charObj) || []).map(g => g.level);
+    let gemGain = 0, gemGold = 0, gemCount = 0;
+    if (gemLevels && gemLevels.length && optSim.gemMin > 0) {
+      const to = gemLevels.map(l => Math.max(l, optSim.gemMin));
+      const g = isSupport ? supportGemSetGain(charObj, to) : dpsGemSetGain(charObj, to);
+      if (Number.isFinite(g)) gemGain = g;
+      gemLevels.forEach((l, i) => {
+        if (to[i] > l) gemCount++;
+        for (let k = l; k < to[i]; k++) gemGold += GEM_UPGRADE_COST[k] || 0;
+      });
+    }
+
+    const total = accGain + gemGain;
+    const cp = raidCombatPowerOf(charObj);
+    return {
+      slots, accGain, accGold, accUnpriced, hasAcc: !!slotLines,
+      gemLevels: gemLevels && gemLevels.length ? gemLevels : null, gemGain, gemGold, gemCount,
+      total, gold: accGold + gemGold,
+      cpGain: !isSupport && cp > 0 ? cp * (Math.exp(total / 100) - 1) : null,
+      bracelet: braceletBandOf(charObj, isSupport),
+      braceletStep: braceletGpdStep(charObj, isSupport)
+    };
+  }
+
+  function renderOptimizationSimInputs(charObj, sim, isSupport, isEn) {
+    const body = document.getElementById('optSimBody');
+    if (!body) return;
+    if (!sim) {
+      body.innerHTML = `<p class="opt-sim-empty">${isEn
+        ? 'Import a character from lostark.bible: the simulator starts from its real accessories, gems and bracelet.'
+        : 'Importe un personnage depuis lostark.bible : le simulateur part de ses vrais bijoux, gemmes et bracelet.'}</p>`;
+      return;
+    }
+    const L = k => escapeHtml((ACC_LINE_NAMES[k] || [k, k])[isEn ? 1 : 0]);
+    const slotName = s => ({ neck: isEn ? 'Necklace' : 'Collier', ear1: isEn ? 'Earring 1' : "Boucle d'oreille 1", ear2: isEn ? 'Earring 2' : "Boucle d'oreille 2",
+      finger1: isEn ? 'Ring 1' : 'Anneau 1', finger2: isEn ? 'Ring 2' : 'Anneau 2' })[s];
+    const tierSel = (slot, i, cur, val) => {
+      const opts = [`<option value="-1"${val < 0 ? ' selected' : ''}>${isEn ? 'Current' : 'Actuel'} (${cur === null ? (isEn ? 'none' : 'absente') : ACC_TIER_NAMES[cur]})</option>`]
+        .concat(ACC_TIER_NAMES.map((n, t) => `<option value="${t}"${val === t ? ' selected' : ''}>${n}</option>`));
+      return `<select class="clean-select compact-select" data-opt-slot="${slot}" data-opt-line="${i}">${opts.join('')}</select>`;
+    };
+
+    let html = `<div class="opt-section-title"><span>${isEn ? 'Accessories: main lines of your role' : 'Bijoux : lignes principales de ton rôle'}</span></div>`;
+    if (!sim.hasAcc) {
+      html += `<p class="opt-sim-empty">${isEn ? 'Accessory lines not readable on this profile.' : 'Lignes des bijoux illisibles sur ce profil.'}</p>`;
+    } else {
+      html += `<div class="opt-sim-table">`;
+      sim.slots.forEach(s => {
+        const extra = s.others.length ? `<span class="opt-sim-sub">${s.others.map(l => `${L(l.key)} ${ACC_TIER_NAMES[accTierOf(l.key, l.amount)] || ''}`).join(' · ')}</span>` : '';
+        html += `<div class="opt-sim-row">
+          <div class="opt-sim-slot"><strong>${slotName(s.slot)}</strong>${extra}</div>
+          ${s.mains.map((k, i) => `<label class="opt-sim-line"><span>${L(k)}</span>${tierSel(s.slot, i, s.cur[i], s.targets[i])}</label>`).join('')}
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `<div class="opt-section-title"><span>${isEn ? 'Skill gems' : 'Gemmes de compétence'}</span></div>`;
+    if (!sim.gemLevels) {
+      html += `<p class="opt-sim-empty">${isEn ? 'No T4 gem readable on this profile.' : 'Aucune gemme T4 lisible sur ce profil.'}</p>`;
+    } else {
+      const counts = {};
+      sim.gemLevels.forEach(l => { counts[l] = (counts[l] || 0) + 1; });
+      const summary = Object.keys(counts).sort((a, b) => b - a).map(l => `${counts[l]}× ${isEn ? 'Lv.' : 'Niv.'} ${l}`).join(', ');
+      const opts = [`<option value="0"${optSim.gemMin === 0 ? ' selected' : ''}>${isEn ? 'Current' : 'Actuel'}</option>`]
+        .concat([7, 8, 9, 10].map(l => `<option value="${l}"${optSim.gemMin === l ? ' selected' : ''}>${isEn ? `All gems at least Lv. ${l}` : `Toutes au moins niv. ${l}`}</option>`));
+      html += `<div class="opt-sim-row"><div class="opt-sim-slot"><strong>${sim.gemLevels.length} ${isEn ? 'gems' : 'gemmes'}</strong><span class="opt-sim-sub">${summary}</span></div>
+        <label class="opt-sim-line"><span>${isEn ? 'Target' : 'Cible'}</span><select class="clean-select compact-select" id="optSimGemMin">${opts.join('')}</select></label></div>`;
+    }
+
+    html += `<div class="opt-section-title"><span>${isEn ? 'Bracelet' : 'Bracelet'}</span></div>`;
+    const br = sim.bracelet;
+    const unit = isSupport ? (isEn ? 'buff' : 'de buff') : (isEn ? 'damage' : 'de dégâts');
+    if (!br) {
+      html += `<p class="opt-sim-empty">${isEn ? 'Bracelet not readable on this profile.' : 'Bracelet illisible sur ce profil.'}</p>`;
+    } else {
+      const st = sim.braceletStep;
+      html += `<p class="opt-sim-note">${isEn ? 'Grade' : 'Note'} <strong>${escapeHtml(String(br.band))}</strong>${Number.isFinite(br.total) ? ` · +${br.total.toFixed(2)} % ${unit}` : ''}.
+        ${st ? (isEn
+          ? `Next grade ${escapeHtml(String(st.step.to))}: a new campaign from scratch, ${formatNumber(Math.round(st.gold))} gold for +${st.gain.toFixed(2)} %.`
+          : `Note suivante ${escapeHtml(String(st.step.to))} : campagne neuve depuis zéro, ${formatNumber(Math.round(st.gold))} or pour +${st.gain.toFixed(2)} %.`) : ''}
+        ${isEn ? 'A bracelet is not upgraded in place: it is not part of the simulation.' : "Un bracelet ne s'améliore pas sur place : il n'entre pas dans la simulation."}</p>`;
+    }
+    body.innerHTML = html;
+
+    body.querySelectorAll('select[data-opt-slot]').forEach(el => el.addEventListener('change', e => {
+      const slot = e.target.getAttribute('data-opt-slot');
+      const i = parseInt(e.target.getAttribute('data-opt-line'), 10);
+      const t = (optSim.acc[slot] || [-1, -1]).slice();
+      t[i] = parseInt(e.target.value, 10);
+      optSim.acc[slot] = t;
+      updateOptimizationView();
+    }));
+    const gemSel = document.getElementById('optSimGemMin');
+    if (gemSel) gemSel.addEventListener('change', e => { optSim.gemMin = parseInt(e.target.value, 10) || 0; updateOptimizationView(); });
+  }
+
+  /**
+   * Met à jour l'onglet Optimisation : simulateur sur le personnage importé, tableau GPD.
    */
   function updateOptimizationView() {
-    const role = state.role || 'support';
-    const isSupport = role === 'support';
-
-    if (dom.optSupportControls && dom.optDpsControls) {
-      dom.optSupportControls.style.display = isSupport ? 'block' : 'none';
-      dom.optDpsControls.style.display = isSupport ? 'none' : 'block';
-    }
-
-    if (dom.gemContainerSupport && dom.gemContainerDps) {
-      dom.gemContainerSupport.style.display = isSupport ? 'block' : 'none';
-      dom.gemContainerDps.style.display = isSupport ? 'none' : 'block';
-    }
-
-    if (isSupport) {
-      updatePerSkillGemsView();
-    } else {
-      updateDpsGemsView();
-    }
-
-    if (dom.optBadge) {
-      dom.optBadge.textContent = isSupport ? 'Arsonistic Support (SupCalc)' : 'Arsonistic DPS (Calc)';
-      dom.optBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
-      dom.optBadge.style.borderColor = isSupport ? 'rgba(232, 230, 220, 0.3)' : 'rgba(224, 122, 99, 0.3)';
-    }
-
+    const isSupport = (state.role || 'support') === 'support';
     const isEn = isEnLang();
+    const charObj = getCurrentActiveCharacter();
+    const key = charObj ? `${charObj.id || charObj.name}|${isSupport}` : null;
+    if (key !== optSim.charKey) { optSim.charKey = key; optSim.acc = {}; optSim.gemMin = 0; }
+    const sim = computeOptimizationSim(charObj, isSupport);
+    renderOptimizationSimInputs(charObj, sim, isSupport, isEn);
+
+    const pct = v => (Math.abs(v) < 0.005 ? '0.00 %' : `${v > 0 ? '+' : '−'}${Math.abs(v).toFixed(2)} %`);
+    if (dom.optBadge) {
+      dom.optBadge.textContent = isSupport ? (isEn ? 'Support: % ally buff' : 'Support : % de buff allié') : (isEn ? 'DPS: % damage' : 'DPS : % de dégâts');
+      dom.optBadge.style.color = isSupport ? 'var(--support-color)' : 'var(--dps-color)';
+    }
     if (dom.optResultTypeLabel) {
       dom.optResultTypeLabel.textContent = isSupport
-        ? (isEn ? 'Real Raid Damage Buff Gain:' : 'Gain Réel de Buff Dégâts pour le Groupe :')
-        : (isEn ? 'Real Personal DPS Gain:' : 'Gain Réel de DPS Personnel :');
+        ? (isEn ? 'Simulated ally buff gain:' : 'Gain de buff allié simulé :')
+        : (isEn ? 'Simulated personal damage gain:' : 'Gain de dégâts personnels simulé :');
+    }
+    if (dom.optDpsGainDisplay) dom.optDpsGainDisplay.textContent = sim ? pct(sim.total) : '—';
+    if (dom.optCpGainDisplay) {
+      dom.optCpGainDisplay.textContent = !sim ? ''
+        : (sim.cpGain !== null ? `${sim.cpGain >= 0 ? '+' : '−'}${formatNumber(Math.round(Math.abs(sim.cpGain)))} CP`
+          : (isEn ? 'Support: the buff % does not convert to CP.' : 'Support : le % de buff ne se convertit pas en CP.'));
+    }
+    if (dom.optBreakdownAcc) dom.optBreakdownAcc.textContent = sim && sim.hasAcc ? pct(sim.accGain) : '—';
+    if (dom.optBreakdownGems) dom.optBreakdownGems.textContent = sim && sim.gemLevels ? pct(sim.gemGain) : '—';
+    const goldEl = document.getElementById('optSimGold');
+    if (goldEl) goldEl.textContent = sim && sim.gold > 0 ? `${formatNumber(Math.round(sim.gold))} g` : '—';
+
+    if (dom.optAdviceText) {
+      let txt;
+      if (!sim) {
+        txt = isEn ? 'No simulation without an imported character.' : 'Aucune simulation sans personnage importé.';
+      } else if (Math.abs(sim.total) < 1e-4) {
+        txt = isEn
+          ? 'Choose a target tier for an accessory line or a gem level: gain and gold are computed on your character with the GPD models.'
+          : "Choisis un tier cible pour une ligne de bijou ou un niveau de gemmes : gain et or sont calculés sur ton personnage avec les modèles du GPD.";
+      } else {
+        const per = isSupport ? 0.01 : 1;
+        const ratio = sim.total > 0 && sim.gold > 0 && !sim.accUnpriced ? sim.gold * per / sim.total : null;
+        const perLbl = isSupport ? (isEn ? '0.01% buff' : '0,01 % de buff') : (isEn ? '1% damage' : '1 % de dégâts');
+        txt = (ratio !== null
+          ? (isEn ? `About <strong>${formatNumber(Math.round(ratio))} gold per ${perLbl}</strong>, to compare with the GPD table below.`
+            : `Environ <strong>${formatNumber(Math.round(ratio))} or par ${perLbl}</strong>, à comparer au tableau GPD ci-dessous.`)
+          : (isEn ? 'No gold ratio for this simulation.' : "Pas de ratio en or pour cette simulation."))
+          + (sim.accUnpriced ? (isEn ? ' One accessory combination has no market price (only High/High, High/Mid, High/Low and Mid/Mid are priced).'
+            : ' Une combinaison de bijou n\'a pas de prix de marché (seules High/High, High/Mid, High/Low et Mid/Mid sont chiffrées).') : '')
+          + (isEn ? ' Accessories bought at the auction house (EUC prices), dead 3rd line; gems at the GPD upgrade cost.'
+            : " Bijoux achetés à l'hôtel des ventes (prix EUC), 3e ligne morte ; gemmes au coût de montée du GPD.");
+      }
+      dom.optAdviceText.innerHTML = txt;
     }
 
-    let accBonus = 0;
-    let braceBonus = 0;
-    let gemBonusDmg = 0;
-    let totalCpBonus = 0;
-
-    let bar1Name = '';
-    let bar1Val = 0;
-    let bar2Name = '';
-    let bar2Val = 0;
-    let bar3Name = '';
-    let bar3Val = 0;
-    let bar4Name = '';
-    let bar4Val = 0;
-    let advice = '';
-
-    const gemData = ARSONISTIC_DATA.gems[state.opt.gemsDeck] || ARSONISTIC_DATA.gems.lvl8;
-    totalCpBonus += gemData.cp;
-
-    if (isSupport) {
-      const sup = ARSONISTIC_DATA.support;
-      const bBrand = sup.brand[state.opt.supBrand] || sup.brand.high;
-      const bDmg = sup.allyDmg[state.opt.supAllyDmg] || sup.allyDmg.mid;
-      const bAp = sup.allyAp[state.opt.supAllyAp] || sup.allyAp.high;
-      const bWp = sup.wpPct[state.opt.supWp] || sup.wpPct.mid;
-      const bWpFlat = sup.wpFlat[state.opt.supWpFlat] || sup.wpFlat['960'];
-      const bQual = sup.quality[state.opt.supQuality] || sup.quality.mid;
-
-      accBonus = bBrand.buffDmg + bDmg.buffDmg + bAp.buffDmg + bWp.buffDmg + bWpFlat.buffDmg + bQual.buffDmg;
-      totalCpBonus += bBrand.cp + bDmg.cp + bAp.cp + bWp.cp + bWpFlat.cp + bQual.cp;
-
-      const brPerk = sup.bracePerk[state.opt.supBracePerk] || sup.bracePerk.crit_ap;
-      const brWp = sup.braceWp[state.opt.supBraceWp] || sup.braceWp['9000'];
-      const brStat = sup.braceStat[state.opt.supBraceStat] || sup.braceStat['14000'];
-      const brSwift = sup.braceSwift[state.opt.supBraceSwift] || sup.braceSwift['100'];
-
-      braceBonus = brPerk.buffDmg + brWp.buffDmg + brStat.buffDmg + brSwift.buffDmg;
-      totalCpBonus += brPerk.cp + brWp.cp + brStat.cp + brSwift.cp;
-
-      gemBonusDmg = gemData.buffDmg;
-
-      bar1Name = isEn ? 'Brand Power' : 'Marque (Brand Power)';
-      bar1Val = bBrand.buffDmg;
-      bar2Name = isEn ? 'Ally AP Buff (Ally AP)' : 'Buff PA Alliés (Ally AP)';
-      bar2Val = bAp.buffDmg;
-      bar3Name = isEn ? 'Ally Damage (Ally Dmg)' : 'Dégâts Alliés (Ally Dmg)';
-      bar3Val = bDmg.buffDmg;
-      bar4Name = isEn ? 'Special Bracelet' : `Bracelet (${brPerk.name.split('+')[0].trim()})`;
-      bar4Val = braceBonus;
-
-      if (state.opt.supBracePerk !== 'crit_ap') {
-        advice = isEn
-          ? `The bracelet roll <strong>Ally Crit Rate + Ally Attack Power</strong> is the largest raid multiplier (+2.43% damage for the whole raid). Target it first.`
-          : `Le roll bracelet <strong>Taux Critique Alliés + PA Alliés</strong> est le plus gros multiplicateur de raid (+2.43 % de dégâts pour tout le raid). Vise-la en premier.`;
-      } else if (state.opt.supBrand !== 'high') {
-        advice = isEn
-          ? `The <strong>Brand Power High (+8%)</strong> line is essential to maximize brand uptime and grants +0.70% net team buff.`
-          : `La ligne <strong>Brand Power High (+8%)</strong> est essentielle pour maximiser l'uptime de ta marque et apporte +0.70% de buff net à l'équipe.`;
-      } else if (state.opt.gemsDeck === 'lvl7') {
-        advice = isEn
-          ? `Upgrading your gem deck to <strong>Level 8 (+28.35 CP per gem)</strong> will grant over 310 CP and boost your buff power by +1.25%.`
-          : `Passer ton deck de gemmes en <strong>Niv. 8 (+28.35 CP par gemme)</strong> te fera franchir plus de 310 CP et renforcera de +1.25% la puissance de tes buffs.`;
-      } else {
-        advice = isEn
-          ? `No priority upgrade left in this model: raid multipliers and gem deck are at their best values.`
-          : `Aucune amélioration prioritaire dans ce modèle : multiplicateurs de raid et deck de gemmes à leurs meilleures valeurs.`;
-      }
-
-    } else {
-      const dps = ARSONISTIC_DATA.dps;
-      const dAdd = dps.addDmg[state.opt.dpsAddDmg] || dps.addDmg.high;
-      const dOut = dps.outDmg[state.opt.dpsOutDmg] || dps.outDmg.high;
-      const dAp = dps.apPct[state.opt.dpsAp] || dps.apPct.high;
-      const dCrit = dps.critPct[state.opt.dpsCrit] || dps.critPct.mid;
-      const dCdmg = dps.cdmgPct[state.opt.dpsCdmg] || dps.cdmgPct.mid;
-      const dWp = dps.wpPct[state.opt.dpsWp] || dps.wpPct.mid;
-      const dQual = dps.quality[state.opt.dpsQuality] || dps.quality.mid;
-
-      accBonus = dAdd.dps + dOut.dps + dAp.dps + dCrit.dps + dCdmg.dps + dWp.dps + dQual.dps;
-      totalCpBonus += dAdd.cp + dOut.cp + dAp.cp + dCrit.cp + dCdmg.cp + dWp.cp + dQual.cp;
-
-      const brPerk = dps.bracePerk[state.opt.dpsBracePerk] || dps.bracePerk.crit_cdmg;
-      const brWp = dps.braceWp[state.opt.dpsBraceWp] || dps.braceWp['9000'];
-      const brStat = dps.braceStat[state.opt.dpsBraceStat] || dps.braceStat['14000'];
-      const brSub = dps.braceSub[state.opt.dpsBraceSub] || dps.braceSub['100'];
-
-      braceBonus = brPerk.dps + brWp.dps + brStat.dps + brSub.dps;
-      totalCpBonus += brPerk.cp + brWp.cp + brStat.cp + brSub.cp;
-
-      gemBonusDmg = gemData.dps;
-
-      bar1Name = isEn ? 'Additional Damage' : 'Dégâts Additionnels';
-      bar1Val = dAdd.dps;
-      bar2Name = isEn ? 'Outgoing Damage & Atk Power' : 'Dégâts Sortants & PA';
-      bar2Val = dOut.dps + dAp.dps;
-      bar3Name = isEn ? 'Crit Rate & Crit Damage' : 'Crit & Dégâts Crit';
-      bar3Val = dCrit.dps + dCdmg.dps;
-      bar4Name = isEn ? 'Special Bracelet' : `Bracelet (${brPerk.name.split('&')[0].trim()})`;
-      bar4Val = braceBonus;
-
-      if (state.opt.dpsBracePerk !== 'crit_cdmg') {
-        advice = isEn
-          ? `The bracelet roll <strong>Crit Rate +5% & Crit Hit Dmg +1.5%</strong> is the highest performing roll in the game (+5.45% direct DPS gain on the Arsonistic sheet).`
-          : `Le roll de bracelet <strong>Crit Rate +5% & Crit Hit Dmg +1.5%</strong> est le roll le plus performant du jeu (+5.45% de gain DPS direct sur la feuille Arsonistic).`;
-      } else if (state.opt.dpsAddDmg !== 'high' || state.opt.dpsOutDmg !== 'high') {
-        advice = isEn
-          ? `Accessory lines <strong>Additional Damage High (+2.6%)</strong> and <strong>Outgoing Damage High (+2.0%)</strong> each represent approximately +2% net DPS.`
-          : `Les lignes d'accessoires <strong>Additional Damage High (+2.6%)</strong> et <strong>Outgoing Damage High (+2.0%)</strong> représentent chacune environ +2% de DPS net.`;
-      } else if (state.opt.gemsDeck === 'lvl8') {
-        advice = isEn
-          ? `Upgrading major gems on your core skills to <strong>Level 9 / 10</strong> is the next threshold to push past 5000+ CP.`
-          : `Monter les gemmes majeures de tes compétences principales vers <strong>Niv. 9 / 10</strong> est le prochain palier pour franchir les 5000+ CP.`;
-      } else {
-        advice = isEn
-          ? `No priority upgrade left in this model: accessory, bracelet and gem lines are at their best values.`
-          : `Aucune amélioration prioritaire dans ce modèle : lignes d'accessoires, bracelet et gemmes à leurs meilleures valeurs.`;
-      }
-    }
-
-    const totalDmgGain = accBonus + braceBonus + gemBonusDmg;
-
-    // Mise à jour de l'affichage
-    if (dom.optDpsGainDisplay) dom.optDpsGainDisplay.textContent = `+${totalDmgGain.toFixed(2)}%`;
-    if (dom.optCpGainDisplay) dom.optCpGainDisplay.textContent = isEnLang()
-      ? `+${formatNumber(totalCpBonus)} CP generated by synergies`
-      : `+${formatNumber(totalCpBonus)} CP générés par les synergies`;
-    if (dom.optBreakdownAcc) dom.optBreakdownAcc.textContent = `+${accBonus.toFixed(2)}%`;
-    if (dom.optBreakdownBrace) dom.optBreakdownBrace.textContent = `+${braceBonus.toFixed(2)}%`;
-    if (dom.optBreakdownGems) dom.optBreakdownGems.textContent = `+${gemBonusDmg.toFixed(2)}%`;
-    if (dom.optTotalCpVal) dom.optTotalCpVal.textContent = `+${formatNumber(totalCpBonus)} CP`;
-
-    // Jauges visuelles (calcul de ratio max)
-    const maxVal = Math.max(3.0, totalDmgGain);
-    if (dom.barLabel1) dom.barLabel1.textContent = bar1Name;
-    if (dom.barVal1) dom.barVal1.textContent = `+${bar1Val.toFixed(2)}%`;
-    if (dom.barFill1) dom.barFill1.style.width = `${Math.min(100, Math.max(5, (bar1Val / maxVal) * 100))}%`;
-
-    if (dom.barLabel2) dom.barLabel2.textContent = bar2Name;
-    if (dom.barVal2) dom.barVal2.textContent = `+${bar2Val.toFixed(2)}%`;
-    if (dom.barFill2) dom.barFill2.style.width = `${Math.min(100, Math.max(5, (bar2Val / maxVal) * 100))}%`;
-
-    if (dom.barLabel3) dom.barLabel3.textContent = bar3Name;
-    if (dom.barVal3) dom.barVal3.textContent = `+${bar3Val.toFixed(2)}%`;
-    if (dom.barFill3) dom.barFill3.style.width = `${Math.min(100, Math.max(5, (bar3Val / maxVal) * 100))}%`;
-
-    if (dom.barLabel4) dom.barLabel4.textContent = bar4Name;
-    if (dom.barVal4) dom.barVal4.textContent = `+${bar4Val.toFixed(2)}%`;
-    if (dom.barFill4) dom.barFill4.style.width = `${Math.min(100, Math.max(5, (bar4Val / maxVal) * 100))}%`;
-
-    if (dom.barVal5) dom.barVal5.textContent = `+${gemBonusDmg.toFixed(2)}%`;
-    if (dom.barFill5) dom.barFill5.style.width = `${Math.min(100, Math.max(5, (gemBonusDmg / maxVal) * 100))}%`;
-
-    if (dom.optAdviceText) dom.optAdviceText.innerHTML = advice;
-
-    // Mise à jour du Tableau d'Arbitrage Rentabilité EUC
     renderEfficiencyTable();
-    updatePerSkillGemsView();
-    updateCuttingAdvisorView();
   }
 
 
@@ -8857,79 +7788,6 @@
       dom.btnClearUserRoster.addEventListener('click', () => clearUserRoster());
     }
 
-    // Onglet 3 : Événements Optimisation T4 Support
-    const supBindings = [
-      { el: dom.optSupBrand, prop: 'supBrand' },
-      { el: dom.optSupAllyDmg, prop: 'supAllyDmg' },
-      { el: dom.optSupAllyAp, prop: 'supAllyAp' },
-      { el: dom.optSupWp, prop: 'supWp' },
-      { el: dom.optSupWpFlat, prop: 'supWpFlat' },
-      { el: dom.optSupQuality, prop: 'supQuality' },
-      { el: dom.optSupBracePerk, prop: 'supBracePerk' },
-      { el: dom.optSupBraceWp, prop: 'supBraceWp' },
-      { el: dom.optSupBraceStat, prop: 'supBraceStat' },
-      { el: dom.optSupBraceSwift, prop: 'supBraceSwift' }
-    ];
-    supBindings.forEach(b => {
-      if (b.el) {
-        b.el.addEventListener('change', (e) => {
-          state.opt[b.prop] = e.target.value;
-          updateOptimizationView();
-        });
-      }
-    });
-
-    // Onglet 3 : Événements Optimisation T4 DPS
-    const dpsBindings = [
-      { el: dom.optDpsAddDmg, prop: 'dpsAddDmg' },
-      { el: dom.optDpsOutDmg, prop: 'dpsOutDmg' },
-      { el: dom.optDpsAp, prop: 'dpsAp' },
-      { el: dom.optDpsCrit, prop: 'dpsCrit' },
-      { el: dom.optDpsCdmg, prop: 'dpsCdmg' },
-      { el: dom.optDpsWp, prop: 'dpsWp' },
-      { el: dom.optDpsQuality, prop: 'dpsQuality' },
-      { el: dom.optDpsBracePerk, prop: 'dpsBracePerk' },
-      { el: dom.optDpsBraceWp, prop: 'dpsBraceWp' },
-      { el: dom.optDpsBraceStat, prop: 'dpsBraceStat' },
-      { el: dom.optDpsBraceSub, prop: 'dpsBraceSub' }
-    ];
-    dpsBindings.forEach(b => {
-      if (b.el) {
-        b.el.addEventListener('change', (e) => {
-          state.opt[b.prop] = e.target.value;
-          updateOptimizationView();
-        });
-      }
-    });
-
-    // Onglet 3 : Gemmes T4 Deck
-    if (dom.optGemsDeck) {
-      dom.optGemsDeck.addEventListener('change', (e) => {
-        state.opt.gemsDeck = e.target.value;
-        updateOptimizationView();
-      });
-    }
-
-    // Onglet 3 : Passifs Karma & Ark Grid
-    if (dom.optKarmaEnlight) {
-      dom.optKarmaEnlight.addEventListener('change', (e) => {
-        state.opt.karmaEnlight = e.target.checked;
-        updateOptimizationView();
-      });
-    }
-    if (dom.optKarmaEvo) {
-      dom.optKarmaEvo.addEventListener('change', (e) => {
-        state.opt.karmaEvo = e.target.checked;
-        updateOptimizationView();
-      });
-    }
-    if (dom.optArkGrid) {
-      dom.optArkGrid.addEventListener('change', (e) => {
-        state.opt.arkGrid = e.target.checked;
-        updateOptimizationView();
-      });
-    }
-
     // Modal d'Aide
     const helpModal = document.getElementById('helpModal');
     const btnOpenHelp = document.getElementById('btnOpenHelpModal');
@@ -9125,8 +7983,6 @@
 
     initAdvisorEvents();
     initArkPassiveEvents();
-    initPerSkillGemsEvents();
-    initCuttingAdvisorEvents();
     initAstrogemGraderEvents();
 
     // Bouton de partage du profil actif (?char=Nom)
@@ -9901,11 +8757,6 @@
     if (btnPredHoning && btnPredGlobal) {
       btnPredHoning.classList.add('active');
       btnPredGlobal.classList.remove('active');
-    }
-
-    if (c.opt) {
-      state.opt = { ...c.opt };
-      syncOptimizationInputs();
     }
 
     setRole(resolvedRole);
@@ -18447,7 +17298,6 @@
       renderCanonicalView();
       renderAdvisorView();
       updateArkPassiveView();
-      updateCuttingAdvisorView();
       renderEfficiencyTable();
       updateGemSelectOptions();
       updateAstrogemGraderView();

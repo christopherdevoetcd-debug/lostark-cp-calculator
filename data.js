@@ -398,158 +398,26 @@ window.CLASS_NAME_MAP = {
     maitredesdimensions: 'Dimensionalist'
   };;
 
+// Pentes des lignes de bijoux T4 (tables Arsonistic) : valeur de la ligne (pct) et gain qu'elle apporte, en % de dégâts
+// (dps) ou en % de buff allié (buffDmg). Seuls le rapport gain / valeur au tier High et la ligne plate 960 servent
+// (getAccessoryLineSlopes dans calculator.js : GPD, Benchmark, simulateur de l'onglet Optimisation).
 window.ARSONISTIC_DATA = {
     support: {
-      brand: {
-        none: { pct: 0, buffDmg: 0, cp: 0 },
-        low: { pct: 2.15, buffDmg: 0.19, cp: 25 },
-        mid: { pct: 4.80, buffDmg: 0.42, cp: 55 },
-        high: { pct: 8.00, buffDmg: 0.70, cp: 90 }
-      },
-      allyDmg: {
-        none: { pct: 0, buffDmg: 0, cp: 0 },
-        low: { pct: 2.00, buffDmg: 0.20, cp: 22 },
-        mid: { pct: 4.50, buffDmg: 0.45, cp: 50 },
-        high: { pct: 7.50, buffDmg: 0.75, cp: 85 }
-      },
-      allyAp: {
-        none: { pct: 0, buffDmg: 0, cp: 0 },
-        low: { pct: 1.35, buffDmg: 0.21, cp: 26 },
-        mid: { pct: 3.00, buffDmg: 0.47, cp: 58 },
-        high: { pct: 5.00, buffDmg: 0.78, cp: 96 }
-      },
-      wpPct: {
-        none: { pct: 0, buffDmg: 0, cp: 0 },
-        low: { pct: 0.80, buffDmg: 0.10, cp: 15 },
-        mid: { pct: 1.80, buffDmg: 0.22, cp: 35 },
-        high: { pct: 3.00, buffDmg: 0.36, cp: 58 }
-      },
-      wpFlat: {
-        '0': { val: 0, buffDmg: 0, cp: 0 },
-        '195': { val: 195, buffDmg: 0.016, cp: 8 },
-        '480': { val: 480, buffDmg: 0.038, cp: 18 },
-        '960': { val: 960, buffDmg: 0.077, cp: 36 }
-      },
-      quality: {
-        min: { val: 60714, buffDmg: 0.00, cp: 0 },
-        low: { val: 63397, buffDmg: 0.36, cp: 28 },
-        mid: { val: 66080, buffDmg: 0.72, cp: 56 },
-        high: { val: 68763, buffDmg: 1.08, cp: 84 },
-        max: { val: 71446, buffDmg: 1.44, cp: 112 },
-        // Rétrocompatibilité clés historiques
-        '1935': { val: 60714, buffDmg: 0.00, cp: 0 },
-        '2083': { val: 66080, buffDmg: 0.72, cp: 56 },
-        '2679': { val: 71446, buffDmg: 1.44, cp: 112 }
-      },
-      bracePerk: {
-        crit_ap: { name: 'Taux Crit Alliés (+2.5%) + PA (+3%)', buffDmg: 2.43, cp: 110 },
-        cdmg_ap: { name: 'Dégâts Crit Alliés (+4.8%) + PA (+3%)', buffDmg: 2.04, cp: 92 },
-        def_ap: { name: 'Réduction Défense (-2.5%) + PA (+3%)', buffDmg: 1.68, cp: 78 },
-        shield_ap: { name: 'Dégâts Bouclier (+1.3%) + PA (+3%)', buffDmg: 1.65, cp: 75 },
-        pure_ap: { name: 'PA Alliés Pure (+6.0%)', buffDmg: 0.94, cp: 60 },
-        pure_dmg: { name: 'Dégâts Alliés Purs (+9.0%)', buffDmg: 0.90, cp: 58 },
-        none: { name: 'Aucune', buffDmg: 0, cp: 0 }
-      },
-      braceWp: {
-        '0': { buffDmg: 0, cp: 0 },
-        '7200': { buffDmg: 0.59, cp: 38 },
-        '8100': { buffDmg: 0.66, cp: 46 },
-        '9000': { buffDmg: 0.73, cp: 56 }
-      },
-      braceStat: {
-        '0': { buffDmg: 0, cp: 0 },
-        '12000': { buffDmg: 0.29, cp: 20 },
-        '14000': { buffDmg: 0.34, cp: 26 },
-        '16000': { buffDmg: 0.39, cp: 34 }
-      },
-      braceSwift: {
-        '0': { buffDmg: 0, cp: 0 },
-        '80': { buffDmg: 0.24, cp: 16 },
-        '100': { buffDmg: 0.30, cp: 20 },
-        '120': { buffDmg: 0.35, cp: 25 }
-      }
+      brand: { high: { pct: 8.00, buffDmg: 0.70 } },
+      allyDmg: { high: { pct: 7.50, buffDmg: 0.75 } },
+      allyAp: { high: { pct: 5.00, buffDmg: 0.78 } },
+      wpPct: { high: { pct: 3.00, buffDmg: 0.36 } },
+      wpFlat: { '960': { val: 960, buffDmg: 0.077 } }
     },
     dps: {
-      addDmg: {
-        none: { pct: 0, dps: 0, cp: 0 },
-        low: { pct: 0.70, dps: 0.53, cp: 28 },
-        mid: { pct: 1.60, dps: 1.20, cp: 64 },
-        high: { pct: 2.60, dps: 1.95, cp: 105 }
-      },
-      outDmg: {
-        none: { pct: 0, dps: 0, cp: 0 },
-        low: { pct: 0.55, dps: 0.55, cp: 28 },
-        mid: { pct: 1.20, dps: 1.20, cp: 65 },
-        high: { pct: 2.00, dps: 2.00, cp: 108 }
-      },
-      apPct: {
-        none: { pct: 0, dps: 0, cp: 0 },
-        low: { pct: 0.40, dps: 0.36, cp: 24 },
-        mid: { pct: 0.95, dps: 0.85, cp: 52 },
-        high: { pct: 1.55, dps: 1.38, cp: 84 }
-      },
-      critPct: {
-        none: { pct: 0, dps: 0, cp: 0 },
-        low: { pct: 0.40, dps: 0.32, cp: 20 },
-        mid: { pct: 0.95, dps: 0.75, cp: 46 },
-        high: { pct: 1.55, dps: 1.23, cp: 76 }
-      },
-      cdmgPct: {
-        none: { pct: 0, dps: 0, cp: 0 },
-        low: { pct: 1.10, dps: 0.28, cp: 18 },
-        mid: { pct: 2.40, dps: 0.61, cp: 40 },
-        high: { pct: 4.00, dps: 1.02, cp: 68 }
-      },
-      wpPct: {
-        none: { pct: 0, dps: 0, cp: 0 },
-        low: { pct: 0.80, dps: 0.28, cp: 18 },
-        mid: { pct: 1.80, dps: 0.62, cp: 42 },
-        high: { pct: 3.00, dps: 1.03, cp: 70 }
-      },
-      quality: {
-        min: { val: 60714, dps: 0.00, cp: 0 },
-        low: { val: 63397, dps: 0.85, cp: 28 },
-        mid: { val: 66080, dps: 1.70, cp: 56 },
-        high: { val: 68763, dps: 2.55, cp: 84 },
-        max: { val: 71446, dps: 3.40, cp: 112 },
-        '1935': { val: 60714, dps: 0.00, cp: 0 },
-        '2083': { val: 66080, dps: 1.70, cp: 56 },
-        '2679': { val: 71446, dps: 3.40, cp: 112 }
-      },
-      bracePerk: {
-        crit_cdmg: { name: 'Taux Crit (+5%) & Dégâts Crit (+1.5%)', dps: 5.45, cp: 155 },
-        add_demon: { name: 'Dégâts Add (+3.5%) & Dégâts Démon (+2.5%)', dps: 5.03, cp: 142 },
-        cdmg_crit: { name: 'Dégâts Crit (+10%) & Dégâts Crit (+1.5%)', dps: 5.20, cp: 148 },
-        dmg_cd: { name: 'Dégâts Purs (+5.5%) avec pénalité CD', dps: 4.06, cp: 120 },
-        wp_stack: { name: 'Puissance Arme Cumulable (+1480x6 + Vitesse)', dps: 2.83, cp: 95 },
-        none: { name: 'Aucune', dps: 0, cp: 0 }
-      },
-      braceWp: {
-        '0': { dps: 0, cp: 0 },
-        '7200': { dps: 1.70, cp: 52 },
-        '8100': { dps: 1.91, cp: 62 },
-        '9000': { dps: 2.12, cp: 72 }
-      },
-      braceStat: {
-        '0': { dps: 0, cp: 0 },
-        '12000': { dps: 0.85, cp: 28 },
-        '14000': { dps: 0.99, cp: 36 },
-        '16000': { dps: 1.13, cp: 44 }
-      },
-      braceSub: {
-        '0': { dps: 0, cp: 0 },
-        '80': { dps: 2.27, cp: 35 },
-        '100': { dps: 2.84, cp: 46 },
-        '120': { dps: 3.40, cp: 58 }
-      }
-    },
-    gems: {
-      lvl7: { buffDmg: 0, dps: 0, cp: 0, label: '11x Gemmes Niv. 7' },
-      lvl8: { buffDmg: 1.25, dps: 2.40, cp: 312, label: '11x Gemmes Niv. 8' },
-      lvl9: { buffDmg: 3.50, dps: 5.10, cp: 664, label: '11x Gemmes Niv. 9' },
-      lvl10: { buffDmg: 6.00, dps: 8.40, cp: 1082, label: '11x Gemmes Niv. 10' }
+      addDmg: { high: { pct: 2.60, dps: 1.95 } },
+      outDmg: { high: { pct: 2.00, dps: 2.00 } },
+      apPct: { high: { pct: 1.55, dps: 1.38 } },
+      critPct: { high: { pct: 1.55, dps: 1.23 } },
+      cdmgPct: { high: { pct: 4.00, dps: 1.02 } },
+      wpPct: { high: { pct: 3.00, dps: 1.03 } }
     }
-  };;
+  };
 
 
 

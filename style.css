@@ -1694,6 +1694,62 @@ select optgroup {
   font-size: 18px;
 }
 
+/* Simulateur de l'onglet Optimisation (bijoux, gemmes, bracelet du personnage importé) */
+#optSimBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.opt-sim-intro {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.opt-sim-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opt-sim-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.1fr) 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.opt-sim-row:last-child { border-bottom: none; }
+.opt-sim-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--text-main);
+}
+.opt-sim-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.opt-sim-line {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.opt-sim-empty,
+.opt-sim-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.opt-sim-note strong { color: var(--text-main); }
+@media (max-width: 640px) {
+  .opt-sim-row { grid-template-columns: 1fr 1fr; }
+  .opt-sim-slot { grid-column: 1 / -1; }
+}
+
 .opt-grid-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
