@@ -481,3 +481,22 @@ window.RELIC_BOOK_EFFECTS = {
   'ether predator': { kind: 'ap', base: 12.6, relic: [0.9, 1.8, 2.7, 3.6] },
   'contender': { kind: 'ap', base: 16.8, relic: [2.1, 4.2, 6.3, 8.4] }
 };
+
+// Recettes de fusion T4 de l'atelier de Forteresse (lostarkcodex.com, recettes 1068610xx / 1068611xx…) :
+// une recette par métier, mêmes quantités. Ingrédients = identifiants du marché (prix par lot de 100).
+// Grande réussite : production doublée ; chance = 5 % × (1 + bonus de Forteresse).
+// Énergie de Forteresse (288 / 360) non chiffrée en or.
+window.STRONGHOLD_FUSION_TRADES = [
+  { fr: 'Cueillette', en: 'Foraging', mats: ['abidos-wild-flower', 'shy-wild-flower', 'wild-flower'] },
+  { fr: 'Bûcheronnage', en: 'Logging', mats: ['abidos-timber', 'tender-timber', 'timber'] },
+  { fr: 'Minage', en: 'Mining', mats: ['abidos-iron-ore', 'heavy-iron-ore', 'iron-ore'] },
+  { fr: 'Chasse', en: 'Hunting', mats: ['abidos-thick-raw-meat', 'treated-meat', 'thick-raw-meat'] },
+  { fr: 'Pêche', en: 'Fishing', mats: ['abidos-solar-carp', 'redflesh-fish', 'fish'] },
+  { fr: 'Archéologie', en: 'Excavating', mats: ['abidos-relic', 'rare-relic', 'ancient-relic'] }
+];
+window.STRONGHOLD_FUSION_RECIPES = [
+  { slug: 'abidos-fusion-material', fr: "Fusion d'Abidos", en: 'Abidos Fusion Material',
+    qty: [33, 45, 86], gold: 400, minutes: 60, out: 10 },
+  { slug: 'superior-abidos-fusion-material', fr: "Fusion d'Abidos supérieure", en: 'Superior Abidos Fusion Material',
+    qty: [43, 59, 112], gold: 520, minutes: 75, out: 10 }
+];

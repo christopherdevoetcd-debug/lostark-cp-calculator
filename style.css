@@ -6790,6 +6790,42 @@ select optgroup {
 .market-table .icon {
   margin-right: 0.5rem;
 }
+.market-table .market-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.market-table .market-gain { color: var(--gain); }
+.market-table .market-loss { color: var(--loss); }
+.market-table .market-lot {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-left: 4px;
+}
+.market-table .market-group-row td {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 1rem;
+  border-bottom: 1px solid var(--border-medium);
+}
+.market-table .market-group-row:hover { background: none; }
+.market-verdict {
+  display: grid;
+  grid-template-columns: minmax(140px, auto) 1fr;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-medium);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.market-verdict:last-child { border-bottom: 1px solid var(--border-medium); }
+.market-verdict-item { color: var(--text-muted); }
+@media (max-width: 600px) {
+  .market-verdict { grid-template-columns: 1fr; }
+  .market-table th, .market-table td { padding: 0.5rem; }
+}
 
 /* ==========================================================================
    SMART ADVISOR — Ledger (terminal de marché)

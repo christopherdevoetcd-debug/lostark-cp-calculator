@@ -33,7 +33,26 @@ const BODY = JSON.stringify({
     'precise-dagger',
     'adrenaline',
     'ether-predator',
-    'contender'
+    'contender',
+    // Matériaux de récolte des fusions de Forteresse (prix par lot de 100)
+    'abidos-wild-flower',
+    'shy-wild-flower',
+    'wild-flower',
+    'abidos-timber',
+    'tender-timber',
+    'timber',
+    'abidos-iron-ore',
+    'heavy-iron-ore',
+    'iron-ore',
+    'abidos-thick-raw-meat',
+    'treated-meat',
+    'thick-raw-meat',
+    'abidos-solar-carp',
+    'redflesh-fish',
+    'fish',
+    'abidos-relic',
+    'rare-relic',
+    'ancient-relic'
   ]
 });
 
