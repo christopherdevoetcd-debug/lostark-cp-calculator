@@ -31,9 +31,17 @@ for (const p of chars) {
   const sumBuy = Object.values(rows).reduce((s, r) => s + (r.buy > 0 && r.cost > 0 ? r.buy : 0), 0);
   const totGap = Object.values(rows).reduce((s, r) => s + (r.gapCp || 0), 0);
   const cpGap = (t.cp || 0) - (p.cp || 0);
-  // Cohérence : somme des écarts par système vs écart réel de CP
-  const ratio = cpGap > 20 ? totGap / cpGap : null;
-  if (ratio !== null && (ratio < 0.6 || ratio > 1.5)) add('cp-sum', `${p.role} ${p.className} ${p.name}(${Math.round(p.cp)})→${t.name}(${Math.round(t.cp)}) écart réel ${Math.round(cpGap)} vs somme ${Math.round(totGap)}`);
+  // Cohérence : somme des écarts par système vs écart réel de CP. DPS : les gains se multiplient, on compare en points
+  // log (somme des delta contre 100 × ln(CP référence ÷ CP joueur)) ; support : CP additifs (branches buff + défense).
+  const isDps = p.role !== 'support';
+  const sumLog = Object.values(rows).reduce((s, r) => s + (Number.isFinite(r.delta) ? r.delta : 0), 0);
+  const realLog = 100 * Math.log((t.cp || 1) / (p.cp || 1));
+  // Battle Point incomplet (parties manquantes sur lostark.bible) : Benchmark suspendu dans l'appli, rien à comparer
+  const incomplete = A.hasIncompleteBattlePoint(p, p.role) || A.hasIncompleteBattlePoint(t, t.role);
+  const ratio = cpGap > 20 && !incomplete ? (isDps ? sumLog / realLog : totGap / cpGap) : null;
+  if (ratio !== null && (ratio < 0.6 || ratio > 1.5)) add('cp-sum', isDps
+    ? `dps ${p.className} ${p.name}(${Math.round(p.cp)})→${t.name}(${Math.round(t.cp)}) écart réel ${realLog.toFixed(1)} pts log vs somme ${sumLog.toFixed(1)}`
+    : `${p.role} ${p.className} ${p.name}(${Math.round(p.cp)})→${t.name}(${Math.round(t.cp)}) écart réel ${Math.round(cpGap)} vs somme ${Math.round(totGap)}`);
   plan.forEach(s => { if (/NaN|Infinity|undefined/.test(JSON.stringify(s))) add('plan-nan', `${p.name} ${JSON.stringify(s)}`); });
 }
 for (const [k, v] of Object.entries(issues)) { console.log(`\n## ${k} — ${v.length}`); v.slice(0, 12).forEach(x => console.log('  ' + x)); }

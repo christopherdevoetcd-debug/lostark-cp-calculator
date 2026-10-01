@@ -27,7 +27,12 @@ for (const b of bibleFiles()) {
   const bp = raw.battlePoint || (raw.loadout && raw.loadout.battlePoint) || {};
   const out = { name: b.name, region: b.region, cls: c.className, role, expRole: exp.role, ilvl: c.ilvl, cp: c.cp || c.inGameScore,
     bpSupport: bp.isSupport, rebuilt: !!bp.rebuiltSupport, issues, rows: [] };
-  if (exp.role && exp.role !== '?' && exp.role !== role) add('HIGH', 'role-mismatch', `rôle ${role}, classement ${exp.role}`);
+  if (exp.role && exp.role !== '?' && exp.role !== role) {
+    // Le classement de raid date de la récolte : un joueur peut avoir changé de rôle depuis (gravures et Battle Point d'accord)
+    const settled = A.roleFromEngravings(c) === role && (typeof bp.isSupport !== 'boolean' || bp.isSupport === isSup);
+    if (settled) add('INFO', 'role-changed', `rôle ${role} (gravures et Battle Point), classement ${exp.role} : changé depuis`);
+    else add('HIGH', 'role-mismatch', `rôle ${role}, classement ${exp.role}`);
+  }
   if (typeof bp.isSupport === 'boolean' && bp.isSupport !== isSup) add('MED', 'bp-mode', `Battle Point en mode ${bp.isSupport ? 'support' : 'dps'} pour un ${role}`);
   if (A.hasMixedRaidProfile(c, role)) add('MED', 'mixed', 'profil mélangé');
   if (A.hasIncompleteBattlePoint(c, role)) add('INFO', 'bp-incomplete', 'Battle Point incomplet ' + A.battlePointCoherence(c, role).toFixed(2));

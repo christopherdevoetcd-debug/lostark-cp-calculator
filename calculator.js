@@ -11767,7 +11767,9 @@
   function benchCoreGains(player, target, isSupport) {
     const pSlots = getArkGridStatus(player).slots || {};
     const tSlots = getArkGridStatus(target).slots || {};
-    if (!Object.values(pSlots).some(v => v > 0) || !Object.values(tSlots).some(v => v > 0)) return null;
+    // Joueur sans point de cœur (cœurs sans astrogemmes) : écart exact depuis 0, pas l'ancien barème
+    // (Hephaestues → Momohammer : 30,4 points de Battle Point réels, 15,8 à l'ancien barème)
+    if (!Object.values(tSlots).some(v => v > 0)) return null;
     const pIds = getArkGridCoreIds(player), tIds = getArkGridCoreIds(target);
     const group = (orderKey, chaosKey) => [orderKey, chaosKey].reduce((acc, key) => {
       const from = pSlots[key] || 0, to = tSlots[key] || 0;
