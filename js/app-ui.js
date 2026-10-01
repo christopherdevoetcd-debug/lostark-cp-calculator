@@ -26,6 +26,7 @@ function bindEvents() {
         if (targetId === 'tab-raidtracker') renderRaidTrackerView();
         if (targetId === 'tab-benchmark') renderBenchmarkTab();
         if (targetId === 'tab-belgardin') updateBelgardinView();
+        if (targetId === 'tab-rotation') showRotationTab();
       }
     });
   });

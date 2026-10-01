@@ -7,12 +7,21 @@
 
 const ROT_MAX_ADVICE = 5; // au-delà, trop d'un coup : les plus importants d'abord, le build à part
 const ROT_DAY_LIMIT = 50;
+const ROT_SYNC_MS = 10000;   // tant que l'onglet est affiché : le fichier a-t-il changé (nouveau combat) ?
+const ROT_RETRY_MS = 2000;   // LOA Logs en pleine écriture : nouvel essai
+const ROT_IDB = 'lostark_rotation';
+
+// Accès direct au fichier (File System Access : Chrome, Edge, Opera) : le fichier se relit à chaque changement et se
+// retrouve à la visite suivante. Ailleurs (Firefox, Safari), un File figé : le navigateur refuse de le relire dès que
+// LOA Logs y écrit, il faut le choisir à nouveau.
+const ROT_CAN_HANDLE = typeof window.showOpenFilePicker === 'function';
 
 const rot = {
   worker: null, seq: 0, pending: new Map(),
   info: null, raids: null, dayFilter: '', busy: '', error: '',
   analysis: null, selected: null,
   mods: null, refData: null, skillData: null,
+  handle: null, storedHandle: null, storedLoaded: false, lastModified: null, syncedAt: null, newIds: new Set(), syncTimer: null,
 };
 
 function rotUrl(path) {
@@ -63,24 +72,133 @@ function rotErrorText(msg) {
   return trLang(`Lecture impossible : ${msg}`, `Could not read the file: ${msg}`);
 }
 
-async function rotOpenFile(file) {
-  rot.info = null; rot.raids = null; rot.analysis = null; rot.selected = null; rot.error = '';
-  rot.busy = 'open';
+const rotSleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---------- Fichier retenu d'une visite à l'autre (IndexedDB : le handle se clone, pas un File) ----------
+
+function rotIdb(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(ROT_IDB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      let tx, r;
+      try {
+        tx = req.result.transaction('kv', mode);
+        r = fn(tx.objectStore('kv'));
+      } catch (e) { req.result.close(); reject(e); return; }
+      tx.oncomplete = () => { req.result.close(); resolve(r && r.result); };
+      tx.onerror = () => { req.result.close(); reject(tx.error); };
+    };
+  });
+}
+async function rotSaveHandle(h) {
+  try { await rotIdb('readwrite', st => st.put(h, 'encounters')); } catch (e) { /* stockage indisponible : rien de grave */ }
+}
+async function rotLoadHandle() {
+  try { return (await rotIdb('readonly', st => st.get('encounters'))) || null; } catch (e) { return null; }
+}
+
+// ---------- Ouverture, synchro ----------
+
+// keep : synchro (même vue : filtre, combat analysé et joueur choisi restent ; les nouveaux raids sont signalés).
+async function rotOpenFile(file, { keep = false } = {}) {
+  if (!keep) { rot.info = null; rot.raids = null; rot.analysis = null; rot.selected = null; rot.newIds = new Set(); }
+  rot.error = '';
+  rot.busy = keep ? 'sync' : 'open';
   renderRotationTab();
+  const before = new Set((rot.raids || []).map(r => r.id));
   try {
     const [info] = await Promise.all([rotCall('open', { file }), rotLoadShared()]);
     rot.info = { ...info, name: file.name };
-    rot.busy = '';
-    await rotListRaids();
+    rot.lastModified = file.lastModified;
+    rot.syncedAt = Date.now();
+    rot.raids = await rotCall('list', { opts: rotListOpts() });
+    if (keep) for (const r of rot.raids) if (!before.has(r.id)) rot.newIds.add(r.id);
   } catch (e) {
     rot.busy = '';
-    rot.error = rotErrorText(e.message);
-    renderRotationTab();
+    throw e;
+  }
+  rot.busy = '';
+  renderRotationTab();
+}
+
+async function rotOpenSafely(file, opts) {
+  try { await rotOpenFile(file, opts); } catch (e) { rot.error = rotErrorText(e.message); renderRotationTab(); }
+}
+
+// Relit le fichier par son handle. Automatique : seulement s'il a changé, sans message d'erreur (LOA Logs peut être en
+// train d'écrire : nouvel essai au tour suivant). Manuel : toujours, avec un nouvel essai après 2 s puis le message.
+async function rotSync({ manual = false } = {}) {
+  if (!rot.handle || (rot.busy && !manual) || rot.busy === 'sync') return;
+  let file;
+  try { file = await rot.handle.getFile(); } catch (e) {
+    if (manual) { rot.error = rotErrorText(e.message); renderRotationTab(); }
+    return;
+  }
+  if (!manual && rot.info && file.lastModified === rot.lastModified) return;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await rotOpenFile(file, { keep: !!rot.info });
+      return;
+    } catch (e) {
+      if (attempt === 0) { await rotSleep(ROT_RETRY_MS); try { file = await rot.handle.getFile(); } catch (_) { /* nouvel essai avec l'ancien */ } continue; }
+      if (manual || !rot.info) { rot.error = rotErrorText(e.message); renderRotationTab(); }
+    }
   }
 }
 
-async function rotListRaids() {
-  if (!rot.info) return;
+async function rotUseHandle(h) {
+  rot.storedLoaded = true;
+  rot.handle = h;
+  rot.storedHandle = null;
+  rot.info = null;
+  rotSaveHandle(h);
+  await rotSync({ manual: true });
+}
+
+async function rotPick() {
+  let h;
+  try {
+    [h] = await window.showOpenFilePicker({ id: 'loalogs', types: [{ description: 'LOA Logs (encounters.db)', accept: { 'application/x-sqlite3': ['.db'] } }] });
+  } catch (e) {
+    return; // fenêtre fermée sans choix
+  }
+  await rotUseHandle(h);
+}
+
+// Fichier retenu : la permission de lecture se redemande à chaque visite (clic obligatoire si le navigateur l'exige).
+async function rotResume() {
+  const h = rot.storedHandle;
+  if (!h) return;
+  try {
+    if ((await h.requestPermission({ mode: 'read' })) !== 'granted') return;
+  } catch (e) { return; }
+  await rotUseHandle(h);
+}
+
+// Onglet affiché : fichier retenu déjà autorisé → ouvert sans clic ; sinon vérification immédiate d'un changement.
+// Le fichier retenu n'est lu qu'ici, à l'ouverture de l'onglet, jamais au chargement du site.
+async function showRotationTab() {
+  if (rot.handle) { rotSync(); return; }
+  if (ROT_CAN_HANDLE && !rot.storedLoaded) {
+    rot.storedLoaded = true;
+    rot.storedHandle = await rotLoadHandle();
+    renderRotationTab();
+  }
+  if (!rot.storedHandle) return;
+  try {
+    if ((await rot.storedHandle.queryPermission({ mode: 'read' })) === 'granted') await rotUseHandle(rot.storedHandle);
+  } catch (e) { /* le bouton « Reprendre » reste proposé */ }
+}
+
+function rotSyncTick() {
+  const pane = document.getElementById('tab-rotation');
+  if (!rot.handle || document.visibilityState !== 'visible' || !pane?.classList.contains('active')) return;
+  rotSync();
+}
+
+function rotListOpts() {
   const opts = { limit: 10 };
   if (rot.dayFilter) {
     const [y, m, d] = rot.dayFilter.split('-').map(Number);
@@ -88,11 +206,29 @@ async function rotListRaids() {
     opts.to = new Date(y, m - 1, d + 1).getTime();
     opts.limit = ROT_DAY_LIMIT;
   }
+  return opts;
+}
+
+// Fichier modifié pendant une lecture (File figé) : avec un handle, on le relit et on refait l'action une fois.
+async function rotWithFreshFile(action) {
+  try { return await action(); } catch (e) {
+    if (e.message !== 'file-changed' || !rot.handle) throw e;
+    const file = await rot.handle.getFile();
+    await rotCall('open', { file });
+    rot.lastModified = file.lastModified;
+    rot.syncedAt = Date.now();
+    return action();
+  }
+}
+
+async function rotListRaids() {
+  if (!rot.info) return;
   rot.busy = 'list';
   rot.error = '';
+  rot.newIds = new Set();
   renderRotationTab();
   try {
-    rot.raids = await rotCall('list', { opts });
+    rot.raids = await rotWithFreshFile(() => rotCall('list', { opts: rotListOpts() }));
   } catch (e) {
     rot.error = rotErrorText(e.message);
   }
@@ -106,7 +242,7 @@ async function rotAnalyze(encounterId) {
   rot.analysis = null;
   renderRotationTab();
   try {
-    const res = await rotCall('analyze', { encounterId });
+    const res = await rotWithFreshFile(() => rotCall('analyze', { encounterId }));
     const { pickReference, scorePlayer } = rot.mods.metrics;
     const refs = rot.refData?.refs || null;
     for (const a of res.players) {
@@ -153,13 +289,30 @@ function rotDifficulty(d) {
 function renderRotationTab() {
   const pane = document.getElementById('tab-rotation');
   if (!pane) return;
+  const loc = isEnLang() ? 'en-GB' : 'fr-FR';
   const info = document.getElementById('rotFileInfo');
   if (info) {
     if (rot.busy === 'open') info.textContent = trLang('Ouverture…', 'Opening…');
+    else if (rot.busy === 'sync') info.textContent = trLang('Synchronisation…', 'Syncing…');
     else if (rot.info) {
-      const range = rot.info.first ? ` · ${new Date(rot.info.first).toLocaleDateString(isEnLang() ? 'en-GB' : 'fr-FR')} → ${new Date(rot.info.last).toLocaleDateString(isEnLang() ? 'en-GB' : 'fr-FR')}` : '';
-      info.textContent = `${rot.info.name} · ${rotNum(rot.info.size / 1048576, 0)} ${trLang('Mo', 'MB')} · ${rot.info.encounters} ${trLang('combats', 'fights')}${range}`;
+      const range = rot.info.first ? ` · ${new Date(rot.info.first).toLocaleDateString(loc)} → ${new Date(rot.info.last).toLocaleDateString(loc)}` : '';
+      const synced = rot.handle && rot.syncedAt ? ` · ${trLang('lu à', 'read at')} ${new Date(rot.syncedAt).toLocaleTimeString(loc)}` : '';
+      info.textContent = `${rot.info.name} · ${rotNum(rot.info.size / 1048576, 0)} ${trLang('Mo', 'MB')} · ${rot.info.encounters} ${trLang('combats', 'fights')}${range}${synced}`;
     } else info.textContent = '';
+  }
+  const resume = document.getElementById('rotResume');
+  if (resume) resume.hidden = !(rot.storedHandle && !rot.handle);
+  const sync = document.getElementById('rotSync');
+  if (sync) { sync.hidden = !rot.handle; sync.disabled = !!rot.busy; }
+  const note = document.getElementById('rotSyncNote');
+  if (note) {
+    note.textContent = !ROT_CAN_HANDLE
+      ? trLang('Ton navigateur ne permet pas de relire le fichier : après un nouveau combat, choisis-le à nouveau. Chrome et Edge le relisent tout seuls.', 'Your browser cannot re-read the file: after a new fight, pick it again. Chrome and Edge re-read it on their own.')
+      : rot.handle
+        ? trLang('Synchro automatique : tant que cet onglet est affiché, les nouveaux combats enregistrés par LOA Logs apparaissent en 10 s environ.', 'Auto sync: while this tab is shown, new fights saved by LOA Logs show up within about 10 s.')
+        : rot.storedHandle
+          ? trLang(`Fichier retenu : ${rot.storedHandle.name}. Clique sur « Reprendre » pour autoriser sa lecture.`, `Remembered file: ${rot.storedHandle.name}. Click "Resume" to allow reading it.`)
+          : trLang('Le fichier est retenu pour tes prochaines visites et relu automatiquement après chaque combat.', 'The file is remembered for your next visits and re-read automatically after each fight.');
   }
   const raidsPanel = document.getElementById('rotRaidsPanel');
   if (raidsPanel) raidsPanel.hidden = !rot.info;
@@ -186,7 +339,7 @@ function rotRaidsHtml() {
   const rows = rot.raids.map(r => `
     <tr class="rot-raid-row${r.id === current ? ' active' : ''}" data-rot-encounter="${r.id}" tabindex="0">
       <td class="market-num">${escapeHtml(rotDate(r.fight_start))}</td>
-      <td>${escapeHtml(r.current_boss)}</td>
+      <td>${escapeHtml(r.current_boss)}${rot.newIds.has(r.id) ? ` <span class="rot-new">${trLang('nouveau', 'new')}</span>` : ''}</td>
       <td>${escapeHtml(rotDifficulty(r.difficulty))}</td>
       <td class="market-num">${rotClock(r.duration)}</td>
       <td>${escapeHtml(r.local_player || '')}</td>
@@ -341,9 +494,17 @@ function initRotationTab() {
   if (!input) return;
   input.addEventListener('change', () => {
     const f = input.files && input.files[0];
-    if (f) rotOpenFile(f);
+    if (f) { rot.handle = null; rotOpenSafely(f); }
     input.value = ''; // rechoisir le même fichier (modifié par LOA Logs) relance la lecture
   });
+  if (ROT_CAN_HANDLE) {
+    // Accès direct au fichier à la place du sélecteur classique (même bouton).
+    input.closest('label')?.addEventListener('click', e => { e.preventDefault(); if (!rot.busy) rotPick(); });
+    rot.syncTimer = setInterval(rotSyncTick, ROT_SYNC_MS);
+    document.addEventListener('visibilitychange', rotSyncTick);
+  }
+  document.getElementById('rotResume')?.addEventListener('click', rotResume);
+  document.getElementById('rotSync')?.addEventListener('click', () => rotSync({ manual: true }));
   document.getElementById('rotLatest')?.addEventListener('click', () => { rot.dayFilter = ''; rotListRaids(); });
   document.getElementById('rotDate')?.addEventListener('change', e => { rot.dayFilter = e.target.value || ''; rotListRaids(); });
   const pane = document.getElementById('tab-rotation');
@@ -361,4 +522,5 @@ function initRotationTab() {
     pick(e.target, 'data-rot-encounter', id => rotAnalyze(+id));
     pick(e.target, 'data-rot-player', name => { rot.selected = name; renderRotationTab(); });
   });
+  renderRotationTab();
 }
