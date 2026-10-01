@@ -190,3 +190,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 - Collier « Outgoing Damage » (combatEffectDesc 621000000-002 de Maxroll) : % lu sur la partie type 17 du Battle Point (55 / 120 / 200).
 - Effets de bracelet (`BIBLE_BRACELET_PERKS`) : texte entre parenthèses = texte du jeu (vérifié sur la table `engraving` de Maxroll) ; les noms « Précision », « Marteau »… n'existent pas dans les données T4 du jeu, ce sont les noms T3 repris par la communauté.
 - Retirés (sans source) : explication de l'écart par festins / nourriture, « formule décompilée / 100 », note « Karma de transcendance », familier « 0,4 / 0,7 / 1,0 % », repli Buff Power = CP × 0,75 / soins × 0,60 sans profil.
+
+### Analyseur de rotation (prototype, `tools/rotation/`, voir son README)
+- Hors de l'appli pour l'instant : analyse d'un combat de la base locale de LOA Logs (`encounters.db`, `skillCastLog` coup par coup avec les buffs actifs), note d'exécution 0-100 par rang parmi la même spé sur le même boss (120 derniers jours). Validé sur 649 combats : corrélation de rang 0,69 avec DPS ÷ CP. Supports non notés.
+- `data/rotation-skills.json` (recharge de base, placement) : `node tools/rotation/build-skill-meta.mjs`.
