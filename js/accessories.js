@@ -143,7 +143,7 @@ function findBestAccessoryUpgrade(slotLines, isSupport, onlyKind) {
         const nextPct = computeAccessoryLinesBonus(others.concat(target), isSupport);
         const gain = ((1 + nextPct / 100) / (1 + curPct / 100) - 1) * 100;
         if (!(gain >= 1e-4)) return;
-        if (!best || cost / gain < best.cost / best.gain) best = { slot, kind, pkg, gain, cost, curPct, nextPct };
+        if (!best || cost / gain < best.cost / best.gain) best = { slot, kind, pkg, gain, cost, curPct, nextPct, lines: [m1, m2], tiers: [a, b] };
       });
     });
   });

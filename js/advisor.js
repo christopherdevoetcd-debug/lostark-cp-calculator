@@ -402,7 +402,7 @@ function buildMasterGpdData(charObj, isSupport, isEn) {
         whatItReads: isEn ? `Accessories +${m.curPct.toFixed(2)}% ${unit}` : `Bijoux +${m.curPct.toFixed(2)}% ${unit}`,
         wherePutsYou: isEn ? 'Best ratio' : 'Meilleur ratio',
         lastStep: '—',
-        nextStep: isEn ? `➔ ${m.pkg} + dead line` : `➔ ${m.pkg} + ligne morte`,
+        nextStep: isEn ? `${m.current} ➔ ${m.target} + dead line` : `${m.current} ➔ ${m.target} + ligne morte`,
         category: 'acc'
       }));
     }

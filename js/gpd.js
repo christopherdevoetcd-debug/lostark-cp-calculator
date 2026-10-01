@@ -525,14 +525,21 @@ function getDynamicGpdTable(charObj, role, isEn) {
     [['neck', isEn ? 'Necklace' : 'Collier'], ['ear', isEn ? 'Earring' : 'Boucle d\'oreille'], ['ring', isEn ? 'Ring' : 'Anneau']].forEach(([kind, kindName]) => {
       const best = findBestAccessoryUpgrade(accEval.slotLines, isSupport, kind);
       if (!best) return;
+      // Gamme nommée ligne par ligne (« High / Mid » seul ne dit pas quelle ligne est High) et état actuel du bijou
+      const lineName = k => (ACC_LINE_NAMES[k] || [k, k])[isEn ? 1 : 0];
+      const tierName = t => (t === null || t === undefined ? (isEn ? 'none' : 'absente') : ACC_TIER_NAMES[t]);
+      const curLines = accEval.slotLines[best.slot] || [];
+      const curTiers = best.lines.map(k => { const l = curLines.find(x => x.key === k); return l ? accTierOf(k, l.amount) : null; });
+      const target = best.lines.map((k, i) => `${lineName(k)} ${tierName(best.tiers[i])}`).join(' / ');
+      const current = best.lines.map((k, i) => `${lineName(k)} ${tierName(curTiers[i])}`).join(' / ');
       pushRow(`dyn_acc_${kind}`,
-        isEn ? `${kindName} — ${slotNames[best.slot]} ➔ ${best.pkg.label}` : `${kindName} — ${slotNames[best.slot]} ➔ ${best.pkg.label}`,
-        isEn ? `➔ ${best.pkg.label} + 1 dead line` : `➔ ${best.pkg.label} + 1 ligne morte`,
+        `${kindName} — ${slotNames[best.slot]} ➔ ${target}`,
+        isEn ? `Now ${current} ➔ ${target} + 1 dead line` : `Actuel ${current} ➔ ${target} + 1 ligne morte`,
         best.gain, best.cost,
         isEn
           ? `Best ${kindName.toLowerCase()} to replace (the weaker one when you wear two), lines valued with the Arsonistic slopes. Price per accessory type is an in-game estimate (no market source).`
           : `Meilleur remplacement de ce type (le plus faible quand tu en portes deux), lignes valorisées avec les pentes Arsonistic. Prix par type de bijou estimé en jeu (pas de source marché).`,
-        { slot: best.slot, slotName: slotNames[best.slot], kind, curPct: best.curPct, pkg: best.pkg.label, state: accGrade });
+        { slot: best.slot, slotName: slotNames[best.slot], kind, curPct: best.curPct, pkg: best.pkg.label, target, current, state: accGrade });
     });
   }
 
