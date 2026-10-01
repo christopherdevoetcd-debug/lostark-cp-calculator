@@ -38,11 +38,11 @@ node --no-warnings tools/rotation/analyze.mjs 4275 Neeverslayer [--json]
 - **Buffs** : part des dégâts (coups des compétences) sous PA du support et Marque à la fois.
 - **Placement** : part des dégâts des compétences à placement portés du bon côté.
 - **Note** (DPS seulement) : chaque critère = rang (0-100) parmi les logs de la même spé sur le même boss (8 au minimum, sinon la spé tous boss), sur les 120 derniers jours. Activité 30, compétences 35 (utilisations par minute des compétences clés, ≥ 3 % des dégâts et jouées par 60 % de la spé, pondérées par leur part), buffs 20, placement 15 (spés dont ≥ 20 % des dégâts sont à placement). Critère absent : poids redistribué.
-- Validation (2026-10-01, 649 combats récents) : corrélation de rang médiane avec DPS ÷ CP de 0,68 au sein d'une même spé, boss et difficulté (activité 0,55, compétences 0,50, placement 0,35, buffs 0,29) ; 0,24 avec le CP. Mesuré sur les mêmes logs que les références.
+- **Note des supports** : couverture de leur groupe calculée par LOA Logs (`support_ap` / `_brand` / `_identity` / `_hyper` de la table `entity`, `compute_support_buffs` : part des dégâts des DPS du groupe sous le buff de PA, la Marque, l'identité et la T, pondérée par leurs dégâts, groupes à un seul support), rang parmi la même spé sur le même boss. PA 30, Marque 25, identité 25, T 10, activité 10 : poids proches de la corrélation de chaque critère avec le rDPS donné ÷ dégâts du groupe (803 supports, 29 groupes : identité 0,61, PA 0,50, Marque 0,50, activité 0,34, T 0,25 ; CP 0,53). Note : 0,66, et 0,21 avec le CP. Compétences comparées à la référence à titre indicatif (fréquence des buffs), hors note.
+- Validation des DPS (2026-10-01, 649 combats récents) : corrélation de rang médiane avec DPS ÷ CP de 0,68 au sein d'une même spé, boss et difficulté (activité 0,55, compétences 0,50, placement 0,35, buffs 0,29) ; 0,24 avec le CP. Mesuré sur les mêmes logs que les références.
 
 ## Pas encore fait
 
-- Note des supports (couverture des buffs donnés au groupe).
 - Ouverture et cycle comparés à la référence, fenêtres de burst (gros sorts lancés juste avant le buff).
 - Références du top (logs de lostark.bible) : aujourd'hui, les joueurs de la base de l'utilisateur.
 - Interface web (sql.js, fichier glissé dans la page, lecture du seul combat choisi).

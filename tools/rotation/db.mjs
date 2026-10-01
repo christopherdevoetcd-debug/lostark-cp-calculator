@@ -41,10 +41,15 @@ export function loadEncounter(db, id) {
   const p = db.prepare(`SELECT p.*, s.upstream_id FROM encounter_preview p LEFT JOIN sync_logs s ON s.encounter_id = p.id WHERE p.id = ?`).get(id);
   if (!p) throw new Error(`Combat ${id} introuvable`);
   const e = db.prepare('SELECT buffs, debuffs, misc, last_combat_packet FROM encounter WHERE id = ?').get(id);
-  const players = db.prepare(`SELECT name, class, class_id, spec, combat_power, gear_score, skills, damage_stats, skill_stats
+  // support_* : pour un support, part des dégâts des DPS de son groupe (pondérée par leurs dégâts) faite sous son buff
+  // de PA, sa Marque, son identité et sa T (compute_support_buffs de LOA Logs, groupes à un seul support).
+  const players = db.prepare(`SELECT name, class, class_id, spec, combat_power, gear_score, skills, damage_stats, skill_stats,
+      support_ap, support_brand, support_identity, support_hyper, rdps_damage_given
     FROM entity WHERE encounter_id = ? AND entity_type = 'PLAYER'`).all(id).map(r => ({
       name: r.name, className: r.class, classId: r.class_id, spec: r.spec || null,
       combatPower: r.combat_power, gearScore: r.gear_score,
+      supportCoverage: { ap: r.support_ap, brand: r.support_brand, identity: r.support_identity, hat: r.support_hyper },
+      rdpsGiven: r.rdps_damage_given || 0,
       skills: unpack(r.skills) || {}, damageStats: unpack(r.damage_stats) || {}, skillStats: unpack(r.skill_stats) || {},
     }));
   return {

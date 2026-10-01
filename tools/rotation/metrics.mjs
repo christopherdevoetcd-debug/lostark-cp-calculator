@@ -198,6 +198,7 @@ export function analyzePlayer(encounter, player, { skillMeta = {}, buffSets = cl
   const r = (x, y) => (y ? x / y : null);
   return {
     name: player.name, className: player.className, spec: player.spec, support: isSupport(player),
+    supportCoverage: isSupport(player) && player.supportCoverage?.ap != null ? player.supportCoverage : null,
     combatPower: player.combatPower, dps: player.damageStats.dps || Math.round(totalDamage / (durationMs / 1000)),
     durationMs, downtimeMs: downMs, availableMs,
     deadMs, lostMs, sharedPauseMs, activity: 1 - lostMs / Math.max(1, availableMs - deadMs - sharedPauseMs),
@@ -253,6 +254,10 @@ export function percentileRank(q, x) {
 }
 
 export const SCORE_WEIGHTS = { activity: 30, skills: 35, buffs: 20, positional: 15 };
+// Supports : couverture de leur groupe (part des dégâts des DPS sous chaque buff). Poids proches de la corrélation
+// de chaque critère avec le rDPS donné ÷ dégâts du groupe (803 supports, 2026-10-02) : identité 0,61, PA 0,50,
+// Marque 0,50, activité 0,34, T 0,25.
+export const SUPPORT_SCORE_WEIGHTS = { ap: 30, brand: 25, identity: 25, hat: 10, activity: 10 };
 export const REF_MIN_SAMPLES = 8;
 export const KEY_SKILL_MIN_SHARE = 0.03;
 export const KEY_SKILL_MIN_USAGE = 0.6; // compétence jouée par au moins 60 % des joueurs de la spé (sinon choix de build)
@@ -266,9 +271,32 @@ export function pickReference(refs, spec, boss) {
   return { ref: null, scope: null };
 }
 
+function weighted(parts, weights) {
+  let tw = 0, total = 0;
+  for (const [k, wk] of Object.entries(weights)) if (parts[k] != null) { tw += wk; total += wk * parts[k]; }
+  return tw ? Math.round(total / tw) : null;
+}
+
+export function scoreSupport(a, ref) {
+  // Couverture absente : groupe sans DPS ou avec deux supports (LOA Logs ne la calcule pas).
+  if (!ref?.support || !a.supportCoverage) return null;
+  const parts = { activity: percentileRank(ref.activity, a.activity) };
+  for (const k of ['ap', 'brand', 'identity', 'hat']) parts[k] = percentileRank(ref.support[k], a.supportCoverage[k]);
+  // Compétences : à titre indicatif (hors note), toutes celles que la spé joue, quelle que soit leur part des dégâts.
+  const skillScores = [];
+  for (const [id, rs] of Object.entries(ref.skills || {})) {
+    if ((rs.usage ?? 0) < KEY_SKILL_MIN_USAGE || (rs.cpm?.[10] ?? 0) < 0.5) continue;
+    const mine = a.skills.find(x => String(x.id) === id);
+    skillScores.push(mine
+      ? { id: +id, name: rs.name, cpm: mine.cpm, refCpmMedian: rs.cpm[10], refCpmP90: rs.cpm[18], rank: percentileRank(rs.cpm, mine.cpm), weight: 0 }
+      : { id: +id, name: rs.name, absent: true, refCpmMedian: rs.cpm[10], refCpmP90: rs.cpm[18], weight: 0 });
+  }
+  return { score: weighted(parts, SUPPORT_SCORE_WEIGHTS), parts, skillScores };
+}
+
 export function scorePlayer(a, ref) {
-  // Supports : leur note portera sur la couverture des buffs donnés au groupe (à venir), pas sur ces critères de DPS.
-  if (!ref || a.support) return null;
+  if (!ref) return null;
+  if (a.support) return scoreSupport(a, ref);
   const parts = {};
   parts.activity = percentileRank(ref.activity, a.activity);
 
@@ -293,7 +321,5 @@ export function scorePlayer(a, ref) {
 
   parts.positional = (ref.positionalShareMedian ?? 0) >= POSITIONAL_MIN_SHARE ? percentileRank(ref.positionalRate, a.positionalRate) : null;
 
-  let tw = 0, total = 0;
-  for (const [k, wk] of Object.entries(SCORE_WEIGHTS)) if (parts[k] != null) { tw += wk; total += wk * parts[k]; }
-  return { score: tw ? Math.round(total / tw) : null, parts, skillScores: skillScores.sort((x, y) => y.weight - x.weight) };
+  return { score: weighted(parts, SCORE_WEIGHTS), parts, skillScores: skillScores.sort((x, y) => y.weight - x.weight) };
 }

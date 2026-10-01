@@ -61,12 +61,19 @@ if (a.score) {
   const p = a.score.parts;
   const ref = a.reference.scope === 'boss' ? `même spé sur ce boss` : `même spé, tous boss`;
   console.log(`Note d'exécution : ${a.score.score} / 100  (rang parmi ${a.reference.n} logs, ${ref})`);
-  console.log(`  Activité ${p.activity ?? '—'} · Compétences ${p.skills ?? '—'} · Buffs ${p.buffs ?? '—'} · Placement ${p.positional ?? '—'}`);
-} else console.log(a.support ? 'Note : pas encore de note pour les supports (couverture des buffs du groupe, prochaine étape).' : 'Note : pas assez de logs de référence pour cette spé.');
+  if (a.support) console.log(`  PA ${p.ap ?? '—'} · Marque ${p.brand ?? '—'} · Identité ${p.identity ?? '—'} · T ${p.hat ?? '—'} · Activité ${p.activity ?? '—'}`);
+  else console.log(`  Activité ${p.activity ?? '—'} · Compétences ${p.skills ?? '—'} · Buffs ${p.buffs ?? '—'} · Placement ${p.positional ?? '—'}`);
+} else console.log(a.support && !a.supportCoverage ? 'Note : couverture non calculée (groupe sans DPS ou avec deux supports).' : 'Note : pas assez de logs de référence pour cette spé.');
 
 console.log(`\nTemps perdu : ${fmtTime(a.lostMs)} sur ${fmtTime(a.availableMs - a.deadMs)} jouables (activité ${pct(a.activity)})${a.deadMs >= 1000 ? `, ${fmtTime(a.deadMs)} à terre` : ''}`);
 if (a.sharedPauseMs >= 1000) console.log(`Pauses partagées avec d'autres DPS (mécanique probable, non comptées) : ${fmtTime(a.sharedPauseMs)}`);
 for (const g of a.longestGaps.filter(g => g.lostMs >= 2000)) console.log(`  ${fmtTime(g.from)} → ${fmtTime(g.to)} : ${num(g.lostMs / 1000)} s sans compétence${g.shared ? `  (pause partagée : ${g.pausedWith.join(', ')})` : ''}`);
+if (a.supportCoverage) {
+  const c = a.supportCoverage, rs = refs && pickReference(refs, a.spec, enc.boss).ref?.support;
+  const med = k => (rs?.[k] ? ` (médiane ${pct(rs[k][10])}, top 10 % ${pct(rs[k][18])})` : '');
+  console.log('\nCouverture du groupe (part des dégâts des DPS sous ton buff) :');
+  console.log(`  PA ${pct(c.ap)}${med('ap')}\n  Marque ${pct(c.brand)}${med('brand')}\n  Identité ${pct(c.identity)}${med('identity')}\n  T ${pct(c.hat)}${med('hat')}`);
+}
 if (!a.support) {
   console.log(`\nBuffs : PA du support ${pct(a.apRate)}, Marque ${pct(a.brandRate)}, les deux ${pct(a.fullBuffRate)}, identité ${pct(a.identityRate)}, T ${pct(a.hatRate)} des dégâts`);
   if (a.bigSkillFullBuffRate != null) console.log(`  Gros sorts (≥ 3 % des dégâts, ≥ 15 s entre deux) sous PA + Marque : ${pct(a.bigSkillFullBuffRate)}`);
@@ -75,7 +82,7 @@ if (a.positionalShare >= 0.05) console.log(`Placement : ${pct(a.positionalRate)}
 
 console.log('\nCompétence                 Dégâts   Util.  /min   Écart méd.  Placement  PA+Marque  Réf. /min (méd. / p90)  Rang');
 const scored = new Map((a.score?.skillScores || []).map(s => [s.id, s]));
-for (const s of a.skills.filter(s => s.share >= 0.005 || scored.has(s.id))) {
+for (const s of a.skills.filter(s => (a.support ? s.casts > 0 && (scored.has(s.id) || s.share >= 0.02) : s.share >= 0.005 || scored.has(s.id)))) {
   const sc = scored.get(s.id);
   console.log(`${pad(s.name, 25)} ${lpad(pct(s.share), 7)} ${lpad(s.casts, 6)} ${lpad(num(s.cpm), 5)}  ${lpad(s.medianIntervalMs == null ? '—' : num(s.medianIntervalMs / 1000) + ' s', 10)}  ${lpad(s.positional ? pct(s.positionalRate) : '', 9)}  ${lpad(pct(s.fullBuffRate), 9)}  ${lpad(sc ? `${num(sc.refCpmMedian)} / ${num(sc.refCpmP90)}` : '', 22)}  ${lpad(sc?.rank ?? '', 4)}`);
 }

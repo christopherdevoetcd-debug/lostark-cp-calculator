@@ -20,7 +20,7 @@ const since = latest - DAYS * 86400000;
 const ids = raidIds(db).filter(id => db.prepare('SELECT fight_start FROM encounter_preview WHERE id = ?').get(id).fight_start >= since);
 const groups = new Map();
 const bucket = key => {
-  if (!groups.has(key)) groups.set(key, { n: 0, activity: [], fullBuffRate: [], apRate: [], positionalRate: [], positionalShare: [], skills: new Map() });
+  if (!groups.has(key)) groups.set(key, { n: 0, activity: [], fullBuffRate: [], apRate: [], positionalRate: [], positionalShare: [], skills: new Map(), support: { ap: [], brand: [], identity: [], hat: [] } });
   return groups.get(key);
 };
 
@@ -37,6 +37,7 @@ for (const [i, id] of ids.entries()) {
       const g = bucket(key);
       g.n++;
       g.activity.push(a.activity);
+      if (a.supportCoverage) for (const k of ['ap', 'brand', 'identity', 'hat']) g.support[k].push(a.supportCoverage[k]);
       if (a.apRate) { g.apRate.push(a.apRate); g.fullBuffRate.push(a.fullBuffRate); }
       g.positionalShare.push(a.positionalShare ?? 0);
       if (a.positionalRate != null) g.positionalRate.push(a.positionalRate);
@@ -64,6 +65,7 @@ for (const [key, g] of groups) {
   out[key] = {
     n: g.n, activity: toQuantiles(g.activity), apRate: toQuantiles(g.apRate), fullBuffRate: toQuantiles(g.fullBuffRate),
     positionalRate: toQuantiles(g.positionalRate), positionalShareMedian: median(g.positionalShare), skills,
+    ...(g.support.ap.length ? { support: Object.fromEntries(Object.entries(g.support).map(([k, v]) => [k, toQuantiles(v)])) } : {}),
   };
 }
 writeFileSync(OUT, JSON.stringify({ built: new Date().toISOString(), since: new Date(since).toISOString().slice(0, 10), encounters: ids.length, players, refs: out }));
