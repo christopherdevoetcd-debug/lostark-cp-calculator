@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=26.5">
+  <link rel="stylesheet" href="style.css?v=26.6">
 </head>
 <body>
   <div class="app-container">
@@ -1105,7 +1105,7 @@
             <div>
               <h2 data-i18n="canon_title">Moteur Mathématique Canonique T4 (Smilegate & lostark.bible)</h2>
               <p class="subtitle" style="margin-top: 4px; font-size: 14px; color: var(--text-muted);" data-i18n="canon_subtitle">
-                Décomposition exacte décompilée : Combat Power = Base Value × ∏ (1 + Multiplicateurs) / 100
+                Formule du jeu : CP = valeur de base × ∏ (1 + partie ÷ 10 000) ÷ 10 000, sur les parties du Battle Point du profil lostark.bible.
               </p>
             </div>
             <span class="info-pill" id="canonRoleBadge">Support Split</span>
@@ -1150,9 +1150,9 @@
           <div style="background: rgba(232, 230, 220, 0.06); border: 1px solid rgba(232, 230, 220, 0.2); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
             <strong data-i18n="canon_analysis_title">Analyse de la formule officielle :</strong>
             <ul style="margin-left: 20px; margin-top: 6px;">
-              <li data-i18n="canon_analysis_dps">Pour les <strong data-i18n="role_dps">DPS</strong>, le CP est le produit pur de la Base d'Attaque (<code>MainStat × Puissance Arme / 6</code>) par l'ensemble des multiplicateurs de dégâts.</li>
-              <li data-i18n="canon_analysis_sup">Pour les <strong>Supports</strong>, le CP additionne directement le <strong>Buff Power</strong> (puissance des buffs PA d'équipe) et le <strong>Heal/Shield Power</strong> (taille des boucliers et soins basée sur les Max HP).</li>
-              <li data-i18n="canon_analysis_delta">L'écart résiduel de 1 à 2% entre le jeu et le site s'explique par les <strong>Festins de guilde/forteresse</strong> (+10k HP / +5k Arme), la <strong>nourriture active</strong> (+3 000 AP) et les sous-niveaux d'avancement d'Ark Grid.</li>
+              <li data-i18n="canon_analysis_dps">Pour les <strong>DPS</strong>, la valeur de base vaut 2,88 × PA de base, avec PA de base = <code>√(stat principale × puissance d'arme ÷ 6) × (1 + % PA)</code> ; chaque autre partie du Battle Point la multiplie.</li>
+              <li data-i18n="canon_analysis_sup">Pour les <strong>supports</strong>, le CP additionne une branche buff (1,24 × PA de base, multipliée par les parties offensives) et une branche défense (12 × PV max, multipliée par les parties défensives).</li>
+              <li data-i18n="canon_analysis_delta">Rapport CP en jeu ÷ CP reconstitué, mesuré sur 70 profils : 0,99 à 1,04 (DPS), 0,96 à 0,99 (support). Cet écart n'est pas expliqué ; au-delà, des parties manquent sur lostark.bible.</li>
             </ul>
           </div>
 
@@ -1507,49 +1507,55 @@
       <button class="modal-close" id="btnCloseHelpModal">&times;</button>
       <div class="modal-header">
         <h2 data-i18n="help_title">Comment utiliser l'outil ?</h2>
-        <p data-i18n="help_subtitle">Le site regroupe 8 modules puissants pour optimiser votre personnage.</p>
+        <p data-i18n="help_subtitle">9 onglets ; importer ton personnage est le point de départ.</p>
       </div>
       <div class="modal-body" style="color: var(--text-dim); line-height: 1.5; font-size: 15px; max-height: 65vh; overflow-y: auto;">
-        <p style="margin-bottom: 16px;" data-i18n="help_intro">Voici un aperçu des différents modules à votre disposition :</p>
+        <p style="margin-bottom: 16px;" data-i18n="help_intro">Ce que fait chaque onglet :</p>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E0A43A; font-size: 14px;">Importation</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_import">Chargez votre équipement, gemmes et Ark Passive depuis lostark.bible. (Point de départ)</div>
+        <div class="help-grid">
+          <div class="help-card">
+            <strong data-i18n="help_import_title">Importation</strong>
+            <div data-i18n="help_import">Point de départ : importe ton personnage depuis lostark.bible (profil raid). Tous les onglets calculent sur ton vrai stuff ; sans personnage, rien n'est chiffré.</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #CFCBBD; font-size: 14px;">Benchmark & Comparator</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_benchmark">Comparez votre build aux meilleurs joueurs pour voir quoi améliorer.</div>
+          <div class="help-card">
+            <strong data-i18n="help_predictor_title">Prédicteur rapide</strong>
+            <div data-i18n="help_predictor">iLvl cible ➔ CP : chemin d'affinage le moins cher sur ton stuff (recettes du jeu, prix du marché), son coût en or et le CP gagné.</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E07A63; font-size: 14px;">Quick Predictor</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_predictor">Estimez votre gain global de Combat Power en fonction d'un iLvl cible.</div>
+          <div class="help-card">
+            <strong data-i18n="help_advisor_title">Smart Advisor</strong>
+            <div data-i18n="help_advisor">Toutes les améliorations chiffrées en or par +1 % de dégâts (DPS) ou +0,01 % de buff (support), comme le GPD de Loseii, et une feuille de route vers ton objectif.</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E0A43A; font-size: 14px;">Smart Advisor</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_advisor">Trouvez les améliorations les plus rentables et optimisez votre budget.</div>
+          <div class="help-card">
+            <strong data-i18n="help_honing_title">Affinage par pièce</strong>
+            <div data-i18n="help_honing">Affinage pièce par pièce (Serka ou Aegir) : coût attendu sur les recettes du jeu, CP gagné et prochain +1 le plus rentable.</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #4ade80; font-size: 14px;">Piece-by-Piece Honing</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_honing">Simulez le coût exact de l'affinage de chaque pièce au forgeron.</div>
+          <div class="help-card">
+            <strong data-i18n="help_ark_title">Simulateur Ark Passive</strong>
+            <div data-i18n="help_ark">CP selon les points dépensés dans chaque arbre (Évolution, Éclairage, Bond), sur le Battle Point du jeu. Évaluateur d'astrogemmes (note de Loseii).</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #f472b6; font-size: 14px;">Ark Passive Simulator</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_ark">Testez différentes combinaisons de points (Evolution, Enlightenment, Leap).</div>
+          <div class="help-card">
+            <strong data-i18n="help_opti_title">Optimisation T4</strong>
+            <div data-i18n="help_opti">Simule tes bijoux emplacement par emplacement et tes gemmes : gain et coût avec les modèles du GPD. Note de ton bracelet et palier suivant.</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #9CB4C6; font-size: 14px;">T4 Optimization</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_opti">Ajustez virtuellement vos gemmes, bijoux et effets de set pour voir l'impact.</div>
+          <div class="help-card">
+            <strong data-i18n="help_canon_title">Moteur canonique</strong>
+            <div data-i18n="help_canon">Ton Combat Power décomposé partie par partie, tel que le jeu le calcule (Battle Point du profil lostark.bible).</div>
           </div>
-          <div style="background: rgba(232, 230, 220,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(232, 230, 220,0.05);">
-            <strong style="color: #E0A43A; font-size: 14px;">Raids & Gold Tracker</strong>
-            <div style="font-size: 13px; margin-top: 4px; color: var(--text-muted);" data-i18n="help_raid">Suivez vos revenus en gold de la semaine via l'agent local.</div>
+          <div class="help-card">
+            <strong data-i18n="help_raid_title">Raids & Gold</strong>
+            <div data-i18n="help_raid">Tes raids à or de la semaine et tes revenus, cochés à la main ou synchronisés par l'agent local (LOA Logs).</div>
+          </div>
+          <div class="help-card">
+            <strong data-i18n="help_market_title">Marché & Forteresse</strong>
+            <div data-i18n="help_market">Prix de l'hôtel des ventes EUC utilisés par les calculs, et rentabilité des fusions de Forteresse (recettes du jeu).</div>
+          </div>
+          <div class="help-card">
+            <strong data-i18n="help_benchmark_title">Benchmark & Comparateur</strong>
+            <div data-i18n="help_benchmark">Compare-toi à de vrais joueurs de ta classe et de ton iLvl : écart par système en % et en CP, plan d'achat classé par or par % gagné.</div>
           </div>
         </div>
 
-        <div style="padding: 12px; background: rgba(232, 230, 220,0.03); border-radius: 8px; font-size: 14px; text-align: center;">
-          <em data-i18n="help_tip">Toutes vos modifications dans les onglets (Gemmes, Ark Passive, Affinage) mettent à jour votre Combat Power en temps réel.</em>
-        </div>
+        <p class="help-tip" data-i18n="help_tip">Sources : profil raid de lostark.bible, tables du jeu (Maxroll), modèles de dégâts et de buff de Loseii, prix EUC. Les simulations ne modifient pas ton personnage : réimporte-le après une amélioration en jeu.</p>
       </div>
       <div class="modal-footer">
         <button class="btn-primary" id="btnCloseHelpModalFooter" data-i18n="btn_close">Compris.</button>
@@ -1809,13 +1815,13 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=8.9"></script>
+  <script src="i18n.js?v=9.1"></script>
   <script src="data.js?v=2.9"></script>
   <script src="bracelet-data.js?v=1.0"></script>
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=52.5"></script>
+  <script src="calculator.js?v=52.7"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>
