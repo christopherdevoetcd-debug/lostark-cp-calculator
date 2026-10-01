@@ -345,11 +345,74 @@
     return cp > 0 ? parseFloat(cp.toFixed(2)) : null;
   }
 
+  // Stockage compact (localStorage : 5 M de caractères par site). Un profil importé reprend plusieurs fois les mêmes
+  // objets (loadout, battlePoint, objets, cœurs, bijoux), que JSON.stringify écrit en entier à chaque fois : la moitié
+  // de ses ~72 000 caractères ; le cache du Benchmark range en plus chaque référence sous deux clés. Un objet déjà écrit
+  // (le même, ou identique et d'au moins 1 000 caractères près de la racine d'une entrée) devient { $ref: chemin } et
+  // redevient le même objet à la lecture, comme juste après l'import. L'ancien format (JSON brut) reste lu.
+  const COMPACT_MIN_CHARS = 1000;
+  function compactStringify(value) {
+    const seen = new Map(), same = new Map();
+    const walk = (v, path) => {
+      if (!v || typeof v !== 'object') return v;
+      if (seen.has(v)) return { $ref: seen.get(v) };
+      // Égalité de contenu près de la racine seulement (entrée, profil, loadout) : relie les copies des anciens stockages
+      if (path.length <= 4) {
+        const json = JSON.stringify(v);
+        if (json.length >= COMPACT_MIN_CHARS) {
+          if (same.has(json)) return { $ref: same.get(json) };
+          same.set(json, path);
+        }
+      }
+      seen.set(v, path);
+      if (Array.isArray(v)) return v.map((x, i) => walk(x, path.concat(i)));
+      const out = {};
+      Object.keys(v).forEach(k => { const r = walk(v[k], path.concat(k)); if (r !== undefined) out[k] = r; });
+      return out;
+    };
+    return JSON.stringify({ $compact: 1, data: walk(value, []) });
+  }
+  function compactParse(text) {
+    const parsed = JSON.parse(text);
+    if (!parsed || parsed.$compact !== 1) return parsed;
+    const root = parsed.data;
+    const at = path => path.reduce((o, k) => o[k], root);
+    const isRef = x => x && typeof x === 'object' && Array.isArray(x.$ref) && Object.keys(x).length === 1;
+    const walk = v => {
+      if (!v || typeof v !== 'object') return;
+      Object.keys(v).forEach(k => { if (isRef(v[k])) v[k] = at(v[k].$ref); else walk(v[k]); });
+    };
+    walk(root);
+    return root;
+  }
+  // Écriture protégée : en cas de quota plein, le cache des références du Benchmark (retéléchargeable) cède sa place
+  function storeCompact(key, value) {
+    const text = compactStringify(value);
+    try {
+      localStorage.setItem(key, text);
+      return true;
+    } catch (e) {
+      if (key === 'lostark_live_benchmarks_cache') { console.warn('Cache du Benchmark non enregistré (quota) :', e.message); return false; }
+      try {
+        localStorage.removeItem('lostark_live_benchmarks_cache');
+        localStorage.setItem(key, text);
+        console.warn('Quota du navigateur plein : cache des références du Benchmark vidé pour enregistrer', key);
+        return true;
+      } catch (e2) {
+        console.warn('Enregistrement impossible (quota du navigateur) :', key, e2.message);
+        if (typeof showToast === 'function') showToast(isEnLang()
+          ? 'Browser storage is full: the roster could not be saved.'
+          : "Stockage du navigateur plein : le roster n'a pas pu être enregistré.");
+        return false;
+      }
+    }
+  }
+
   function getUserRoster() {
     try {
       const raw = localStorage.getItem('lostark_user_roster');
       if (raw) {
-        const parsed = JSON.parse(raw);
+        const parsed = compactParse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           let modified = false;
           parsed.forEach(c => {
@@ -377,11 +440,7 @@
   }
 
   function saveUserRoster(list) {
-    try {
-      localStorage.setItem('lostark_user_roster', JSON.stringify(list));
-    } catch (e) {
-      console.warn('Error saving user roster to localStorage:', e);
-    }
+    storeCompact('lostark_user_roster', list);
   }
 
   let activeCharacterId = null;
@@ -1314,7 +1373,7 @@
       if (healSupportProfile(b)) { b.systems = extractPlayerSystems(b, isEnglishLang()); cacheChanged = true; }
     });
     if (cacheChanged) {
-      try { localStorage.setItem('lostark_live_benchmarks_cache', JSON.stringify(liveBibleBenchmarkCache)); } catch (e) {}
+      storeCompact('lostark_live_benchmarks_cache', liveBibleBenchmarkCache);
     }
     if (typeof updateActiveCharacterCard === 'function' && activeCharacterId) updateActiveCharacterCard(activeCharacterId);
     if (typeof renderEfficiencyTable === 'function') renderEfficiencyTable();
@@ -17078,7 +17137,7 @@
   try {
     const savedLiveCache = localStorage.getItem('lostark_live_benchmarks_cache');
     if (savedLiveCache) {
-      liveBibleBenchmarkCache = JSON.parse(savedLiveCache) || {};
+      liveBibleBenchmarkCache = compactParse(savedLiveCache) || {};
       Object.values(liveBibleBenchmarkCache).forEach(b => {
         if (b && b.isLive) {
           const raidCp = raidCombatPowerOf(b);
@@ -17283,9 +17342,7 @@
 
     liveBibleBenchmarkCache[cacheKey] = fullBenchmark;
     liveBibleBenchmarkCache[displayName.toLowerCase()] = fullBenchmark;
-    try {
-      localStorage.setItem('lostark_live_benchmarks_cache', JSON.stringify(liveBibleBenchmarkCache));
-    } catch (e) {}
+    storeCompact('lostark_live_benchmarks_cache', liveBibleBenchmarkCache);
     return fullBenchmark;
   }
 
