@@ -2131,6 +2131,35 @@
     return prob;
   }
 
+  /**
+   * Probabilité exacte (taille optimale, mêmes règles) que la somme des niveaux des deux gravures atteigne
+   * `minSum`, quel que soit l'ordre (9/7, 7/9, 10/6…) : seuil de la PA de base +1,5 %. Loseii : 1 pierre sur ~725.
+   */
+  function stoneLevelSumProbability(minSum) {
+    const cacheKey = `sum${minSum}`;
+    if (stoneSuccessCache.has(cacheKey)) return stoneSuccessCache.get(cacheKey);
+    const N = 10;
+    const P = [0.25, 0.35, 0.45, 0.55, 0.65, 0.75];
+    const memo = new Map();
+    const V = (r1, s1, r2, s2, r3, pi) => {
+      if (stoneLevelFromNodes(s1) + stoneLevelFromNodes(s2) >= minSum) return 1;
+      if (stoneLevelFromNodes(s1 + r1) + stoneLevelFromNodes(s2 + r2) < minSum) return 0;
+      const key = ((((r1 * 11 + s1) * 11 + r2) * 11 + s2) * 11 + r3) * 6 + pi;
+      const hit = memo.get(key);
+      if (hit !== undefined) return hit;
+      const p = P[pi], up = Math.min(5, pi + 1), dn = Math.max(0, pi - 1);
+      let best = 0;
+      if (r1 > 0) best = Math.max(best, p * V(r1 - 1, s1 + 1, r2, s2, r3, dn) + (1 - p) * V(r1 - 1, s1, r2, s2, r3, up));
+      if (r2 > 0) best = Math.max(best, p * V(r1, s1, r2 - 1, s2 + 1, r3, dn) + (1 - p) * V(r1, s1, r2 - 1, s2, r3, up));
+      if (r3 > 0) best = Math.max(best, p * V(r1, s1, r2, s2, r3 - 1, dn) + (1 - p) * V(r1, s1, r2, s2, r3 - 1, up));
+      memo.set(key, best);
+      return best;
+    };
+    const prob = V(N, 0, N, 0, N, 5);
+    stoneSuccessCache.set(cacheKey, prob);
+    return prob;
+  }
+
   // Profil raid « mélangé » : lostark.bible calcule le Battle Point selon l'arbre d'Illumination enregistré.
   // Un joueur qui quitte après un donjon du chaos en arbre DPS peut laisser un profil raid de support avec
   // ses gravures support mais un Battle Point en mode DPS (PV à 0, gravures support sans valeur).
@@ -2199,8 +2228,16 @@
     return engravingBonusGain(eff.kind, eff.base, lvlFrom > 0 ? eff.stone[lvlFrom - 1] : 0, eff.stone[lvlTo - 1]);
   }
 
-  // Gain (%) de la PA de base +1,5 % (somme des niveaux >= 5), mesuré sur le profil de référence
-  function stoneBaseApGain() {
+  // Gain (%) de la PA de base +1,5 % (somme des niveaux >= 5). DPS : profil de référence de bracelet-model.js.
+  // Support : buff donné aux alliés (canal ap de supportContribution, % de PA du Battle Point type 1 + 1,5 %).
+  function stoneBaseApGain(charObj, isSupport) {
+    if (isSupport) {
+      const ctx = gearStatContext(charObj);
+      if (!ctx) return 0;
+      const inp = supportInputs(charObj);
+      return 100 * Math.log(supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct + STONE_BASE_AP_BONUS) /
+        supportContribution(inp, ctx.wp, ctx.ms, inp.gemAvg, inp.apPct));
+    }
     if (!window.Bracelet) return 0;
     const prof = window.Bracelet.normalizeProfile({ role: 'dps' });
     const without = Object.assign({}, prof, { baseApPct: prof.baseApPct - STONE_BASE_AP_BONUS });
@@ -2224,19 +2261,28 @@
       const p = stoneSuccessProbability(target[0], target[1]);
       if (!(p > 0)) return;
       const sumFrom = e1.level + e2.level;
-      const apBonus = sumFrom < 5 && sumFrom + 1 >= 5 ? stoneBaseApGain() : 0;
+      const apBonus = sumFrom < 5 && sumFrom + 1 >= 5 ? stoneBaseApGain(charObj, isSupport) : 0;
       const engGain = stoneEngravingGain(up.key, up.level, upTo, isSupport);
       const gain = ((1 + engGain / 100) * (1 + apBonus / 100) - 1) * 100;
       const cost = abilityStonePrice() / p;
       candidates.push({ up, keep, upTo, target, p, stones: 1 / p, cost, gain, apBonus });
     });
+    // PA de base seule (gravures sans gain chiffré, ou supports) : n'importe quelle pierre à 5 niveaux convient
+    if (e1.level + e2.level < 5) {
+      const apBonus = stoneBaseApGain(charObj, isSupport);
+      const p = stoneLevelSumProbability(5);
+      if (apBonus > 0 && p > 0) {
+        candidates.push({ up: e1, keep: e2, upTo: e1.level, anyOrder: true, p, stones: 1 / p,
+          cost: abilityStonePrice() / p, gain: apBonus, apBonus });
+      }
+    }
     const scored = candidates.filter(c => c.gain > 0);
     if (!scored.length) return null;
     scored.sort((x, y) => x.cost / x.gain - y.cost / y.gain);
     const best = scored[0];
     const nodesOf = (eng, lvl) => (eng === best.up ? nodesFor(best.upTo) : nodesFor(lvl));
     best.fromLabel = `${e1.nodes}/${e2.nodes}`;
-    best.toLabel = `${nodesOf(e1, e1.level)}/${nodesOf(e2, e2.level)}`;
+    best.toLabel = best.anyOrder ? '9/7 · 10/6' : `${nodesOf(e1, e1.level)}/${nodesOf(e2, e2.level)}`;
     best.stone = stone;
     return best;
   }
@@ -4445,12 +4491,14 @@
       const stoneGold = formatNumber(Math.round(abilityStonePrice()));
       pushRow('dyn_stone',
         isEn ? `Ability stone ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}` : `Pierre d'aptitude ${stoneUp.fromLabel} ➔ ${stoneUp.toLabel}`,
-        isEn ? `${upName} Lv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 stone in ${formatNumber(odds)}` : `${upName} niv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 pierre sur ${formatNumber(odds)}`,
+        stoneUp.anyOrder
+          ? (isEn ? `5 levels in total (base Atk. Power +1.5%), 1 stone in ${formatNumber(odds)}` : `5 niveaux au total (PA de base +1,5 %), 1 pierre sur ${formatNumber(odds)}`)
+          : (isEn ? `${upName} Lv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 stone in ${formatNumber(odds)}` : `${upName} niv. ${stoneUp.up.level} ➔ ${stoneUp.upTo}, 1 pierre sur ${formatNumber(odds)}`),
         stoneUp.gain, stoneUp.cost,
         isEn
           ? `Exact odds with optimal faceting: 1 stone in ${formatNumber(odds)} reaches ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)}%). Cost = ${formatNumber(odds)} uncut stones × ${stoneGold} g (${ABILITY_STONE_PHEONS} pheons each); faceting costs silver, not counted.${stoneUp.apBonus > 0 ? ' Includes the +1.5% base Atk. Power at 5 levels.' : ''}`
           : `Probabilité exacte avec une taille optimale : 1 pierre sur ${formatNumber(odds)} atteint ${stoneUp.toLabel} (${(stoneUp.p * 100).toFixed(3)} %). Coût = ${formatNumber(odds)} pierres non taillées × ${stoneGold} or (${ABILITY_STONE_PHEONS} pheons chacune) ; la taille coûte de l'argent, non comptée.${stoneUp.apBonus > 0 ? ' Inclut la PA de base +1,5 % à 5 niveaux.' : ''}`,
-        { state: stoneUp.fromLabel, from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: upName, odds, stoneGold });
+        { state: stoneUp.fromLabel, from: stoneUp.fromLabel, to: stoneUp.toLabel, engraving: stoneUp.anyOrder ? (isEn ? 'base Atk. Power' : 'PA de base') : upName, odds, stoneGold });
     }
 
     // 10. Karma d'Illumination : niveau suivant, 900 or par essai
@@ -5689,11 +5737,11 @@
 
     // 6. Bracelet
     const brLines = [];
-    let brLadder = 'B- · 63.2 · +13.47% damage';
+    let brLadder = '—';
 
-    const brStats = (charObj && charObj.bracelet && Array.isArray(charObj.bracelet.stats) && charObj.bracelet.stats)
-      || (charObj && charObj.rawProfile && charObj.rawProfile.bracelet && Array.isArray(charObj.rawProfile.bracelet.stats) && charObj.rawProfile.bracelet.stats)
-      || null;
+    // Mêmes stats que la carte Bracelet et le GPD (getBraceletStats, puis l'objet bracelet du loadout)
+    const brItem = ((charObj && charObj.rawProfile && charObj.rawProfile.loadout && charObj.rawProfile.loadout.items) || []).find(i => i.slot === 'bracelet');
+    const brStats = getBraceletStats(charObj) || (brItem && brItem.data && Array.isArray(brItem.data.stats) ? brItem.data.stats : null);
 
     if (typeof window.Bracelet !== 'undefined' && typeof window.Subrank !== 'undefined' && brStats) {
       try {
@@ -11628,6 +11676,7 @@
     return { key: 'other', amount: 0 };
   }
 
+  const SUPPORT_IDENTITY_SLOPE = 0.0673;
   // Gain (% DPS ou % Buff) par unité de ligne, dérivé des tables Arsonistic.
   // Une clé absente vaut 0 : lignes inutiles, soins, boucliers, jauge d'identité, PV...
   let accLineSlopesCache = null;
@@ -11658,7 +11707,10 @@
         allyDmg: perPct(sup.allyDmg, 'buffDmg'),
         allyAp: perPct(sup.allyAp, 'buffDmg'),
         wpPct: supWpSlope,
-        wpFlat: supWpFlatPerPoint
+        wpFlat: supWpFlatPerPoint,
+        // Gain de jauge d'identité (collier) : absent des tables Arsonistic. Loseii (accessory-scores.json, collier
+        // sans marque) : Low 1,6 % +0,108, Mid 3,6 % +0,243, High 6 % +0,404 → 0,0673 % de buff par %, linéaire.
+        identity: SUPPORT_IDENTITY_SLOPE
       }
     };
     return accLineSlopesCache;
