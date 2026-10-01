@@ -530,6 +530,10 @@ function extractCharacterBaseAtkDetails(c, isEn = false) {
   };
 }
 
+// Effet offensif du familier : +160 sur une stat de combat au choix (Stove, probabilités « 펫 효과 »).
+const PET_COMBAT_STAT = 160;
+const PET_STAT_DETECT_MIN = 200;
+
 function extractCharacterCombatStatsDetails(c, isEn = false) {
   if (!c) return { totalPts: 2386, bonusPct: 95.44, swift: 1820, specStat: 566, crit: 0, role: 'support' };
   const pId = (c.id || c.name || '').toLowerCase();
@@ -571,8 +575,10 @@ function extractCharacterCombatStatsDetails(c, isEn = false) {
 
   // Sources par stat (vérifié sur 70 profils) : Évolution palier 0 de l'Ark Passive (nœuds 1010100 Crit,
   // 1010200 Spécialisation, 1010400 Rapidité, 50 pts par niveau, 40 niveaux pour tous), lignes du bracelet
-  // (index 15 / 16 / 18) ; le reste n'est pas détaillé par le profil. Arbre enregistré différent des stats
-  // (Ark Passive enregistré à la déconnexion) : reste négatif, pas de détail.
+  // (index 15 / 16 / 18), effet du familier (+160 fixes sur une stat au choix, ancien +10 %), base ~75 par stat.
+  // Le familier n'est pas sur le profil : déduit du reste (seule stat à plus de 200, mesuré 232-237 contre
+  // 69-77 sans familier sur 68 profils). Arbre enregistré différent des stats (Ark Passive enregistré
+  // à la déconnexion) : reste négatif, pas de détail.
   let sources = null;
   if (known) {
     const keys = { crit: 15, specStat: 16, swift: 18 };
@@ -587,7 +593,14 @@ function extractCharacterCombatStatsDetails(c, isEn = false) {
     const values = { crit, specStat, swift };
     const other = {};
     Object.keys(keys).forEach(k => { other[k] = values[k] - ap[k] - bracelet[k]; });
-    if (Object.values(other).every(v => v >= 0)) sources = { ap, bracelet, other };
+    if (Object.values(other).every(v => v >= 0)) {
+      const pet = { crit: 0, specStat: 0, swift: 0 };
+      const petStat = Object.keys(other).sort((a, b) => other[b] - other[a])[0];
+      if (other[petStat] >= PET_STAT_DETECT_MIN) pet[petStat] = PET_COMBAT_STAT;
+      const base = {};
+      Object.keys(other).forEach(k => { base[k] = other[k] - pet[k]; });
+      sources = { ap, bracelet, pet, base };
+    }
   }
 
   return {
@@ -617,7 +630,8 @@ function buildCombatStatsSourcesHtml(player, target, p, t, isEn) {
   const srcs = [
     ['ap', isEn ? 'Ark Passive (Evolution tier 0)' : 'Ark Passive (Évolution palier 0)'],
     ['bracelet', isEn ? 'Bracelet' : 'Bracelet'],
-    ['other', isEn ? 'Other sources' : 'Autres sources']
+    ['pet', isEn ? 'Pet effect' : 'Familier'],
+    ['base', isEn ? 'Base' : 'Base']
   ];
   const signed = v => `${v > 0 ? '+' : ''}${formatNumber(v)}`;
   const cell = (pv, tv) => `${formatNumber(pv)} → ${formatNumber(tv)}${tv !== pv ? ` <span class="col-cp-gain">(${signed(tv - pv)})</span>` : ''}`;
@@ -630,13 +644,20 @@ function buildCombatStatsSourcesHtml(player, target, p, t, isEn) {
   const srcTotal = (c, src) => stats.reduce((sum, [k]) => sum + c.sources[src][k], 0);
   const totals = srcs.map(([src]) => `<td><strong>${cell(srcTotal(p, src), srcTotal(t, src))}</strong></td>`).join('');
   const dBr = srcTotal(t, 'bracelet') - srcTotal(p, 'bracelet');
-  const dOther = srcTotal(t, 'other') - srcTotal(p, 'other');
+  const dPet = srcTotal(t, 'pet') - srcTotal(p, 'pet');
+  const dBase = srcTotal(t, 'base') - srcTotal(p, 'base');
   const dAp = srcTotal(t, 'ap') - srcTotal(p, 'ap');
   const pName = escapeHtml(player.name || (isEn ? 'you' : 'toi'));
   const tName = escapeHtml((target && target.name) || (isEn ? 'the reference' : 'la référence'));
+  const petMissing = [[p, pName], [t, tName]].filter(([c]) => !srcTotal(c, 'pet')).map(([, n]) => n);
+  const petNote = petMissing.length
+    ? (isEn
+      ? ` No pet effect detected on ${petMissing.join(' and ')}: +160 on a combat stat of your choice at the pet effect NPC.`
+      : ` Aucun effet de familier détecté sur ${petMissing.join(' et ')} : +160 sur une stat de combat au choix, chez le PNJ des effets de familier.`)
+    : '';
   const note = isEn
-    ? `Ark Passive gives the same number of points to everyone (40 Evolution tier 0 levels × 50 pts${dAp ? `; here ${signed(dAp)} pts, a tree not fully spent` : ''}): only the split between Crit, Specialization and Swiftness changes, it is a build choice. The total gap comes from the bracelet (${signed(dBr)} pts) and from other sources (${signed(dOther)} pts), which the lostark.bible profile does not detail. Values: ${pName} → ${tName}.`
-    : `L'Ark Passive donne le même nombre de points à tout le monde (40 niveaux d'Évolution palier 0 × 50 pts${dAp ? ` ; ici ${signed(dAp)} pts, un arbre pas entièrement dépensé` : ''}) : seule la répartition entre Critique, Spécialisation et Rapidité change, c'est un choix de build. L'écart de total vient du bracelet (${signed(dBr)} pts) et des autres sources (${signed(dOther)} pts), que le profil lostark.bible ne détaille pas. Valeurs : ${pName} → ${tName}.`;
+    ? `Ark Passive gives the same number of points to everyone (40 Evolution tier 0 levels × 50 pts${dAp ? `; here ${signed(dAp)} pts, a tree not fully spent` : ''}): only the split between Crit, Specialization and Swiftness changes, it is a build choice. The total gap comes from the bracelet (${signed(dBr)} pts), the pet effect (${signed(dPet)} pts) and the base (${signed(dBase)} pts). The pet effect is not on the lostark.bible profile: it is deduced from the stats (+160 on a single stat).${petNote} Values: ${pName} → ${tName}.`
+    : `L'Ark Passive donne le même nombre de points à tout le monde (40 niveaux d'Évolution palier 0 × 50 pts${dAp ? ` ; ici ${signed(dAp)} pts, un arbre pas entièrement dépensé` : ''}) : seule la répartition entre Critique, Spécialisation et Rapidité change, c'est un choix de build. L'écart de total vient du bracelet (${signed(dBr)} pts), du familier (${signed(dPet)} pts) et de la base (${signed(dBase)} pts). L'effet du familier n'est pas sur le profil lostark.bible : il est déduit des stats (+160 sur une seule stat).${petNote} Valeurs : ${pName} → ${tName}.`;
   return `
         <div class="astrogems-compare-table-wrap" style="margin-top: 14px;">
           ${title}
