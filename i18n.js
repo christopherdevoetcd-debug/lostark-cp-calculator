@@ -255,8 +255,8 @@
     "modal_avatar_preview_lbl": "Aperçu du nouveau portrait :",
     "modal_avatar_btn_save": "Enregistrer le portrait",
     "modal_avatar_btn_reset": "↺ Restaurer l'image officielle lostark.bible",
-    "footer_left": "Lost Ark Tier 4 • Calibré d'après les logs & profils réels de lostark.bible",
-    "footer_right": "Formule actualisée Support (42.5% AP / 32.5% ID / 25% Brand) & DPS"
+    "footer_left": "Lost Ark Tier 4 • Profils réels de lostark.bible",
+    "footer_right": "Tables du jeu (Maxroll) • Modèles DPS et support de Loseii • Prix EUC"
 ,
     "honing_impact_title": "Impact de l'Équipement",
     "honing_model_badge": "Simulateur Pièce",
@@ -742,8 +742,8 @@
     "modal_avatar_preview_lbl": "New portrait preview:",
     "modal_avatar_btn_save": "Save portrait",
     "modal_avatar_btn_reset": "↺ Restore official lostark.bible portrait",
-    "footer_left": "Lost Ark Tier 4 • Calibrated from actual lostark.bible logs & profiles",
-    "footer_right": "Updated Formula for Support (42.5% AP / 32.5% ID / 25% Brand) & DPS"
+    "footer_left": "Lost Ark Tier 4 • Real lostark.bible profiles",
+    "footer_right": "Game tables (Maxroll) • Loseii DPS and support models • EUC prices"
 ,
     "honing_impact_title": "Gear Impact & Scaling",
     "honing_model_badge": "Piece Simulator",
