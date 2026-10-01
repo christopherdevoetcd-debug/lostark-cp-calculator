@@ -10,3 +10,6 @@ tools/audit/report.json
 tools/audit/sample.json
 tools/audit/baseline-*.json
 tools/samples/
+
+# Modules ES de l'analyseur de rotation : nécessaire à Node et au site
+!js/rotation/package.json

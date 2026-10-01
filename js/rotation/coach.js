@@ -4,7 +4,7 @@
 //
 // Conseil = { kind, gainPct?, title, what, why, how: [lignes], moments: [{ t, text }] } dans la langue demandée.
 
-import { percentileRank, KEY_SKILL_MIN_SHARE, KEY_SKILL_MIN_USAGE, SHIELD_MIN_DURATION_MS } from './metrics.mjs';
+import { percentileRank, KEY_SKILL_MIN_SHARE, KEY_SKILL_MIN_USAGE, SHIELD_MIN_DURATION_MS } from './metrics.js';
 
 export const WEAK_RANK = 35;          // critère sous ce rang : conseil
 export const SKILL_GAIN_MIN_PCT = 1;  // compétence : gain estimé d'au moins 1 % de dégâts

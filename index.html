@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=27.8">
+  <link rel="stylesheet" href="style.css?v=27.9">
 </head>
 <body>
   <div class="app-container">
@@ -224,6 +224,10 @@
       </button>
 <button class="tab-btn" data-tab="tab-benchmark">
         <span data-i18n="tab_benchmark">Benchmark & Comparateur</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-rotation">
+        <span data-i18n="tab_rotation">Analyse de rotation</span>
+        <span class="badge-tab-new" data-i18n="tab_badge_beta">Bêta</span>
       </button>
       <button class="tab-btn" data-tab="tab-belgardin">
         <span data-i18n="tab_belgardin">Projection Belgardin (Brassards)</span>
@@ -1355,6 +1359,34 @@
         </div>
       </section>
 
+<!-- ONGLET ANALYSE DE ROTATION : base locale de LOA Logs (encounters.db) lue dans le navigateur, js/tab-rotation.js -->
+      <section class="tab-pane" id="tab-rotation">
+        <header class="belg-header">
+          <h2 data-i18n="rot_title">Analyse de rotation (LOA Logs)</h2>
+          <p data-i18n="rot_subtitle">Une note d'exécution sur 100 et des conseils pour progresser.</p>
+        </header>
+        <div class="belg-panel rot-source">
+          <div class="rot-pick-row">
+            <label class="rot-file-btn">
+              <input type="file" id="rotFile" accept=".db">
+              <span data-i18n="rot_pick">Choisir encounters.db</span>
+            </label>
+            <span id="rotFileInfo" class="rot-dim"></span>
+          </div>
+          <p class="belg-note" data-i18n="rot_where">Le fichier est dans le dossier de LOA Logs, à côté de LOA Logs.exe.</p>
+          <p class="belg-note" data-i18n="rot_privacy">Le fichier reste sur ton PC : il est lu par ton navigateur, rien n'est envoyé.</p>
+        </div>
+        <div class="belg-panel rot-raids" id="rotRaidsPanel" hidden>
+          <div class="rot-filter-row">
+            <button type="button" class="belg-quick-btn" id="rotLatest" data-i18n="rot_latest">10 derniers raids</button>
+            <label for="rotDate" class="rot-dim" data-i18n="rot_date_label">Jour du raid</label>
+            <input type="date" id="rotDate" class="rot-date">
+          </div>
+          <div id="rotRaids"></div>
+        </div>
+        <div id="rotAnalysis"></div>
+      </section>
+
 <!-- ONGLET PROJECTION BELGARDIN : brassard T4 (완갑), avant sa sortie en Europe -->
       <section class="tab-pane" id="tab-belgardin">
         <header class="belg-header">
@@ -1850,36 +1882,37 @@
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
   <!-- Appli : scripts de js/, dans cet ordre (ils partagent leurs déclarations de premier niveau) -->
-  <script src="js/core.js?v=55.1"></script>
-  <script src="js/app-state.js?v=55.1"></script>
-  <script src="js/game-tables.js?v=55.1"></script>
-  <script src="js/models.js?v=55.1"></script>
-  <script src="js/honing.js?v=55.1"></script>
-  <script src="js/upgrades.js?v=55.1"></script>
-  <script src="js/tab-predictor.js?v=55.1"></script>
-  <script src="js/optimization.js?v=55.1"></script>
-  <script src="js/gpd.js?v=55.1"></script>
-  <script src="js/ark-grid.js?v=55.1"></script>
-  <script src="js/bracelet.js?v=55.1"></script>
-  <script src="js/advisor.js?v=55.1"></script>
-  <script src="js/ark-passive.js?v=55.1"></script>
-  <script src="js/astrogem-grader.js?v=55.1"></script>
-  <script src="js/bible-import.js?v=55.1"></script>
-  <script src="js/oauth-roster.js?v=55.1"></script>
-  <script src="js/app-ui.js?v=55.1"></script>
-  <script src="js/raid-tracker.js?v=55.1"></script>
-  <script src="js/benchmark-core.js?v=55.1"></script>
-  <script src="js/accessories.js?v=55.1"></script>
-  <script src="js/benchmark-systems.js?v=55.1"></script>
-  <script src="js/benchmark-gains.js?v=55.1"></script>
-  <script src="js/breakdown-acc-bracelet.js?v=55.1"></script>
-  <script src="js/breakdown-character.js?v=55.1"></script>
-  <script src="js/breakdown-cores.js?v=55.1"></script>
-  <script src="js/benchmark-peers.js?v=55.1"></script>
-  <script src="js/benchmark-tab.js?v=55.1"></script>
-  <script src="js/market.js?v=55.1"></script>
-  <script src="js/belgardin.js?v=55.1"></script>
-  <script src="js/main.js?v=55.1"></script>
+  <script src="js/core.js?v=55.2"></script>
+  <script src="js/app-state.js?v=55.2"></script>
+  <script src="js/game-tables.js?v=55.2"></script>
+  <script src="js/models.js?v=55.2"></script>
+  <script src="js/honing.js?v=55.2"></script>
+  <script src="js/upgrades.js?v=55.2"></script>
+  <script src="js/tab-predictor.js?v=55.2"></script>
+  <script src="js/optimization.js?v=55.2"></script>
+  <script src="js/gpd.js?v=55.2"></script>
+  <script src="js/ark-grid.js?v=55.2"></script>
+  <script src="js/bracelet.js?v=55.2"></script>
+  <script src="js/advisor.js?v=55.2"></script>
+  <script src="js/ark-passive.js?v=55.2"></script>
+  <script src="js/astrogem-grader.js?v=55.2"></script>
+  <script src="js/bible-import.js?v=55.2"></script>
+  <script src="js/oauth-roster.js?v=55.2"></script>
+  <script src="js/app-ui.js?v=55.2"></script>
+  <script src="js/raid-tracker.js?v=55.2"></script>
+  <script src="js/benchmark-core.js?v=55.2"></script>
+  <script src="js/accessories.js?v=55.2"></script>
+  <script src="js/benchmark-systems.js?v=55.2"></script>
+  <script src="js/benchmark-gains.js?v=55.2"></script>
+  <script src="js/breakdown-acc-bracelet.js?v=55.2"></script>
+  <script src="js/breakdown-character.js?v=55.2"></script>
+  <script src="js/breakdown-cores.js?v=55.2"></script>
+  <script src="js/benchmark-peers.js?v=55.2"></script>
+  <script src="js/benchmark-tab.js?v=55.2"></script>
+  <script src="js/market.js?v=55.2"></script>
+  <script src="js/belgardin.js?v=55.2"></script>
+  <script src="js/tab-rotation.js?v=55.2"></script>
+  <script src="js/main.js?v=55.2"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>

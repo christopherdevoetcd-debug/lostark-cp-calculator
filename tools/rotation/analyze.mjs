@@ -6,8 +6,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openDb, listRaids, loadEncounter } from './db.mjs';
-import { analyzeEncounter, pickReference, scorePlayer } from './metrics.mjs';
-import { coachPlayer } from './coach.mjs';
+import { analyzeEncounter, pickReference, scorePlayer } from '../../js/rotation/metrics.js';
+import { coachPlayer } from '../../js/rotation/coach.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -23,7 +23,7 @@ const pad = (s, n) => String(s).slice(0, n).padEnd(n);
 const lpad = (s, n) => String(s).padStart(n);
 
 if (flag('--list')) {
-  const rows = listRaids(db, { player: opt('--player'), boss: opt('--boss'), limit: +opt('--limit', 20) });
+  const rows = await listRaids(db, { player: opt('--player'), boss: opt('--boss'), limit: +opt('--limit', 20) });
   for (const r of rows) {
     console.log(`${lpad(r.id, 5)}  ${new Date(r.fight_start).toISOString().slice(0, 16).replace('T', ' ')}  ${pad(r.current_boss, 34)} ${pad(r.difficulty, 8)} ${lpad(fmtTime(r.duration), 6)}  ${pad(r.local_player, 14)} ${r.upstream_id ? 'lostark.bible/logs/' + r.upstream_id : ''}`);
   }
@@ -32,10 +32,10 @@ if (flag('--list')) {
 
 const id = +positional[0];
 if (!id) { console.error('Usage : analyze.mjs <id> [joueur] [--json] | --list [--player Nom] [--boss Texte]'); process.exit(1); }
-const enc = loadEncounter(db, id);
+const enc = await loadEncounter(db, id);
 const DATA = JSON.parse(readFileSync(path.join(HERE, '..', '..', 'data', 'rotation-skills.json'), 'utf8'));
 const skillMeta = DATA.skills;
-const refFile = opt('--ref', path.join(HERE, '..', 'samples', 'rotation-ref.json'));
+const refFile = opt('--ref', path.join(HERE, '..', '..', 'data', 'rotation-ref.json'));
 const refData = existsSync(refFile) ? JSON.parse(readFileSync(refFile, 'utf8')) : null;
 const refs = refData?.refs || null;
 

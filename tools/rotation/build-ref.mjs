@@ -1,6 +1,8 @@
 // Références de rotation par spé et par boss, tirées de tous les raids de la base LOA Logs.
 // Seules des distributions (quantiles tous les 5 %) et des fréquences sont écrites, aucun nom de joueur.
 // Usage : node tools/rotation/build-ref.mjs [--db encounters.db] [--out fichier.json] [--days 120]
+// Sortie par défaut : data/rotation-ref.json, servi au site (onglet Rotation). Groupes de moins de REF_MIN_SAMPLES logs
+// non écrits : pickReference ne les utilise jamais.
 // --days : seulement les combats des N derniers jours avant le plus récent (les façons de jouer changent avec les patchs).
 //
 // refs["spé|boss"] et refs["spé|*"] : rythme (activité, buffs, placement, utilisations par minute, rythme le plus rapide
@@ -11,27 +13,32 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openDb, raidIds, loadEncounter } from './db.mjs';
-import { analyzeEncounter, toQuantiles } from './metrics.mjs';
+import { analyzeEncounter, toQuantiles, REF_MIN_SAMPLES } from '../../js/rotation/metrics.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
-const OUT = arg('--out', path.join(HERE, '..', 'samples', 'rotation-ref.json'));
+const OUT = arg('--out', path.join(HERE, '..', '..', 'data', 'rotation-ref.json'));
+
+// Refontes de classe : les logs d'avant ne décrivent plus la classe (compétences, rythmes). Date du patch EU, vérifiée
+// sur les logs : Soulfist, dernière Energy Overflow le 2026-09-15, première Supreme Art (nouvelle spé) le 2026-09-18.
+const CLASS_REWORKS = { Soulfist: '2026-09-16' };
 const DATA = JSON.parse(readFileSync(path.join(HERE, '..', '..', 'data', 'rotation-skills.json'), 'utf8'));
 
 const db = openDb(arg('--db'));
 const DAYS = +arg('--days', 120);
-const latest = db.prepare('SELECT MAX(fight_start) AS t FROM encounter_preview').get().t;
+const latest = db.get('SELECT MAX(fight_start) AS t FROM encounter_preview').t;
 const since = latest - DAYS * 86400000;
-const ids = raidIds(db).filter(id => db.prepare('SELECT fight_start FROM encounter_preview WHERE id = ?').get(id).fight_start >= since);
+const ids = (await raidIds(db)).filter(id => db.get('SELECT fight_start FROM encounter_preview WHERE id = ?', [id]).fight_start >= since);
 
 const records = [];
 const t0 = Date.now();
 for (const [i, id] of ids.entries()) {
   let enc;
-  try { enc = loadEncounter(db, id); } catch { continue; }
+  try { enc = await loadEncounter(db, id); } catch { continue; }
   const { players: rows } = analyzeEncounter(enc, { skillMeta: DATA.skills, buffMeta: DATA.buffs });
   for (const a of rows) {
     if (!a.spec || a.spec === 'Unknown' || a.skills.reduce((t, s) => t + s.casts, 0) < 20) continue;
+    if (CLASS_REWORKS[a.className] && enc.fightStart < Date.parse(CLASS_REWORKS[a.className])) continue;
     const minutes = a.availableMs / 60000;
     const sd = a.supportDetails;
     records.push({
@@ -134,9 +141,9 @@ function build(rs) {
 const refs = {}, builds = {};
 const bySpecBoss = new Map(), bySpec = new Map();
 for (const r of records) { push(bySpecBoss, `${r.spec}|${r.boss}`, r); push(bySpec, r.spec, r); }
-for (const [k, rs] of bySpecBoss) refs[k] = rhythm(rs);
+for (const [k, rs] of bySpecBoss) if (rs.length >= REF_MIN_SAMPLES) refs[k] = rhythm(rs);
 for (const [spec, rs] of bySpec) {
-  refs[`${spec}|*`] = rhythm(rs);
+  if (rs.length >= REF_MIN_SAMPLES) refs[`${spec}|*`] = rhythm(rs);
   const b = build(rs);
   if (b) builds[spec] = b;
 }

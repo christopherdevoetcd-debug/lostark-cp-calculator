@@ -6,22 +6,34 @@ Analyse d'un combat enregistré par [LOA Logs](https://github.com/snoww/loa-logs
 
 | Fichier | Rôle |
 |---|---|
-| `db.mjs` | Lecture seule de `encounters.db` (`node:sqlite`, colonnes JSON en gzip). |
-| `metrics.mjs` | Calculs, sans dépendance à Node (réutilisable dans le navigateur). |
-| `build-ref.mjs` | Références par spé et par boss → `tools/samples/rotation-ref.json` (quantiles, aucun nom). |
-| `coach.mjs` | Conseils pédagogiques (FR / EN), module pur. |
+| `js/rotation/encounters.js` | Requêtes sur `encounters.db` (liste des raids, chargement d'un combat), communes à Node et au navigateur. |
+| `js/rotation/metrics.js` | Calculs, sans dépendance à Node. |
+| `js/rotation/coach.js` | Conseils pédagogiques (FR / EN), module pur. |
+| `js/rotation/sqlite-worker.js` | Navigateur : worker qui lit le fichier choisi par SQLite en WebAssembly (`js/rotation/vendor`, @sqlite.org/sqlite-wasm 3.53.4, Apache-2.0 / domaine public) et un VFS en lecture seule (FileReaderSync, blocs de 64 Ko en cache), sans copie ni envoi. |
+| `js/tab-rotation.js` | Onglet « Analyse de rotation » du site. |
+| `db.mjs` | Node : ouverture de la base (`node:sqlite`, gzip), mêmes requêtes. |
+| `build-ref.mjs` | Références par spé et par boss → `data/rotation-ref.json`, servi au site (quantiles, aucun nom). |
 | `analyze.mjs` | Rapport en ligne de commande (`--en` : conseils en anglais). |
 | `build-skill-meta.mjs` | `data/rotation-skills.json` : recharge de base et placement (`directionalMask`) de chaque compétence, noms des nœuds d'Ark Passive, durée et groupe des buffs de support, tirés des tables du jeu de LOA Logs (`Skill.json`, `ArkPassive.json`, `SkillBuff.json`). |
+
+`js/rotation/package.json` (`"type": "module"`) : Node lit ces fichiers comme des modules, et les serveurs les servent en `application/javascript` (nginx ne connaît pas `.mjs`).
 
 `tools/samples/` (ignoré par Git) contient `encounters.db`, un lien vers la copie de l'utilisateur sur le partage `medias` (`/mnt/pve/Proxmox-Data4TO/encounters.db`), et les références.
 
 ## Usage
 
 ```bash
-node --no-warnings tools/rotation/build-ref.mjs [--days 120]        # ~15 s
+node --no-warnings tools/rotation/build-ref.mjs [--days 120]        # ~20 s, puis redéployer
 node --no-warnings tools/rotation/analyze.mjs --list --player Neeverslayer
 node --no-warnings tools/rotation/analyze.mjs 4275 Neeverslayer [--json]
 ```
+
+## Onglet du site
+
+- Bouton « Choisir encounters.db » (dossier de LOA Logs, à côté de `LOA Logs.exe`, par défaut `%LOCALAPPDATA%\LOA Logs`), puis les 10 derniers raids réussis, ou ceux d'un jour choisi au calendrier (50 au plus).
+- Mesuré sur la base de l'utilisateur (1 Go, 4 280 combats, Chromium) : ouverture 0,1 s, liste 0,01 s, analyse d'un combat 0,1 s ; mêmes chiffres que `analyze.mjs`.
+- Base en mode WAL : lue comme une base classique (en-tête corrigé à la lecture) ; les combats encore dans le `-wal` manquent. Fichier modifié après sa sélection (nouveau combat) : le navigateur refuse de le relire, message « choisis-le à nouveau ».
+- CSP de nginx : `'wasm-unsafe-eval'` dans script-src.
 
 ## Données d'un combat (LOA Logs 1.51)
 
@@ -38,6 +50,8 @@ node --no-warnings tools/rotation/analyze.mjs 4275 Neeverslayer [--json]
 - **Temps perdu** : écarts entre deux utilisations au-delà de 1,5 s de battement. **Activité** = 1 − temps perdu ÷ temps jouable.
 - **Buffs** : part des dégâts (coups des compétences) sous PA du support et Marque à la fois.
 - **Placement** : part des dégâts des compétences à placement portés du bon côté.
+- **Refontes de classe** (`CLASS_REWORKS` de `build-ref.mjs`) : logs d'avant le patch écartés. Soulfist au 2026-09-16 (dernière Energy Overflow le 15/09, première Supreme Art, nouvelle spé, le 18/09). Supreme Art n'est pas un alias d'Energy Overflow : compétences différentes.
+- Groupes de moins de 8 logs non écrits dans les références (jamais utilisés par la note).
 - **Note** (DPS seulement) : chaque critère = rang (0-100) parmi les logs de la même spé sur le même boss (8 au minimum, sinon la spé tous boss), sur les 120 derniers jours. Activité 30, compétences 35 (utilisations par minute des compétences clés, ≥ 3 % des dégâts et jouées par 60 % de la spé, pondérées par leur part), buffs 20, placement 15 (spés dont ≥ 20 % des dégâts sont à placement). Critère absent : poids redistribué.
 - **Note des supports** : couverture de leur groupe calculée par LOA Logs (`support_ap` / `_brand` / `_identity` / `_hyper` de la table `entity`, `compute_support_buffs` : part des dégâts des DPS du groupe sous le buff de PA, la Marque, l'identité et la T, pondérée par leurs dégâts, groupes à un seul support), rang parmi la même spé sur le même boss. PA 30, Marque 25, identité 25, T 10, activité 10 : poids proches de la corrélation de chaque critère avec le rDPS donné ÷ dégâts du groupe (803 supports, 29 groupes : identité 0,61, PA 0,50, Marque 0,50, activité 0,34, T 0,25 ; CP 0,53). Note : 0,66, et 0,21 avec le CP. Compétences comparées à la référence à titre indicatif (fréquence des buffs), hors note.
 - Validation des DPS (2026-10-01, 649 combats récents) : corrélation de rang médiane avec DPS ÷ CP de 0,68 au sein d'une même spé, boss et difficulté (activité 0,55, compétences 0,50, placement 0,35, buffs 0,29) ; 0,24 avec le CP. Mesuré sur les mêmes logs que les références.
@@ -65,4 +79,5 @@ Chaque conseil : ce qui ne va pas (chiffres du joueur), pourquoi (gain estimé q
 
 - Ouverture et cycle comparés à la référence, fenêtres de burst (gros sorts lancés juste avant le buff).
 - Références du top (logs de lostark.bible) : aujourd'hui, les joueurs de la base de l'utilisateur.
-- Interface web (sql.js, fichier glissé dans la page, lecture du seul combat choisi).
+- Références plus larges : une seule base (celle de l'utilisateur) ; Recurrence absente, 11 spés sous 10 logs.
+- Logs lostark.bible par URL (option 2) : la page embarque castLog, dégâts de dos / face et sous buffs par compétence, boucliers, PV du boss, DPS par seconde, mais pas les coups datés avec leurs buffs (proxy Cloudflare nécessaire, pas de CORS).

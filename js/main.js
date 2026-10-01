@@ -17,6 +17,7 @@ async function initApp() {
   loadKarmaT4();
   loadBracerT4();
   initBelgardinTab();
+  initRotationTab();
   loadLoseiiGpd();
   loadArkGridBp();
   loadBpSupportTable();
@@ -52,6 +53,7 @@ async function initApp() {
     renderBenchmarkTab();
     renderMarketTab();
     updateBelgardinView();
+    renderRotationTab();
     renderSavedRosterManager();
   });
 
