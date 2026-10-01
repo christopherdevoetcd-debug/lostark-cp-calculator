@@ -164,7 +164,7 @@ self.onmessage = async ({ data }) => {
   try {
     let result;
     if (type === 'open') result = await open(data.file);
-    else if (type === 'list') result = await listRaids(adapter, data.opts || {});
+    else if (type === 'list') result = await listRaids(adapter, { ...data.opts, bosses: Object.keys((await skillData()).raids || {}) });
     else if (type === 'analyze') result = await analyze(data.encounterId);
     else throw new Error(`unknown message ${type}`);
     self.postMessage({ id, ok: true, result });

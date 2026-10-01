@@ -1,5 +1,6 @@
 // Tables légères pour l'analyseur de rotation, tirées des tables du jeu embarquées par LOA Logs (meter-data) :
-// compétences de joueur (recharge de base, placement), noms des nœuds d'Ark Passive, buffs de support (durée, groupe).
+// compétences de joueur (recharge de base, placement), noms des nœuds d'Ark Passive, buffs de support (durée, groupe),
+// boss des raids (encounters.json : raid → porte → boss ; ni gardiens, ni donjons du chaos).
 // Usage : node tools/rotation/build-skill-meta.mjs [dossier meter-data local]
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -31,5 +32,15 @@ for (const b of Object.values(await load('SkillBuff.json'))) {
   if (b.buffCategory === 'supportbuff' || b.uniqueGroup === 210230 || shield) buffs[b.id] = { n: b.name, d: b.duration, g: b.uniqueGroup, ...(shield ? { s: 1 } : {}) };
 }
 
-writeFileSync(OUT, JSON.stringify({ source: dir ? 'meter-data local' : SRC, built: new Date().toISOString().slice(0, 10), skills, arkPassive, buffs }));
-console.log(`${Object.keys(skills).length} compétences, ${Object.keys(arkPassive).length} nœuds d'Ark Passive, ${Object.keys(buffs).length} buffs → ${path.relative(process.cwd(), OUT)}`);
+// Boss de raid → { r: raid, g: porte } (nom exact de current_boss ; « Despicable Skolakia », porte 1 de Behemoth, n'est
+// pas le gardien « Skolakia »).
+const raids = {};
+for (const [raid, gates] of Object.entries(await load('encounters.json'))) {
+  for (const [gate, bosses] of Object.entries(gates)) {
+    const g = gate.startsWith(raid) ? gate.slice(raid.length).trim() : '';
+    for (const b of bosses) raids[b] = { r: raid, g };
+  }
+}
+
+writeFileSync(OUT, JSON.stringify({ source: dir ? 'meter-data local' : SRC, built: new Date().toISOString().slice(0, 10), skills, arkPassive, buffs, raids }));
+console.log(`${Object.keys(skills).length} compétences, ${Object.keys(arkPassive).length} nœuds d'Ark Passive, ${Object.keys(buffs).length} buffs, ${Object.keys(raids).length} boss de raid → ${path.relative(process.cwd(), OUT)}`);

@@ -14,7 +14,7 @@ Analyse d'un combat enregistré par [LOA Logs](https://github.com/snoww/loa-logs
 | `db.mjs` | Node : ouverture de la base (`node:sqlite`, gzip), mêmes requêtes. |
 | `build-ref.mjs` | Références par spé et par boss → `data/rotation-ref.json`, servi au site (quantiles, aucun nom). |
 | `analyze.mjs` | Rapport en ligne de commande (`--en` : conseils en anglais). |
-| `build-skill-meta.mjs` | `data/rotation-skills.json` : recharge de base et placement (`directionalMask`) de chaque compétence, noms des nœuds d'Ark Passive, durée et groupe des buffs de support, tirés des tables du jeu de LOA Logs (`Skill.json`, `ArkPassive.json`, `SkillBuff.json`). |
+| `build-skill-meta.mjs` | `data/rotation-skills.json` : recharge de base et placement (`directionalMask`) de chaque compétence, noms des nœuds d'Ark Passive, durée et groupe des buffs de support, boss de raid (`encounters.json`), tirés des tables du jeu de LOA Logs (`Skill.json`, `ArkPassive.json`, `SkillBuff.json`). |
 
 `js/rotation/package.json` (`"type": "module"`) : Node lit ces fichiers comme des modules, et les serveurs les servent en `application/javascript` (nginx ne connaît pas `.mjs`).
 
@@ -30,6 +30,7 @@ node --no-warnings tools/rotation/analyze.mjs 4275 Neeverslayer [--json]
 
 ## Onglet du site
 
+- **Raids seulement** (liste du site, `--list`, références) : boss de la table `raids` de `data/rotation-skills.json`, tirée de `meter-data/encounters.json` de LOA Logs (raid → porte → boss, 85 boss : Légion, Abysse, Kazeros, Serca, Cathédrale, raids d'assaut). Gardiens (Hanumatan, Krathios…) et donjons du chaos exclus : 525 combats de référence sur 649. Affiché « Serca G1 · Witch of Agony, Serca ».
 - Bouton « Choisir encounters.db » (dossier de LOA Logs, à côté de `LOA Logs.exe`, par défaut `%LOCALAPPDATA%\LOA Logs`), puis les 10 derniers raids réussis, ou ceux d'un jour choisi au calendrier (50 au plus).
 - Mesuré sur la base de l'utilisateur (1 Go, 4 280 combats, Chromium) : ouverture 0,1 s, liste 0,01 s, analyse d'un combat 0,1 s ; mêmes chiffres que `analyze.mjs`.
 - Synchro (Chrome, Edge, Opera : `showOpenFilePicker`) : le bouton ouvre un accès direct au fichier (FileSystemFileHandle), relu par `getFile()` toutes les 10 s tant que l'onglet est affiché et que la date du fichier a changé, ou par « Synchroniser » ; nouveaux raids marqués « nouveau », combat analysé conservé ; LOA Logs en pleine écriture : nouvel essai 2 s après. Accès retenu dans IndexedDB (`lostark_rotation`), lu seulement à l'ouverture de l'onglet ; à la visite suivante, « Reprendre » redemande la permission de lecture. Vérifié dans Chromium : nouveau raid affiché 8 s après l'écriture. Non vérifié ici : la reprise après rechargement (lire un handle depuis IndexedDB fait planter le Chromium de test, même sur une page vide). Firefox / Safari : sélecteur classique, File figé, le choisir à nouveau après un combat.

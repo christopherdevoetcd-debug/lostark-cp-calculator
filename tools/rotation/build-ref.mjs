@@ -28,7 +28,8 @@ const db = openDb(arg('--db'));
 const DAYS = +arg('--days', 120);
 const latest = db.get('SELECT MAX(fight_start) AS t FROM encounter_preview').t;
 const since = latest - DAYS * 86400000;
-const ids = (await raidIds(db)).filter(id => db.get('SELECT fight_start FROM encounter_preview WHERE id = ?', [id]).fight_start >= since);
+// Raids seulement (ni gardiens ni donjons du chaos) : table raids de data/rotation-skills.json.
+const ids = (await raidIds(db, { bosses: Object.keys(DATA.raids) })).filter(id => db.get('SELECT fight_start FROM encounter_preview WHERE id = ?', [id]).fight_start >= since);
 
 const records = [];
 const t0 = Date.now();

@@ -7,10 +7,19 @@
 // Combats de raid exploitables : réussis, pas en solo ni en matchmaking, plus de 2 minutes.
 export const RAID_FILTER = `p.cleared = 1 AND p.difficulty IS NOT NULL AND p.difficulty NOT IN ('Solo', 'Matching') AND p.duration > 120000`;
 
+// Seulement les boss de raid (bosses : noms exacts, table raids de data/rotation-skills.json tirée de encounters.json de
+// LOA Logs) : ni gardiens ni donjons du chaos, qui ne se comparent pas.
+function bossFilter(bosses, where, args) {
+  if (!bosses?.length) return;
+  where.push(`p.current_boss IN (${bosses.map(() => '?').join(', ')})`);
+  args.push(...bosses);
+}
+
 // from / to : bornes de fight_start (ms) ; player : nom exact d'un joueur du combat ; boss : texte du nom.
-export async function listRaids(db, { player, boss, from, to, limit = 20 } = {}) {
+export async function listRaids(db, { player, boss, bosses, from, to, limit = 20 } = {}) {
   const where = [RAID_FILTER];
   const args = [];
+  bossFilter(bosses, where, args);
   if (player) { where.push(`EXISTS (SELECT 1 FROM entity e WHERE e.encounter_id = p.id AND e.name = ? AND e.entity_type = 'PLAYER')`); args.push(player); }
   if (boss) { where.push('p.current_boss LIKE ?'); args.push(`%${boss}%`); }
   if (from != null) { where.push('p.fight_start >= ?'); args.push(from); }
@@ -20,8 +29,11 @@ export async function listRaids(db, { player, boss, from, to, limit = 20 } = {})
     WHERE ${where.join(' AND ')} ORDER BY p.fight_start DESC LIMIT ?`, [...args, limit]);
 }
 
-export async function raidIds(db) {
-  return (await db.all(`SELECT p.id FROM encounter_preview p WHERE ${RAID_FILTER} ORDER BY p.id`, [])).map(r => r.id);
+export async function raidIds(db, { bosses } = {}) {
+  const where = [RAID_FILTER];
+  const args = [];
+  bossFilter(bosses, where, args);
+  return (await db.all(`SELECT p.id FROM encounter_preview p WHERE ${where.join(' AND ')} ORDER BY p.id`, args)).map(r => r.id);
 }
 
 export async function loadEncounter(db, id) {

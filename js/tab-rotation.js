@@ -327,19 +327,25 @@ function renderRotationTab() {
   if (an) an.innerHTML = rotAnalysisHtml();
 }
 
+// « Serca G1 · Witch of Agony, Serca » : raid et porte de la table de LOA Logs (noms du jeu, en anglais).
+function rotRaidLabel(boss) {
+  const r = rot.skillData?.raids?.[boss];
+  return `${r ? `<span class="rot-dim">${escapeHtml(`${r.r}${r.g ? ' ' + r.g : ''}`)} · </span>` : ''}${escapeHtml(boss)}`;
+}
+
 function rotRaidsHtml() {
   if (rot.busy === 'list') return `<p class="belg-empty">${trLang('Recherche des raids…', 'Looking for raids…')}</p>`;
   if (!rot.raids) return '';
   if (!rot.raids.length) {
     return `<p class="belg-empty">${rot.dayFilter
-      ? trLang('Aucun raid réussi ce jour-là (combats de plus de 2 minutes, hors solo et matchmaking).', 'No cleared raid that day (fights over 2 minutes, solo and matchmaking excluded).')
+      ? trLang('Aucun raid réussi ce jour-là (raids seulement : ni gardiens ni donjons du chaos ; combats de plus de 2 minutes, hors solo et matchmaking).', 'No cleared raid that day (raids only: no guardians or chaos dungeons; fights over 2 minutes, solo and matchmaking excluded).')
       : trLang('Aucun raid réussi dans cette base.', 'No cleared raid in this database.')}</p>`;
   }
   const current = rot.analysis?.encounter.id;
   const rows = rot.raids.map(r => `
     <tr class="rot-raid-row${r.id === current ? ' active' : ''}" data-rot-encounter="${r.id}" tabindex="0">
       <td class="market-num">${escapeHtml(rotDate(r.fight_start))}</td>
-      <td>${escapeHtml(r.current_boss)}${rot.newIds.has(r.id) ? ` <span class="rot-new">${trLang('nouveau', 'new')}</span>` : ''}</td>
+      <td>${rotRaidLabel(r.current_boss)}${rot.newIds.has(r.id) ? ` <span class="rot-new">${trLang('nouveau', 'new')}</span>` : ''}</td>
       <td>${escapeHtml(rotDifficulty(r.difficulty))}</td>
       <td class="market-num">${rotClock(r.duration)}</td>
       <td>${escapeHtml(r.local_player || '')}</td>
@@ -373,7 +379,7 @@ function rotAnalysisHtml() {
   }).join('');
   const player = res.players.find(p => p.name === rot.selected);
   return `<div class="belg-panel">
-      <h3>${escapeHtml(e.boss)} <span class="rot-dim">${escapeHtml(rotDifficulty(e.difficulty))} · ${rotClock(e.timelineMs)} · ${escapeHtml(rotDate(e.fightStart))}${bible}</span></h3>
+      <h3>${rotRaidLabel(e.boss)} <span class="rot-dim">${escapeHtml(rotDifficulty(e.difficulty))} · ${rotClock(e.timelineMs)} · ${escapeHtml(rotDate(e.fightStart))}${bible}</span></h3>
       <p class="belg-note">${trLang(`Phases où moins de la moitié du raid frappe (boss absent, mécanique) : ${rotClock(downMs)}, retirées du temps jouable.`, `Phases where less than half the raid deals damage (boss away, mechanic): ${rotClock(downMs)}, removed from the playable time.`)}</p>
       <div class="table-container"><table class="market-table rot-table">
         <thead><tr><th>${trLang('Joueur', 'Player')}</th><th>${trLang('Classe / spé', 'Class / spec')}</th><th>CP</th><th>DPS</th>
