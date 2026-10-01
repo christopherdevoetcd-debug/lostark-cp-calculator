@@ -1104,8 +1104,7 @@
     arkCharName: document.getElementById('arkCharName'),
     arkCharStats: document.getElementById('arkCharStats'),
     btnArkResetCurrent: document.getElementById('btnArkResetCurrent'),
-    btnArkPresetSupport: document.getElementById('btnArkPresetSupport'),
-    btnArkPresetDps: document.getElementById('btnArkPresetDps'),
+    btnArkPresetMax: document.getElementById('btnArkPresetMax'),
     btnApplyArkToSim: document.getElementById('btnApplyArkToSim'),
     
     // Evolution
@@ -1113,8 +1112,6 @@
     numArkEvoPoints: document.getElementById('numArkEvoPoints'),
     dispArkEvoPoints: document.getElementById('dispArkEvoPoints'),
     arkEvoTierBadge: document.getElementById('arkEvoTierBadge'),
-    arkEvoQuickPills: document.getElementById('arkEvoQuickPills'),
-    arkEvoNodeSelect: document.getElementById('arkEvoNodeSelect'),
     dispArkEvoMult: document.getElementById('dispArkEvoMult'),
     dispArkEvoCp: document.getElementById('dispArkEvoCp'),
     
@@ -1123,10 +1120,6 @@
     numArkEnlightPoints: document.getElementById('numArkEnlightPoints'),
     dispArkEnlightPoints: document.getElementById('dispArkEnlightPoints'),
     arkEnlightTierBadge: document.getElementById('arkEnlightTierBadge'),
-    arkEnlightQuickPills: document.getElementById('arkEnlightQuickPills'),
-    chkArkRelicBooks: document.getElementById('chkArkRelicBooks'),
-    chkArkRelicAcc: document.getElementById('chkArkRelicAcc'),
-    arkClassSpecSelect: document.getElementById('arkClassSpecSelect'),
     dispArkEnlightMult: document.getElementById('dispArkEnlightMult'),
     dispArkEnlightCp: document.getElementById('dispArkEnlightCp'),
     
@@ -1135,9 +1128,6 @@
     numArkLeapPoints: document.getElementById('numArkLeapPoints'),
     dispArkLeapPoints: document.getElementById('dispArkLeapPoints'),
     arkLeapTierBadge: document.getElementById('arkLeapTierBadge'),
-    arkLeapQuickPills: document.getElementById('arkLeapQuickPills'),
-    chkArkHaUnlocked: document.getElementById('chkArkHaUnlocked'),
-    chkArkRaidsUnlocked: document.getElementById('chkArkRaidsUnlocked'),
     dispArkLeapMult: document.getElementById('dispArkLeapMult'),
     dispArkLeapCp: document.getElementById('dispArkLeapCp'),
     
@@ -6293,659 +6283,224 @@
   }
 
   // --- 4b. SIMULATEUR ARK PASSIVE T4 (ÉVOLUTION / ÉCLAIRAGE / BOND) ---
-
-  
-
-  function getCharClassSpecs(char) {
-    const rawClass = ((char && (char.className || char.characterClassName || char.class)) || '').toLowerCase().trim();
-    for (const [key, val] of Object.entries(ARK_CLASS_SPECS)) {
-      if (rawClass.includes(key) || key.includes(rawClass)) {
-        return val;
-      }
-    }
-    const isSupport = char && char.role === 'support';
-    return {
-      name: char ? (char.className || 'DPS') : 'DPS',
-      specs: [
-        { id: 'generic_spec_1', name: isSupport ? 'Spécialisation Support' : 'Spécialisation Burst DPS', nameEn: isSupport ? 'Support Spec' : 'Burst DPS Spec', role: isSupport ? 'support' : 'dps' },
-        { id: 'generic_spec_2', name: isSupport ? 'Spécialisation DPS Secondaire' : 'Spécialisation DPS Continu', nameEn: isSupport ? 'Secondary DPS Spec' : 'Sustained DPS Spec', role: 'dps' }
-      ]
-    };
-  }
-
-  function syncArkPassiveClassSpecs(char) {
-    if (!dom.arkClassSpecSelect) return;
-    const curChar = char || getCurrentActiveCharacter();
-    const classInfo = getCharClassSpecs(curChar);
-    const isEn = isEnLang();
-
-    dom.arkClassSpecSelect.innerHTML = '';
-    let matchedSpecId = null;
-    const targetSpecName = ((curChar && curChar.spec) || '').toLowerCase();
-
-    classInfo.specs.forEach(spec => {
-      const opt = document.createElement('option');
-      opt.value = spec.id;
-      opt.textContent = isEn ? spec.nameEn : spec.name;
-      dom.arkClassSpecSelect.appendChild(opt);
-
-      if (targetSpecName && (
-        spec.name.toLowerCase().includes(targetSpecName) ||
-        (spec.nameEn && spec.nameEn.toLowerCase().includes(targetSpecName)) ||
-        spec.id.includes(targetSpecName.replace(/\s+/g, '_')) ||
-        targetSpecName.includes(spec.id.replace(/_/g, ' '))
-      )) {
-        matchedSpecId = spec.id;
-      }
-    });
-
-    if (matchedSpecId) {
-      dom.arkClassSpecSelect.value = matchedSpecId;
-      arkPassiveState.sim.classSpec = matchedSpecId;
-    } else if (classInfo.specs.length > 0) {
-      dom.arkClassSpecSelect.value = classInfo.specs[0].id;
-      arkPassiveState.sim.classSpec = classInfo.specs[0].id;
-    }
-
-    const isSupp = (curChar && curChar.role === 'support');
-    arkPassiveState.sim.evoNode = isSupp ? 'vigor' : 'strike';
-    if (dom.arkEvoNodeSelect) dom.arkEvoNodeSelect.value = arkPassiveState.sim.evoNode;
-  }
+  // Modèle du jeu : chaque arbre est une partie du Battle Point (type 5 Évolution, 6 Éclairage, 7 Bond) qui vaut
+  // « valeur par point × points dépensés » en 0,01 %, multiplicateur 1 + valeur ÷ 10 000 (vérifié sur les 70 profils :
+  // DPS 75 / 70 / 20, support 160 / 72 / 20 par point). L'Évolution ne compte que ses paliers 1 à 4 (100 points) :
+  // les 40 points du palier 0 sont des stats de combat (Crit / Spécialisation / Célérité), dans la partie stats de combat.
+  // Les nœuds choisis ne changent pas le CP. Le support porte ces parties sur sa branche buff.
+  const ARK_TREES = [
+    { key: 'evolution', type: 5, max: 100 },
+    { key: 'enlightenment', type: 6, max: 100 },
+    { key: 'leap', type: 7, max: 70 }
+  ];
 
   const arkPassiveState = {
-    basePoints: {
-      evolution: 140,
-      enlightenment: 101,
-      leap: 70
-    },
-    sim: {
-      evoPts: 140,
-      evoNode: 'strike',
-      enlightPts: 101,
-      relicBooks: true,
-      relicAcc: true,
-      classSpec: 'demonic_impulse',
-      leapPts: 70,
-      haUnlocked: true,
-      raidsUnlocked: true
-    },
+    model: null,
+    sim: { evolution: 0, enlightenment: 0, leap: 0 },
     lastResult: null
   };
 
-  function calcArkPassive({
-    role = 'dps',
-    baseCp = 5552,
-    evoPts = 140,
-    evoNode = 'strike',
-    enlightPts = 101,
-    relicBooks = true,
-    relicAcc = true,
-    classSpec = 'demonic_impulse',
-    leapPts = 70,
-    haUnlocked = true,
-    raidsUnlocked = true
-  }) {
-    const isSupport = role === 'support';
-    const isEn = isEnLang();
-
-    // Dans le modèle de Combat Power de Smilegate T4, le système Ark Passive
-    // représente environ 24% du Combat Power total d'un personnage endgame.
-    // Pour Neevercry (5 552 CP), l'Ark Passive représente environ 1 332 CP au total :
-    // - Évolution (140 pts max) : ~45% de l'Ark Passive (~10.8% du CP total) -> ~600 CP
-    // - Éclairage (101-110 pts max) : ~41% de l'Ark Passive (~9.8% du CP total) -> ~546 CP
-    // - Bond (70 pts max) : ~14% de l'Ark Passive (~3.4% du CP total) -> ~186 CP
-    const arkPassiveBudget = baseCp * 0.24;
-    const evoBudget = arkPassiveBudget * 0.45;
-    const enlightBudget = arkPassiveBudget * 0.41;
-    const leapBudget = arkPassiveBudget * 0.14;
-
-    // 1. Évolution Tree
-    function getEvoData(pts, node) {
-      const cappedPts = Math.min(140, Math.max(0, pts));
-      let mult = 0;
-      let scoreFrac = 0;
-      if (cappedPts <= 30) {
-        mult = (cappedPts / 30) * 3.5;
-        scoreFrac = (cappedPts / 30) * 0.20;
-      } else if (cappedPts <= 60) {
-        mult = 3.5 + ((cappedPts - 30) / 30) * 4.5;
-        scoreFrac = 0.20 + ((cappedPts - 30) / 30) * 0.22;
-      } else if (cappedPts <= 90) {
-        mult = 8.0 + ((cappedPts - 60) / 30) * 5.5;
-        scoreFrac = 0.42 + ((cappedPts - 60) / 30) * 0.23;
-      } else if (cappedPts <= 120) {
-        mult = 13.5 + ((cappedPts - 90) / 30) * 5.0;
-        scoreFrac = 0.65 + ((cappedPts - 90) / 30) * 0.22;
-      } else {
-        mult = 18.5 + ((cappedPts - 120) / 20) * 2.5;
-        scoreFrac = 0.87 + ((cappedPts - 120) / 20) * 0.13;
-      }
-
-      if (cappedPts >= 90) {
-        if (node === 'vigor') mult += isSupport ? 2.5 : 1.0;
-        else if (node === 'strike') mult += isSupport ? 1.0 : 2.5;
-        else if (node === 'flow') mult += 1.5;
-      }
-      const cp = Math.round(evoBudget * scoreFrac);
-      return { mult, cp };
+  /**
+   * Ark Passive réel d'un personnage, lu sur son Battle Point : par arbre, points dépensés et valeur par point
+   * (celle du profil, sinon la table du jeu du mode du Battle Point). CP de base = CP raid, part du CP portée
+   * par ces parties (DPS : tout le CP ; support : branche buff). null sans Battle Point lisible.
+   */
+  function arkPassiveModel(c) {
+    if (!c) return null;
+    const parts = battlePointPartsOf(c);
+    const t1 = parts.find(p => p.type === 1);
+    if (!t1 || !(t1.value > 0)) return null;
+    const raw = c.rawProfile || {};
+    const bp = raw.battlePoint || (raw.loadout && raw.loadout.battlePoint) || {};
+    const isSupport = typeof bp.isSupport === 'boolean' ? bp.isSupport : c.role === 'support';
+    const cp = raidCombatPowerOf(c) || c.cp;
+    if (!(cp > 0)) return null;
+    let share = 1;
+    if (isSupport) {
+      const br = supportBpBranches(c);
+      if (!br) return null;
+      share = br.A / (br.A + br.D);
     }
+    const trees = {};
+    ARK_TREES.forEach(t => {
+      const part = parts.find(p => p.type === t.type);
+      const spent = part && Number.isFinite(part.pointsSpent) ? part.pointsSpent : 0;
+      const table = isSupport
+        ? (bpSupportTable && bpSupportTable[t.type] && bpSupportTable[t.type][0] && bpSupportTable[t.type][0][0])
+        : (arkGridBp && arkGridBp.arkPassive && arkGridBp.arkPassive[t.type]);
+      const rate = part && spent > 0 && part.value > 0 ? part.value / spent : table;
+      trees[t.key] = { spent, rate: rate || 0, max: Math.max(t.max, spent), value: part ? part.value || 0 : 0 };
+    });
+    return { cp, share, isSupport, trees };
+  }
 
-    // 2. Éclairage (Enlightenment) Tree
-    function getEnlightData(pts, books, acc) {
-      const bonusPts = (books ? 10 : 0) + (acc ? 6 : 0);
-      const effPts = Math.min(120, Math.max(0, pts + bonusPts));
-      let mult = 0;
-      let scoreFrac = 0;
-      if (effPts <= 25) {
-        mult = (effPts / 25) * 4.0;
-        scoreFrac = (effPts / 25) * 0.20;
-      } else if (effPts <= 50) {
-        mult = 4.0 + ((effPts - 25) / 25) * 5.5;
-        scoreFrac = 0.20 + ((effPts - 25) / 25) * 0.22;
-      } else if (effPts <= 75) {
-        mult = 9.5 + ((effPts - 50) / 25) * 6.5;
-        scoreFrac = 0.42 + ((effPts - 50) / 25) * 0.24;
-      } else if (effPts <= 100) {
-        mult = 16.0 + ((effPts - 75) / 25) * 6.5;
-        scoreFrac = 0.66 + ((effPts - 75) / 25) * 0.25;
-      } else {
-        mult = 22.5 + ((effPts - 100) / 20) * 3.0;
-        scoreFrac = 0.91 + ((effPts - 100) / 20) * 0.09;
-      }
-      const cp = Math.round(enlightBudget * scoreFrac);
-      return { mult, cp, effPts };
-    }
+  /**
+   * CP projeté pour une répartition de points : la part des parties Ark Passive (tout le CP d'un DPS, la branche buff
+   * d'un support) est multipliée par le rapport des multiplicateurs simulés et actuels. Par arbre : part du CP qu'il
+   * porte (CP perdu à 0 point) et écart au profil.
+   */
+  function calcArkPassive(model, sim) {
+    const mult = v => 1 + v / 1e4;
+    const base = model.cp * model.share;
+    const out = { trees: {}, isSupport: model.isSupport };
+    let ratio = 1, prodSim = 1, prodMax = 1;
+    ARK_TREES.forEach(t => {
+      const tr = model.trees[t.key];
+      const pts = Math.max(0, Math.min(tr.max, sim[t.key]));
+      const vSim = tr.rate * pts, vCur = tr.value;
+      ratio *= mult(vSim) / mult(vCur);
+      prodSim *= mult(vSim);
+      prodMax *= mult(tr.rate * tr.max) / mult(vCur);
+      out.trees[t.key] = { pts, max: tr.max, rate: tr.rate, value: vSim, diff: base * (mult(vSim) / mult(vCur) - 1) };
+    });
+    const projectedCp = model.cp + base * (ratio - 1);
+    // Part de chaque arbre dans le CP projeté : ce qu'on perdrait à 0 point
+    const projBase = base * ratio;
+    ARK_TREES.forEach(t => { const r = out.trees[t.key]; r.cp = projBase * (1 - 1 / mult(r.value)); });
+    out.projectedCp = projectedCp;
+    out.diffCp = projectedCp - model.cp;
+    out.globalMult = (prodSim - 1) * 100;
+    out.totalAllocated = ARK_TREES.reduce((s, t) => s + out.trees[t.key].pts, 0);
+    out.pointsCap = ARK_TREES.reduce((s, t) => s + model.trees[t.key].max, 0);
+    out.maxCp = model.cp + base * (prodMax - 1);
+    return out;
+  }
 
-    // 3. Bond (Leap) Tree
-    function getLeapData(pts, ha, raids) {
-      const maxPts = raids ? 70 : 50;
-      const cappedPts = Math.min(maxPts, Math.max(0, pts));
-      let mult = 0;
-      let scoreFrac = 0;
-      if (cappedPts <= 15) {
-        mult = (cappedPts / 15) * 1.5;
-        scoreFrac = (cappedPts / 15) * 0.19;
-      } else if (cappedPts <= 35) {
-        mult = 1.5 + ((cappedPts - 15) / 20) * 1.8;
-        scoreFrac = 0.19 + ((cappedPts - 15) / 20) * 0.24;
-      } else if (cappedPts <= 55) {
-        mult = 3.3 + ((cappedPts - 35) / 20) * 2.0;
-        scoreFrac = 0.43 + ((cappedPts - 35) / 20) * 0.27;
-      } else {
-        mult = 5.3 + ((cappedPts - 55) / 15) * 1.7;
-        scoreFrac = 0.70 + ((cappedPts - 55) / 15) * 0.18;
-      }
-      if (ha) {
-        mult += 1.5;
-        scoreFrac += 0.12;
-      }
-      const cp = Math.round(leapBudget * Math.min(1.0, scoreFrac));
-      return { mult, cp };
-    }
-
-    // Baseline calculation (valeurs du profil actuel)
-    const baseEvoData = getEvoData(arkPassiveState.basePoints.evolution || 140, isSupport ? 'vigor' : 'strike');
-    const baseEnlightData = getEnlightData(arkPassiveState.basePoints.enlightenment || 101, true, true);
-    const baseLeapData = getLeapData(arkPassiveState.basePoints.leap || 70, true, true);
-    const baseArkTotalCp = baseEvoData.cp + baseEnlightData.cp + baseLeapData.cp;
-
-    // Simulated calculation (valeurs ajustées par l'utilisateur)
-    const simEvoData = getEvoData(evoPts, evoNode);
-    const simEnlightData = getEnlightData(enlightPts, relicBooks, relicAcc);
-    const simLeapData = getLeapData(leapPts, haUnlocked, raidsUnlocked);
-    const simArkTotalCp = simEvoData.cp + simEnlightData.cp + simLeapData.cp;
-
-    const evoDiff = simEvoData.cp - baseEvoData.cp;
-    const enlightDiff = simEnlightData.cp - baseEnlightData.cp;
-    const leapDiff = simLeapData.cp - baseLeapData.cp;
-    const diffCp = simArkTotalCp - baseArkTotalCp;
-    const projectedCp = Math.max(100, Math.round(baseCp + diffCp));
-
-    const globalMult = ((1 + simEvoData.mult / 100) * (1 + simEnlightData.mult / 100) * (1 + simLeapData.mult / 100) - 1) * 100;
-
-    // Tiers
-    function getEvoTier(pts) {
-      if (isEn) {
-        if (pts >= 140) return 'Tier IV Max (140 pts)';
-        if (pts >= 120) return 'Tier IV Reached (120+)';
-        if (pts >= 90) return 'Tier III Reached (90+)';
-        if (pts >= 60) return 'Tier II Reached (60+)';
-        if (pts >= 30) return 'Tier I Reached (30+)';
-        return 'Tier 0';
-      }
-      if (pts >= 140) return 'Palier IV Max (140 pts)';
-      if (pts >= 120) return 'Palier IV Atteint (120+)';
-      if (pts >= 90) return 'Palier III Atteint (90+)';
-      if (pts >= 60) return 'Palier II Atteint (60+)';
-      if (pts >= 30) return 'Palier I Atteint (30+)';
-      return 'Palier 0';
-    }
-    function getEnlightTier(effPts) {
-      if (isEn) {
-        if (effPts >= 110) return 'Tier IV Optimized (110+ pts)';
-        if (effPts >= 100) return 'Tier IV Reached (100+)';
-        if (effPts >= 75) return 'Tier III Reached (75+)';
-        if (effPts >= 50) return 'Tier II Reached (50+)';
-        if (effPts >= 25) return 'Tier I Reached (25+)';
-        return 'Tier 0';
-      }
-      if (effPts >= 110) return 'Palier IV Optimisé (110+ pts)';
-      if (effPts >= 100) return 'Palier IV Atteint (100+)';
-      if (effPts >= 75) return 'Palier III Atteint (75+)';
-      if (effPts >= 50) return 'Palier II Atteint (50+)';
-      if (effPts >= 25) return 'Palier I Atteint (25+)';
-      return 'Palier 0';
-    }
-    function getLeapTier(pts) {
-      if (isEn) {
-        if (pts >= 70) return 'Tier IV Cap (70 pts)';
-        if (pts >= 55) return 'Tier III Reached (55+)';
-        if (pts >= 35) return 'Tier II Reached (35+)';
-        if (pts >= 15) return 'Tier I Reached (15+)';
-        return 'Tier 0';
-      }
-      if (pts >= 70) return 'Palier IV Cap (70 pts)';
-      if (pts >= 55) return 'Palier III Atteint (55+)';
-      if (pts >= 35) return 'Palier II Atteint (35+)';
-      if (pts >= 15) return 'Palier I Atteint (15+)';
-      return 'Palier 0';
-    }
-
-    const totalAllocated = evoPts + enlightPts + leapPts;
-    const pointsCap = 140 + 120 + 70; // 330 pts
-
-    let efficiency = isEn ? 'Tier S+ (Optimal)' : 'Rang S+ (Opti)';
-    let efficiencyAdvice = isEn ? 'Tier 4 unlocked on all 3 major trees' : 'Palier 4 débloqué sur les 3 arbres majeurs';
-    let analysis = '';
-
-    if (totalAllocated >= 300 && simEnlightData.effPts >= 100) {
-      efficiency = isEn ? 'Tier S+ (Optimal)' : 'Rang S+ (Opti)';
-      efficiencyAdvice = isEn ? 'Tier 4 unlocked on all 3 major trees' : 'Palier 4 débloqué sur les 3 arbres majeurs';
-      if (isSupport) {
-        analysis = isEn
-          ? `Your Ark Passive configuration is optimized for Tier 4 raids. 100+ Enlightenment points unlock the full potential of your support identity multiplier (+25% group bonus) and max Evolution amplifies base AP transferred to the team.`
-          : `Votre configuration Ark Passive est optimisée pour le raid Tier 4. Les 100+ points d'Éclairage débloquent le plein potentiel du multiplicateur d'identité de soutien (+25% bonus de groupe) et l'Évolution max amplifie l'AP de base transférée au groupe.`;
-      } else {
-        analysis = isEn
-          ? `Strong DPS configuration. The Heavy Strike node paired with 100+ Enlightenment points gives the best burst on class engraving and T4 defense penetration.`
-          : `Configuration DPS solide. Le nœud de Frappe Lourde couplé aux 100+ points d'Éclairage donne le meilleur burst sur la gravure de classe et la pénétration de défense T4.`;
-      }
-    } else if (totalAllocated >= 260) {
-      efficiency = isEn ? 'Tier S (Advanced)' : 'Rang S (Avancé)';
-      efficiencyAdvice = isEn ? 'Tier 3/4 active, close to ceiling' : 'Palier 3/4 actif, proche du plafond';
-      analysis = isEn
-        ? `Good distribution. To reach Tier S+, prioritize acquiring the 2 T4 class Relic Books to unlock Tier IV Enlightenment (+10 pts) without sacrificing the Evolution tree.`
-        : `Bonne répartition. Pour atteindre le palier S+, priorisez l'acquisition des 2 Livres Reliques T4 de classe pour débloquer le palier IV d'Éclairage (+10 pts) sans sacrifier l'arbre d'Évolution.`;
-    } else if (totalAllocated >= 200) {
-      efficiency = isEn ? 'Tier A (Standard T4)' : 'Rang A (Standard T4)';
-      efficiencyAdvice = isEn ? 'Tiers II/III active' : 'Paliers II/III actifs';
-      analysis = isEn
-        ? `Standard early T4 build. You are missing the exponential multipliers of Tier IV Evolution (120+) and Enlightenment (100+). Complete your Leap quests and unlock Hyper Awakening.`
-        : `Build standard de début de T4. Vous manquez les multiplicateurs exponentiels des paliers IV d'Évolution (120+) et d'Éclairage (100+). Terminez vos quêtes de Bond et débloquez l'Éveil Supérieur.`;
-    } else {
-      efficiency = isEn ? 'Tier B (In Progress)' : 'Rang B (En progression)';
-      efficiencyAdvice = isEn ? 'Introductory tiers' : 'Paliers d\'initiation';
-      analysis = isEn
-        ? `Insufficient Ark Passive points to benefit from key class synergies. Continue leveling your character (60 to 70) and clearing Behemoth/Aegir raids to accumulate points.`
-        : `Points d'Ark Passive insuffisants pour bénéficier des synergies clés de classe. Continuez à monter votre niveau de personnage (60 à 70) et vos raids Behemoth/Aegir pour accumuler des points.`;
-    }
-
-    return {
-      evoMult: simEvoData.mult,
-      enlightMult: simEnlightData.mult,
-      leapMult: simLeapData.mult,
-      globalMult,
-      projectedCp,
-      diffCp,
-      evoTier: getEvoTier(evoPts),
-      enlightTier: getEnlightTier(simEnlightData.effPts),
-      leapTier: getLeapTier(leapPts),
-      evoCp: simEvoData.cp,
-      evoDiff,
-      enlightCp: simEnlightData.cp,
-      enlightDiff,
-      leapCp: simLeapData.cp,
-      leapDiff,
-      totalAllocated,
-      pointsCap,
-      efficiency,
-      efficiencyAdvice,
-      analysis,
-      isSupport
-    };
+  function resetArkPassiveSim() {
+    const m = arkPassiveState.model;
+    ARK_TREES.forEach(t => { arkPassiveState.sim[t.key] = m ? m.trees[t.key].spent : 0; });
   }
 
   function updateArkPassiveView() {
     if (!dom.tabArkPassivePane) return;
-
+    const isEn = isEnLang();
     const curChar = getCurrentActiveCharacter();
-    const cName = curChar ? curChar.name : (isEnLang() ? 'Active Character' : 'Personnage Actif');
-    if (dom.arkCharName) dom.arkCharName.textContent = cName;
+    const charKey = curChar ? (curChar.id || curChar.name) : null;
+    // Nouveau personnage : modèle relu et points remis à ceux du profil
+    if (!arkPassiveState.model || arkPassiveState.model.charKey !== charKey) {
+      const m = arkPassiveModel(curChar);
+      arkPassiveState.model = m ? Object.assign(m, { charKey }) : null;
+      resetArkPassiveSim();
+    }
+    const model = arkPassiveState.model;
+    if (dom.arkCharName) dom.arkCharName.textContent = curChar ? curChar.name : (isEn ? 'No character' : 'Aucun personnage');
     if (dom.arkCharStats) {
-      dom.arkCharStats.textContent = `${state.currentIlvl.toFixed(2)} iLvl • ${formatNumber(Math.round(state.currentCp))} CP`;
+      dom.arkCharStats.textContent = model
+        ? `${(curChar.ilvl || state.currentIlvl).toFixed(2)} iLvl • ${formatNumber(Math.round(model.cp))} CP`
+        : '—';
     }
-
-    // Synchronisation automatique des spécialisations de classe
-    if (dom.arkClassSpecSelect && (!dom.arkClassSpecSelect.dataset || dom.arkClassSpecSelect.dataset.charId !== (curChar ? (curChar.id || curChar.name) : ''))) {
-      syncArkPassiveClassSpecs(curChar);
-      if (curChar && dom.arkClassSpecSelect.dataset) dom.arkClassSpecSelect.dataset.charId = curChar.id || curChar.name;
-    }
-
     const sim = arkPassiveState.sim;
-    const baseCp = state.currentCp || 3368;
-    const role = state.role || 'support';
+    const ui = {
+      evolution: { slider: dom.sliderArkEvoPoints, num: dom.numArkEvoPoints, disp: dom.dispArkEvoPoints, badge: dom.arkEvoTierBadge, mult: dom.dispArkEvoMult, cp: dom.dispArkEvoCp },
+      enlightenment: { slider: dom.sliderArkEnlightPoints, num: dom.numArkEnlightPoints, disp: dom.dispArkEnlightPoints, badge: dom.arkEnlightTierBadge, mult: dom.dispArkEnlightMult, cp: dom.dispArkEnlightCp },
+      leap: { slider: dom.sliderArkLeapPoints, num: dom.numArkLeapPoints, disp: dom.dispArkLeapPoints, badge: dom.arkLeapTierBadge, mult: dom.dispArkLeapMult, cp: dom.dispArkLeapCp }
+    };
+    const setText = (el, txt) => { if (el) el.textContent = txt; };
+    if (dom.btnApplyArkToSim) dom.btnApplyArkToSim.disabled = !model;
 
-    const res = calcArkPassive({
-      role,
-      baseCp,
-      evoPts: sim.evoPts,
-      evoNode: sim.evoNode,
-      enlightPts: sim.enlightPts,
-      relicBooks: sim.relicBooks,
-      relicAcc: sim.relicAcc,
-      classSpec: sim.classSpec,
-      leapPts: sim.leapPts,
-      haUnlocked: sim.haUnlocked,
-      raidsUnlocked: sim.raidsUnlocked
+    if (!model) {
+      arkPassiveState.lastResult = null;
+      Object.values(ui).forEach(u => {
+        [u.slider, u.num].forEach(el => { if (el) el.disabled = true; });
+        setText(u.disp, '—'); setText(u.badge, '—'); setText(u.mult, '—'); setText(u.cp, '—');
+      });
+      ['arkResTotalCp', 'arkResDiffCp', 'arkResGlobalMult', 'arkResBuffDetail', 'arkResTotalPoints', 'arkResPointsCap', 'arkResEfficiency', 'arkResAdviceText']
+        .forEach(k => setText(dom[k], '—'));
+      setText(dom.arkSummaryRoleBadge, isEn ? 'Game Battle Point' : 'Battle Point du jeu');
+      setText(dom.arkAnalysisText, isEn
+        ? 'Import a character: the simulator reads its Ark Passive points and their value on the game Battle Point of its profile.'
+        : 'Importez un personnage : le simulateur lit ses points d\'Ark Passive et leur valeur sur le Battle Point du jeu de son profil.');
+      updateAstrogemGraderView();
+      return;
+    }
+
+    const res = calcArkPassive(model, sim);
+    arkPassiveState.lastResult = res;
+    const fmtPct = v => `${(v / 100).toFixed(2)}%`;
+    const signed = v => `${v >= 0 ? '+' : '−'}${formatNumber(Math.abs(Math.round(v)))}`;
+    setText(dom.arkSummaryRoleBadge, model.isSupport
+      ? (isEn ? 'Support Battle Point (buff branch)' : 'Battle Point support (branche buff)')
+      : (isEn ? 'DPS Battle Point' : 'Battle Point DPS'));
+
+    ARK_TREES.forEach(t => {
+      const u = ui[t.key], r = res.trees[t.key], tr = model.trees[t.key];
+      [u.slider, u.num].forEach(el => { if (el) { el.disabled = false; el.max = r.max; el.value = r.pts; } });
+      setText(u.disp, `${r.pts} / ${r.max} pts`);
+      setText(u.badge, isEn
+        ? `${tr.rate.toFixed(0)} BP / point${t.key === 'evolution' ? ' (tiers 1-4)' : ''}`
+        : `${tr.rate.toFixed(0)} BP / point${t.key === 'evolution' ? ' (paliers 1 à 4)' : ''}`);
+      setText(u.mult, `+${fmtPct(r.value)}`);
+      if (u.cp) {
+        const d = Math.round(r.diff);
+        u.cp.innerHTML = d !== 0
+          ? `${formatNumber(Math.round(r.cp))} CP <span class="tree-delta-pill ${d > 0 ? 'pos' : 'neg'}">(${signed(d)} CP)</span>`
+          : `${formatNumber(Math.round(r.cp))} CP`;
+      }
     });
 
-    arkPassiveState.lastResult = res;
+    setText(dom.arkResTotalCp, `${formatNumber(Math.round(res.projectedCp))} CP`);
+    setText(dom.arkResDiffCp, isEn ? `${signed(res.diffCp)} CP vs current profile` : `${signed(res.diffCp)} CP vs profil actuel`);
+    setText(dom.arkResGlobalMult, `+${res.globalMult.toFixed(2)}%`);
+    setText(dom.arkResBuffDetail, ARK_TREES.map(t => `×${(1 + res.trees[t.key].value / 1e4).toFixed(2)}`).join(' · ')
+      + (model.isSupport ? (isEn ? ` on ${Math.round(model.share * 100)}% of CP` : ` sur ${Math.round(model.share * 100)} % du CP`) : ''));
+    setText(dom.arkResTotalPoints, `${res.totalAllocated} Pts`);
+    setText(dom.arkResPointsCap, isEn
+      ? `Max ${res.pointsCap} pts (+ 40 Evolution tier 0 combat-stat points)`
+      : `Max ${res.pointsCap} pts (+ 40 pts de stats au palier 0 d'Évolution)`);
+    const missing = Math.max(0, res.maxCp - res.projectedCp);
+    setText(dom.arkResEfficiency, missing >= 0.5 ? `+${formatNumber(Math.round(missing))} CP` : (isEn ? 'Maxed' : 'Au maximum'));
+    setText(dom.arkResAdviceText, isEn ? 'left to gain at max points' : 'à gagner au maximum des points');
 
-    // Role badge in summary
-    const isEnArk = isEnLang();
-    if (dom.arkSummaryRoleBadge) {
-      dom.arkSummaryRoleBadge.textContent = isEnArk 
-        ? (role === 'support' ? 'T4 Support Model' : 'T4 DPS Model') 
-        : (role === 'support' ? 'Modèle Support T4' : 'Modèle DPS T4');
-    }
-
-    // Evolution Tree
-    if (dom.sliderArkEvoPoints) dom.sliderArkEvoPoints.value = sim.evoPts;
-    if (dom.numArkEvoPoints) dom.numArkEvoPoints.value = sim.evoPts;
-    if (dom.dispArkEvoPoints) dom.dispArkEvoPoints.textContent = `${sim.evoPts} pts`;
-    if (dom.arkEvoTierBadge) dom.arkEvoTierBadge.textContent = res.evoTier;
-    if (dom.dispArkEvoMult) dom.dispArkEvoMult.textContent = `+${res.evoMult.toFixed(2)}%`;
-    if (dom.dispArkEvoCp) {
-      if (res.evoDiff !== 0) {
-        const sign = res.evoDiff > 0 ? '+' : '';
-        const cls = res.evoDiff > 0 ? 'pos' : 'neg';
-        dom.dispArkEvoCp.innerHTML = `${formatNumber(res.evoCp)} CP <span class="tree-delta-pill ${cls}">(${sign}${formatNumber(res.evoDiff)} CP)</span>`;
-      } else {
-        dom.dispArkEvoCp.textContent = `${formatNumber(res.evoCp)} CP`;
-      }
-    }
-
-    if (dom.arkEvoQuickPills) {
-      dom.arkEvoQuickPills.querySelectorAll('.btn-action-pill').forEach(btn => {
-        const p = parseInt(btn.getAttribute('data-pts'), 10);
-        btn.classList.toggle('active', p === sim.evoPts);
-      });
-    }
-
-    // Enlightenment Tree
-    if (dom.sliderArkEnlightPoints) dom.sliderArkEnlightPoints.value = sim.enlightPts;
-    if (dom.numArkEnlightPoints) dom.numArkEnlightPoints.value = sim.enlightPts;
-    if (dom.dispArkEnlightPoints) dom.dispArkEnlightPoints.textContent = `${sim.enlightPts} pts`;
-    if (dom.arkEnlightTierBadge) dom.arkEnlightTierBadge.textContent = res.enlightTier;
-    if (dom.dispArkEnlightMult) dom.dispArkEnlightMult.textContent = `+${res.enlightMult.toFixed(2)}%`;
-    if (dom.dispArkEnlightCp) {
-      if (res.enlightDiff !== 0) {
-        const sign = res.enlightDiff > 0 ? '+' : '';
-        const cls = res.enlightDiff > 0 ? 'pos' : 'neg';
-        dom.dispArkEnlightCp.innerHTML = `${formatNumber(res.enlightCp)} CP <span class="tree-delta-pill ${cls}">(${sign}${formatNumber(res.enlightDiff)} CP)</span>`;
-      } else {
-        dom.dispArkEnlightCp.textContent = `${formatNumber(res.enlightCp)} CP`;
-      }
-    }
-
-    if (dom.chkArkRelicBooks) dom.chkArkRelicBooks.checked = sim.relicBooks;
-    if (dom.chkArkRelicAcc) dom.chkArkRelicAcc.checked = sim.relicAcc;
-
-    if (dom.arkEnlightQuickPills) {
-      dom.arkEnlightQuickPills.querySelectorAll('.btn-action-pill').forEach(btn => {
-        const p = parseInt(btn.getAttribute('data-pts'), 10);
-        btn.classList.toggle('active', p === sim.enlightPts);
-      });
-    }
-
-    // Leap Tree
-    if (dom.sliderArkLeapPoints) dom.sliderArkLeapPoints.value = sim.leapPts;
-    if (dom.numArkLeapPoints) dom.numArkLeapPoints.value = sim.leapPts;
-    if (dom.dispArkLeapPoints) dom.dispArkLeapPoints.textContent = `${sim.leapPts} pts`;
-    if (dom.arkLeapTierBadge) dom.arkLeapTierBadge.textContent = res.leapTier;
-    if (dom.dispArkLeapMult) dom.dispArkLeapMult.textContent = `+${res.leapMult.toFixed(2)}%`;
-    if (dom.dispArkLeapCp) {
-      if (res.leapDiff !== 0) {
-        const sign = res.leapDiff > 0 ? '+' : '';
-        const cls = res.leapDiff > 0 ? 'pos' : 'neg';
-        dom.dispArkLeapCp.innerHTML = `${formatNumber(res.leapCp)} CP <span class="tree-delta-pill ${cls}">(${sign}${formatNumber(res.leapDiff)} CP)</span>`;
-      } else {
-        dom.dispArkLeapCp.textContent = `${formatNumber(res.leapCp)} CP`;
-      }
-    }
-
-    if (dom.chkArkHaUnlocked) dom.chkArkHaUnlocked.checked = sim.haUnlocked;
-    if (dom.chkArkRaidsUnlocked) dom.chkArkRaidsUnlocked.checked = sim.raidsUnlocked;
-
-    if (dom.arkLeapQuickPills) {
-      dom.arkLeapQuickPills.querySelectorAll('.btn-action-pill').forEach(btn => {
-        const p = parseInt(btn.getAttribute('data-pts'), 10);
-        btn.classList.toggle('active', p === sim.leapPts);
-      });
-    }
-
-    // Summary Card Displays
-    if (dom.arkResTotalCp) dom.arkResTotalCp.textContent = `${formatNumber(res.projectedCp)} CP`;
-    if (dom.arkResDiffCp) {
-      const sign = res.diffCp > 0 ? '+' : (res.diffCp < 0 ? '-' : '+');
-      dom.arkResDiffCp.textContent = isEnArk
-        ? `${sign}${formatNumber(Math.abs(res.diffCp))} CP vs current profile`
-        : `${sign}${formatNumber(Math.abs(res.diffCp))} CP vs profil actuel`;
-    }
-    if (dom.arkResGlobalMult) dom.arkResGlobalMult.textContent = `+${res.globalMult.toFixed(2)}%`;
-    if (dom.arkResBuffDetail) {
-      dom.arkResBuffDetail.textContent = role === 'support' 
-        ? (isEnArk ? `Ally AP Buff: ~${(18.0 + (res.enlightMult * 0.20)).toFixed(1)}% net` : `Buff PA Alliés : ~${(18.0 + (res.enlightMult * 0.20)).toFixed(1)}% net`)
-        : (isEnArk ? `Personal Damage: +${(res.globalMult * 0.85).toFixed(1)}% net` : `Dégâts Personnels : +${(res.globalMult * 0.85).toFixed(1)}% net`);
-    }
-    if (dom.arkResTotalPoints) dom.arkResTotalPoints.textContent = `${res.totalAllocated} Pts`;
-    if (dom.arkResPointsCap) dom.arkResPointsCap.textContent = isEnArk ? `Current Cap: ${res.pointsCap} Pts` : `Plafond actuel : ${res.pointsCap} Pts`;
-    if (dom.arkResEfficiency) dom.arkResEfficiency.textContent = res.efficiency;
-    if (dom.arkResAdviceText) dom.arkResAdviceText.textContent = res.efficiencyAdvice;
-    if (dom.arkAnalysisText) dom.arkAnalysisText.textContent = res.analysis;
+    const lines = ARK_TREES.filter(t => res.trees[t.key].pts < res.trees[t.key].max).map(t => {
+      const r = res.trees[t.key];
+      const name = { evolution: isEn ? 'Evolution' : 'Évolution', enlightenment: isEn ? 'Enlightenment' : 'Éclairage', leap: isEn ? 'Leap' : 'Bond' }[t.key];
+      return `${name} ${r.max - r.pts} pts`;
+    });
+    const rule = isEn
+      ? `The game Battle Point counts every point spent (${ARK_TREES.map(t => model.trees[t.key].rate.toFixed(0)).join(' / ')} per point, in 0.01%), whatever the nodes chosen; Evolution only counts tiers 1 to 4.`
+      : `Le Battle Point du jeu compte chaque point dépensé (${ARK_TREES.map(t => model.trees[t.key].rate.toFixed(0)).join(' / ')} par point, en 0,01 %), quels que soient les nœuds choisis ; l'Évolution ne compte que ses paliers 1 à 4.`;
+    setText(dom.arkAnalysisText, lines.length
+      ? (isEn ? `Points not spent: ${lines.join(', ')}. ` : `Points non dépensés : ${lines.join(', ')}. `) + rule
+      : (isEn ? 'All Ark Passive points are spent. ' : 'Tous les points d\'Ark Passive sont dépensés. ') + rule);
 
     updateAstrogemGraderView();
   }
 
   function initArkPassiveEvents() {
-    // 1. Evolution Inputs
-    if (dom.sliderArkEvoPoints) {
-      dom.sliderArkEvoPoints.addEventListener('input', (e) => {
-        const v = parseInt(e.target.value, 10) || 0;
-        arkPassiveState.sim.evoPts = v;
-        if (dom.numArkEvoPoints) dom.numArkEvoPoints.value = v;
+    const bind = (key, slider, num) => {
+      const set = v => {
+        const m = arkPassiveState.model;
+        const max = m ? m.trees[key].max : 0;
+        arkPassiveState.sim[key] = Math.min(max, Math.max(0, parseInt(v, 10) || 0));
         updateArkPassiveView();
-      });
-    }
-    if (dom.numArkEvoPoints) {
-      dom.numArkEvoPoints.addEventListener('change', (e) => {
-        const v = Math.min(140, Math.max(0, parseInt(e.target.value, 10) || 0));
-        arkPassiveState.sim.evoPts = v;
-        if (dom.sliderArkEvoPoints) dom.sliderArkEvoPoints.value = v;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.arkEvoNodeSelect) {
-      dom.arkEvoNodeSelect.addEventListener('change', (e) => {
-        arkPassiveState.sim.evoNode = e.target.value;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.arkEvoQuickPills) {
-      dom.arkEvoQuickPills.querySelectorAll('.btn-action-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const pts = parseInt(btn.getAttribute('data-pts'), 10) || 140;
-          arkPassiveState.sim.evoPts = pts;
-          updateArkPassiveView();
-        });
-      });
-    }
+      };
+      if (slider) slider.addEventListener('input', e => set(e.target.value));
+      if (num) num.addEventListener('change', e => set(e.target.value));
+    };
+    bind('evolution', dom.sliderArkEvoPoints, dom.numArkEvoPoints);
+    bind('enlightenment', dom.sliderArkEnlightPoints, dom.numArkEnlightPoints);
+    bind('leap', dom.sliderArkLeapPoints, dom.numArkLeapPoints);
 
-    // 2. Enlightenment Inputs
-    if (dom.sliderArkEnlightPoints) {
-      dom.sliderArkEnlightPoints.addEventListener('input', (e) => {
-        const v = parseInt(e.target.value, 10) || 0;
-        arkPassiveState.sim.enlightPts = v;
-        if (dom.numArkEnlightPoints) dom.numArkEnlightPoints.value = v;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.numArkEnlightPoints) {
-      dom.numArkEnlightPoints.addEventListener('change', (e) => {
-        const v = Math.min(120, Math.max(0, parseInt(e.target.value, 10) || 0));
-        arkPassiveState.sim.enlightPts = v;
-        if (dom.sliderArkEnlightPoints) dom.sliderArkEnlightPoints.value = v;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.chkArkRelicBooks) {
-      dom.chkArkRelicBooks.addEventListener('change', (e) => {
-        arkPassiveState.sim.relicBooks = e.target.checked;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.chkArkRelicAcc) {
-      dom.chkArkRelicAcc.addEventListener('change', (e) => {
-        arkPassiveState.sim.relicAcc = e.target.checked;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.arkClassSpecSelect) {
-      dom.arkClassSpecSelect.addEventListener('change', (e) => {
-        arkPassiveState.sim.classSpec = e.target.value;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.arkEnlightQuickPills) {
-      dom.arkEnlightQuickPills.querySelectorAll('.btn-action-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const pts = parseInt(btn.getAttribute('data-pts'), 10) || 100;
-          arkPassiveState.sim.enlightPts = pts;
-          updateArkPassiveView();
-        });
-      });
-    }
-
-    // 3. Leap Inputs
-    if (dom.sliderArkLeapPoints) {
-      dom.sliderArkLeapPoints.addEventListener('input', (e) => {
-        const v = parseInt(e.target.value, 10) || 0;
-        arkPassiveState.sim.leapPts = v;
-        if (dom.numArkLeapPoints) dom.numArkLeapPoints.value = v;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.numArkLeapPoints) {
-      dom.numArkLeapPoints.addEventListener('change', (e) => {
-        const v = Math.min(70, Math.max(0, parseInt(e.target.value, 10) || 0));
-        arkPassiveState.sim.leapPts = v;
-        if (dom.sliderArkLeapPoints) dom.sliderArkLeapPoints.value = v;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.chkArkHaUnlocked) {
-      dom.chkArkHaUnlocked.addEventListener('change', (e) => {
-        arkPassiveState.sim.haUnlocked = e.target.checked;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.chkArkRaidsUnlocked) {
-      dom.chkArkRaidsUnlocked.addEventListener('change', (e) => {
-        arkPassiveState.sim.raidsUnlocked = e.target.checked;
-        updateArkPassiveView();
-      });
-    }
-    if (dom.arkLeapQuickPills) {
-      dom.arkLeapQuickPills.querySelectorAll('.btn-action-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const pts = parseInt(btn.getAttribute('data-pts'), 10) || 70;
-          arkPassiveState.sim.leapPts = pts;
-          updateArkPassiveView();
-        });
-      });
-    }
-
-    // 4. Quick Action Presets
     if (dom.btnArkResetCurrent) {
-      dom.btnArkResetCurrent.addEventListener('click', () => {
-        const curChar = getCurrentActiveCharacter();
-        const ap = (curChar && curChar.apPoints) || arkPassiveState.basePoints || { evolution: 140, enlightenment: 101, leap: 70 };
-        arkPassiveState.sim.evoPts = ap.evolution !== undefined ? ap.evolution : 140;
-        arkPassiveState.sim.enlightPts = ap.enlightenment !== undefined ? ap.enlightenment : 101;
-        arkPassiveState.sim.leapPts = ap.leap !== undefined ? ap.leap : 70;
-        arkPassiveState.sim.relicBooks = true;
-        arkPassiveState.sim.relicAcc = true;
-        arkPassiveState.sim.haUnlocked = true;
-        arkPassiveState.sim.raidsUnlocked = true;
-        syncArkPassiveClassSpecs(curChar);
+      dom.btnArkResetCurrent.addEventListener('click', () => { resetArkPassiveSim(); updateArkPassiveView(); });
+    }
+    if (dom.btnArkPresetMax) {
+      dom.btnArkPresetMax.addEventListener('click', () => {
+        const m = arkPassiveState.model;
+        if (m) ARK_TREES.forEach(t => { arkPassiveState.sim[t.key] = m.trees[t.key].max; });
         updateArkPassiveView();
       });
     }
 
-    if (dom.btnArkPresetSupport) {
-      dom.btnArkPresetSupport.addEventListener('click', () => {
-        arkPassiveState.sim.evoPts = 140;
-        arkPassiveState.sim.evoNode = 'vigor';
-        arkPassiveState.sim.enlightPts = 105;
-        arkPassiveState.sim.relicBooks = true;
-        arkPassiveState.sim.relicAcc = true;
-        arkPassiveState.sim.leapPts = 70;
-        arkPassiveState.sim.haUnlocked = true;
-        arkPassiveState.sim.raidsUnlocked = true;
-        const curChar = getCurrentActiveCharacter();
-        const info = getCharClassSpecs(curChar);
-        const suppSpec = info.specs.find(s => s.role === 'support') || info.specs[0];
-        if (suppSpec) {
-          arkPassiveState.sim.classSpec = suppSpec.id;
-          if (dom.arkClassSpecSelect) dom.arkClassSpecSelect.value = suppSpec.id;
-        }
-        if (dom.arkEvoNodeSelect) dom.arkEvoNodeSelect.value = 'vigor';
-        updateArkPassiveView();
-      });
-    }
-
-    if (dom.btnArkPresetDps) {
-      dom.btnArkPresetDps.addEventListener('click', () => {
-        arkPassiveState.sim.evoPts = 140;
-        arkPassiveState.sim.evoNode = 'strike';
-        arkPassiveState.sim.enlightPts = 105;
-        arkPassiveState.sim.relicBooks = true;
-        arkPassiveState.sim.relicAcc = true;
-        arkPassiveState.sim.leapPts = 70;
-        arkPassiveState.sim.haUnlocked = true;
-        arkPassiveState.sim.raidsUnlocked = true;
-        const curChar = getCurrentActiveCharacter();
-        const info = getCharClassSpecs(curChar);
-        const dpsSpec = info.specs.find(s => s.role === 'dps') || info.specs[0];
-        if (dpsSpec) {
-          arkPassiveState.sim.classSpec = dpsSpec.id;
-          if (dom.arkClassSpecSelect) dom.arkClassSpecSelect.value = dpsSpec.id;
-        }
-        if (dom.arkEvoNodeSelect) dom.arkEvoNodeSelect.value = 'strike';
-        updateArkPassiveView();
-      });
-    }
-
-    // 5. Apply / Inject into Quick Predictor
+    // Injecter dans le Prédicteur
     if (dom.btnApplyArkToSim) {
       dom.btnApplyArkToSim.addEventListener('click', () => {
         if (!arkPassiveState.lastResult) return;
-        const newCp = arkPassiveState.lastResult.projectedCp;
+        const newCp = Math.round(arkPassiveState.lastResult.projectedCp);
         state.currentCp = newCp;
         if (dom.numCurrentCp) dom.numCurrentCp.value = newCp;
         if (dom.sliderCurrentCp) dom.sliderCurrentCp.value = newCp;
 
-        // Switch to Predictor tab
         dom.tabBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === 'tab-predictor'));
         dom.tabPanes.forEach(p => p.classList.toggle('active', p.id === 'tab-predictor'));
 
@@ -6953,7 +6508,7 @@
         updateActiveCharacterCard(activeCharacterId);
 
         const origHtml = dom.btnApplyArkToSim.innerHTML;
-        dom.btnApplyArkToSim.innerHTML = `<span>CP Injecté (${formatNumber(newCp)} CP).</span>`;
+        dom.btnApplyArkToSim.innerHTML = `<span>${isEnLang() ? 'CP applied' : 'CP injecté'} (${formatNumber(newCp)} CP).</span>`;
         setTimeout(() => { dom.btnApplyArkToSim.innerHTML = origHtml; }, 2000);
       });
     }
@@ -6972,6 +6527,12 @@
     effect2: 'ally_dmg',
     effect2Level: 5
   };
+
+  // Clés de l'évaluateur → noms d'effets de astrogem.js
+  const ASTRO_EFFECT_LOSEII = { atk_power: 'Attack Power', add_dmg: 'Additional Damage', boss_dmg: 'Boss Damage',
+    ally_dmg: 'Ally Damage Enh.', brand: 'Brand Power', ally_ap: 'Ally Attack Enh.' };
+
+  const signedPct = v => `${v < 0 ? '−' : '+'}${Math.abs(v).toFixed(2)}%`;
 
   function evaluateAstrogem(config, role) {
     const isSupport = role === 'support';
@@ -7013,7 +6574,7 @@
 
       const rawD = eff1Score + eff2Score + orderScore;
       realGain = (Math.exp(rawD / 100) - 1) * 100;
-      realGainText = `+${realGain.toFixed(2)}% DPS`;
+      realGainText = `${signedPct(realGain)} DPS`;
 
       const top2 = config.baseCost === 8 ? ['add_dmg', 'atk_power'] : (config.baseCost === 9 ? ['boss_dmg', 'atk_power'] : ['boss_dmg', 'add_dmg']);
       isRainbow = config.willpowerLevel === 5 && config.orderLevel === 5 && config.effect1Level === 5 && config.effect2Level === 5 &&
@@ -7035,24 +6596,40 @@
       grade = 100 * (val - s.bounds.min) / (s.anchor - s.bounds.min);
       grade = Math.round(Math.max(0, Math.min(110, grade)) * 10) / 10;
 
-      const partyBuff = (eff1Score + eff2Score) * 3 + (config.orderLevel * 0.0769);
-      realGainText = `+${partyBuff.toFixed(2)}% Buff`;
+      // Buff de chaque allié (unité du GPD), ordre 0,0769 ÷ 3 par point (SUPPORT_SCORING de Loseii)
+      const allyBuff = eff1Score + eff2Score + config.orderLevel * 0.0769 / 3;
+      realGainText = `${signedPct(allyBuff)} Buff`;
 
       const top2 = config.baseCost === 8 ? ['brand', 'ally_dmg'] : (config.baseCost === 9 ? ['ally_ap', 'ally_dmg'] : ['ally_ap', 'brand']);
       isRainbow = config.willpowerLevel === 5 && config.orderLevel === 5 && config.effect1Level === 5 && config.effect2Level === 5 &&
         top2.includes(config.effect1) && top2.includes(config.effect2);
     }
 
-    const sPlusCut = isSupport ? 96.3 : 96.7;
-    const ladder = [
-      ["S+", sPlusCut], ["S", 93.3], ["S-", 90.0],
+    // Modèle de Loseii (astrogem.js, chargé pour le GPD) quand il est là : note, gain et échelle de rangs de son évaluateur
+    const AG = window.Astrogem;
+    let ladder = null;
+    if (AG && AG.grade && AG.supportGrade && AG.rankFromGrade) {
+      const cfg = { baseCost: config.baseCost, willpowerLevel: config.willpowerLevel, orderLevel: config.orderLevel,
+        effect1: ASTRO_EFFECT_LOSEII[config.effect1], effect1Level: config.effect1Level,
+        effect2: ASTRO_EFFECT_LOSEII[config.effect2], effect2Level: config.effect2Level };
+      try {
+        if (!AG.validateConfig || AG.validateConfig(cfg).valid) {
+          grade = isSupport ? AG.supportGrade(cfg) : AG.grade(cfg);
+          realGainText = isSupport ? `${signedPct(AG.supportDamage(cfg))} Buff` : `${signedPct(AG.damagePercent(cfg))} DPS`;
+          ladder = isSupport ? AG.SUPPORT_RANK_LADDER : AG.RANK_LADDER;
+        }
+      } catch (e) { /* repli sur le calcul interne */ }
+    }
+    // Échelle de Loseii (RANK_LADDER / SUPPORT_RANK_LADDER)
+    ladder = ladder || [
+      ["S+", isSupport ? 94.6 : 96.1], ["S", 93.3], ["S-", 90.0],
       ["A+", 86.7], ["A", 83.3], ["A-", 80.0],
       ["B+", 76.7], ["B", 73.3], ["B-", 70.0],
       ["C+", 66.7], ["C", 63.3], ["C-", 60.0],
       ["D+", 56.7], ["D", 53.3], ["D-", 50.0],
-      ["F", 0]
+      ["F+", 33.3], ["F", 16.7], ["F-", 0]
     ];
-    let rank = "F";
+    let rank = "F-";
     for (const [r, cut] of ladder) {
       if (grade >= cut) { rank = r; break; }
     }
@@ -7150,7 +6727,7 @@
 
     if (dom.astroGainLabel) {
       dom.astroGainLabel.textContent = isSupport
-        ? (isEn ? 'True Party Buff Gain' : 'Gain Réel Buff Groupe')
+        ? (isEn ? 'Buff Gain per Ally' : 'Gain de buff par allié')
         : (isEn ? 'True Solo DPS Gain' : 'Gain Réel DPS Perso');
     }
     if (dom.astroGainSub) {
@@ -7159,6 +6736,13 @@
         : (isEn ? 'Raw damage multiplier' : 'Multiplicateur brut de dégâts');
     }
 
+    // Changement de rôle : effets de départ = les deux effets utiles du rôle pour ce coût
+    if (astrogemState.role !== role) {
+      astrogemState.role = role;
+      const useful = isSupport ? ['ally_ap', 'brand', 'ally_dmg'] : ['boss_dmg', 'add_dmg', 'atk_power'];
+      const pool = (ASTROGEM_DATA.pools[astrogemState.baseCost] || []).filter(e => useful.includes(e));
+      if (pool.length >= 2) { astrogemState.effect1 = pool[0]; astrogemState.effect2 = pool[1]; }
+    }
     populateAstrogemEffects();
 
     if (dom.astroBaseCost) dom.astroBaseCost.value = astrogemState.baseCost.toString();
@@ -10333,20 +9917,8 @@
     renderCanonicalView();
     renderAdvisorView();
 
-    // Synchronisation Ark Passive
-    const ap = c.apPoints || (c.rawProfile && c.rawProfile.loadout && c.rawProfile.loadout.apPoints) || {
-      evolution: 140,
-      enlightenment: 101,
-      leap: 70
-    };
-    arkPassiveState.basePoints = { ...ap };
-    arkPassiveState.sim.evoPts = ap.evolution !== undefined ? ap.evolution : 140;
-    arkPassiveState.sim.enlightPts = ap.enlightenment !== undefined ? ap.enlightenment : 101;
-    arkPassiveState.sim.leapPts = ap.leap !== undefined ? ap.leap : 70;
-    arkPassiveState.sim.relicBooks = true;
-    arkPassiveState.sim.relicAcc = true;
-    arkPassiveState.sim.haUnlocked = true;
-    syncArkPassiveClassSpecs(c);
+    // Ark Passive : relu sur le Battle Point du personnage chargé
+    arkPassiveState.model = null;
     updateArkPassiveView();
 
     updateTargetButtons();

@@ -118,7 +118,12 @@ for (const row of Object.values(stats.battlePoint['1']).flat()) {
   (cores[id] = cores[id] || CORE_STEPS.map(() => null))[step - 1] = value === undefined ? null : value;
 }
 const CORE_OUT = new URL('../data/ark-grid-bp.json', import.meta.url);
-writeFileSync(CORE_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), steps: CORE_STEPS, dps: cores }));
+// Ark Passive (mode DPS) : valeur par point dépensé, en 0,01 % (5 = Évolution paliers 1 à 4, 6 = Éclairage, 7 = Bond)
+const arkPassive = {};
+for (const row of Object.values(stats.battlePoint['1']).flat()) {
+  if (row && [5, 6, 7].includes(row.type)) arkPassive[row.type] = row.values[0];
+}
+writeFileSync(CORE_OUT, JSON.stringify({ source: FEED, generatedAt: new Date().toISOString(), steps: CORE_STEPS, dps: cores, arkPassive }));
 console.log(`data/ark-grid-bp.json écrit (${Object.keys(cores).length} cœurs)`);
 
 // Battle Point en mode support (table battlePoint du jeu, branche 2) : sert à recalculer le Battle Point d'un support

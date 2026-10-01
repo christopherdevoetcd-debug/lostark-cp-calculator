@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=26.2">
+  <link rel="stylesheet" href="style.css?v=26.3">
 </head>
 <body>
   <div class="app-container">
@@ -678,11 +678,11 @@
               <div class="ark-title-area">
                 <span class="badge-t4-special" data-i18n="ark_badge">Progression T4</span>
                 <h2 data-i18n="ark_main_title">Simulateur Ark Passive — Évolution, Éclairage & Bond</h2>
-                <p class="subtitle" data-i18n="ark_subtitle">Simulez la répartition de vos points d'Ark Passive T4, testez l'impact des Livres Reliques et de l'Hyper Awakening sur votre Combat Power et vos multiplicateurs.</p>
+                <p class="subtitle" data-i18n="ark_subtitle">Faites varier les points dépensés dans chaque arbre et lisez leur effet sur le Combat Power, avec la valeur par point du Battle Point du jeu lue sur votre profil.</p>
               </div>
               <div class="advisor-char-pill" id="arkCharPill">
                 <span class="advisor-char-name" id="arkCharName" data-i18n="char_active_default">Personnage Actif</span>
-                <span class="advisor-char-stats" id="arkCharStats">1750.00 iLvl • 3 368 CP</span>
+                <span class="advisor-char-stats" id="arkCharStats">—</span>
               </div>
             </div>
 
@@ -692,11 +692,8 @@
                 <button type="button" class="btn-action-pill active" id="btnArkResetCurrent">
                   <span data-i18n="ark_btn_current_points">Points Actuels du Personnage</span>
                 </button>
-                <button type="button" class="btn-action-pill" id="btnArkPresetSupport">
-                  <span data-i18n="ark_btn_sup_build">Build Support Recommandé (Aura Max)</span>
-                </button>
-                <button type="button" class="btn-action-pill" id="btnArkPresetDps">
-                  <span data-i18n="ark_btn_dps_build">Build DPS Recommandé (Burst Max)</span>
+                <button type="button" class="btn-action-pill" id="btnArkPresetMax">
+                  <span data-i18n="ark_btn_max_points">Tous les points au maximum</span>
                 </button>
               </div>
               <div class="ark-quick-tools">
@@ -716,49 +713,32 @@
                 <div class="tree-title-group">
                   <div>
                     <h3 data-i18n="ark_tree_evo_title">Arbre Évolution</h3>
-                    <span class="tree-sub" data-i18n="ark_tree_evo_sub">Stats de Base & Multiplicateur Brute</span>
+                    <span class="tree-sub" data-i18n="ark_tree_evo_sub">Paliers 1 à 4 (le palier 0 = stats de combat)</span>
                   </div>
                 </div>
-                <span class="tree-tier-badge" id="arkEvoTierBadge" data-i18n="ark_tier_iv_reached">Palier IV Atteint</span>
+                <span class="tree-tier-badge" id="arkEvoTierBadge">—</span>
               </div>
 
               <div class="tree-points-control">
                 <div class="label-row">
-                  <label for="sliderArkEvoPoints" data-i18n="ark_tree_evo_points_label">Points Alloués en Évolution :</label>
-                  <span class="val-display" id="dispArkEvoPoints">140 pts</span>
+                  <label for="sliderArkEvoPoints" data-i18n="ark_tree_evo_points_label">Points dépensés (paliers 1 à 4) :</label>
+                  <span class="val-display" id="dispArkEvoPoints">—</span>
                 </div>
                 <div class="slider-input-combo">
-                  <input type="range" id="sliderArkEvoPoints" min="0" max="140" step="5" value="140">
-                  <input type="number" id="numArkEvoPoints" min="0" max="140" step="1" value="140" class="clean-number-input compact">
+                  <input type="range" id="sliderArkEvoPoints" min="0" max="100" step="1" value="100">
+                  <input type="number" id="numArkEvoPoints" min="0" max="100" step="1" value="100" class="clean-number-input compact">
                 </div>
-                <div class="tree-quick-pills" id="arkEvoQuickPills">
-                  <button type="button" class="btn-action-pill" data-pts="30">30 (P1)</button>
-                  <button type="button" class="btn-action-pill" data-pts="60">60 (P2)</button>
-                  <button type="button" class="btn-action-pill" data-pts="90">90 (P3)</button>
-                  <button type="button" class="btn-action-pill" data-pts="120">120 (P4)</button>
-                  <button type="button" class="btn-action-pill active" data-pts="140">140 (Max)</button>
-                </div>
-              </div>
-
-              <!-- Node Majeur Spécial Palier 4 -->
-              <div class="tree-node-select-group">
-                <label for="arkEvoNodeSelect" data-i18n="ark_tree_evo_node_label">Nœud Majeur Palier IV :</label>
-                <select id="arkEvoNodeSelect" class="clean-select">
-                  <option value="vigor" selected data-i18n="ark_tree_evo_node_vigor">Vigueur Divine / Don de Vie (Focus Buff Puissance & AP Brute) [Recommandé Support]</option>
-                  <option value="strike" data-i18n="ark_tree_evo_node_strike">Frappe Lourde / Perçage (Dégâts Critiques & Pénétration Brute) [Recommandé DPS]</option>
-                  <option value="flow" data-i18n="ark_tree_evo_node_flow">Flux Astral (Vitesse d'Attaque & Réduction de Mana)</option>
-                </select>
               </div>
 
               <!-- Indicateur Métrique de l'Arbre -->
               <div class="tree-metric-footer">
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label" data-i18n="ark_tree_evo_mult_label">Multiplicateur Évolution</span>
-                  <span class="tree-metric-val" id="dispArkEvoMult">+176.00%</span>
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_mult_label">Battle Point Évolution</span>
+                  <span class="tree-metric-val" id="dispArkEvoMult">—</span>
                 </div>
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Contribution CP</span>
-                  <span class="tree-metric-val highlight" id="dispArkEvoCp">600 CP</span>
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Part du CP</span>
+                  <span class="tree-metric-val highlight" id="dispArkEvoCp">—</span>
                 </div>
               </div>
             </div>
@@ -769,60 +749,32 @@
                 <div class="tree-title-group">
                   <div>
                     <h3 data-i18n="ark_tree_enlight_title">Arbre Éclairage</h3>
-                    <span class="tree-sub" data-i18n="ark_tree_enlight_sub">Gravure de Classe & Spécialisation</span>
+                    <span class="tree-sub" data-i18n="ark_tree_enlight_sub">Nœuds de classe</span>
                   </div>
                 </div>
-                <span class="tree-tier-badge" id="arkEnlightTierBadge" data-i18n="ark_tier_iv_reached">Palier IV Atteint</span>
+                <span class="tree-tier-badge" id="arkEnlightTierBadge">—</span>
               </div>
 
               <div class="tree-points-control">
                 <div class="label-row">
-                  <label for="sliderArkEnlightPoints" data-i18n="ark_tree_enlight_points_label">Points Alloués en Éclairage :</label>
-                  <span class="val-display" id="dispArkEnlightPoints">101 pts</span>
+                  <label for="sliderArkEnlightPoints" data-i18n="ark_tree_enlight_points_label">Points dépensés en Éclairage :</label>
+                  <span class="val-display" id="dispArkEnlightPoints">—</span>
                 </div>
                 <div class="slider-input-combo">
-                  <input type="range" id="sliderArkEnlightPoints" min="0" max="120" step="5" value="101">
-                  <input type="number" id="numArkEnlightPoints" min="0" max="120" step="1" value="101" class="clean-number-input compact">
+                  <input type="range" id="sliderArkEnlightPoints" min="0" max="100" step="1" value="100">
+                  <input type="number" id="numArkEnlightPoints" min="0" max="100" step="1" value="100" class="clean-number-input compact">
                 </div>
-                <div class="tree-quick-pills" id="arkEnlightQuickPills">
-                  <button type="button" class="btn-action-pill" data-pts="25">25 (P1)</button>
-                  <button type="button" class="btn-action-pill" data-pts="50">50 (P2)</button>
-                  <button type="button" class="btn-action-pill" data-pts="75">75 (P3)</button>
-                  <button type="button" class="btn-action-pill active" data-pts="100">100 (P4)</button>
-                  <button type="button" class="btn-action-pill" data-pts="110">110 (Max)</button>
-                </div>
-              </div>
-
-              <!-- Toggles Livres Reliques & Accessoires -->
-              <div class="tree-toggles-box">
-                <label class="toggle-chip">
-                  <input type="checkbox" id="chkArkRelicBooks" checked>
-                  <span data-i18n="ark_tree_enlight_relic_books">2x Livres Reliques T4 de Classe (+10 Pts Éclairage)</span>
-                </label>
-                <label class="toggle-chip">
-                  <input type="checkbox" id="chkArkRelicAcc" checked>
-                  <span data-i18n="ark_relic_acc_chip">Accessoires Reliques avec Éclairage (+6 Pts)</span>
-                </label>
-              </div>
-
-              <!-- Gravure de Classe Actuelle -->
-              <div class="tree-node-select-group">
-                <label for="arkClassSpecSelect" data-i18n="ark_class_spec_label">Spécialisation de Classe Active :</label>
-                <select id="arkClassSpecSelect" class="clean-select">
-                  <option value="blessed_aura" selected data-i18n="ark_class_opt_supp">Bénédiction Sacrée (Aura Bénie / Paladin Support)</option>
-                  <option value="judgment" data-i18n="ark_class_opt_dps">Jugement (Paladin DPS)</option>
-                </select>
               </div>
 
               <!-- Indicateur Métrique de l'Arbre -->
               <div class="tree-metric-footer">
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label" data-i18n="ark_tree_enlight_mult_label">Multiplicateur Éclairage</span>
-                  <span class="tree-metric-val" id="dispArkEnlightMult">+24.50%</span>
+                  <span class="tree-metric-label" data-i18n="ark_tree_enlight_mult_label">Battle Point Éclairage</span>
+                  <span class="tree-metric-val" id="dispArkEnlightMult">—</span>
                 </div>
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Contribution CP</span>
-                  <span class="tree-metric-val highlight" id="dispArkEnlightCp">546 CP</span>
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Part du CP</span>
+                  <span class="tree-metric-val highlight" id="dispArkEnlightCp">—</span>
                 </div>
               </div>
             </div>
@@ -833,50 +785,32 @@
                 <div class="tree-title-group">
                   <div>
                     <h3 data-i18n="ark_tree_leap_title">Arbre Bond (Leap)</h3>
-                    <span class="tree-sub" data-i18n="ark_tree_leap_subtext">Hyper Awakening & Compétence T</span>
+                    <span class="tree-sub" data-i18n="ark_tree_leap_subtext">Éveil supérieur</span>
                   </div>
                 </div>
-                <span class="tree-tier-badge" id="arkLeapTierBadge" data-i18n="ark_tier_iv_reached">Palier IV Atteint</span>
+                <span class="tree-tier-badge" id="arkLeapTierBadge">—</span>
               </div>
 
               <div class="tree-points-control">
                 <div class="label-row">
-                  <label for="sliderArkLeapPoints" data-i18n="ark_tree_leap_points_lbl">Points Alloués en Bond :</label>
-                  <span class="val-display" id="dispArkLeapPoints">70 pts</span>
+                  <label for="sliderArkLeapPoints" data-i18n="ark_tree_leap_points_lbl">Points dépensés en Bond :</label>
+                  <span class="val-display" id="dispArkLeapPoints">—</span>
                 </div>
                 <div class="slider-input-combo">
-                  <input type="range" id="sliderArkLeapPoints" min="0" max="70" step="5" value="70">
+                  <input type="range" id="sliderArkLeapPoints" min="0" max="70" step="1" value="70">
                   <input type="number" id="numArkLeapPoints" min="0" max="70" step="1" value="70" class="clean-number-input compact">
                 </div>
-                <div class="tree-quick-pills" id="arkLeapQuickPills">
-                  <button type="button" class="btn-action-pill" data-pts="15">15 (P1)</button>
-                  <button type="button" class="btn-action-pill" data-pts="35">35 (P2)</button>
-                  <button type="button" class="btn-action-pill" data-pts="55">55 (P3)</button>
-                  <button type="button" class="btn-action-pill active" data-pts="70">70 (Max)</button>
-                </div>
-              </div>
-
-              <!-- Toggles Quêtes & Raids Kazeros -->
-              <div class="tree-toggles-box">
-                <label class="toggle-chip">
-                  <input type="checkbox" id="chkArkHaUnlocked" checked>
-                  <span data-i18n="ark_ha_unlocked_chip">Éveil Supérieur & T-Skill Débloqués (+10% dégâts T)</span>
-                </label>
-                <label class="toggle-chip">
-                  <input type="checkbox" id="chkArkRaidsUnlocked" checked>
-                  <span data-i18n="ark_raids_unlocked_chip">Paliers Raids Behemoth / Aegir validés (Plafond 70 pts)</span>
-                </label>
               </div>
 
               <!-- Indicateur Métrique de l'Arbre -->
               <div class="tree-metric-footer">
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label" data-i18n="ark_mult_leap_lbl">Multiplicateur Bond</span>
-                  <span class="tree-metric-val" id="dispArkLeapMult">+8.50%</span>
+                  <span class="tree-metric-label" data-i18n="ark_mult_leap_lbl">Battle Point Bond</span>
+                  <span class="tree-metric-val" id="dispArkLeapMult">—</span>
                 </div>
                 <div class="tree-metric-cell">
-                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Contribution CP</span>
-                  <span class="tree-metric-val highlight" id="dispArkLeapCp">186 CP</span>
+                  <span class="tree-metric-label" data-i18n="ark_tree_evo_cp_label">Part du CP</span>
+                  <span class="tree-metric-val highlight" id="dispArkLeapCp">—</span>
                 </div>
               </div>
             </div>
@@ -886,41 +820,39 @@
           <!-- Synthèse Globale & KPI d'Ark Passive -->
           <div class="card ark-summary-card">
             <div class="card-header">
-              <h2 data-i18n="ark_summary_header">Impact Global sur le Combat Power & vos Buffs</h2>
-              <span class="model-badge" id="arkSummaryRoleBadge">Modèle Support T4</span>
+              <h2 data-i18n="ark_summary_header">Effet sur le Combat Power</h2>
+              <span class="model-badge" id="arkSummaryRoleBadge">—</span>
             </div>
 
             <div class="ark-kpi-grid">
               <div class="advisor-kpi-card highlight-cp">
                 <div class="kpi-label" data-i18n="ark_kpi_proj_cp">Combat Power Projeté</div>
-                <div class="kpi-value" id="arkResTotalCp">3 368 CP</div>
-                <div class="kpi-sub" id="arkResDiffCp">+0 CP vs profil actuel</div>
+                <div class="kpi-value" id="arkResTotalCp">—</div>
+                <div class="kpi-sub" id="arkResDiffCp">—</div>
               </div>
 
               <div class="advisor-kpi-card highlight-roi">
-                <div class="kpi-label" data-i18n="ark_kpi_global_buff">Multiplicateur Global de Buff</div>
-                <div class="kpi-value" id="arkResGlobalMult">+246.00%</div>
-                <div class="kpi-sub" id="arkResBuffDetail">Buff AP Alliés : ~42.8% net</div>
+                <div class="kpi-label" data-i18n="ark_kpi_global_buff">Multiplicateur Ark Passive</div>
+                <div class="kpi-value" id="arkResGlobalMult">—</div>
+                <div class="kpi-sub" id="arkResBuffDetail">—</div>
               </div>
 
               <div class="advisor-kpi-card highlight-gold">
-                <div class="kpi-label" data-i18n="ark_kpi_allocated_pts">Total Points Alloués</div>
-                <div class="kpi-value" id="arkResTotalPoints">311 Pts</div>
-                <div class="kpi-sub" id="arkResPointsCap">Plafond actuel : 330 Pts</div>
+                <div class="kpi-label" data-i18n="ark_kpi_allocated_pts">Points dépensés</div>
+                <div class="kpi-value" id="arkResTotalPoints">—</div>
+                <div class="kpi-sub" id="arkResPointsCap">—</div>
               </div>
 
               <div class="advisor-kpi-card highlight-ilvl">
-                <div class="kpi-label" data-i18n="ark_kpi_setup_eff">Efficacité du Setup</div>
-                <div class="kpi-value" id="arkResEfficiency">Rang S+ (Opti)</div>
-                <div class="kpi-sub" id="arkResAdviceText">Palier 4 débloqué sur les 3 arbres</div>
+                <div class="kpi-label" data-i18n="ark_kpi_setup_eff">Reste à gagner</div>
+                <div class="kpi-value" id="arkResEfficiency">—</div>
+                <div class="kpi-sub" id="arkResAdviceText">—</div>
               </div>
             </div>
 
             <div class="analysis-box" id="arkAnalysisBox">
-              <div class="analysis-title" data-i18n="ark_analysis_header">Recommandation Stratégique Ark Passive :</div>
-              <p id="arkAnalysisText">
-                Votre configuration actuelle est optimisée pour le contenu de raid Tier 4. Les 100+ points d'Éclairage débloquent le plein potentiel du multiplicateur de dégâts d'Aura Bénie (+25% bonus de groupe).
-              </p>
+              <div class="analysis-title" data-i18n="ark_analysis_header">Lecture du modèle :</div>
+              <p id="arkAnalysisText">—</p>
             </div>
           </div>
 
@@ -1019,7 +951,7 @@
                 <!-- Grille des 4 KPIs -->
                 <div class="cutting-kpis-grid">
                   <div class="cut-kpi-card">
-                    <span class="cut-kpi-label" id="astroGainLabel" data-i18n="astro_gain_group">Gain Réel Buff Groupe</span>
+                    <span class="cut-kpi-label" id="astroGainLabel">Gain de buff par allié</span>
                     <div class="cut-kpi-val highlight" id="astroGainVal">+0.28%</div>
                     <div class="gem-kpi-sub" id="astroGainSub" data-i18n="astro_gain_sub">Contribution nette par allié</div>
                   </div>
@@ -2721,13 +2653,13 @@
     </div>
   </div>
 
-  <script src="i18n.js?v=8.5"></script>
-  <script src="data.js?v=2.6"></script>
+  <script src="i18n.js?v=8.6"></script>
+  <script src="data.js?v=2.7"></script>
   <script src="bracelet-data.js?v=1.0"></script>
   <script src="gear-data.js?v=1.0"></script>
   <script src="bracelet-model.js?v=1.0"></script>
   <script src="subrank.js?v=1.0"></script>
-  <script src="calculator.js?v=52.2"></script>
+  <script src="calculator.js?v=52.3"></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "ab628174dd6d4aec9cb0a47449a6b62f"}'></script>
