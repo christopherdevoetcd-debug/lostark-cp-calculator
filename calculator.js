@@ -1511,7 +1511,28 @@
     const earringPct = parts.filter(p => p.stat && p.stat.index === 152).reduce((s, p) => s + (p.stat.value || 0) / 100, 0);
     const karmaPct = ((lo.karma && lo.karma.enlightenment) || 0) * 0.1;
     // Vitalité (stat 6) : les PV max suivent la Vitalité (branche défense du CP support)
-    return { wp, ms, vit: stat(6), wpAmp: 1 + (earringPct + karmaPct) / 100, gear };
+    return { wp, ms, vit: stat(6), wpAmp: 1 + (earringPct + karmaPct) / 100, msMult: armorMainStatMult(charObj, gear, stat, ms), gear };
+  }
+
+  /**
+   * Multiplicateur appliqué à la stat principale des armures (avatars, ranch du familier…), mesuré sur le profil :
+   * les deux autres stats (Force / Dextérité / Intelligence) viennent des mêmes sources que la principale (bijoux…)
+   * sauf les armures, donc (principale − autre) ÷ stats de base des armures (table itemLevel). Mesuré sur 70 profils :
+   * 1,035 à 1,111, 1,10 pour la moitié (avatars complets). 1 si une donnée manque ou sort de [1 ; 1,2].
+   */
+  function armorMainStatMult(charObj, gear, stat, ms) {
+    const others = [3, 4, 5].map(stat).filter(v => v !== ms);
+    if (others.length !== 2) return 1;
+    let base = 0;
+    for (const slot of GEAR_ARMOR_SLOTS) {
+      const isSerka = pieceIsSerka(gear, slot);
+      const tr = honingT4.tracks[isSerka ? 'serka' : 'aegir'];
+      const v = tr && tr.stats && gear[slot] >= 0 ? gearPieceStat(tr, slot, gear[slot], isSerka ? 0 : gearAdvOf(charObj, gear, slot)) : null;
+      if (v === null) return 1;
+      base += v;
+    }
+    const m = (ms - Math.max(...others)) / base;
+    return m >= 1 && m <= 1.2 ? m : 1;
   }
 
   /**
@@ -1537,7 +1558,7 @@
       if (from === null || to === null) return null;
       if (c.slot === 'weapon') dWp += (to - from) * ctx.wpAmp;
       else {
-        dMs += to - from;
+        dMs += (to - from) * (ctx.msMult || 1);
         const vFrom = gearPieceStat(tr, c.slot, c.lvl, adv, 'vitality'), vTo = gearPieceStat(trTo, c.slot, c.toLvl, toAdv, 'vitality');
         if (vFrom !== null && vTo !== null) dVit += vTo - vFrom;
       }
@@ -1810,7 +1831,8 @@
   // puissance d'arme × (1 + % boucles + Karma) comme celle de l'arme.
   function bracerAttackState(ctx, apPool, level) {
     const s = level >= 0 ? calcBracerStats(level) : null;
-    const mm = (bracerT4 && bracerT4.mainStatMult) || 1;
+    // Multiplicateur mesuré sur le profil (comme les armures), sinon celui du post Inven (× 1,09)
+    const mm = ctx.msMult > 1 ? ctx.msMult : (bracerT4 && bracerT4.mainStatMult) || 1;
     const st = {
       wp: ctx.wp + (s ? s.weaponPower * ctx.wpAmp : 0),
       ms: ctx.ms + (s ? s.mainStat * mm : 0),
@@ -17524,9 +17546,12 @@
     }
 
     // 2. Stats du brassard au niveau choisi
-    const mm = bracerT4.mainStatMult || 1;
+    const ctxB = charObj ? gearStatContext(charObj) : null;
+    const measured = !!(ctxB && ctxB.msMult > 1);
+    const mm = measured ? ctxB.msMult : (bracerT4.mainStatMult || 1);
+    const mmTxt = measured ? (isEn ? 'measured on the profile, like the armors' : 'mesuré sur le profil, comme les armures') : (isEn ? 'avatars and pet ranch, Inven' : 'avatars et ranch, Inven');
     html += `<table class="market-table belg-table"><thead><tr><th>${isEn ? `Bracer +${level}` : `Brassard +${level}`}</th><th>${isEn ? 'Value' : 'Valeur'}</th></tr></thead><tbody>
-      <tr><td>${isEn ? 'Main stat' : 'Stat principale'} <span class="belg-dim">(× ${fmt(mm, 2)} ${isEn ? 'avatars and pet ranch' : 'avatars et ranch'})</span></td><td class="market-num">${fmt(stats.mainStat)}</td></tr>
+      <tr><td>${isEn ? 'Main stat' : 'Stat principale'} <span class="belg-dim">(× ${fmt(mm, 3)}, ${mmTxt})</span></td><td class="market-num">${fmt(stats.mainStat)}</td></tr>
       <tr><td>${isEn ? 'Weapon power' : "Puissance d'arme"} <span class="belg-dim">(× ${isEn ? 'earrings and Karma' : 'boucles et Karma'})</span></td><td class="market-num">${fmt(stats.weaponPower)}</td></tr>
       <tr><td>${isEn ? 'Vitality' : 'Vitalité'}</td><td class="market-num">${fmt(stats.vitality)}</td></tr>
       <tr><td>${isEn ? 'Base attack power (flat)' : 'PA de base (fixe)'}</td><td class="market-num">+${fmt(stats.flatAp)}</td></tr>
