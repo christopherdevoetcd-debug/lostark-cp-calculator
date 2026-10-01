@@ -526,7 +526,7 @@ function getDynamicGpdTable(charObj, role, isEn) {
       const best = findBestAccessoryUpgrade(accEval.slotLines, isSupport, kind);
       if (!best) return;
       // Gamme nommée ligne par ligne (« High / Mid » seul ne dit pas quelle ligne est High) et état actuel du bijou
-      const lineName = k => (ACC_LINE_NAMES[k] || [k, k])[isEn ? 1 : 0];
+      const lineName = k => (ACC_LINE_SHORT[k] || ACC_LINE_NAMES[k] || [k, k])[isEn ? 1 : 0];
       const tierName = t => (t === null || t === undefined ? (isEn ? 'none' : 'absente') : ACC_TIER_NAMES[t]);
       const curLines = accEval.slotLines[best.slot] || [];
       const curTiers = best.lines.map(k => { const l = curLines.find(x => x.key === k); return l ? accTierOf(k, l.amount) : null; });

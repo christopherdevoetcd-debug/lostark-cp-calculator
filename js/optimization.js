@@ -33,6 +33,15 @@ const ACC_LINE_NAMES = {
   wpFlat: ["Puissance d'arme plate", 'Flat Weapon Power']
 };
 const ACC_TIER_NAMES = ['Low', 'Mid', 'High'];
+// Noms courts des lignes (tableaux du GPD et du Smart Advisor, sans défilement horizontal)
+const ACC_LINE_SHORT = {
+  addDmg: ['Dgt add.', 'Add. Dmg'], outDmg: ['Dgt infligés', 'Dmg to enemies'],
+  apPct: ['PA %', 'AP %'], wpPct: ['PdA %', 'WP %'],
+  critPct: ['Taux crit.', 'Crit Rate'], cdmgPct: ['Dgt crit.', 'Crit Dmg'],
+  brand: ['Marque', 'Brand'], identity: ['Identité', 'Identity'],
+  allyAp: ['Ampli. PA alliée', 'Ally AP Enh.'], allyDmg: ['Dgt alliés', 'Ally Dmg Enh.'],
+  wpFlat: ['PdA plate', 'Flat WP']
+};
 
 // Cibles choisies : { [slot]: [cible ligne 1, cible ligne 2] } (-1 = actuel, 0/1/2 = Low/Mid/High) ; gemmes : niveau minimal
 const optSim = { charKey: null, acc: {}, gemMin: 0 };

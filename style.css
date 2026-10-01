@@ -7106,8 +7106,8 @@ select optgroup {
 
 .gpd-system-cell {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -7131,7 +7131,22 @@ select optgroup {
   font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text-muted);
-  white-space: nowrap;
+}
+
+/* Étape sur deux lignes au plus large : l'étape, puis son détail (état actuel, pierres…) */
+.gpd-step-cell {
+  max-width: 300px;
+}
+
+.gpd-step-cell .gpd-next-step-name,
+.gpd-step-detail {
+  display: block;
+}
+
+.gpd-step-detail {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-dim);
 }
 
 .gpd-gain-val {

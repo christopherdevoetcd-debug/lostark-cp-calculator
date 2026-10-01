@@ -368,9 +368,10 @@ function buildMasterGpdData(charObj, isSupport, isEn) {
         whatItReads: `${m.from} · ${m.engraving}`,
         wherePutsYou: m.from,
         lastStep: '—',
-        nextStep: isEn
-          ? `${m.from} ➔ ${m.to} · ${formatNumber(m.odds)} uncut stones × ${m.stoneGold} g (faceting in silver, not counted)`
-          : `${m.from} ➔ ${m.to} · ${formatNumber(m.odds)} pierres non taillées × ${m.stoneGold} or (taille en argent, non comptée)`,
+        nextStep: `${m.from} ➔ ${m.to}`,
+        stepDetail: isEn
+          ? `${formatNumber(m.odds)} uncut stones × ${m.stoneGold} g (faceting in silver, not counted)`
+          : `${formatNumber(m.odds)} pierres non taillées × ${m.stoneGold} or (taille en argent, non comptée)`,
         category: 'stone'
       }));
     } else if (d.id === 'dyn_karma') {
@@ -402,7 +403,8 @@ function buildMasterGpdData(charObj, isSupport, isEn) {
         whatItReads: isEn ? `Accessories +${m.curPct.toFixed(2)}% ${unit}` : `Bijoux +${m.curPct.toFixed(2)}% ${unit}`,
         wherePutsYou: isEn ? 'Best ratio' : 'Meilleur ratio',
         lastStep: '—',
-        nextStep: isEn ? `${m.current} ➔ ${m.target} + dead line` : `${m.current} ➔ ${m.target} + ligne morte`,
+        nextStep: `➔ ${m.target}`,
+        stepDetail: isEn ? `now ${m.current} · + dead line` : `actuel ${m.current} · + ligne morte`,
         category: 'acc'
       }));
     }
@@ -746,7 +748,7 @@ function renderAdvisorView() {
                 <span class="gpd-read-text">${row.whatItReads}</span>
               </div>
             </td>
-            <td><span class="gpd-next-step-name">${row.nextStep}</span></td>
+            <td class="gpd-step-cell"><span class="gpd-next-step-name">${row.nextStep}</span>${row.stepDetail ? `<span class="gpd-step-detail">${row.stepDetail}</span>` : ''}</td>
             <td class="col-num">${formatNumber(row.cost)}</td>
             <td class="col-num gpd-gain-val">+${row.dmgGain.toFixed(2)} %</td>
             <td class="col-num col-rate">
