@@ -49,7 +49,7 @@ git -c safe.directory="$REPO" archive HEAD | tar -x -C "$WORK"
 cp "$POOL" "$WORK/data/"
 cd "$WORK"
 mkdir site
-cp ./*.js ./*.html ./*.css site/
+cp $(ls ./*.js | grep -vx ./server.js) ./*.html ./*.css site/
 cp -r images data js site/
 npx -y wrangler pages deploy site --project-name lostark-cp --commit-dirty=true --branch master 2>&1 | grep -E "Success|complete|ERROR|✘" || true
 echo "=== $(date '+%F %T') terminé"

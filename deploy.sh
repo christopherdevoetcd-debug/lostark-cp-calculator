@@ -20,7 +20,9 @@ for f in *.js js/*.js functions/api/market/prices.js; do node -c "$f"; done
 echo "Syntaxe JS : OK"
 
 echo "=== [2/4] Synchronisation CT 104 (Docker Nginx) ==="
-scp -q *.js *.html *.css root@192.168.1.104:/opt/lostark-cp/public/
+# Scripts du site : server.js (serveur Node local) n'est jamais publié
+SITE_JS=$(ls *.js | grep -vx server.js)
+scp -q $SITE_JS *.html *.css root@192.168.1.104:/opt/lostark-cp/public/
 scp -rq images data js root@192.168.1.104:/opt/lostark-cp/public/ 2>/dev/null || true
 # nginx.conf est monté seul dans le conteneur : réécrit en place (même inode), un scp ne serait pas vu
 ssh root@192.168.1.104 "cat > /opt/lostark-cp/nginx.conf" < nginx.conf
@@ -37,7 +39,7 @@ export NVM_DIR="$HOME/.nvm"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-cp *.js *.html *.css "$WORK/"
+cp $SITE_JS *.html *.css "$WORK/"
 cp -r images data js "$WORK/" 2>/dev/null || true
 
 npx -y wrangler pages deploy "$WORK" --project-name lostark-cp --commit-dirty=true --branch master
