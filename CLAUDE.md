@@ -120,6 +120,10 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
 - Mode évolution globale : table `CALIBRATION_DATA` appliquée au rapport CP du joueur ÷ table (seule la forme compte). Mesuré sur 68 profils : CP ÷ table médiane 1,06 (DPS) / 1,00 (support), dispersion 0,72-1,26.
 - Pièces Serka / Aegir lues une par une (`gear.serka`, ID 13462… / 13461…, `pieceIsSerka`) : les sets d'armures mixtes existent (2 profils sur 70). iLvl = moyenne des 6 pièces (Serka 1675 + 5 × affinage ; Aegir 1590 + 5 × affinage + avancé), exact sur les 70 profils. Affinage, avancé (pièces Aegir seulement), GPD, feuille de route, Benchmark et simulateur chiffrent chaque pièce sur sa propre recette.
 
+### Simulateur d'affinage (onglet 2)
+- Personnage importé : CP par `gearCpGain` (DPS et support : branches buff et défense), ramené au CP de base du simulateur ; coût pièce par pièce sur sa recette (Serka / Aegir), avancé sur les pièces Aegir seulement. Conseil calculé (`honingNextSteps`) : +1 sur chaque pièce depuis l'état simulé, CP marginal et coût attendu, classés par or / CP (cohérent avec le GPD : arme +19 ➔ +20 sur Kaarlach, 59 CP contre 58 au GPD).
+- Sans personnage : ancien barème par pièce (estimation) et rappel général, sans chiffres inventés.
+
 ### Battle Point des cœurs de la Grille d'Ark (DPS)
 - `data/ark-grid-bp.json` : table `battlePoint` du jeu (flux Maxroll, branche 1 = mode DPS), écrite par `node tools/fetch-maxroll-honing.mjs`. Par ID de cœur, valeur cumulée à 10 / 14 / 17 / 18 / 19 / 20 points en 0,01 % de dégâts (chaque partie du Battle Point est un multiplicateur 1 + bp ÷ 10 000). Les profils lostark.bible donnent les mêmes valeurs (parties type 29).
 - Gain d'un cœur (Benchmark, écart affiché) : jusqu'à 17 points = 100 × ln((1 + bp17) ÷ (1 + bp actuel)), pour le cœur réellement équipé (`getArkGridCoreIds`, repli sur `loadout.arkGridCores` sous 10 points). Pas de ligne si le rang du cœur ne va pas jusqu'à 17 ; cœurs absents de la table : ancien barème `getArkGridCoreBonus`.

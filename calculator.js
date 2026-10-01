@@ -2736,9 +2736,12 @@
       : computeGearIlvl(state.gear, state.advHoning);
     const diffIlvl = computedIlvl - baseIlvl;
 
-    if (simReal && role !== 'support') {
-      // DPS : le CP suit les dégâts (score loseii = K × exp(Σ gains / 100))
-      totalPieceCpDiff = baseCp * (Math.exp(simReal.gain / 100) - 1);
+    // Personnage importé : CP du modèle validé (gearCpGain : DPS, attaque de base ; support, branches buff et défense),
+    // ramené au CP de base du simulateur
+    const simProfileCp = simChar && ((simChar.rawProfile && simChar.rawProfile.raidCombatPower) || simChar.cp);
+    const simCpGain = simReal ? gearCpGain(simChar, simCtx, simReal, role === 'support') : null;
+    if (simCpGain !== null) {
+      totalPieceCpDiff = simCpGain * (simProfileCp > 0 ? baseCp / simProfileCp : 1);
     } else {
       for (const piece of ['weapon', 'head', 'shoulder', 'chest', 'pants', 'gloves']) {
         const dLevel = state.gear[piece] - baseGear[piece];
@@ -2810,7 +2813,8 @@
     }
 
     if (dom.simEstimatedGold) {
-      dom.simEstimatedGold.innerHTML = totalSimGold > 0 ? `${formatNumber(totalSimGold)} g <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">(Market Value)</span><br><span style="font-size:15px; color:#ffb13b;">${formatNumber(totalRawGold)} g</span> <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">(Raw Gold only)</span>` : '0 g';
+      const enG = isEnLang();
+      dom.simEstimatedGold.innerHTML = totalSimGold > 0 ? `${formatNumber(totalSimGold)} g <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">(${enG ? 'gold + materials at market price' : 'or + matériaux au prix du marché'})</span><br><span style="font-size:15px; color:#ffb13b;">${formatNumber(totalRawGold)} g</span> <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">(${enG ? 'gold fee only' : 'or des tentatives seul'})</span>` : '0 g';
     }
 
     if (dom.simGoldPerCp) {
@@ -2848,8 +2852,9 @@
       if (el) el.textContent = `+${state.gear[piece]}`;
     }
 
-    // Conseils personnalisés
-    updateHoningAdvice(diffCp, totalSimGold);
+    // Conseils : calculés sur le personnage importé (prochain palier le plus rentable), sinon règles générales
+    const nextSteps = simCtx ? honingNextSteps(simChar, simCtx, simPieces, role === 'support', simProfileCp > 0 ? baseCp / simProfileCp : 1) : null;
+    updateHoningAdvice(diffCp, totalSimGold, nextSteps);
     if (dom.charCardIlvl) dom.charCardIlvl.textContent = `${computedIlvl.toFixed(2)} iLvl`;
     if (dom.charCardCp) dom.charCardCp.textContent = `${formatNumber(predictedCp)} CP`;
     if (dom.charCardWeapon) dom.charCardWeapon.textContent = `+${state.gear.weapon}`;
@@ -2863,7 +2868,27 @@
     if (dom.charCardAdv) dom.charCardAdv.textContent = `+${state.advHoning}`;
   }
 
-  function updateHoningAdvice(diffCp = 0, totalSimGold = 0) {
+  /**
+   * Simulateur : +1 sur chaque pièce depuis l'état simulé, CP marginal du modèle (gearCpGain) et coût attendu
+   * (recette de la pièce, prix du marché), classés par or / CP. null sans données.
+   */
+  function honingNextSteps(charObj, ctx, pieces, isSupport, cpScale) {
+    const cpOf = list => { const r = gearDpsGain(ctx, list); return r ? gearCpGain(charObj, ctx, r, isSupport) : null; };
+    const now = cpOf(pieces);
+    if (now === null) return null;
+    const out = [];
+    pieces.forEach((p, i) => {
+      if (p.toLvl >= 25) return;
+      const cost = getLevelCost(p.slot === 'weapon' ? 'weapon' : 'armor', p.toLvl, p.isSerka ? 'serka' : 'aegir').totalValue;
+      const next = cpOf(pieces.map((q, j) => (j === i ? Object.assign({}, q, { toLvl: q.toLvl + 1 }) : q)));
+      if (!(cost > 0) || next === null) return;
+      const cp = (next - now) * cpScale;
+      if (cp > 0) out.push({ slot: p.slot, from: p.toLvl, to: p.toLvl + 1, cp, cost, ratio: cost / cp });
+    });
+    return out.sort((a, b) => a.ratio - b.ratio);
+  }
+
+  function updateHoningAdvice(diffCp = 0, totalSimGold = 0, nextSteps = null) {
     const g = state.gear;
     const role = state.role;
     const isEn = isEnLang();
@@ -2877,39 +2902,26 @@
       </div>`;
     }
 
-    if (role === 'dps') {
-      if (g.weapon < 20) {
-        advice = isEn
-          ? `${simPrefix}Your <strong>Weapon (+${g.weapon})</strong> is your primary optimization target. Pushing it toward <strong>+20</strong> generates the largest boost to Weapon Power and Combat Power.`
-          : `${simPrefix}Ton <strong>Arme (+${g.weapon})</strong> est ton levier d'optimisation majeur. La pousser vers <strong>+20</strong> génère le plus gros boost de Puissance d'Attaque d'Arme et de Combat Power.`;
-      } else if (g.weapon >= 20 && (g.chest < 18 || g.pants < 18)) {
-        advice = isEn
-          ? `${simPrefix}Your weapon is already at a high tier (+${g.weapon}). To optimize gold, prioritizing your <strong>Chest (+${g.chest})</strong> and <strong>Pants (+${g.pants})</strong> to <strong>+18 / +19</strong> is most cost-effective for MainStat.`
-          : `${simPrefix}Ton arme est déjà à un très haut niveau (+${g.weapon}). Pour optimiser tes golds, monter en priorité ton <strong>Torse (+${g.chest})</strong> et <strong>Pantalon (+${g.pants})</strong> à <strong>+18 / +19</strong> sera le plus rentable en Force / MainStat.`;
-      } else if (g.weapon >= 23) {
-        advice = isEn
-          ? `${simPrefix}Weapon at <strong>+${g.weapon}</strong>. At this level, each tap (+24, +25) adds large Weapon Power gains (~<strong>+60 to +75 CP per tap</strong>), but at high cost. Ensure your armors are all at +18/+19 to balance your base.`
-          : `${simPrefix}Arme à <strong>+${g.weapon}</strong>. À ce niveau, chaque palier (+24, +25) apporte de fortes hausses de Puissance d'Arme (~<strong>+60 à +75 CP par tap</strong>), mais à un coût très élevé. Assure-toi que tes armures soient toutes à +18/+19 pour consolider ta base.`;
-      } else {
-        advice = isEn
-          ? `${simPrefix}Balanced honing distribution (+${g.weapon} weapon, armors +${Math.min(g.head, g.chest, g.pants)}). Continue elevating remaining armors evenly toward +18 / +20.`
-          : `${simPrefix}Répartition d'affinage équilibrée (+${g.weapon} arme, armures +${Math.min(g.head, g.chest, g.pants)}). Continue d'élever uniformément tes armures vers +18 / +20.`;
-      }
-    } else {
-      if (g.chest < 16 || g.pants < 16) {
-        advice = isEn
-          ? `${simPrefix}As a Support, your <strong>Chest (+${g.chest})</strong> and <strong>Pants (+${g.pants})</strong> are vital for Vitality and MainStat scaling your Shields and Heals. Hone them to +16 / +18 first.`
-          : `${simPrefix}En Support, le <strong>Torse (+${g.chest})</strong> et le <strong>Pantalon (+${g.pants})</strong> sont vitaux pour la Vitalité et la Force qui augmentent tes Shields et Soins. Monte-les en priorité à +16 / +18.`;
-      } else if (g.weapon < 18) {
-        advice = isEn
-          ? `${simPrefix}Pushing your <strong>Weapon (+${g.weapon})</strong> to +18 (+29 CP, ~56k gold) will strongly increase your base Attack Power, directly strengthening the attack buff granted to allies.`
-          : `${simPrefix}Pousser ton <strong>Arme (+${g.weapon})</strong> vers +18 (+29 CP, ~56k gold) augmentera fortement ta Puissance d'Attaque de base, renforçant directement le buff d'attaque que tu donnes à tes alliés.`;
-      } else {
-        advice = isEn
-          ? `${simPrefix}Very strong Support progression (+${g.weapon} weapon, armors +${Math.min(g.head, g.chest, g.pants)}). Push remaining pieces toward +18 / +20.`
-          : `${simPrefix}Très bonne progression Support (+${g.weapon} arme, armures +${Math.min(g.head, g.chest, g.pants)}). Élève tes pièces restantes vers +18 / +20.`;
-      }
+    if (nextSteps && nextSteps.length) {
+      const names = isEn
+        ? { weapon: 'Weapon', head: 'Head', shoulder: 'Shoulders', chest: 'Chest', pants: 'Pants', gloves: 'Gloves' }
+        : { weapon: 'Arme', head: 'Tête', shoulder: 'Épaules', chest: 'Torse', pants: 'Jambes', gloves: 'Gants' };
+      const fmt = st => `${names[st.slot]} +${st.from} ➔ +${st.to} : +${formatNumber(Math.round(st.cp))} CP ${isEn ? 'for' : 'pour'} ${formatNumber(Math.round(st.cost))} ${isEn ? 'g' : 'or'} (${formatNumber(Math.round(st.ratio))} ${isEn ? 'g' : 'or'} / CP)`;
+      const best = nextSteps[0];
+      const others = nextSteps.slice(1).map(fmt).join('<br>');
+      advice = `${simPrefix}${isEn ? 'Most cost-effective next step from this simulation' : 'Prochain palier le plus rentable depuis cette simulation'} : <strong>${fmt(best)}</strong>.` +
+        (others ? `<div style="margin-top: 6px; font-size: 13px; color: var(--text-muted);">${others}</div>` : '') +
+        `<div style="margin-top: 6px; font-size: 12px; color: var(--text-muted);">${isEn
+          ? 'Your real gear, game recipes and market prices (expected cost with artisan energy). CP from base attack power' + (role === 'support' ? ' and Vitality.' : '.')
+          : 'Ton vrai stuff, recettes du jeu et prix du marché (coût attendu avec l\'énergie d\'artisan). CP par l\'attaque de base' + (role === 'support' ? ' et la Vitalité.' : '.')}</div>`;
+      dom.honingAdviceText.innerHTML = advice;
+      return;
     }
+
+    // Sans personnage importé : rappel général (mesuré sur 68 profils réels), sans chiffres inventés
+    advice = isEn
+      ? `${simPrefix}Each +1 is worth the same item level whatever the piece. The weapon gives about 5 times more CP per level than an armor piece, but costs several times more gold. <strong>Import your character</strong> to get the real CP and the most cost-effective next step, piece by piece.`
+      : `${simPrefix}Chaque +1 vaut le même iLvl quelle que soit la pièce. L'arme rapporte environ 5 fois plus de CP par niveau qu'une armure, mais coûte plusieurs fois plus d'or. <strong>Importe ton personnage</strong> pour le vrai CP et le palier le plus rentable, pièce par pièce.`;
 
     dom.honingAdviceText.innerHTML = advice;
   }
