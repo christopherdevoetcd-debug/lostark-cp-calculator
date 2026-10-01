@@ -335,7 +335,6 @@ const dom = {
   // Bannière Visuelle du Personnage Actif
   activeCharacterCard: document.getElementById('activeCharacterCard'),
   charAvatarImg: document.getElementById('charAvatarImg'),
-  charAvatarRoleBadge: document.getElementById('charAvatarRoleBadge'),
   charCardName: document.getElementById('charCardName'),
   charCardClass: document.getElementById('charCardClass'),
   charCardServer: document.getElementById('charCardServer'),

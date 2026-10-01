@@ -694,13 +694,6 @@ function updateActiveCharacterCard(key, customProfile = null) {
     dom.activeCharacterCard.classList.toggle('role-dps', !isSupport);
   }
 
-  if (dom.charAvatarRoleBadge) {
-    const cName = p.className || (isSupport ? 'Paladin' : 'Shadowhunter');
-    const sigilSrc = getClassIconUrl(cName, p.role);
-    const roleLabel = isSupport ? 'Support' : 'DPS';
-    dom.charAvatarRoleBadge.innerHTML = `<img class="class-sigil-badge" src="${sigilSrc}" alt=""> <span>${roleLabel}</span>`;
-  }
-
   // Gestion de l'avatar du héros (priorité au custom upload local puis live / CDN officiel)
   const savedCustom = localStorage.getItem('char_custom_avatar_' + charKey);
   const isDemo = Object.prototype.hasOwnProperty.call(DEFAULT_AVATARS, charKey);
