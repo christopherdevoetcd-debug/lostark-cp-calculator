@@ -10194,15 +10194,11 @@
       }
     }
 
-    // 1. Si spec explicite valide déjà définie sur l'objet
-    if (ch.spec && !['Standard', 'Standard T4', 'Unknown', ''].includes(ch.spec)) {
-      return ch.spec;
-    }
-
     const raw = ch.rawProfile || (ch.loadout ? ch : null);
     const normClass = normalizeClassName(ch.className || (ch.loadout && ch.loadout.classId) || (raw && raw.loadout && raw.loadout.classId) || (raw && raw.className) || '').toLowerCase();
 
-    // 2. Détection via Ark Passive (Enlightenment nodes)
+    // 1. Nœud d'Éclairage de palier 1 du profil (table du jeu) : prime sur une spé enregistrée,
+    // qui peut venir de l'ancienne table fausse (rosters et références sauvegardés avant).
     const arkPass = ch.arkPassive || (raw && (raw.arkPassive || (raw.loadout && raw.loadout.arkPassive)));
     if (arkPass && Array.isArray(arkPass.enlightenment)) {
       for (const node of arkPass.enlightenment) {
@@ -10210,6 +10206,11 @@
           return BIBLE_ENLIGHTENMENT_SPECS[node.id];
         }
       }
+    }
+
+    // 2. Spé explicite déjà définie sur l'objet
+    if (ch.spec && !['Standard', 'Standard T4', 'Unknown', ''].includes(ch.spec)) {
+      return ch.spec;
     }
 
     // 2b. Détection dynamique via les statistiques de combat (Spec vs Swift/Crit)
@@ -15669,6 +15670,14 @@
     return suggestedPeersState.poolPromise;
   }
 
+  // Noms d'une même spé selon la source (lostark.bible, Maxroll, anciens noms de l'appli)
+  const SPEC_ALIASES = { 'supreme art': 'energy overflow', 'tactical bullet': 'enhanced weapon', 'asura destruction': "asura's path",
+    "berserker's technique": 'berserker technique', 'knight of light': 'shining knight' };
+  function specKey(spec) {
+    const k = (spec || '').toLowerCase().trim();
+    return SPEC_ALIASES[k] || k;
+  }
+
   function suggestedPeersKey(player) {
     return `${(player.name || '').toLowerCase()}|${Math.round(player.cp || 0)}|${player.role || ''}`;
   }
@@ -15680,12 +15689,14 @@
     const pName = (player.name || '').toLowerCase().trim();
     const pIlvl = player.ilvl || 1700;
     const pCp = player.cp || 0;
-    const pSpec = (getCharacterSpecName(player) || '').toLowerCase();
+    const pSpec = specKey(getCharacterSpecName(player));
+    const specKnown = !!pSpec && !['standard', 'standard t4', 'unknown'].includes(pSpec);
     const regMatch = /\((CE|NA|NAE|NAW|SA)\)/i.exec(player.server || '');
     const pRegion = (player.region || (regMatch && regMatch[1]) || 'CE').toUpperCase().replace(/^NA[EW]$/, 'NA');
 
     // Classement des candidats. Le CP suit l'iLvl : d'abord la fenêtre [-8 ; +10], puis plus haut,
-    // en dernier plus bas ; à l'intérieur, iLvl le plus proche, même spé et même région.
+    // en dernier plus bas ; à l'intérieur, iLvl le plus proche et même région. Même spé d'abord (même gameplay,
+    // autres gravures et stats) ; la spé du réservoir date du raid relevé, elle est revérifiée sur la fiche.
     // La fenêtre descend à -8 car l'iLvl du réservoir date du raid relevé : les joueurs ont progressé depuis.
     const candidates = (pool[cls] || [])
       .filter(c => c.role === role && c.name.toLowerCase() !== pName)
@@ -15693,13 +15704,14 @@
         const d = c.ilvl - pIlvl;
         const group = d >= -8 && d <= 10 ? 0 : (d > 10 ? 1 : 2);
         let score = group * 1000 + Math.abs(d);
-        if ((c.spec || '').toLowerCase() !== pSpec) score += 3;
+        if (specKnown && specKey(c.spec) !== pSpec) score += 10000;
         if ((c.region || '').toUpperCase() !== pRegion) score += 2;
         return { ...c, score };
       })
       .sort((a, b) => a.score - b.score);
 
-    const above = [];
+    const above = [];       // même spé (ou spé inconnue)
+    const otherSpec = [];   // autre spé : seulement si aucun joueur de la même spé n'est trouvé
     let probed = 0;
     // 2 fiches à la fois : au-delà, lostark.bible refuse une partie des requêtes simultanées.
     // Une seconde tentative après une courte pause rattrape les refus ponctuels.
@@ -15722,12 +15734,15 @@
         if (normalizeClassName(b.className || '').toLowerCase().replace(/[^a-z]/g, '') !== cls) return;
         if ((b.role || role) !== role || (b.name || '').toLowerCase() === pName) return;
         if (hasMixedRaidProfile(b, role) || hasIncompleteBattlePoint(b, role)) return;
-        if ((b.cp || 0) > pCp) above.push(b);
+        if ((b.cp || 0) <= pCp) return;
+        if (specKnown && specKey(getCharacterSpecName(b)) !== pSpec) otherSpec.push(b);
+        else above.push(b);
       });
     }
     // Les plus proches au-dessus : faible écart de CP, puis iLvl proche
-    above.sort((a, b) => ((a.cp - pCp) - (b.cp - pCp)) || (Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl)));
-    const peers = above.slice(0, SUGGESTED_PEER_COUNT);
+    const byGap = (a, b) => ((a.cp - pCp) - (b.cp - pCp)) || (Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
+    const sameSpecFound = above.length > 0;
+    const peers = (sameSpecFound ? above : otherSpec).sort(byGap).slice(0, SUGGESTED_PEER_COUNT);
 
     // Disponibles aussi dans le menu des références et pour l'auto-match
     if (!benchmarkState.searchedTargets) benchmarkState.searchedTargets = [];
@@ -15735,7 +15750,7 @@
       benchmarkState.searchedTargets = benchmarkState.searchedTargets.filter(t => t.id !== b.id);
       benchmarkState.searchedTargets.push(b);
     });
-    return { peers, probed, poolSize: candidates.length };
+    return { peers, probed, poolSize: candidates.length, spec: specKnown ? getCharacterSpecName(player) : '', otherSpec: specKnown && !sameSpecFound && peers.length > 0 };
   }
 
   function renderSuggestedPeers(player, target) {
@@ -15743,15 +15758,15 @@
     if (!box || !player) return;
     const isEn = isEnglishLang();
     const st = suggestedPeersState.byPlayer[suggestedPeersKey(player)];
-    const title = `<div class="bench-suggested-title">${isEn ? 'Suggested players — same class, slightly higher CP' : 'Joueurs proposés — même classe, CP légèrement supérieur'}</div>`;
+    const title = `<div class="bench-suggested-title">${isEn ? 'Suggested players — same class and spec, slightly higher CP' : 'Joueurs proposés — même classe et même spé, CP légèrement supérieur'}</div>`;
     if (!st || st.loading) {
       box.innerHTML = `${title}<div class="bench-suggested-note">${isEn ? 'Searching live profiles on lostark.bible…' : 'Recherche de profils en direct sur lostark.bible…'}</div>`;
       return;
     }
     if (!st.peers.length) {
       box.innerHTML = `${title}<div class="bench-suggested-note">${isEn
-        ? `No player of this class with a higher CP was found among ${st.probed} live profiles checked. Use the search bar to pick one.`
-        : `Aucun joueur de cette classe avec un CP supérieur parmi les ${st.probed} profils vérifiés en direct. Utilise la barre de recherche.`}</div>`;
+        ? `No player of this class and spec with a higher CP was found among ${st.probed} live profiles checked. Use the search bar to pick one.`
+        : `Aucun joueur de cette classe et de cette spé avec un CP supérieur parmi les ${st.probed} profils vérifiés en direct. Utilise la barre de recherche.`}</div>`;
       return;
     }
     const pCp = player.cp || 0;
@@ -15763,7 +15778,11 @@
           <span class="bsp-cp">${formatNumber(Math.round(b.cp))} CP <span class="bsp-delta">+${formatNumber(Math.round(b.cp - pCp))}</span></span>
         </button>`;
     }).join('');
-    const note = st.peers.length < SUGGESTED_PEER_COUNT
+    const note = st.otherSpec
+      ? `<div class="bench-suggested-note">${isEn
+          ? `No ${escapeHtml(st.spec)} player above your CP among ${st.probed} live profiles checked: these players use the other spec (different engravings and stats).`
+          : `Aucun joueur ${escapeHtml(st.spec)} au-dessus de ton CP parmi les ${st.probed} profils vérifiés en direct : ces joueurs jouent l'autre spé (gravures et stats différentes).`}</div>`
+      : st.peers.length < SUGGESTED_PEER_COUNT
       ? `<div class="bench-suggested-note">${isEn
           ? `Only ${st.peers.length} player(s) above your CP among ${st.probed} live profiles checked.`
           : `Seulement ${st.peers.length} joueur(s) au-dessus de ton CP parmi les ${st.probed} profils vérifiés en direct.`}</div>`
@@ -16011,7 +16030,7 @@
     const pAvatar = getCharacterFaceAvatar(player);
     const tAvatar = target.avatarUrl || getClassIconUrl(target.className, target.role);
     const pSpec = getCharacterSpecName(player);
-    const tSpec = target.spec || pSpec;
+    const tSpec = getCharacterSpecName(target) || pSpec;
 
     // 3. Rendu Hero Face à Face
     heroCard.innerHTML = `

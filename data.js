@@ -179,101 +179,70 @@ window.CLASS_DEFAULT_SPECS = {
     dimensionalist: { default: "Time Wielder", alt: "Space Wielder", keys: ["time wielder", "space wielder", "dimensionalist", "dimension_master", "dimension master", "dimensionmaster", "dimension"] }
   };;
 
+// Nœud d’Éclairage de palier 1 (groupe 1, tier 0) qui fixe la spé : table arkPassives du flux Maxroll
+// (assets-ng.maxroll.gg/laplanner/game/stats.json), nom = subName du jeu, sinon name ; « Supreme Art » et
+// « Tactical Bullet » écrits avec les noms de CLASS_DEFAULT_SPECS (Energy Overflow, Enhanced Weapon).
 window.BIBLE_ENLIGHTENMENT_SPECS = {
-    // Paladin
-    2360010: 'Blessed Aura',
-    2360020: 'Judgment',
-    // Bard
-    2370010: 'Desperate Salvation',
-    2370020: 'True Courage',
-    // Artist
-    2440010: 'Full Bloom',
-    2440020: 'Recurrence',
-    // Slayer
-    2450010: 'Predator',
-    2450020: 'Punisher',
-    // Shadowhunter
-    2400010: 'Demonic Impulse',
-    2400020: 'Perfect Suppression',
-    // Souleater
-    2460010: 'Full Moon Harvester',
-    2460020: "Night's Edge",
-    // Breaker
-    2470010: 'Brawl King Storm',
-    2470020: 'Asura Destruction',
-    // Valkyrie
-    2480100: 'Knight of Light',
-    2480200: 'Liberator',
-    // Soulfist
-    2240000: 'Energy Overflow',
-    2240100: 'Robust Spirit',
-    // Scrapper
-    2230000: 'Ultimate Skill: Taijutsu',
-    2230100: 'Shock Training',
-    // Wardancer
-    2220000: 'First Intention',
-    2220100: 'Esoteric Skill Enhancement',
-    // Berserker
-    2160010: 'Mayhem',
-    2160020: "Berserker's Technique",
-    // Destroyer
-    2170010: 'Rage Hammer',
-    2170020: 'Gravity Training',
-    // Gunlancer
-    2180010: 'Combat Readiness',
-    2180020: 'Lone Knight',
-    // Glaivier
-    2250010: 'Pinnacle',
-    2250020: 'Control',
-    // Striker
-    2260010: 'Deathblow',
-    2260020: 'Esoteric Flurry',
-    // Deadeye
-    2270010: 'Enhanced Weapon',
-    2270020: 'Pistoleer',
-    // Gunslinger
-    2280010: 'Peacemaker',
-    2280020: 'Time to Hunt',
-    // Artillerist
-    2290010: 'Barrage Enhancement',
-    2290020: 'Firepower Enhancement',
-    // Sharpshooter
-    2300010: 'Death Strike',
-    2300020: 'Loyal Companion',
-    // Machinist
-    2310010: 'Evolutionary Legacy',
-    2310020: 'Arthetinean Skill',
-    // Sorceress
-    2380010: 'Igniter',
-    2380020: 'Reflux',
-    // Deathblade
-    2390010: 'Surge',
-    2390020: 'Remaining Energy',
-    // Arcanist
-    2410010: 'Grace of the Empress',
-    2410020: 'Order of the Emperor',
-    // Summoner
-    2420010: 'Master Summoner',
-    2420020: 'Communication Overflow',
-    // Reaper
-    2430010: 'Hunger',
-    2430020: 'Lunar Voice',
-    // Aeromancer
-    2490010: 'Wind Fury',
-    2490020: 'Drizzle',
-    // Dimensionalist
-    220500100: 'Space Wielder',
-    220500300: 'Space Wielder',
-    220500600: 'Space Wielder',
-    220500700: 'Space Wielder',
-    220501000: 'Space Wielder',
-    220501100: 'Space Wielder',
-    220500000: 'Time Wielder',
-    220500200: 'Time Wielder',
-    220500400: 'Time Wielder',
-    220500500: 'Time Wielder',
-    220500800: 'Time Wielder',
-    220500900: 'Time Wielder'
+    2160000: "Berserker Technique",
+    2160010: "Mayhem",
+    2180000: "Rage Hammer",
+    2180010: "Gravity Training",
+    2170000: "Lone Knight",
+    2170010: "Combat Readiness",
+    2360000: "Judgment",
+    2360010: "Blessed Aura",
+    2450000: "Punisher",
+    2450010: "Predator",
+    2480000: "Shining Knight",
+    2480100: "Liberator",
+    2190000: "Grace of the Empress",
+    2190100: "Order of the Emperor",
+    2200000: "Communication Overflow",
+    2200100: "Master Summoner",
+    2210000: "Desperate Salvation",
+    2210100: "True Courage",
+    2370000: "Igniter",
+    2370100: "Reflux",
+    2220000: "First Intention",
+    2220100: "Esoteric Skill Enhancement",
+    2230000: "Ultimate Skill: Taijutsu",
+    2230100: "Shock Training",
+    2240000: "Energy Overflow",
+    2240100: "Robust Spirit",
+    2340000: "Control",
+    2340100: "Pinnacle",
+    2390000: "Esoteric Flurry",
+    2390100: "Deathblow",
+    2470000: "Brawl King Storm",
+    2470100: "Asura's Path",
+    2250000: "Surge",
+    2250600: "Remaining Energy",
+    2270000: "Demonic Impulse",
+    2270600: "Perfect Suppression",
+    2260000: "Lunar Voice",
+    2260600: "Hunger",
+    2460000: "Full Moon Harvester",
+    2460600: "Night's Edge",
+    2280000: "Death Strike",
+    2280100: "Loyal Companion",
+    2290000: "Enhanced Weapon",
+    2290100: "Pistoleer",
+    2300000: "Barrage Enhancement",
+    2300100: "Firepower Enhancement",
+    2350000: "Evolutionary Legacy",
+    2350100: "Arthetinean Skill",
+    2380000: "Peacemaker",
+    2380100: "Time to Hunt",
+    2310000: "Full Bloom",
+    2310600: "Recurrence",
+    2320000: "Wind Fury",
+    2320600: "Drizzle",
+    2330000: "Ferality",
+    2330100: "Phantom Beast Awakening",
+    220500000: "Time Wielder",
+    220500100: "Space Wielder",
+    2490000: "Hellfire Successor",
+    2490100: "Dreadful Roar"
   };;
 
 window.CLASS_NAME_MAP = {
