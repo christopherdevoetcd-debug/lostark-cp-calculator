@@ -58,6 +58,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
   - Pierre d'aptitude : taille exacte (`getAbilityStoneUpgrade`), pierre non taillée = 9 pheons ; l'or = pierres achetées (la taille coûte de l'argent, non comptée). Pas de ligne au-delà de 5 000 pierres (`STONE_GPD_MAX_STONES`) : un 10/x s'achète taillé à l'hôtel des ventes. PA de base +1,5 % (5 niveaux au total) : n'importe quel ordre compte (`stoneLevelSumProbability`, 1 pierre sur 725, identique à Loseii) ; support : gain par le canal ap de `supportContribution` (Loseii : +0,46 % de buff), jamais le modèle DPS.
   - Prix hors marché réglables au-dessus du tableau (`lostark_gpd_prices` en localStorage) : pheon et bracelet 90/90 non relancé ; défauts = prix de Loseii ; leurs achats sont repris au prorata (`loseiiRepriceRatio`).
 - Le Smart Advisor (`buildMasterGpdData`) reprend les mêmes lignes ; une ligne sans traduction y est ignorée.
+- Tableau « Pièce par pièce » : lecture de chaque bijou par `accessoryLadderLabel` (roll des 2 lignes principales du rôle, ligne plate, lignes mortes) ; bracelet par `getBraceletStats`, même note que la carte. Aucune valeur de repli inventée (« — »).
 
 ---
 

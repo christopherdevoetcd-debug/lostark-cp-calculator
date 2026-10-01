@@ -5643,6 +5643,35 @@
     return rows;
   }
 
+  /**
+   * Lecture d'un bijou à la manière de l'échelle de Loseii : roll des 2 lignes principales du rôle (« high/— »),
+   * ligne plate (PA / puissance d'arme) et nombre de lignes mortes, d'après les vraies valeurs (getAccessoryLineKey).
+   */
+  function accessoryLadderLabel(rolls, slot, isSupport, isEn) {
+    const role = isSupport ? 'support' : 'dps';
+    const prim = ACC_MAIN_LINES[role][accessoryKind(slot)];
+    const tierOf = (key, amount) => {
+      const t = ACC_LINE_TIERS[key];
+      if (!t) return null;
+      let best = 0;
+      t.forEach((v, i) => { if (Math.abs(v - amount) < Math.abs(t[best] - amount)) best = i; });
+      return ['low', 'mid', 'high'][best];
+    };
+    const found = {};
+    const flats = [];
+    let dead = 0;
+    rolls.forEach(st => {
+      const { key, amount } = getAccessoryLineKey(st);
+      if (prim.includes(key)) found[key] = tierOf(key, amount);
+      else if (key === 'apFlat' || key === 'wpFlat') flats.push(`${isEn ? (key === 'apFlat' ? 'Atk.' : 'Wpn') : (key === 'apFlat' ? 'PA' : 'arme')} ${tierOf(key, amount)}`);
+      else dead++;
+    });
+    const parts = [prim.map(k => found[k] || '—').join('/')];
+    parts.push(flats.length ? `${isEn ? "flat" : "plate"} ${flats.join(", ")}` : (isEn ? "no flat" : "sans ligne plate"));
+    if (dead) parts.push(isEn ? `${dead} dead` : `${dead} morte${dead > 1 ? 's' : ''}`);
+    return parts.join(' · ');
+  }
+
   function buildPieceByPieceData(charObj, isSupport, isEn) {
     if (!charObj) return [];
     const cKey = (charObj.id || charObj.name || '').toLowerCase().trim();
@@ -5658,11 +5687,11 @@
       || [];
 
     const slotConfigs = [
-      { slot: 'neck', name: isEn ? 'Necklace' : 'Collier', icon: '', fallbackLadder: 'mid/high · no flat · low stat' },
-      { slot: 'ear1', name: isEn ? 'Earring 1' : 'Boucle d\'oreille 1', icon: '', fallbackLadder: 'mid/high · no flat' },
-      { slot: 'ear2', name: isEn ? 'Earring 2' : 'Boucle d\'oreille 2', icon: '', fallbackLadder: 'mid/high · no flat · low stat' },
-      { slot: 'finger1', name: isEn ? 'Ring 1' : 'Anneau 1', icon: '', fallbackLadder: 'high/mid · no flat · mid stat' },
-      { slot: 'finger2', name: isEn ? 'Ring 2' : 'Anneau 2', icon: '', fallbackLadder: 'high/mid · no flat · mid stat' }
+      { slot: 'neck', name: isEn ? 'Necklace' : 'Collier', icon: '' },
+      { slot: 'ear1', name: isEn ? 'Earring 1' : 'Boucle d\'oreille 1', icon: '' },
+      { slot: 'ear2', name: isEn ? 'Earring 2' : 'Boucle d\'oreille 2', icon: '' },
+      { slot: 'finger1', name: isEn ? 'Ring 1' : 'Anneau 1', icon: '' },
+      { slot: 'finger2', name: isEn ? 'Ring 2' : 'Anneau 2', icon: '' }
     ];
 
     const result = [];
@@ -5672,18 +5701,13 @@
 
     slotConfigs.forEach(cfg => {
       const item = (pAccItems && pAccItems.length > 0) ? pAccItems.find(i => i.slot === cfg.slot) : null;
-      let ladderStr = cfg.fallbackLadder;
+      let ladderStr = '—';
       const lines = [];
 
       if (item && item.data && Array.isArray(item.data.stats)) {
         const rolls = item.data.stats.filter(st => st.base === false);
-        let highs = 0, mids = 0, lows = 0, deads = 0;
         rolls.forEach(r => {
           const dec = decodeAccessoryStat(r, cfg.slot, isSupport, isEn);
-          if (dec.isDead) deads++;
-          else if (dec.rollTier === 'passif' || dec.rollTier === 'high') highs++;
-          else if (dec.rollTier === 'mid') mids++;
-          else lows++;
 
           lines.push({
             text: dec.text,
@@ -5692,15 +5716,7 @@
           });
         });
 
-        if (rolls.length > 0) {
-          const parts = [];
-          if (highs > 0 && mids > 0) parts.push('high/mid');
-          else if (highs > 0) parts.push('high');
-          else if (mids > 0) parts.push('mid');
-          parts.push('no flat');
-          if (lows > 0) parts.push('low stat');
-          ladderStr = parts.join(' · ');
-        }
+        if (rolls.length > 0) ladderStr = accessoryLadderLabel(rolls, cfg.slot, isSupport, isEn);
       } else {
         const pieceKeyword = cfg.slot === 'neck' ? 'collier'
           : (cfg.slot === 'ear1' ? 'boucle d\'oreille #1'
