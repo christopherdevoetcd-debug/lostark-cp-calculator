@@ -53,6 +53,11 @@ export function loadEncounter(db, id) {
       engravings: unpack(r.engravings) || [], arkPassive: unpack(r.ark_passive_data) || null,
       skills: unpack(r.skills) || {}, damageStats: unpack(r.damage_stats) || {}, skillStats: unpack(r.skill_stats) || {},
     }));
+  // Attaques du boss : chaque utilisation datée (castLog) et dégâts totaux infligés aux joueurs par attaque.
+  const bossAttacks = db.prepare(`SELECT skills FROM entity WHERE encounter_id = ? AND entity_type = 'BOSS'`).all(id)
+    .flatMap(r => Object.values(unpack(r.skills) || {}))
+    .filter(s => s.totalDamage > 0 && s.castLog?.length)
+    .map(s => ({ id: s.id, totalDamage: s.totalDamage, hits: s.hits || 0, castLog: s.castLog }));
   return {
     // durationMs = durée affichée par LOA Logs, qui retire certains passages (ex. Kazeros) ; timelineMs = chronologie
     // complète des utilisations et des morts, jusqu'au dernier paquet de combat.
@@ -60,7 +65,7 @@ export function loadEncounter(db, id) {
     timelineMs: Math.max(p.duration, (e.last_combat_packet || 0) - p.fight_start),
     localPlayer: p.local_player, bibleId: p.upstream_id || null,
     buffs: unpack(e.buffs) || {}, debuffs: unpack(e.debuffs) || {}, misc: unpack(e.misc) || {},
-    shieldBuffs: unpack(e.applied_shield_buffs) || {},
+    shieldBuffs: unpack(e.applied_shield_buffs) || {}, bossAttacks,
     players,
   };
 }

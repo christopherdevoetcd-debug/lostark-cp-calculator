@@ -43,7 +43,7 @@ for (const [i, id] of ids.entries()) {
       apOverlapPerMin: sd ? sd.apOverlapMs / 1000 / minutes : null,
       apGapPerMin: sd ? sd.apGapMs / 1000 / minutes : null,
       brandGapPerMin: sd ? sd.brandGapMs / 1000 / minutes : null,
-      shieldEfficiency: sd?.shields.efficiency ?? null, shieldProtected: sd?.shields.protectedShare ?? null,
+      shieldEfficiency: sd?.shields.efficiency ?? null, shieldProtected: sd?.shields.protectedShare ?? null, shieldBig: sd?.shields.bigShielded ?? null,
       shieldList: sd ? sd.shields.list.map(x => ({ id: x.id, eff: x.efficiency, given: x.given })) : [],
       skills: a.skills.filter(s => s.casts).map(s => ({ id: s.id, name: s.name, cpm: s.cpm, share: s.share, fast: s.fastIntervalMs, gemCd: s.gemCooldown })),
       build: a.build,
@@ -103,7 +103,7 @@ function shieldRef(rs) {
   for (const r of rs) for (const s of r.shieldList || []) { if (!per.has(s.id)) per.set(s.id, []); per.get(s.id).push(s.eff); }
   const q = f => toQuantiles(rs.map(r => r[f]).filter(x => x != null));
   return {
-    efficiency: q('shieldEfficiency'), protectedShare: q('shieldProtected'),
+    efficiency: q('shieldEfficiency'), protectedShare: q('shieldProtected'), bigShielded: q('shieldBig'),
     byShield: Object.fromEntries([...per].filter(([, v]) => v.length >= 5).map(([id, v]) => [id, { n: v.length, efficiency: toQuantiles(v) }])),
   };
 }

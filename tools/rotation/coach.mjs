@@ -4,7 +4,7 @@
 //
 // Conseil = { kind, gainPct?, title, what, why, how: [lignes], moments: [{ t, text }] } dans la langue demandée.
 
-import { percentileRank, KEY_SKILL_MIN_SHARE, KEY_SKILL_MIN_USAGE } from './metrics.mjs';
+import { percentileRank, KEY_SKILL_MIN_SHARE, KEY_SKILL_MIN_USAGE, SHIELD_MIN_DURATION_MS } from './metrics.mjs';
 
 export const WEAK_RANK = 35;          // critère sous ce rang : conseil
 export const SKILL_GAIN_MIN_PCT = 1;  // compétence : gain estimé d'au moins 1 % de dégâts
@@ -18,7 +18,7 @@ function makeT(lang) {
   const en = lang === 'en';
   const tr = (fr, e) => (en ? e : fr);
   const num = (x, d = 1) => (x == null ? '—' : en ? x.toFixed(d) : x.toFixed(d).replace('.', ','));
-  const pct = (x, d = 0) => `${num(x * 100, d)} %`;
+  const pct = (x, d = 0) => (en ? `${num(x * 100, d)}%` : `${num(x * 100, d)} %`);
   const sec = ms => `${num(ms / 1000, ms < 10000 ? 1 : 0)} s`;
   const clock = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
   return { en, tr, num, pct, sec, clock };
@@ -323,9 +323,11 @@ function supportAdvice(a, ref, L) {
 
 // Boucliers : problème seulement si le groupe a pris des coups non protégés (part évitée faible pour la spé sur ce
 // boss) ; un bouclier peu utile quand le groupe esquive bien n'est pas une faute. On cite alors les boucliers qui
-// servent moins que chez les autres. Le log ne date pas les coups reçus : pas de moments.
+// servent moins que chez les autres, et en exemples les grosses attaques du boss tombées sans bouclier du support.
+// Ces exemples sont approximatifs (lancement de l'attaque, pas l'instant du coup ; corrélation 0,26 avec la part
+// évitée, 0,22 avec les mises à terre de groupe) : jamais dans la note ni dans le déclenchement.
 function shieldAdvice(a, ref, L) {
-  const { tr, num, pct } = L;
+  const { tr, num, pct, sec, clock } = L;
   const sh = a.supportDetails?.shields, rs = ref.shields;
   if (!sh?.given || !rs?.protectedShare) return [];
   const protRank = percentileRank(rs.protectedShare, sh.protectedShare);
@@ -333,7 +335,8 @@ function shieldAdvice(a, ref, L) {
   const M = x => `${num(x / 1e6, 1)} M`;
   const weak = sh.list.filter(s => {
     const r = rs.byShield?.[s.id];
-    return r && s.given >= sh.given * 0.05 && percentileRank(r.efficiency, s.efficiency) < WEAK_RANK;
+    // Boucliers de moins de 3 s (ex. God's Decree, 1 s) : effets d'accompagnement qui ne se placent pas.
+    return r && s.durationMs >= SHIELD_MIN_DURATION_MS && s.given >= sh.given * 0.05 && percentileRank(r.efficiency, s.efficiency) < WEAK_RANK;
   });
   const how = weak.map(s => {
     const r = rs.byShield[s.id];
@@ -342,8 +345,17 @@ function shieldAdvice(a, ref, L) {
   });
   how.push(tr(`Garde tes boucliers pour les attaques du boss qui touchent tout le groupe : lance-les une ou deux secondes avant le coup, pas dès qu'ils sont prêts. Un bouclier qui expire avant le coup ne sert à rien.`,
               `Keep your shields for boss attacks that hit the whole party: cast them one or two seconds before the hit, not as soon as they are ready. A shield that expires before the hit is wasted.`));
-  how.push(tr(`Le log ne dit pas à quel moment ton groupe a pris des coups : repère dans ta mémoire du combat les grosses attaques de groupe, c'est là que tes boucliers doivent arriver.`,
-              `The log does not say when your party took hits: recall the big party-wide attacks of the fight, that is when your shields should land.`));
+  const missed = (sh.bigAttacks || []).filter(x => !x.shielded);
+  if (missed.length) how.push(tr(`Grosses attaques du boss tombées sans ton bouclier (à quelques secondes près : le log date le lancement de l'attaque, pas le coup) :`,
+                                 `Big boss attacks that landed without your shield (within a few seconds: the log dates the start of the attack, not the hit):`));
+  const moments = top(missed, 4, x => x.dmg).sort((x, y) => x.t - y.t).map(x => {
+    const ended = x.lastShieldEnd != null && x.t - x.lastShieldEnd <= 5000
+      ? tr(`ton bouclier s'était terminé ${sec(Math.max(0, x.t - x.lastShieldEnd))} avant`, `your shield had ended ${sec(Math.max(0, x.t - x.lastShieldEnd))} before`)
+      : x.nextShield != null && x.nextShield - x.t <= 8000
+        ? tr(`ton bouclier est arrivé ${sec(x.nextShield - x.t)} après`, `your shield came ${sec(x.nextShield - x.t)} after`)
+        : tr('aucun bouclier autour', 'no shield around it');
+    return { t: x.t, text: tr(`${clock(x.t)} : ${num(x.dmg / 1e3, 0)} k de dégâts, ${ended}`, `${clock(x.t)}: ${num(x.dmg / 1e3, 0)}k damage, ${ended}`) };
+  });
   return [{
     kind: 'support-shield',
     title: tr('Tes boucliers ne tombent pas au bon moment', 'Your shields do not land at the right time'),
@@ -351,7 +363,7 @@ function shieldAdvice(a, ref, L) {
              `Your party took unprotected damage: your shields only prevented ${pct(sh.protectedShare, 0)} of the damage your teammates took (${a.spec} median on this boss: ${pct(rs.protectedShare[10], 0)}). Yet of ${M(sh.given)} shields given, only ${pct(sh.efficiency, 1)} were used.`),
     why: tr(`Un bouclier au bon moment évite des morts et laisse tes DPS frapper au lieu de se soigner. Dans le vent, il ne sert à rien.`,
             `A well-timed shield prevents deaths and lets your DPS keep attacking instead of healing. Wasted, it does nothing.`),
-    how, moments: [],
+    how, moments,
   }];
 }
 

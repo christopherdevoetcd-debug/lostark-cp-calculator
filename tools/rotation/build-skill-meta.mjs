@@ -24,10 +24,11 @@ for (const n of Object.values(await load('ArkPassive.json'))) {
   if (l?.name) arkPassive[n.id] = l.name;
 }
 
-// Buffs de support (catégorie supportbuff) et Marque : durée en ms (-1 = permanent), groupe (uniqueGroup).
+// Buffs de support (catégorie supportbuff), Marque et boucliers de classe : durée en ms (-1 = permanent), groupe.
 const buffs = {};
 for (const b of Object.values(await load('SkillBuff.json'))) {
-  if (b.buffCategory === 'supportbuff' || b.uniqueGroup === 210230) buffs[b.id] = { n: b.name, d: b.duration, g: b.uniqueGroup };
+  const shield = b.type === 'shield' && ['classskill', 'arkpassive'].includes(b.buffCategory);
+  if (b.buffCategory === 'supportbuff' || b.uniqueGroup === 210230 || shield) buffs[b.id] = { n: b.name, d: b.duration, g: b.uniqueGroup, ...(shield ? { s: 1 } : {}) };
 }
 
 writeFileSync(OUT, JSON.stringify({ source: dir ? 'meter-data local' : SRC, built: new Date().toISOString().slice(0, 10), skills, arkPassive, buffs }));

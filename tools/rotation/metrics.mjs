@@ -238,7 +238,21 @@ function partySupportOf(encounter, player) {
 // on mesure la part utile, pas le moment.
 export const SHIELD_CATEGORIES = new Set(['classskill', 'arkpassive']);
 
-function supportShields(encounter, player, party) {
+// Grosses attaques du boss : utilisations dont les dégâts (total de l'attaque ÷ nombre d'utilisations) font au moins
+// 3 % des dégâts du boss sur le combat. Bouclier « en place » : un bouclier du support (durée ≥ 3 s, tables du jeu)
+// actif à un moment de la fenêtre [lancement de l'attaque, + 3 s] (le coup tombe après le lancement).
+export const BIG_ATTACK_MIN_SHARE = 0.03;
+export const BIG_ATTACK_HIT_WINDOW_MS = 3000;
+export const SHIELD_MIN_DURATION_MS = 3000;
+
+function bigBossAttacks(encounter) {
+  const total = (encounter.bossAttacks || []).reduce((t, s) => t + s.totalDamage, 0);
+  if (!total) return [];
+  return encounter.bossAttacks.flatMap(s => s.castLog.map(t => ({ t, id: s.id, dmg: s.totalDamage / s.castLog.length })))
+    .filter(x => x.dmg >= total * BIG_ATTACK_MIN_SHARE).sort((a, b) => a.t - b.t);
+}
+
+function supportShields(encounter, player, party, buffMeta = {}) {
   const ds = player.damageStats || {};
   const given = ds.shieldsGivenBy || {}, absorbed = ds.damageAbsorbedOnOthersBy || {};
   const skillName = id => Object.values(player.skills).find(s => s.id === id || s.id - (s.id % 10) === id)?.name;
@@ -247,14 +261,36 @@ function supportShields(encounter, player, party) {
     const b = encounter.shieldBuffs?.[id];
     if (!b || !SHIELD_CATEGORIES.has(b.buffCategory) || !(g > 0)) continue;
     const skillId = b.source?.skill?.id || null;
-    list.push({ id: +id, skillId, name: (skillId && skillName(skillId)) || b.source?.skill?.name || b.source?.name || id, given: g, absorbed: absorbed[id] || 0, efficiency: (absorbed[id] || 0) / g });
+    list.push({ id: +id, skillId, name: (skillId && skillName(skillId)) || b.source?.skill?.name || b.source?.name || id, durationMs: buffMeta[id]?.d ?? null, given: g, absorbed: absorbed[id] || 0, efficiency: (absorbed[id] || 0) / g });
   }
   const totalGiven = list.reduce((t, x) => t + x.given, 0), totalAbsorbed = list.reduce((t, x) => t + x.absorbed, 0);
+
+  // Fenêtres où un bouclier du support est actif : ses utilisations des compétences qui posent un bouclier.
+  const shieldSkills = new Map();
+  for (const [id, b] of Object.entries(encounter.shieldBuffs || {})) {
+    const d = buffMeta[id]?.d, skillId = b.source?.skill?.id;
+    if (!skillId || !SHIELD_CATEGORIES.has(b.buffCategory) || !(d >= SHIELD_MIN_DURATION_MS)) continue;
+    shieldSkills.set(skillId, Math.max(shieldSkills.get(skillId) || 0, d));
+  }
+  const active = [];
+  for (const s of Object.values(player.skills)) {
+    const d = shieldSkills.get(s.id) || shieldSkills.get(s.id - (s.id % 10));
+    if (d) for (const c of s.skillCastLog || []) active.push([c.timestamp, c.timestamp + d, s.name]);
+  }
+  active.sort((a, b) => a[0] - b[0]);
+  const attacks = bigBossAttacks(encounter).map(x => {
+    const on = active.some(([a, b]) => a <= x.t + BIG_ATTACK_HIT_WINDOW_MS && b >= x.t);
+    const before = active.filter(([a]) => a <= x.t).pop();
+    const after = active.find(([a]) => a > x.t + BIG_ATTACK_HIT_WINDOW_MS);
+    return { ...x, shielded: on, lastShieldEnd: before ? before[1] : null, nextShield: after ? after[0] : null };
+  });
+  const bigDmg = attacks.reduce((t, x) => t + x.dmg, 0);
   // Dégâts reçus par le reste du groupe (après boucliers) : part que les boucliers du support ont évitée.
   const taken = encounter.players.filter(p => party.includes(p.name) && p.name !== player.name).reduce((t, p) => t + (p.damageStats.damageTaken || 0), 0);
   return {
     list: list.sort((x, y) => y.given - x.given), given: totalGiven, absorbed: totalAbsorbed,
     efficiency: totalGiven ? totalAbsorbed / totalGiven : null,
+    bigAttacks: attacks, bigShielded: bigDmg ? attacks.filter(x => x.shielded).reduce((t, x) => t + x.dmg, 0) / bigDmg : null,
     protectedShare: totalAbsorbed + taken ? totalAbsorbed / (totalAbsorbed + taken) : null,
   };
 }
@@ -335,7 +371,7 @@ function supportDetails(encounter, player, { buffSets, buffMeta, excluded }) {
   }
   const sum = (a, f) => a.reduce((t, x) => t + x[f], 0);
   return {
-    partyDps: partyDps.map(p => p.name), shields: supportShields(encounter, player, party),
+    partyDps: partyDps.map(p => p.name), shields: supportShields(encounter, player, party, buffMeta),
     apGaps, apGapMs: sum(apGaps, 'ms'), brandGaps, brandGapMs: sum(brandGaps, 'ms'),
     overlaps, apOverlapMs: sum(overlaps.ap, 'wastedMs'), apBuffCasts: overlaps.ap.length,
     buffSkills: [...bySkill.entries()].map(([id, v]) => ({ id, ...v })),
