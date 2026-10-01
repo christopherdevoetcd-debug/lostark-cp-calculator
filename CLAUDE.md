@@ -96,7 +96,7 @@ Lors de l'ingestion d'un profil via `parseBibleCharacter()`, les données brutes
    ```bash
    ./deploy.sh
    ```
-   *(Ce script autonome vérifie la syntaxe JS, synchronise CT 104 + Nginx, déploie sur Cloudflare Pages via Wrangler et vérifie la mise en ligne)*
+   *(Ce script autonome vérifie la syntaxe JS, synchronise CT 104 + Nginx, déploie sur Cloudflare Pages via Wrangler et vérifie la mise en ligne : sur les deux sites, mêmes octets que les fichiers locaux (index.html, calculator.js, style.css, i18n.js, data.js, données) et versions de cache-busting d'index.html, jusqu'à 2 min de propagation ; sinon code de sortie 1)*
    - Le token Cloudflare est lu dans `.env` (ignoré par Git) ou l'environnement : `CLOUDFLARE_API_TOKEN=...`. Ne jamais l'écrire dans un fichier versionné, le dépôt est public.
 
 ### Recettes d'affinage T4 (Maxroll)

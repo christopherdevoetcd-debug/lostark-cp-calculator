@@ -43,5 +43,31 @@ cp -r images data "$WORK/" 2>/dev/null || true
 npx -y wrangler pages deploy "$WORK" --project-name lostark-cp --commit-dirty=true --branch master
 
 echo "=== [4/4] Vérification en ligne ==="
-curl -s -L https://lostark-cp.pages.dev/ | grep -E "calculator\.js" || true
-echo "✅ Déploiement terminé avec succès !"
+# Chaque site doit servir les versions d'index.html et les mêmes octets que les fichiers locaux
+# (paramètre anti-cache ; Cloudflare peut mettre quelques secondes à propager). Échec = code de sortie 1.
+sha() { sha256sum | cut -d' ' -f1; }
+FILES="index.html calculator.js style.css i18n.js data.js data/bracer-t4.json data/honing-t4.json"
+verify_site() {
+  local base="$1" f bust
+  bust="nocache=$(date +%s%N)"
+  for f in $FILES; do
+    if [ "$(curl -fsS -L "$base/$f?$bust" | sha)" != "$(sha < "$f")" ]; then echo "  $base/$f : différent du fichier local"; return 1; fi
+  done
+  # Versions de cache-busting annoncées par la page servie
+  local want got
+  want=$(grep -o 'calculator\.js?v=[0-9.]*\|style\.css?v=[0-9.]*' index.html | sort | tr '\n' ' ')
+  got=$(curl -fsS -L "$base/?$bust" | grep -o 'calculator\.js?v=[0-9.]*\|style\.css?v=[0-9.]*' | sort | tr '\n' ' ')
+  [ "$want" = "$got" ] || { echo "  $base : versions servies « $got », attendues « $want »"; return 1; }
+}
+FAILED=0
+for site in http://192.168.1.104:8080 https://lostark-cp.pages.dev; do
+  ok=0
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    if out=$(verify_site "$site" 2>&1); then ok=1; break; fi
+    sleep 10
+  done
+  if [ "$ok" = 1 ]; then echo "$site : à jour ($(grep -o 'calculator\.js?v=[0-9.]*' index.html))"
+  else echo "$site : PAS à jour après 2 min"; echo "$out"; FAILED=1; fi
+done
+if [ "$FAILED" = 1 ]; then echo "❌ Déploiement non vérifié" >&2; exit 1; fi
+echo "✅ Déploiement vérifié : CT 104 et Cloudflare servent les fichiers locaux"
