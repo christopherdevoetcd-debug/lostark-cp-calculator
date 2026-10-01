@@ -12071,7 +12071,7 @@
 
     const pIlvl = playerChar.ilvl || 1740;
     const pCp = playerChar.cp || playerChar.combatPower || 3500;
-    const pSpec = getCharacterSpecName(playerChar).toLowerCase();
+    const pSpec = specKey(getCharacterSpecName(playerChar));
     const pClass = normalizeClassName(playerChar.className || playerChar.characterClass || playerChar.class || '').toLowerCase();
     const isSupportClass = ['paladin', 'bard', 'artist', 'valkyrie'].some(s => pClass.includes(s));
     const pRole = playerChar.role || (isSupportClass ? 'support' : 'dps');
@@ -12086,14 +12086,14 @@
     if (sameClass.length === 0) return null;
 
     // 1. Cherche en priorité un profil LIVE réel de même spé avec CP >= pCp ET iLvl proche (écart <= 15 iLvl)
-    const closeSameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 15.0);
+    const closeSameSpecLive = sameClass.filter(b => b.isLive && specKey(b.spec) === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 15.0);
     if (closeSameSpecLive.length > 0) {
       closeSameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return closeSameSpecLive[0];
     }
 
     // 2. Cherche un profil LIVE réel de même spé avec CP >= pCp (écart <= 30 iLvl)
-    const anySameSpecLive = sameClass.filter(b => b.isLive && (b.spec || '').toLowerCase() === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 30.0);
+    const anySameSpecLive = sameClass.filter(b => b.isLive && specKey(b.spec) === pSpec && b.cp >= pCp && Math.abs(b.ilvl - pIlvl) <= 30.0);
     if (anySameSpecLive.length > 0) {
       anySameSpecLive.sort((a, b) => Math.abs(a.ilvl - pIlvl) - Math.abs(b.ilvl - pIlvl));
       return anySameSpecLive[0];
@@ -16004,16 +16004,26 @@
           searchedList.unshift(benchmarkState.customTarget);
         }
       }
-      if (searchedList.length > 0) {
-        optionsHtml += `<optgroup label="${isEn ? 'Live Profiles (' + escapeHtml(player.className) + ')' : 'Profils LIVE Réels (' + escapeHtml(player.className) + ')'}">`;
-        searchedList.forEach(s => {
-          const isSel = target && (target.id === s.id);
-          const deltaIlvl = s.ilvl - (player.ilvl || 1700);
-          const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
-          optionsHtml += `<option value="${escapeHtml(s.id)}" ${isSel ? 'selected' : ''}>
-            ${escapeHtml(s.name)} • ${escapeHtml(s.spec || '')} (${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
+      // Même spé d'abord (même gameplay) ; l'autre spé reste disponible dans un groupe à part
+      const playerSpecKey = specKey(getCharacterSpecName(player));
+      const optionOf = s => {
+        const isSel = target && (target.id === s.id);
+        const deltaIlvl = s.ilvl - (player.ilvl || 1700);
+        const signIlvl = deltaIlvl >= 0 ? `+${deltaIlvl.toFixed(1)}` : deltaIlvl.toFixed(1);
+        return `<option value="${escapeHtml(s.id)}" ${isSel ? 'selected' : ''}>
+            ${escapeHtml(s.name)} • ${escapeHtml(getCharacterSpecName(s) || '')} (${s.ilvl.toFixed(1)} iLvl [${signIlvl}] - ${formatNumber(Math.round(s.cp))} CP) [LIVE]
           </option>`;
-        });
+      };
+      const sameSpecList = searchedList.filter(s => specKey(getCharacterSpecName(s)) === playerSpecKey);
+      const otherSpecList = searchedList.filter(s => !sameSpecList.includes(s));
+      if (sameSpecList.length > 0) {
+        optionsHtml += `<optgroup label="${isEn ? 'Live Profiles (' + escapeHtml(getCharacterSpecName(player)) + ')' : 'Profils LIVE Réels (' + escapeHtml(getCharacterSpecName(player)) + ')'}">`;
+        sameSpecList.forEach(s => { optionsHtml += optionOf(s); });
+        optionsHtml += `</optgroup>`;
+      }
+      if (otherSpecList.length > 0) {
+        optionsHtml += `<optgroup label="${isEn ? 'Other spec (' + escapeHtml(player.className) + ')' : 'Autre spé (' + escapeHtml(player.className) + ')'}">`;
+        otherSpecList.forEach(s => { optionsHtml += optionOf(s); });
         optionsHtml += `</optgroup>`;
       }
 
@@ -16945,6 +16955,7 @@
         if (b && b.isLive) {
           const raidCp = raidCombatPowerOf(b);
           if (raidCp) b.cp = raidCp;
+          b.spec = getCharacterSpecName({ ...b, spec: '' });
           if ((!b.gear || !b.systems || !b.systems.weapon || b.systems.weapon.label.includes('+17')) && b.rawProfile && b.rawProfile.gear) {
             b.gear = b.rawProfile.gear;
             b.weaponQuality = b.rawProfile.weaponQuality !== undefined ? b.rawProfile.weaponQuality : b.weaponQuality;
