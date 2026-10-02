@@ -7758,6 +7758,10 @@ body.no-character .main-content {
 .rot-table tr.active td { background: var(--bg-surface-elevated); }
 .rot-table tr.active td:first-child { box-shadow: inset 2px 0 0 var(--accent-gold); }
 .rot-score-cell { color: var(--text-main); font-weight: 600; }
+.rot-grade { display: inline-block; min-width: 20px; padding: 1px 5px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 12px; font-weight: 700; line-height: 1.4; text-align: center; }
+.rot-grade-big { min-width: 44px; padding: 4px 8px; font-size: 28px; align-self: center; margin-right: 6px; }
+.rot-name-cell { white-space: nowrap; }
+.rot-class-icon { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; margin-right: 8px; }
 .rot-error { color: var(--loss); font-size: 14px; margin: 0; }
 .rot-score-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 12px; }
 .rot-score { display: flex; align-items: baseline; gap: 6px; }

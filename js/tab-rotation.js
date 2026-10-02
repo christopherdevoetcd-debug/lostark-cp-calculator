@@ -24,6 +24,25 @@ const rot = {
   handle: null, storedHandle: null, storedLoaded: false, lastModified: null, syncedAt: null, newIds: new Set(), syncTimer: null,
 };
 
+// Lettre de la note d'exécution (rang parmi la même spé, 50 = médiane) : S = 5 % du haut, A = quart du haut, B = au-dessus
+// de la médiane, C = en dessous, D = quart du bas. Couleurs du barème du site (subrank.js).
+const ROT_GRADES = [['S', 95], ['A', 75], ['B', 50], ['C', 25], ['D', -Infinity]];
+
+function rotGrade(score) {
+  return ROT_GRADES.find(([, min]) => score >= min)[0];
+}
+
+function rotGradeHtml(score, big) {
+  const g = rotGrade(score);
+  const c = window.Subrank ? window.Subrank.colorOf(g) : null;
+  const style = c ? ` style="background:${c.bg};color:${c.fg}"` : '';
+  return `<span class="rot-grade${big ? ' rot-grade-big' : ''}"${style}>${g}</span>`;
+}
+
+function rotClassIcon(className) {
+  return `<img class="rot-class-icon" src="${escapeHtml(getClassIconUrl(className))}" alt="" width="20" height="20" loading="lazy">`;
+}
+
 function rotUrl(path) {
   return new URL(path, document.baseURI).href;
 }
@@ -367,14 +386,14 @@ function rotAnalysisHtml() {
   const rows = res.players.map(a => {
     const sc = a.score?.score;
     return `<tr class="rot-player-row${a.name === rot.selected ? ' active' : ''}" data-rot-player="${escapeHtml(a.name)}" tabindex="0">
-      <td>${escapeHtml(a.name)}</td>
+      <td class="rot-name-cell">${rotClassIcon(a.className)}${escapeHtml(a.name)}</td>
       <td>${escapeHtml(a.className)} <span class="rot-dim">${escapeHtml(a.spec || '')}</span></td>
       <td class="market-num">${a.combatPower ? rotNum(a.combatPower, 0) : '—'}</td>
       <td class="market-num">${rotNum(a.dps / 1e6, 0)} M</td>
       <td class="market-num">${rotPct(a.activity)}</td>
       <td class="market-num">${a.support ? `<span class="rot-dim">${trLang('support', 'support')}</span>` : rotPct(a.fullBuffRate)}</td>
       <td class="market-num">${a.positionalShare >= 0.05 ? rotPct(a.positionalRate) : '—'}</td>
-      <td class="market-num rot-score-cell">${sc != null ? sc : '—'}</td>
+      <td class="market-num rot-score-cell">${sc != null ? `${rotGradeHtml(sc)} ${sc}` : '—'}</td>
     </tr>`;
   }).join('');
   const player = res.players.find(p => p.name === rot.selected);
@@ -412,9 +431,9 @@ function rotPlayerHtml(a, enc) {
   let head;
   if (a.score && a.score.score != null) {
     head = `<div class="rot-score-row">
-        <div class="rot-score"><span class="rot-score-value">${a.score.score}</span><span class="rot-dim">/ 100</span></div>
+        <div class="rot-score">${rotGradeHtml(a.score.score, true)}<span class="rot-score-value">${a.score.score}</span><span class="rot-dim">/ 100</span></div>
         <div class="rot-score-text">${trLang('Note d\'exécution : ', 'Execution score: ')}${escapeHtml(rotScopeText(a))}.
-          <span class="rot-dim">${trLang('50 = la médiane de ta spé. La note ne dépend pas de ton équipement : elle compare ta façon de jouer.', '50 = your spec median. The score does not depend on your gear: it compares how you play.')}</span></div>
+          <span class="rot-dim">${trLang('50 = la médiane de ta spé. S : 5 % du haut (95 et plus), A : quart du haut (75), B : au-dessus de la médiane (50), C : en dessous (25), D : quart du bas. La note ne dépend pas de ton équipement : elle compare ta façon de jouer.', '50 = your spec median. S: top 5% (95 and up), A: top quarter (75), B: above the median (50), C: below it (25), D: bottom quarter. The score does not depend on your gear: it compares how you play.')}</span></div>
       </div>
       <div class="belg-cards rot-parts">${rotPartsHtml(a)}</div>`;
   } else if (a.support && a.ref && !a.supportCoverage) {
