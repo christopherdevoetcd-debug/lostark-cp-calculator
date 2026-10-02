@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openDb, raidIds, loadEncounter } from './db.mjs';
-import { analyzeEncounter, toQuantiles, REF_MIN_SAMPLES } from '../../js/rotation/metrics.js';
+import { analyzeEncounter, toQuantiles, scorePlayer, coverageMean, REF_MIN_SAMPLES } from '../../js/rotation/metrics.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
@@ -147,6 +147,14 @@ for (const [spec, rs] of bySpec) {
   if (rs.length >= REF_MIN_SAMPLES) refs[`${spec}|*`] = rhythm(rs);
   const b = build(rs);
   if (b) builds[spec] = b;
+}
+
+// Répartition des notes et de la couverture brute de chaque groupe (« Top X % » du site) : chaque log noté sur la
+// référence que le site lui appliquerait (même spé et même boss, sinon même spé tous boss).
+for (const [key, ref] of Object.entries(refs)) {
+  const rs = key.endsWith('|*') ? bySpec.get(key.slice(0, -2)) : bySpecBoss.get(key);
+  ref.score = toQuantiles(rs.map(r => scorePlayer({ ...r, supportCoverage: r.coverage }, ref)?.score));
+  if (ref.support) ref.support.mean = toQuantiles(rs.map(r => coverageMean(r.coverage)));
 }
 
 writeFileSync(OUT, JSON.stringify({ built: new Date().toISOString(), since: new Date(since).toISOString().slice(0, 10), encounters: ids.length, players: records.length, refs, builds }));

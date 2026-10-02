@@ -43,6 +43,21 @@ function rotClassIcon(className) {
   return `<img class="rot-class-icon" src="${escapeHtml(getClassIconUrl(className))}" alt="" width="20" height="20" loading="lazy">`;
 }
 
+function rotTopHtml(top) {
+  return top != null ? `<span class="rot-top">${trLang(`Top ${top} %`, `Top ${top}%`)}</span>` : '';
+}
+
+// Couverture brute du support (style « Buff Performance » de lostark.bible) : moyenne buff d'attaque, Marque, identité.
+function rotCoverageHtml(a) {
+  if (a.coverageMean == null) return '';
+  const c = a.supportCoverage;
+  return `<div class="rot-coverage">
+      <span class="rot-coverage-label">${trLang('Couverture brute', 'Raw coverage')}</span>
+      <span class="rot-coverage-value">${rotPct(a.coverageMean)}</span>${rotTopHtml(a.coverageTop)}
+      <span class="rot-dim rot-coverage-detail">${trLang('PA', 'AP')} ${rotPct(c.ap)} · ${trLang('Marque', 'Brand')} ${rotPct(c.brand)} · ${trLang('Identité', 'Identity')} ${rotPct(c.identity)}</span>
+    </div>`;
+}
+
 function rotUrl(path) {
   return new URL(path, document.baseURI).href;
 }
@@ -262,13 +277,17 @@ async function rotAnalyze(encounterId) {
   renderRotationTab();
   try {
     const res = await rotWithFreshFile(() => rotCall('analyze', { encounterId }));
-    const { pickReference, scorePlayer } = rot.mods.metrics;
+    const { pickReference, scorePlayer, coverageMean, topPercent } = rot.mods.metrics;
     const refs = rot.refData?.refs || null;
     for (const a of res.players) {
       const { ref, scope } = pickReference(refs, a.spec, res.encounter.boss);
       a.ref = ref;
       a.reference = ref ? { scope, n: ref.n } : null;
       a.score = scorePlayer(a, ref);
+      // « Top X % » comme lostark.bible : rang de la note, et de la couverture brute des supports, dans leur référence.
+      a.scoreTop = a.score?.score != null ? topPercent(ref?.score, a.score.score) : null;
+      a.coverageMean = coverageMean(a.supportCoverage);
+      a.coverageTop = a.coverageMean != null ? topPercent(ref?.support?.mean, a.coverageMean) : null;
     }
     rot.analysis = res;
     const local = res.players.find(p => p.name === res.encounter.localPlayer);
@@ -431,9 +450,12 @@ function rotPlayerHtml(a, enc) {
   let head;
   if (a.score && a.score.score != null) {
     head = `<div class="rot-score-row">
-        <div class="rot-score">${rotGradeHtml(a.score.score, true)}<span class="rot-score-value">${a.score.score}</span><span class="rot-dim">/ 100</span></div>
+        <div class="rot-score">${rotGradeHtml(a.score.score, true)}<span class="rot-score-value">${a.score.score}</span><span class="rot-dim">/ 100</span>${rotTopHtml(a.scoreTop)}</div>
+        ${rotCoverageHtml(a)}
         <div class="rot-score-text">${trLang('Note d\'exécution : ', 'Execution score: ')}${escapeHtml(rotScopeText(a))}.
-          <span class="rot-dim">${trLang('50 = la médiane de ta spé. S : 5 % du haut (95 et plus), A : quart du haut (75), B : au-dessus de la médiane (50), C : en dessous (25), D : quart du bas. La note ne dépend pas de ton équipement : elle compare ta façon de jouer.', '50 = your spec median. S: top 5% (95 and up), A: top quarter (75), B: above the median (50), C: below it (25), D: bottom quarter. The score does not depend on your gear: it compares how you play.')}</span></div>
+          <span class="rot-dim">${trLang('50 = la médiane de ta spé. S : 5 % du haut (95 et plus), A : quart du haut (75), B : au-dessus de la médiane (50), C : en dessous (25), D : quart du bas. La note ne dépend pas de ton équipement : elle compare ta façon de jouer.', '50 = your spec median. S: top 5% (95 and up), A: top quarter (75), B: above the median (50), C: below it (25), D: bottom quarter. The score does not depend on your gear: it compares how you play.')}</span>
+          <span class="rot-dim">${a.scoreTop != null ? trLang(`Top ${a.scoreTop} % : part des ${a.reference.n} logs de référence qui ont une note au moins aussi bonne.`, `Top ${a.scoreTop}%: share of the ${a.reference.n} reference logs with a score at least as good.`) : ''}</span>
+          <span class="rot-dim">${a.coverageMean != null ? trLang('Couverture brute : moyenne simple de la part des dégâts du groupe sous ton buff d\'attaque, ta Marque et ton identité. Même idée que la « Buff Performance » de lostark.bible, dont la formule n\'est pas publiée : les chiffres ne sont pas identiques. Son « Top » compare aussi d\'autres joueurs (tous les logs envoyés, à CP proche).', 'Raw coverage: plain average of the party damage share under your attack buff, Brand and identity. Same idea as lostark.bible\'s “Buff Performance”, whose formula is not published: the numbers are not identical. Its “Top” also compares other players (all uploaded logs, at similar CP).') : ''}</span></div>
       </div>
       <div class="belg-cards rot-parts">${rotPartsHtml(a)}</div>`;
   } else if (a.support && a.ref && !a.supportCoverage) {

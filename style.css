@@ -7760,14 +7760,20 @@ body.no-character .main-content {
 .rot-score-cell { color: var(--text-main); font-weight: 600; }
 .rot-grade { display: inline-block; min-width: 20px; padding: 1px 5px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 12px; font-weight: 700; line-height: 1.4; text-align: center; }
 .rot-grade-big { min-width: 44px; padding: 4px 8px; font-size: 28px; align-self: center; margin-right: 6px; }
+.rot-top { font-family: var(--font-mono); font-size: 13px; color: var(--text-main); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1px 6px; margin-left: 6px; white-space: nowrap; }
+.rot-coverage { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding-left: 16px; border-left: 1px solid var(--border-subtle); }
+.rot-coverage-label { width: 100%; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.rot-coverage-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 28px; line-height: 1; color: var(--text-main); }
+.rot-coverage-detail { width: 100%; font-family: var(--font-mono); font-size: 12px; }
 .rot-name-cell { white-space: nowrap; }
 .rot-class-icon { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; margin-right: 8px; }
 .rot-error { color: var(--loss); font-size: 14px; margin: 0; }
 .rot-score-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 12px; }
 .rot-score { display: flex; align-items: baseline; gap: 6px; }
 .rot-score-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 40px; line-height: 1; color: var(--accent-gold); }
-.rot-score-text { flex: 1; min-width: 220px; font-size: 14px; color: var(--text-soft); line-height: 1.5; }
-.rot-score-text .rot-dim { display: block; }
+.rot-score-text { flex: 1 1 100%; min-width: 220px; font-size: 14px; color: var(--text-soft); line-height: 1.5; }
+.rot-score-text .rot-dim { display: block; margin-top: 4px; }
+.rot-score-text .rot-dim:empty { display: none; }
 .rot-parts .belg-card-value.rot-part { color: var(--text-main); }
 .rot-h4 { font-size: 14px; color: var(--text-main); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
 .rot-advice { border-top: 1px solid var(--border-subtle); padding: 12px 0; font-size: 14px; line-height: 1.55; color: var(--text-soft); }

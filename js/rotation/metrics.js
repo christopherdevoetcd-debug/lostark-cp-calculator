@@ -460,6 +460,19 @@ export function scoreSupport(a, ref) {
   return { score: weighted(parts, SUPPORT_SCORE_WEIGHTS), parts, skillScores };
 }
 
+// Couverture brute d'un support : moyenne simple de la part des dégâts du groupe sous le buff d'attaque, la Marque et
+// l'identité (proche de la « Buff Performance » de lostark.bible, dont la formule n'est pas publiée).
+export function coverageMean(c) {
+  if (!c || c.ap == null || c.brand == null || c.identity == null) return null;
+  return (c.ap + c.brand + c.identity) / 3;
+}
+
+// « Top X % » : part des logs de référence qui font au moins aussi bien (1 à 100), sur la distribution d'une mesure.
+export function topPercent(q, x) {
+  const r = percentileRank(q, x);
+  return r == null ? null : Math.min(100, Math.max(1, 100 - r));
+}
+
 export function scorePlayer(a, ref) {
   if (!ref) return null;
   if (a.support) return scoreSupport(a, ref);
