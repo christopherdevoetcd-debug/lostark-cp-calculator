@@ -20,7 +20,7 @@ const rot = {
   worker: null, seq: 0, pending: new Map(),
   info: null, raids: null, dayFilter: '', busy: '', error: '',
   analysis: null, selected: null,
-  mods: null, refData: null, skillData: null,
+  mods: null, refData: null, skillData: null, guides: null,
   handle: null, storedHandle: null, storedLoaded: false, lastModified: null, syncedAt: null, newIds: new Set(), syncTimer: null,
 };
 
@@ -90,12 +90,14 @@ async function rotLoadShared() {
     rot.mods = { metrics, coach };
   }
   if (!rot.refData || !rot.skillData) {
-    const [refs, skills] = await Promise.all([
+    const [refs, skills, guides] = await Promise.all([
       fetch(rotUrl('data/rotation-ref.json')).then(r => (r.ok ? r.json() : null)),
       fetch(rotUrl('data/rotation-skills.json')).then(r => (r.ok ? r.json() : null)),
+      fetch(rotUrl('data/rotation-guides.json')).then(r => (r.ok ? r.json() : null)).catch(() => null),
     ]);
     rot.refData = refs;
     rot.skillData = skills;
+    rot.guides = guides;
   }
 }
 
@@ -277,10 +279,12 @@ async function rotAnalyze(encounterId) {
   renderRotationTab();
   try {
     const res = await rotWithFreshFile(() => rotCall('analyze', { encounterId }));
-    const { pickReference, scorePlayer, coverageMean, topPercent } = rot.mods.metrics;
+    const { pickReference, alignToReference, scorePlayer, coverageMean, topPercent } = rot.mods.metrics;
     const refs = rot.refData?.refs || null;
     for (const a of res.players) {
       const { ref, scope } = pickReference(refs, a.spec, res.encounter.boss);
+      // Référence lostark.bible : rythmes du joueur comptés comme les siens, sur toute la chronologie.
+      a.skills = alignToReference(a, ref).skills;
       a.ref = ref;
       a.reference = ref ? { scope, n: ref.n } : null;
       a.score = scorePlayer(a, ref);
@@ -432,6 +436,11 @@ function rotAnalysisHtml() {
 
 function rotScopeText(a) {
   const r = a.reference;
+  if (r.scope === 'bible-boss' || r.scope === 'bible-spec') {
+    const where = r.scope === 'bible-boss' ? trLang('sur ce boss', 'on this boss') : trLang('tous boss', 'all bosses');
+    return trLang(`rang parmi ${r.n} logs de ${a.spec} autour de la médiane de DPS sur lostark.bible, ${where} (pas assez dans ta base LOA Logs). Sans le détail des coups : compétences et placement seulement, rythmes sur toute la durée du combat`,
+      `rank among ${r.n} ${a.spec} logs around the median DPS on lostark.bible, ${where} (not enough in your LOA Logs database). Without hit details: skills and positioning only, rates over the whole fight`);
+  }
   return r.scope === 'boss'
     ? trLang(`rang parmi ${r.n} logs de ${a.spec} sur ce boss`, `rank among ${r.n} ${a.spec} logs on this boss`)
     : trLang(`rang parmi ${r.n} logs de ${a.spec}, tous boss (pas assez sur celui-ci)`, `rank among ${r.n} ${a.spec} logs, all bosses (not enough on this one)`);
@@ -464,11 +473,12 @@ function rotPlayerHtml(a, enc) {
     head = `<p class="belg-empty">${trLang(`Pas encore assez de logs de référence pour ${escapeHtml(a.spec || '?')} (il en faut au moins 8) : pas de note ni de conseils comparés. Les mesures ci-dessous restent valables.`, `Not enough reference logs for ${escapeHtml(a.spec || '?')} yet (at least 8 needed): no score or compared advice. The measures below still apply.`)}</p>`;
   }
 
-  const advice = a.ref ? rot.mods.coach.coachPlayer(a, a.ref, rot.refData?.builds?.[a.spec], { lang, arkPassiveNames: rot.skillData?.arkPassive || {}, skillMeta: rot.skillData?.skills || {} }) : [];
+  // Sans référence, seuls les objectifs d'un guide de classe (s'il y en a un pour la spé).
+  const advice = rot.mods.coach.coachPlayer(a, a.ref, rot.refData?.builds?.[a.spec], { lang, arkPassiveNames: rot.skillData?.arkPassive || {}, skillMeta: rot.skillData?.skills || {}, guides: rot.guides });
   const main = advice.filter(c => c.kind !== 'build');
   const shown = [...main.slice(0, ROT_MAX_ADVICE), ...advice.filter(c => c.kind === 'build')];
   let adviceHtml = '';
-  if (a.ref) {
+  if (a.ref || advice.length) {
     adviceHtml = shown.length
       ? shown.map((c, i) => rotAdviceHtml(c, i)).join('') + (main.length > ROT_MAX_ADVICE ? `<p class="belg-note">${rotMoreText(main.length - ROT_MAX_ADVICE)}</p>` : '')
       : `<p class="belg-empty">${trLang('Rien ne ressort : tu joues comme les meilleurs de ta spé sur ce boss.', 'Nothing stands out: you play like the best of your spec on this boss.')}</p>`;
@@ -477,7 +487,7 @@ function rotPlayerHtml(a, enc) {
   return `<div class="belg-panel rot-player">
       <h3>${escapeHtml(a.name)} <span class="rot-dim">${escapeHtml(a.className)} · ${escapeHtml(a.spec || '')}</span></h3>
       ${head}
-      ${a.ref ? `<h4 class="rot-h4">${trLang('Comment progresser', 'How to improve')}</h4>${adviceHtml}` : ''}
+      ${a.ref || advice.length ? `<h4 class="rot-h4">${trLang('Comment progresser', 'How to improve')}</h4>${adviceHtml}` : ''}
       <details class="rot-details"><summary>${trLang('Détail des mesures', 'Measure details')}</summary>${rotMeasuresHtml(a)}</details>
     </div>`;
 }
@@ -496,7 +506,7 @@ function rotAdviceHtml(c, i) {
       <div class="rot-advice-title"><span class="rot-advice-num">${i + 1}</span>${escapeHtml(c.title)}${gain}</div>
       <p>${escapeHtml(c.what)}</p>
       <p class="rot-why">${escapeHtml(c.why)}</p>
-      ${how}${moments}
+      ${how}${moments}${c.source?.url ? `<p class="rot-source"><a href="${escapeHtml(c.source.url)}" target="_blank" rel="noopener">${trLang('Lire le guide', 'Read the guide')}</a></p>` : ''}
     </div>`;
 }
 

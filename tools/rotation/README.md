@@ -12,7 +12,10 @@ Analyse d'un combat enregistré par [LOA Logs](https://github.com/snoww/loa-logs
 | `js/rotation/sqlite-worker.js` | Navigateur : worker qui lit le fichier choisi par SQLite en WebAssembly (`js/rotation/vendor`, @sqlite.org/sqlite-wasm 3.53.4, Apache-2.0 / domaine public) et un VFS en lecture seule (FileReaderSync, blocs de 64 Ko en cache), sans copie ni envoi. |
 | `js/tab-rotation.js` | Onglet « Analyse de rotation » du site. |
 | `db.mjs` | Node : ouverture de la base (`node:sqlite`, gzip), mêmes requêtes. |
-| `build-ref.mjs` | Références par spé et par boss → `data/rotation-ref.json`, servi au site (quantiles, aucun nom). |
+| `build-ref.mjs` | Références par spé et par boss → `data/rotation-ref.json`, servi au site (quantiles, aucun nom). Ajoute les références « bible|… » si `tools/samples/bible-records.json` existe. |
+| `fetch-bible-ref.mjs` | Logs de lostark.bible (stats publiques de raid : 25 logs autour de la médiane de DPS par spé, boss et difficulté, et les meilleurs) pour les spés DPS sans référence locale sur un boss → `tools/samples/bible-records.json`. Cathédrale niv. 3 / 2, Serca et Kazeros Difficile. 15 s entre deux appels, 60 logs par session, arrêt au premier 429, cache `tools/samples/bible-logs/`. |
+| `harvest-bible.sh` | Session de récolte lancée par cron toutes les 2 h (verrou, pause de 6 h après un 429, références reconstruites et mail une fois tout récolté ; rien n'est commité ni déployé). |
+| `bible.mjs` | Client lostark.bible (fonctions distantes SvelteKit, devalue, logs `__data.json`). |
 | `analyze.mjs` | Rapport en ligne de commande (`--en` : conseils en anglais). |
 | `build-skill-meta.mjs` | `data/rotation-skills.json` : recharge de base et placement (`directionalMask`) de chaque compétence, noms des nœuds d'Ark Passive, durée et groupe des buffs de support, boss de raid (`encounters.json`), tirés des tables du jeu de LOA Logs (`Skill.json`, `ArkPassive.json`, `SkillBuff.json`). |
 
@@ -84,3 +87,16 @@ Chaque conseil : ce qui ne va pas (chiffres du joueur), pourquoi (gain estimé q
 - Références du top (logs de lostark.bible) : aujourd'hui, les joueurs de la base de l'utilisateur.
 - Références plus larges : une seule base (celle de l'utilisateur) ; Recurrence absente, 11 spés sous 10 logs.
 - Logs lostark.bible par URL (option 2) : la page embarque castLog, dégâts de dos / face et sous buffs par compétence, boucliers, PV du boss, DPS par seconde, mais pas les coups datés avec leurs buffs (proxy Cloudflare nécessaire, pas de CORS).
+
+## Références lostark.bible (spés absentes de la base locale)
+
+- Ordre de `pickReference` : base locale même boss → lostark.bible même boss → base locale tous boss → lostark.bible tous boss.
+- Logs du site sans le détail des coups (buffs actifs, phases sans boss) : note sur les compétences et le placement seulement ; rythmes sur toute la chronologie du combat des deux côtés (`alignToReference`), comme la colonne CPM de lostark.bible.
+- Rythmes : logs autour de la médiane de DPS et leurs coéquipiers (jamais les meilleurs : le site n'a rien sous la médiane, la note serait trop sévère). Build : 25 % meilleurs en DPS ÷ CP, sans gemmes (absentes des logs du site).
+- Limite de débit mesurée (2026-10-03) : 429 après ~120 logs à 5,5 s d'écart.
+- Une même spé mélange les builds de grille d'Ark (ex. Time Wielder 111 / 222) : les logs ne disent pas la grille.
+
+## Guides de classe (`data/rotation-guides.json`)
+
+Objectifs écrits dans un guide cité (ex. Dimensionalist, guide communautaire Nexus, 2026-09), pour le build qu'il décrit (reconnu à la part de dégâts d'une compétence) : rythme d'une compétence (utilisations ÷ durée du combat) et gravures déconseillées (`guideAdvice` de coach.js, affiché même sans référence).
+

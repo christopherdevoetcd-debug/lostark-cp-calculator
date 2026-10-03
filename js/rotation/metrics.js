@@ -429,12 +429,23 @@ export const KEY_SKILL_MIN_SHARE = 0.03;
 export const KEY_SKILL_MIN_USAGE = 0.6; // compétence jouée par au moins 60 % des joueurs de la spé (sinon choix de build)
 export const POSITIONAL_MIN_SHARE = 0.2;
 
+// Référence locale (même boss, sinon tous boss) d'abord ; à défaut, logs de lostark.bible autour de la médiane
+// (même boss d'abord : une spé jouée sur un boss est mieux comparée sur ce boss, même hors de la base locale).
 export function pickReference(refs, spec, boss) {
-  const exact = refs?.[`${spec}|${boss}`];
-  if (exact && exact.n >= REF_MIN_SAMPLES) return { ref: exact, scope: 'boss' };
-  const all = refs?.[`${spec}|*`];
-  if (all && all.n >= REF_MIN_SAMPLES) return { ref: all, scope: 'spec' };
+  const order = [[`${spec}|${boss}`, 'boss'], [`bible|${spec}|${boss}`, 'bible-boss'], [`${spec}|*`, 'spec'], [`bible|${spec}|*`, 'bible-spec']];
+  for (const [k, scope] of order) {
+    const ref = refs?.[k];
+    if (ref && ref.n >= REF_MIN_SAMPLES) return { ref, scope };
+  }
   return { ref: null, scope: null };
+}
+
+// Joueur ramené à la base de la référence : les logs de lostark.bible n'ont pas le détail des coups, leurs rythmes
+// sont comptés sur toute la chronologie (basis « timeline ») ; ceux du joueur aussi, sans retirer les phases sans boss.
+export function alignToReference(a, ref) {
+  if (ref?.basis !== 'timeline') return a;
+  const minutes = Math.max(1, a.durationMs) / 60000;
+  return { ...a, skills: a.skills.map(s => ({ ...s, cpm: s.casts / minutes })) };
 }
 
 function weighted(parts, weights) {

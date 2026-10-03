@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openDb, listRaids, loadEncounter } from './db.mjs';
-import { analyzeEncounter, pickReference, scorePlayer } from '../../js/rotation/metrics.js';
+import { analyzeEncounter, pickReference, alignToReference, scorePlayer } from '../../js/rotation/metrics.js';
 import { coachPlayer } from '../../js/rotation/coach.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -44,6 +44,7 @@ const result = analyzeEncounter(enc, { skillMeta, buffMeta: DATA.buffs });
 const who = positional[1] || enc.localPlayer;
 for (const a of result.players) {
   const { ref, scope } = pickReference(refs, a.spec, enc.boss);
+  a.skills = alignToReference(a, ref).skills; // référence lostark.bible : rythmes sur toute la chronologie
   a.reference = ref ? { scope, n: ref.n } : null;
   a.score = scorePlayer(a, ref);
 }
@@ -63,7 +64,7 @@ if (!a) { console.error(`\nJoueur ${who} absent de ce combat.`); process.exit(1)
 console.log(`\n=== ${a.name} — ${a.className} / ${a.spec} ===`);
 if (a.score) {
   const p = a.score.parts;
-  const ref = a.reference.scope === 'boss' ? `même spé sur ce boss` : `même spé, tous boss`;
+  const ref = { boss: `même spé sur ce boss`, spec: `même spé, tous boss`, 'bible-boss': `logs lostark.bible autour de la médiane, ce boss`, 'bible-spec': `logs lostark.bible autour de la médiane, tous boss` }[a.reference.scope];
   console.log(`Note d'exécution : ${a.score.score} / 100  (rang parmi ${a.reference.n} logs, ${ref})`);
   if (a.support) console.log(`  PA ${p.ap ?? '—'} · Marque ${p.brand ?? '—'} · Identité ${p.identity ?? '—'} · T ${p.hat ?? '—'} · Activité ${p.activity ?? '—'}`);
   else console.log(`  Activité ${p.activity ?? '—'} · Compétences ${p.skills ?? '—'} · Buffs ${p.buffs ?? '—'} · Placement ${p.positional ?? '—'}`);
@@ -100,7 +101,9 @@ for (const s of (a.score?.skillScores || []).filter(s => s.absent)) console.log(
 console.log(`\nOuverture : ${a.opener.map(o => `${o.name} (${num(o.t / 1000)} s)`).join(' → ')}`);
 
 const lang = flag('--en') ? 'en' : 'fr';
-const advice = coachPlayer(a, pickReference(refs, a.spec, enc.boss).ref, refData?.builds?.[a.spec], { lang, arkPassiveNames: DATA.arkPassive, skillMeta });
+const guidesFile = path.join(HERE, '..', '..', 'data', 'rotation-guides.json');
+const guides = existsSync(guidesFile) ? JSON.parse(readFileSync(guidesFile, 'utf8')) : null;
+const advice = coachPlayer(a, pickReference(refs, a.spec, enc.boss).ref, refData?.builds?.[a.spec], { lang, arkPassiveNames: DATA.arkPassive, skillMeta, guides });
 console.log(`\n${'='.repeat(20)} ${lang === 'en' ? 'HOW TO IMPROVE' : 'COMMENT PROGRESSER'} ${'='.repeat(20)}`);
 if (!advice.length) console.log(lang === 'en' ? 'Nothing stands out: you play like the best of your spec on this boss.' : 'Rien ne ressort : tu joues comme les meilleurs de ta spé sur ce boss.');
 const MAX_ADVICE = 5; // au-delà, trop d'un coup : les plus importants d'abord, le build à part

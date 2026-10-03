@@ -9,7 +9,7 @@
 // et gemmes de recharge par compétence, couverture et chevauchements des supports).
 // builds["spé"] : build des 25 % de joueurs qui font le plus de dégâts pour leur CP (rang dans leur groupe
 // spé | boss | difficulté ; supports : couverture de PA) : stats de l'Évolution, nœuds d'Ark Passive, gravures, gemmes.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openDb, raidIds, loadEncounter } from './db.mjs';
@@ -79,7 +79,8 @@ function rhythm(rs) {
   for (const r of rs) for (const s of r.skills) {
     if (!skills.has(s.id)) skills.set(s.id, { name: s.name, users: 0, cpm: [], share: [], fast: [], gemCd: [] });
     const k = skills.get(s.id);
-    k.users++; k.cpm.push(s.cpm); k.share.push(s.share); k.gemCd.push(s.gemCd);
+    k.users++; k.cpm.push(s.cpm); k.share.push(s.share);
+    if (s.gemCd != null) k.gemCd.push(s.gemCd); // logs de lostark.bible : gemmes inconnues
     if (s.fast != null) k.fast.push(s.fast);
   }
   const out = {};
@@ -89,7 +90,7 @@ function rhythm(rs) {
     const withGem = k.gemCd.filter(x => x > 0);
     out[id] = {
       name: k.name, usage: +usage.toFixed(3), shareMedian: +median(k.share).toFixed(4), cpm: toQuantiles(k.cpm),
-      fastIntervalMedianMs: median(k.fast), gemCdShare: +(withGem.length / k.users).toFixed(3), gemCdMedian: median(withGem),
+      fastIntervalMedianMs: median(k.fast), gemCdShare: k.gemCd.length ? +(withGem.length / k.gemCd.length).toFixed(3) : null, gemCdMedian: median(withGem),
     };
   }
   const q = f => toQuantiles(rs.map(r => r[f]).filter(x => x != null));
@@ -124,6 +125,7 @@ function build(rs) {
     for (const id of Object.keys(r.build.nodes)) nodes.set(id, (nodes.get(id) || 0) + 1);
     for (const e of r.build.engravings) engr.set(e, (engr.get(e) || 0) + 1);
     for (const s of r.skills) {
+      if (s.gemCd == null) continue;
       if (!gems.has(s.id)) gems.set(s.id, { name: s.name, n: 0, withGem: [] });
       const g = gems.get(s.id);
       g.n++;
@@ -148,6 +150,33 @@ for (const [spec, rs] of bySpec) {
   const b = build(rs);
   if (b) builds[spec] = b;
 }
+
+// Logs de lostark.bible (fetch-bible-ref.mjs) : références « bible|spé|boss » et « bible|spé|* » faites des logs autour
+// de la médiane de DPS du site, rythmes sur toute la chronologie (basis « timeline ») ; build des 25 % meilleurs
+// (DPS ÷ CP, logs médians et meilleurs) seulement pour une spé sans build local. pickReference ne s'en sert qu'à
+// défaut de référence locale.
+const BIBLE = path.join(HERE, '..', 'samples', 'bible-records.json');
+const bible = existsSync(BIBLE) ? JSON.parse(readFileSync(BIBLE, 'utf8')).records : [];
+const bibleSpecs = new Map(), bibleBoss = new Map();
+for (const r of bible) push(bibleSpecs, r.spec, r);
+// Rythmes : logs autour de la médiane et leurs coéquipiers (« median-party ») ; jamais les meilleurs.
+const isMedian = r => r.sample === 'median' || r.sample === 'median-party';
+for (const r of bible) if (isMedian(r)) push(bibleBoss, `${r.spec}|${r.boss}`, r);
+const bibleRef = rs => ({ ...rhythm(rs), source: 'lostark.bible', basis: 'timeline' });
+for (const [k, rs] of bibleBoss) if (rs.length >= REF_MIN_SAMPLES) refs[`bible|${k}`] = bibleRef(rs);
+for (const [spec, rs] of bibleSpecs) {
+  const med = rs.filter(isMedian);
+  if (med.length >= REF_MIN_SAMPLES) refs[`bible|${spec}|*`] = bibleRef(med);
+  if (builds[spec]) continue;
+  for (const g of new Map(rs.map(r => [r.group, rs.filter(x => x.group === r.group && x.eff != null)])).values()) {
+    g.sort((x, y) => y.eff - x.eff);
+    g.slice(0, Math.ceil(g.length / 4)).forEach(r => { r.top = true; });
+  }
+  const b = build(rs);
+  if (b) builds[spec] = { ...b, source: 'lostark.bible' };
+}
+for (const [k, rs] of bibleBoss) bySpecBoss.set(`bible|${k}`, rs);
+for (const [spec, rs] of bibleSpecs) bySpec.set(`bible|${spec}`, rs.filter(isMedian));
 
 // Répartition des notes et de la couverture brute de chaque groupe (« Top X % » du site) : chaque log noté sur la
 // référence que le site lui appliquerait (même spé et même boss, sinon même spé tous boss).

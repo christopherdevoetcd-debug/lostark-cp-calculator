@@ -7782,6 +7782,7 @@ body.no-character .main-content {
 .rot-advice-num { font-family: var(--font-mono); color: var(--accent-gold); min-width: 16px; }
 .rot-gain { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 400; color: var(--gain); }
 .rot-why { color: var(--text-muted); }
+.rot-source { font-size: 13px; }
 .rot-how { margin: 6px 0 0; padding-left: 20px; }
 .rot-how li { margin: 3px 0; }
 .rot-moments { margin: 4px 0 0; padding-left: 20px; font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }

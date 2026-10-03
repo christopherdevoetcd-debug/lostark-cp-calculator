@@ -1,0 +1,55 @@
+{
+  "_doc": "Objectifs chiffrés des guides de classe, comparés aux logs par coach.js (guideAdvice). Seulement des valeurs écrites dans le guide cité, pour le build qu'il décrit (reconnu à la part de dégâts d'une compétence). Rythmes comme le compteur de LOA Logs : utilisations ÷ durée du combat.",
+  "sources": {
+    "dimensionalist-nexus": {
+      "title": "Dimensionalist – Community Advanced Guide",
+      "authors": "Mariabetaniah, Hhôpe (Discord Nexus)",
+      "updated": "2026-09",
+      "url": "https://docs.google.com/document/d/1zpFlulXppMRzwrd1JEFiWtdQgA76R0pikyO7fwmS34o"
+    }
+  },
+  "specs": {
+    "Time Wielder": {
+      "source": "dimensionalist-nexus",
+      "build": "222",
+      "when": { "skill": "Cross Thrust", "minShare": 0.05 },
+      "skills": [
+        {
+          "name": "Cross Thrust", "cpmMin": 19, "cpmMax": 24,
+          "fr": {
+            "why": "Chaque Cross Thrust retire 5 secondes à la recharge de Dimensional Break, ta compétence principale. Le guide : « dans un raid bien joué, 19 à 24 par minute ; en dessous, tu la laisses sans doute dormir à 5 charges ».",
+            "how": ["Glisse Cross Thrust entre tes autres compétences, 2 ou 3 fois d'affilée (la première est plus lente, les suivantes plus rapides).", "Ne la laisse jamais atteindre 5 charges.", "Arrête dès que Dimensional Break a 2 secondes ou moins de recharge : au-delà, tu gaspilles les charges."]
+          },
+          "en": {
+            "why": "Each Cross Thrust takes 5 seconds off Dimensional Break, your main skill. The guide: “in a raid with good performance, 19 to 24 per minute; below that you are probably letting it sit at 5 stacks”.",
+            "how": ["Weave Cross Thrust between your other skills, 2 or 3 times in a row (the first cast is slower, the next ones faster).", "Never let it reach 5 stacks.", "Stop once Dimensional Break has 2 seconds or less left: beyond that you waste stacks."]
+          }
+        }
+      ],
+      "engravingsAvoid": [
+        { "name": "Mass Increase", "fr": "le build vit de vitesse d'attaque, Mass Increase la réduit", "en": "the build lives on attack speed, Mass Increase lowers it" },
+        { "name": "Raid Captain", "fr": "le Time Wielder n'a aucun buff de vitesse de déplacement", "en": "Time Wielder has no move speed buff" },
+        { "name": "MP Efficiency Increase", "fr": "une grande part de tes dégâts (sortie de l'identité) ne consomme pas de mana", "en": "a large part of your damage (identity exit) does not use mana" }
+      ]
+    },
+    "Space Wielder": {
+      "source": "dimensionalist-nexus",
+      "build": "333",
+      "when": { "skill": "Spatial Slash", "minShare": 0.25 },
+      "skills": [
+        {
+          "name": "Spatial Slash", "cpmMin": 10,
+          "fr": {
+            "why": "Spatial Slash est ta compétence principale dans ce build. Le guide vise environ 10 utilisations par minute et plus.",
+            "how": ["Lance-la dès qu'elle est prête, quel que soit ton nombre de charges de destin (sauf pour garder un gros moment : boss à terre).", "Enchaîne-la juste après une autre compétence : son tripode « Skip » saute alors son temps de lancement.", "Prépare 2 charges rouges avant le combat et pendant les mécaniques."]
+          },
+          "en": {
+            "why": "Spatial Slash is your main skill in this build. The guide aims for about 10 uses per minute or more.",
+            "how": ["Use it as soon as it is ready, whatever your destiny stacks (except to hold it for a big window: boss stagger).", "Chain it right after another skill: its “Skip” tripod then skips its cast delay.", "Pre-stack 2 red stacks before the fight and during mechanics."]
+          }
+        }
+      ],
+      "engravingsAvoid": []
+    }
+  }
+}

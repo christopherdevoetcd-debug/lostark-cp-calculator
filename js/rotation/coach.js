@@ -228,8 +228,11 @@ function buildAdvice(a, build, names, L) {
   return [{
     kind: 'build',
     title: tr(`Ton build diffère de celui des meilleurs ${a.spec}`, `Your build differs from the best ${a.spec} players`),
-    what: tr(`Comparé aux ${build.n} logs des 25 % de ${a.spec} qui font le plus de dégâts pour leur CP (tous boss, 120 derniers jours).`,
-             `Compared with ${build.n} logs from the 25% of ${a.spec} players with the most damage for their CP (all bosses, last 120 days).`),
+    what: build.source === 'lostark.bible'
+      ? tr(`Comparé aux ${build.n} logs des 25 % de ${a.spec} qui font le plus de dégâts pour leur CP, parmi les logs de lostark.bible lus (autour de la médiane et parmi les meilleurs, tous boss).`,
+           `Compared with ${build.n} logs from the 25% of ${a.spec} players with the most damage for their CP, among the lostark.bible logs read (around the median and among the best, all bosses).`)
+      : tr(`Comparé aux ${build.n} logs des 25 % de ${a.spec} qui font le plus de dégâts pour leur CP (tous boss, 120 derniers jours).`,
+           `Compared with ${build.n} logs from the 25% of ${a.spec} players with the most damage for their CP (all bosses, last 120 days).`),
     why: tr(`Ce ne sont pas des règles absolues, mais des choix que presque tous les meilleurs font (ou ne font pas). Vérifie-les sur un guide de ta classe (Maxroll) avant de tout changer.`,
             `These are not absolute rules, but choices almost all of the best players make (or avoid). Check them against a class guide (Maxroll) before changing everything.`),
     how, moments: [],
@@ -367,12 +370,55 @@ function shieldAdvice(a, ref, L) {
   }];
 }
 
-export function coachPlayer(a, ref, build, { lang = 'fr', arkPassiveNames = {}, skillMeta = {} } = {}) {
+// Objectifs écrits dans un guide de classe (data/rotation-guides.json), pour le build qu'il décrit seulement : rythme
+// d'une compétence (utilisations ÷ durée du combat, comme le compteur de LOA Logs) et gravures déconseillées.
+// Le guide est cité : ce n'est pas une mesure de la référence, mais une consigne publiée comparée au log.
+export function guideAdvice(a, guides, L) {
+  const g = guides?.specs?.[a.spec];
+  if (!g || a.support) return [];
+  const src = guides.sources?.[g.source];
+  const { tr, num } = L;
+  const key = tr('fr', 'en');
+  const minutes = Math.max(1, a.durationMs) / 60000;
+  const main = a.skills.find(s => s.name === g.when.skill);
+  if (!main || main.share < g.when.minShare) return [];
+  const cite = src ? tr(`Source : ${src.title} (${src.authors}, ${src.updated}).`, `Source: ${src.title} (${src.authors}, ${src.updated}).`) : '';
+  const out = [];
+  for (const t of g.skills || []) {
+    const s = a.skills.find(x => x.name === t.name);
+    const cpm = s ? s.casts / minutes : 0;
+    if (cpm >= t.cpmMin) continue;
+    const target = t.cpmMax ? tr(`${t.cpmMin} à ${t.cpmMax}`, `${t.cpmMin} to ${t.cpmMax}`) : tr(`${t.cpmMin} et plus`, `${t.cpmMin} or more`);
+    out.push({
+      kind: 'guide', source: src || null,
+      title: tr(`Guide ${g.build} : lance ${t.name} plus souvent`, `${g.build} guide: use ${t.name} more often`),
+      what: tr(`${num(cpm)} fois par minute sur ce combat. Le guide de la classe vise ${target} pour le build ${g.build}.`,
+               `${num(cpm)} times per minute in this fight. The class guide aims for ${target} for the ${g.build} build.`),
+      why: `${t[key].why} ${cite}`,
+      how: t[key].how,
+      moments: [],
+    });
+  }
+  const worn = new Set(a.build?.engravings || []);
+  const bad = (g.engravingsAvoid || []).filter(e => worn.has(e.name));
+  if (bad.length) out.push({
+    kind: 'guide', source: src || null,
+    title: tr(`Guide ${g.build} : gravure${bad.length > 1 ? 's' : ''} déconseillée${bad.length > 1 ? 's' : ''}`, `${g.build} guide: engraving${bad.length > 1 ? 's' : ''} not recommended`),
+    what: tr(`Tu portes ${bad.map(e => e.name).join(', ')}, que le guide déconseille pour ce build.`, `You use ${bad.map(e => e.name).join(', ')}, which the guide advises against for this build.`),
+    why: `${bad.map(e => `${e.name} : ${e[key]}`).join(' ; ')}. ${cite}`,
+    how: [tr('Vérifie sur le guide avant de changer : remplace-la par une des gravures qu\'il conseille.', 'Check the guide before changing: replace it with one of the engravings it recommends.')],
+    moments: [],
+  });
+  return out;
+}
+
+export function coachPlayer(a, ref, build, { lang = 'fr', arkPassiveNames = {}, skillMeta = {}, guides = null } = {}) {
   const L = makeT(lang);
-  if (!ref) return [];
+  const fromGuide = guideAdvice(a, guides, L);
+  if (!ref) return fromGuide;
   const list = a.support
     ? [...supportAdvice(a, ref, L), ...activityAdvice(a, ref, L), ...buildAdvice(a, build, arkPassiveNames, L)]
-    : [...dpsSkillAdvice(a, ref, build, L, skillMeta), ...activityAdvice(a, ref, L), ...buffAdvice(a, ref, L), ...positionalAdvice(a, ref, L), ...buildAdvice(a, build, arkPassiveNames, L)];
+    : [...dpsSkillAdvice(a, ref, build, L, skillMeta), ...activityAdvice(a, ref, L), ...buffAdvice(a, ref, L), ...positionalAdvice(a, ref, L), ...fromGuide, ...buildAdvice(a, build, arkPassiveNames, L)];
   // Les conseils chiffrés d'abord (gain estimé décroissant), puis les autres dans l'ordre ; le build en dernier.
   return list.sort((x, y) => (x.kind === 'build') - (y.kind === 'build') || (y.gainPct ?? -1) - (x.gainPct ?? -1));
 }
